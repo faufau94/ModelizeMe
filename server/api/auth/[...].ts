@@ -1,0 +1,99 @@
+import GithubProvider from 'next-auth/providers/github'
+import GoogleProvider from 'next-auth/providers/google'
+import CredentialsProvider from "next-auth/providers/credentials"
+import { NuxtAuthHandler } from '#auth'
+import prisma from "~/lib/prisma";
+import bcrypt from "bcrypt";
+
+export default NuxtAuthHandler({
+    // A secret string you define, to ensure correct encryption
+    secret: useRuntimeConfig().authSecret,
+    providers: [
+        CredentialsProvider.default({
+            // The name to display on the sign in form (e.g. 'Sign in with...')
+            name: 'vos informations',
+            // The credentials is used to generate a suitable form on the sign in page.
+            // You can specify whatever fields you are expecting to be submitted.
+            // e.g. domain, username, password, 2FA token, etc.
+            // You can pass any HTML attribute to the <input> tag through the object.
+            credentials: {
+                email: { label: "Email", type: "text", placeholder: "" },
+                password: { label: "Mot de passe", type: "password" }
+            },
+            async authorize(credentials, req) {
+                // You need to provide your own logic here that takes the credentials
+                // submitted and returns either an object representing a user or value
+                // that is false/null if the credentials are invalid.
+                // e.g. return { id: 1, name: 'J Smith', email: 'jsmith@example.com' }
+                // You can also use the `req` object to obtain additional parameters
+                // (i.e., the request IP address)
+                console.log('credentials', credentials)
+                const user = await prisma.user.findFirst({
+                    where: {
+                        email: credentials.email,
+                    }
+                })
+                console.log('user', user)
+                if(user) {
+                    return user
+                }
+                return null
+            }
+        }),
+        // @ts-expect-error Use .default here for it to work during SSR.
+        GithubProvider.default({
+            clientId: useRuntimeConfig().githubClientId,
+            clientSecret: useRuntimeConfig().githubClientSecret
+        }),
+        GoogleProvider.default({
+            clientId: useRuntimeConfig().googleClientId,
+            clientSecret: useRuntimeConfig().googleClientSecret
+        }),
+
+    ],
+    callbacks: {
+        /* on before signin */
+        async signIn({ user, account, profile, email, credentials }) {
+            const providerId = account.providerAccountId;
+
+            console.log('user quoiii', user)
+
+            // Vérifier si l'utilisateur existe déjà
+            const existingUser = await prisma.user.findUnique({
+                where: {
+                    email: user.email,
+                },
+            });
+
+            console.log(existingUser)
+            if (!existingUser) {
+                // Créer un nouvel utilisateur s'il n'existe pas
+                await prisma.user.create({
+                    data: {
+                        email: user.email,
+                        name: user.name,
+                        first_name: user?.name,
+                        image: user.picture || user.avatar_url, // profile.avatar_url pour GitHub
+                        provider: account.provider,
+                        providerAccountId: providerId,
+                    },
+                });
+            }
+
+            // Retourner true pour permettre la connexion
+            return true;
+        },
+        /* on redirect to another url */
+        async redirect({ url, baseUrl }) {
+            return baseUrl
+        },
+        /* on session retrival */
+        async session({ session, user, token }) {
+            return session
+        },
+        /* on JWT token creation or mutation */
+        async jwt({ token, user, account, profile, isNewUser }) {
+            return token
+        }
+    }
+})
