@@ -5,13 +5,16 @@ import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 //import { AlertDescription } from '@/components/ui/alert'
 
+/*
 definePageMeta({
-  auth: {unauthenticatedOnly: true, navigateAuthenticatedTo: '/'}
+  auth: { authenticatedOnly: false, navigateAuthenticatedTo: '/dashboard' }
 })
 
-const {signIn, getProviders} = useAuth()
-const providers = await getProviders()
+ */
 
+const {signIn, getProviders, status} = useAuth()
+const providers = await getProviders()
+console.log(status.value)
 const signUpUserInfo = ref({
   name: '',
   firstName: '',
@@ -44,7 +47,7 @@ const signUp = async () => {
     }, 5000)
       //message.value = {text: "", type: ""}
 
-    const userLogged = await signIn('credentials',{email: signUpUserInfo.value.email, password: signUpUserInfo.value.password})
+    const userLogged = await signIn('credentials',{email: signUpUserInfo.value.email, password: signUpUserInfo.value.password, callbackUrl: '/dashboard'})
 
     if(userLogged) {
       await router.push({path: "/"})
@@ -173,8 +176,8 @@ const filteredProviders = computed(() => {
               S'inscrire
             </Button>
             <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id"
-                    @click="signIn(provider?.id)">
-              S'inscrire avec {{ provider?.name }}
+                    @click="signIn(provider?.id, { callbackUrl: '/dashboard' })">
+              Se connecter avec {{ provider?.name }}
             </Button>
           </div>
           <div class="mt-4 text-center text-sm">

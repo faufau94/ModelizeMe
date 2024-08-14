@@ -11,7 +11,8 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ["shadcn-nuxt", "@nuxtjs/tailwindcss", "@prisma/nuxt", "@sidebase/nuxt-auth"],
+  modules: ["shadcn-nuxt", "@nuxtjs/tailwindcss", "@prisma/nuxt", "@sidebase/nuxt-auth", '@pinia/nuxt',],
+
   runtimeConfig: {
     authSecret: 'oGDu}UC[pMovI1[c\'SLk+94bB3',
     authOrigin: 'http://localhost:3000',
@@ -24,6 +25,10 @@ export default defineNuxtConfig({
 
   },
   auth: {
+    isEnabled: true,
+    disableServerSideAuth: false,
+    originEnvKey: 'AUTH_ORIGIN',
+    baseURL: 'http://localhost:3000/api/auth',
     provider: {
       type: 'authjs',
       trustHost: false,

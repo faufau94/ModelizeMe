@@ -3,10 +3,12 @@ import {Button} from '@/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
-
+/*
 definePageMeta({
-  auth: { unauthenticatedOnly: true, navigateAuthenticatedTo: '/'}
+  auth: { unauthenticatedOnly: true, navigateAuthenticatedTo: '/dashboard' }
 })
+
+ */
 
 const { signIn, getProviders } = useAuth()
 const providers = await getProviders()
@@ -15,6 +17,16 @@ const logUserInfo = ref({
   email: '',
   password: ''
 })
+
+const onSubmit = async () => {
+  const res = await signIn('credentials', {
+    email: logUserInfo.value.email,
+    password: logUserInfo.value.password,
+    callbackUrl: '/dashboard'
+  })
+
+  console.log(res)
+}
 
 const filteredProviders = computed(() => {
   return Object.keys(providers)
@@ -87,11 +99,11 @@ const filteredProviders = computed(() => {
               />
             </div>
             <Button type="submit" class="w-full"
-                    @click="signIn('credentials', logUserInfo)">
+                    @click="() => onSubmit()">
               Se connecter
             </Button>
 
-            <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id" @click="signIn(provider?.id)">
+            <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id" @click="async () => await signIn(provider?.id, { callbackUrl: '/dashboard' })">
               Se connecter avec {{ provider?.name }}
             </Button>
           </div>

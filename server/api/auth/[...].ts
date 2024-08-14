@@ -27,14 +27,12 @@ export default NuxtAuthHandler({
                 // e.g. return { id: 1, name: 'J Smith', email: 'jsmith@example.com' }
                 // You can also use the `req` object to obtain additional parameters
                 // (i.e., the request IP address)
-                console.log('credentials', credentials)
                 const user = await prisma.user.findFirst({
                     where: {
                         email: credentials.email,
                     }
                 })
-                console.log('user', user)
-                if(user) {
+                if(user && await bcrypt.compare(credentials.password, user.password)) {
                     return user
                 }
                 return null
@@ -54,46 +52,50 @@ export default NuxtAuthHandler({
     callbacks: {
         /* on before signin */
         async signIn({ user, account, profile, email, credentials }) {
-            const providerId = account.providerAccountId;
 
-            console.log('user quoiii', user)
+            if (account.provider !== 'credentials') {
+                const providerId = account.providerAccountId;
 
-            // Vérifier si l'utilisateur existe déjà
-            const existingUser = await prisma.user.findUnique({
-                where: {
-                    email: user.email,
-                },
-            });
-
-            console.log(existingUser)
-            if (!existingUser) {
-                // Créer un nouvel utilisateur s'il n'existe pas
-                await prisma.user.create({
-                    data: {
+                // Vérifier si l'utilisateur existe déjà
+                const existingUser = await prisma.user.findUnique({
+                    where: {
                         email: user.email,
-                        name: user.name,
-                        first_name: user?.name,
-                        image: user.picture || user.avatar_url, // profile.avatar_url pour GitHub
-                        provider: account.provider,
-                        providerAccountId: providerId,
                     },
                 });
+
+                if (!existingUser) {
+                    // Créer un nouvel utilisateur s'il n'existe pas
+                    await prisma.user.create({
+                        data: {
+                            email: user.email,
+                            name: user.name,
+                            first_name: user?.name,
+                            image: user.picture || user.avatar_url, // profile.avatar_url pour GitHub
+                            provider: account.provider,
+                            providerAccountId: providerId,
+                        },
+                    });
+                }
             }
 
             // Retourner true pour permettre la connexion
             return true;
         },
-        /* on redirect to another url */
-        async redirect({ url, baseUrl }) {
-            return baseUrl
-        },
         /* on session retrival */
         async session({ session, user, token }) {
-            return session
+            if (user) {
+                session.user.id = user.id;
+            } else if (token) {
+                session.user.id = token.id;
+            }
+            return session;
         },
         /* on JWT token creation or mutation */
         async jwt({ token, user, account, profile, isNewUser }) {
-            return token
+            if (user) {
+                token.id = user.id;
+            }
+            return token;
         }
     }
 })
