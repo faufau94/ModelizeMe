@@ -11,7 +11,14 @@ export default defineNuxtConfig({
     },
   },
 
-  modules: ["shadcn-nuxt", "@nuxtjs/tailwindcss", "@prisma/nuxt", "@sidebase/nuxt-auth", '@pinia/nuxt',],
+  modules: [
+    "shadcn-nuxt",
+    "@nuxtjs/tailwindcss",
+    "@prisma/nuxt",
+    "@sidebase/nuxt-auth",
+    '@pinia/nuxt',
+    "nuxt-lucide-icons",
+  ],
 
   runtimeConfig: {
     authSecret: 'oGDu}UC[pMovI1[c\'SLk+94bB3',

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import {Button} from '@/components/ui/button'
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
-import {Input} from '@/components/ui/input'
-import {Label} from '@/components/ui/label'
+import {Button} from '~/components/ui/button'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
+import {Input} from '~/components/ui/input'
+import {Label} from '~/components/ui/label'
 /*
 definePageMeta({
-  auth: { unauthenticatedOnly: true, navigateAuthenticatedTo: '/dashboard' }
+  auth: { unauthenticatedOnly: true, navigateAuthenticatedTo: '/app/dashboard' }
 })
 
  */
@@ -22,7 +22,7 @@ const onSubmit = async () => {
   const res = await signIn('credentials', {
     email: logUserInfo.value.email,
     password: logUserInfo.value.password,
-    callbackUrl: '/dashboard'
+    callbackUrl: '/app/app/dashboard'
   })
 
   console.log(res)
@@ -103,7 +103,7 @@ const filteredProviders = computed(() => {
               Se connecter
             </Button>
 
-            <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id" @click="async () => await signIn(provider?.id, { callbackUrl: '/dashboard' })">
+            <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id" @click="async () => await signIn(provider?.id, { callbackUrl: '/app/app/dashboard' })">
               Se connecter avec {{ provider?.name }}
             </Button>
           </div>

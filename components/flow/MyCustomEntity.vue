@@ -52,7 +52,7 @@
     <input
         class="text-center w-full mb-2 border-0 focus:border-none focus:outline-none active:border-none"
         placeholder="Nom de l'entité"
-        v-model="entityDatas.name"
+        v-models="entityDatas.name"
         type="text"
         maxlength="20"
     />
@@ -73,7 +73,7 @@
           <input
               class="text-center border-transparent w-full"
               placeholder="Propriété"
-              v-model="input['propertyName']"
+              v-models="input['propertyName']"
               type="text"
               maxlength="20"
               :class="{'text-red-500': index === 0}"
@@ -85,7 +85,7 @@
           <input
               class="text-center w-full"
               placeholder="Type"
-              v-model="input['typeName']"
+              v-models="input['typeName']"
               type="text"
               maxlength="20"
               :class="{'text-red-500': index === 0}"
