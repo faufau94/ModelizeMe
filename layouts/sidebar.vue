@@ -31,6 +31,12 @@
               Paramètres
             </a>
           </li>
+          <li>
+            <NuxtLink @click="() => signOut({ callbackUrl: '/' })"
+               class="cursor-pointer block rounded-lg px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700">
+              Se déconnecter
+            </NuxtLink>
+          </li>
         </ul>
       </div>
       <div v-else>
@@ -136,4 +142,6 @@ const sidebarClass = computed(() => (isExpanded.value ? "w-56" : "w-16"));
 const toggleSidebar = () => {
   isExpanded.value = !isExpanded.value;
 };
+
+const {signOut} = useAuth()
 </script>

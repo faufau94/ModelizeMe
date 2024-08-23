@@ -1,51 +1,96 @@
 <template>
   <div class="w-full max-w-6xl mx-auto px-4 py-8">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold">Modèles</h1>
-      <Toaster />
-      <Dialog>
-        <DialogTrigger as-child>
-          <Button @click="showModel = true">
-            <CirclePlus :size="20" class="mr-2"/>
-            Nouveau modèle
-          </Button>
-        </DialogTrigger>
-        <DialogContent class="sm:max-w-[425px]" v-if="showModel">
-          <DialogHeader>
-            <DialogTitle>Nouveau modèle</DialogTitle>
-            <DialogDescription>
-              Ajouter un nouveau modèle.
-            </DialogDescription>
-          </DialogHeader>
+    <div v-if="areModelsLoaded === true && (models === null || models.length === 0)">
+          <div class="flex flex-col items-center justify-center h-[80vh]">
+            <div class="text-center space-y-4">
+              <h3 class="text-2xl font-bold">Aucun résultat</h3>
+              <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
+              <Dialog>
+                <DialogTrigger as-child>
+                  <Button @click="showModel = true">
+                    <CirclePlus :size="20" class="mr-2"/>
+                    Créer un modèle
+                  </Button>
+                </DialogTrigger>
+                <DialogContent class="sm:max-w-[425px]" v-if="showModel">
+                  <DialogHeader>
+                    <DialogTitle>Nouveau modèle</DialogTitle>
+                    <DialogDescription>
+                      Ajouter un nouveau modèle.
+                    </DialogDescription>
+                  </DialogHeader>
 
-          <Input v-model="newModel.title" type="text"/>
+                  <Input v-model="newModel.title" type="text"/>
 
-          <DialogFooter class="mt-3">
-            <DialogClose as-child>
-              <Button @click="showModel = false" type="button" variant="secondary">
-                Fermer
-              </Button>
-            </DialogClose>
-            <Button @click="onSubmit" :disabled="isLoadingNewModel">
-              <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
-              {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
-            </Button>
-          </DialogFooter>
+                  <DialogFooter class="mt-3">
+                    <DialogClose as-child>
+                      <Button @click="showModel = false" type="button" variant="secondary">
+                        Fermer
+                      </Button>
+                    </DialogClose>
+                    <Button @click="onSubmit" :disabled="isLoadingNewModel">
+                      <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
+                      {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
+                    </Button>
+                  </DialogFooter>
 
-        </DialogContent>
-      </Dialog>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
     </div>
-    <div class="mb-6">
-      <div class="relative w-full max-w-sm items-center">
-        <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle" class="pl-10"/>
-        <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
+    <div v-else>
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Modèles</h1>
+        <Toaster/>
+        <Dialog>
+          <DialogTrigger as-child>
+            <Button @click="showModel = true">
+              <CirclePlus :size="20" class="mr-2"/>
+              Nouveau modèle
+            </Button>
+          </DialogTrigger>
+          <DialogContent class="sm:max-w-[425px]" v-if="showModel">
+            <DialogHeader>
+              <DialogTitle>Nouveau modèle</DialogTitle>
+              <DialogDescription>
+                Ajouter un nouveau modèle.
+              </DialogDescription>
+            </DialogHeader>
+
+            <Input v-model="newModel.title" type="text"/>
+
+            <DialogFooter class="mt-3">
+              <DialogClose as-child>
+                <Button @click="showModel = false" type="button" variant="secondary">
+                  Fermer
+                </Button>
+              </DialogClose>
+              <Button @click="onSubmit" :disabled="isLoadingNewModel">
+                <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
+                {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
+              </Button>
+            </DialogFooter>
+
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div class="mb-6">
+        <div class="relative w-full max-w-sm items-center">
+          <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle" class="pl-10"/>
+          <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
       <Search class="size-5 text-muted-foreground"/>
     </span>
+        </div>
+      </div>
+      <div v-if="isLoading" class="flex justify-center mt-32 items-center">
+        <Loader2 :size="30" class="animate-spin"/>
+      </div>
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <CardModel v-for="(model, index) in filteredModels" :key="index" :model="model"/>
       </div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <CardModel v-for="(model, index) in filteredModels" :key="index" :model="model"/>
-    </div>
+
   </div>
 </template>
 
@@ -56,59 +101,39 @@ import CardModel from "~/components/ui/card/CardModel.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 
 import Toaster from '@/components/ui/toast/Toaster.vue'
-import { useToast } from '@/components/ui/toast/use-toast'
-import { ToastAction } from '@/components/ui/toast'
+import {useToast} from '@/components/ui/toast/use-toast'
+import {ToastAction} from '@/components/ui/toast'
+import {useMCDStore} from "@/stores/mcd-store.js";
+import {storeToRefs} from "pinia";
 
 definePageMeta({
   layout: 'sidebar',
 });
 
-const router = useRouter()
+const mcdStore = useMCDStore()
+const {models} = storeToRefs(mcdStore)
 
-const { toast } = useToast()
+const {toast} = useToast()
 
-const models = ref([
-  {
-    title: "Cozy Cabin Retreat",
-    description: "Escape to a peaceful mountain getaway.",
-    image: "/placeholder.svg",
-  },
-  {
-    title: "Beachfront Bungalow",
-    description: "Relax and unwind by the ocean.",
-    image: "/placeholder.svg",
-  },
-  {
-    title: "Urban Loft Oasis",
-    description: "Experience city living in style.",
-    image: "/placeholder.svg",
-  },
-  {
-    title: "Rustic Farmhouse",
-    description: "Reconnect with nature in the countryside.",
-    image: "/placeholder.svg",
-  },
-  {
-    title: "Luxury Treehouse",
-    description: "Elevate your stay in the treetops.",
-    image: "/placeholder.svg",
-  },
-  {
-    title: "Coastal Cottage",
-    description: "Breathe in the salty sea air.",
-    image: "/placeholder.svg",
-  },
-]);
+const isLoading = ref(false);
+const areModelsLoaded = ref(false)
+
+onMounted(async () => {
+  isLoading.value = true;
+  models.value = await $fetch('/api/models/list', {method: 'GET'});
+  isLoading.value = false
+  areModelsLoaded.value = true
+})
 
 const searchTerm = ref("");
+
+const filteredModels = computed(() => {
+  return models?.value?.filter((card) =>
+      card.name.toLowerCase().includes(searchTerm.value.toLowerCase())
+  )
+});
+
 const showModel = ref(false);
-
-const filteredModels = computed(() =>
-    models.value.filter((card) =>
-        card.title.toLowerCase().includes(searchTerm.value.toLowerCase())
-    )
-);
-
 const newModel = ref({
   title: "",
 });
@@ -124,11 +149,9 @@ const onSubmit = async () => {
     });
 
     if (res) {
-      setTimeout(async () => {
-        isLoadingNewModel.value = false;
-        showModel.value = false;
-        await navigateTo('/app/model/' + res.id.toString());
-      }, 3000);
+      isLoadingNewModel.value = false;
+      showModel.value = false;
+      await navigateTo('/app/model/' + res.id.toString());
     }
 
   } else {

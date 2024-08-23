@@ -25,7 +25,8 @@ model User {
 model Model {
   id        Int     @id @default(autoincrement())
   name      String
-  content   Json?   @default("{}")
+  nodes     Json   @default("[]")
+  edges     Json   @default("[]")
   type      ModelType @default(MCD)
   user      User    @relation(fields: [userId], references: [id])
   userId    Int
