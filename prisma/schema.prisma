@@ -30,6 +30,8 @@ model Model {
   type      ModelType @default(MCD)
   user      User    @relation(fields: [userId], references: [id])
   userId    Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt @default(now())
 }
 
 enum ModelType {

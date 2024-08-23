@@ -3,9 +3,6 @@
     <CardHeader class="flex flex-row items-start gap-4 space-y-0">
       <div class="space-y-1 flex-1">
         <CardTitle class="text-lg">{{ props.model.name }}</CardTitle>
-        <CardDescription>
-          {{ props.model.description }}
-        </CardDescription>
       </div>
       <div class="rounded-md text-secondary-foreground">
 
@@ -54,23 +51,25 @@
       </div>
     </CardHeader>
     <CardContent>
-      <div class="flex space-x-4 text-sm text-muted-foreground">
-        <div class="flex items-center">
-          <Circle class="mr-1 h-3 w-3 text-sky-400"/>
-          TypeScript
+      <div class="flex gap-x-6 text-sm text-muted-foreground">
+        <div class="flex items-center gap-x-2 justify-center">
+          <PanelTop :size="15" />
+          {{ props.model.nodes.length }} nœuds
         </div>
-        <div class="flex items-center">
-          <Star class="mr-1 h-3 w-3"/>
-          20k
+        <div class="flex items-center gap-x-2">
+          <Workflow :size="15" />
+          {{ props.model.edges.length }} relations
         </div>
-        <div>Updated April 2023</div>
       </div>
+        <div class="text-[11px] text-muted-foreground mt-3 text-right">
+          Modifié le {{ $dayjs(props.model.updatedAt).format('DD-MM-YYYY à HH:mm') }}
+        </div>
     </CardContent>
   </Card>
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {Trash2, Circle, Star, Loader2} from 'lucide-vue-next';
+import {Trash2, Workflow, Loader2, PanelTop} from 'lucide-vue-next';
 import {useToast} from '@/components/ui/toast/use-toast'
 import {Toaster} from '@/components/ui/toast'
 import {
@@ -83,6 +82,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {useMCDStore} from "@/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
+
 
 
 const props = defineProps({

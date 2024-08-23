@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
     console.log(session)
 
-    const updateUser = await prisma.model.update({
+    const updateModel = await prisma.model.update({
         where: {
             id: '',
             userId: session?.user?.id,
