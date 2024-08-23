@@ -8,32 +8,10 @@
 
         <Toaster/>
 
-        <AlertDialog>
-          <AlertDialogTrigger as-child>
-            <Button @click.stop="showDialogDeleteModel = true" variant="secondary" class="p-2 shadow-none bg-white">
-              <Trash2 :size="17" class="text-red-500"/>
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent v-if="showDialogDeleteModel">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Voulez-vous supprimer ce modèle?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est irréversible et supprimera définitement ce modèle.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <Button @click.stop="deleteModel" :disabled="isLoading">
-                <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
-                {{ isLoading ? 'Suppression...' : 'Supprimer' }}
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        <!--
+
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button variant="secondary" class="px-2 shadow-none bg-white">
+            <Button @click.stop="" variant="secondary" class="px-2 shadow-none bg-white">
               <EllipsisVertical :size="15" />
             </Button>
           </DropdownMenuTrigger>
@@ -42,12 +20,58 @@
               :align-offset="-5"
               class="w-[200px]"
           >
-            <DropdownMenuCheckboxItem class="text-red-500">
-              Supprimer
-            </DropdownMenuCheckboxItem>
+
+            <DropdownMenuItem class="cursor-pointer">
+              <AlertDialog>
+                <AlertDialogTrigger as-child>
+                  <div @click.stop="showDialogRenameModel = true">
+                    Renommer
+                  </div>
+                </AlertDialogTrigger>
+                <AlertDialogContent v-if="showDialogRenameModel">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Renommer le nom</AlertDialogTitle>
+                  </AlertDialogHeader>
+
+                  <Input v-model="model.name" type="text"/>
+
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <Button @click="renameModel" :disabled="isRenamingModel">
+                      <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
+                      {{ isRenamingModel ? 'Ajout...' : 'Ajouter' }}
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuItem>
+            <DropdownMenuItem class="cursor-pointer">
+              <AlertDialog>
+                <AlertDialogTrigger as-child>
+                  <div @click.stop="showDialogDeleteModel = true" class="text-red-500">
+                    Supprimer
+                  </div>
+                </AlertDialogTrigger>
+                <AlertDialogContent v-if="showDialogDeleteModel">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Voulez-vous supprimer ce modèle?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action est irréversible et supprimera définitement ce modèle.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <Button @click.stop="deleteModel" :disabled="isLoading">
+                      <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                      {{ isLoading ? 'Suppression...' : 'Supprimer' }}
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        -->
+
       </div>
     </CardHeader>
     <CardContent>
@@ -69,7 +93,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {Trash2, Workflow, Loader2, PanelTop} from 'lucide-vue-next';
+import {Trash2, Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
 import {useToast} from '@/components/ui/toast/use-toast'
 import {Toaster} from '@/components/ui/toast'
 import {
@@ -104,6 +128,8 @@ const openModel = async () => {
 
 const isLoading = ref(false);
 const showDialogDeleteModel = ref(false);
+const showDialogRenameModel = ref(false);
+const isRenamingModel = ref(false);
 const deleteModel = async () => {
   isLoading.value = true;
   console.log(props.model.id);
@@ -120,6 +146,21 @@ const deleteModel = async () => {
     toast({
       description: 'Le modèle a été supprimé.',
     });
+  }
+}
+
+const renameModel = async () => {
+  isRenamingModel.value = true
+  const res = await $fetch(`/api/models/rename-model?id=${props.model.id}`, {
+    method: "PUT",
+    body: {
+      name: props.model.name
+    }
+  });
+
+  if (res) {
+    isRenamingModel.value = false
+    showDialogRenameModel.value = false
   }
 }
 </script>
