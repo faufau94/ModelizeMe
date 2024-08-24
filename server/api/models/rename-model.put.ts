@@ -6,8 +6,6 @@ export default defineEventHandler(async (event) => {
 
     const query = getQuery(event)
 
-    console.log(query.id)
-    console.log(body)
 
     const updateModelName = await prisma.model.update({
         where: {

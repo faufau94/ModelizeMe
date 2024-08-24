@@ -20,8 +20,8 @@ export default function useDragAndDrop() {
     const { draggedType, isDragOver, isDragging } = state
 
     const mcdStore = useMCDStore(); // Utiliser le store importé
-    const { isSubMenuVisible, elementsMenu, nodeIdSelected } = storeToRefs(mcdStore);
-    const { getIdNode } = useMCDStore()
+    const { isSubMenuVisible, elementsMenu, nodeIdSelected, addNewNode } = storeToRefs(mcdStore);
+    const { createNewNode } = mcdStore
 
 
     watch(isDragging, (dragging) => {
@@ -75,46 +75,42 @@ export default function useDragAndDrop() {
      *
      * @param {DragEvent} event
      */
-    function onDrop(event) {
+    async function onDrop(event, idModel) {
+        addNewNode.value = true
         const position = mcdStore.flowMCD.screenToFlowCoordinate({
             x: event.clientX,
             y: event.clientY,
         })
 
-        const nodeId = getIdNode()
-
-        const newNode = {
-            id: nodeId,
-            type: 'customEntity',
-            position,
-            draggable: true,
-            data: {
-                name: '',
-                properties: [
-                    {
-                        propertyName: "id",
-                        typeName: "Big Increment",
-                    },
-                ]
-            }
-        }
+        const newNode = createNewNode(position)
 
         /**
          * Align node position after drop, so it's centered to the mouse
          *
          * We can hook into events even in a callback, and we can remove the event listener after it's been called.
-         */
+         **/
         const { off } = mcdStore.flowMCD.onNodesInitialized(() => {
-            mcdStore.flowMCD.updateNode(nodeId, (node) => ({
+            mcdStore.flowMCD.updateNode(newNode.id, (node) => ({
                 position: { x: node.position.x - node.dimensions.width / 2, y: node.position.y - node.dimensions.height / 2 },
             }))
 
             off()
         })
 
+        const res = await $fetch(`/api/models/update`, {
+            method: 'PUT',
+            query: { id: idModel },
+            body: {
+                node: newNode,
+                type: 'node',
+                action: 'addNode'
+            }
+        });
+
         mcdStore.flowMCD.addNodes(newNode)
 
         nodeIdSelected.value = newNode.id
+        addNewNode.value = false
     }
 
     return {

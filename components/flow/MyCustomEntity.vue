@@ -17,7 +17,7 @@
       <h3 v-if="props?.data?.name !== ''" class="text-lg font-bold text-center text-gray-800">
         {{ props?.data?.name }}
       </h3>
-      <h3 v-else class="text-lg font-bold text-center text-gray-400">Entité {{ props.id.split('_')[1] }}</h3>
+      <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
     </div>
     <div class="p-4 md:px-5">
       <div class="flex justify-between items-center gap-6 py-1" v-for="field in props?.data?.properties">

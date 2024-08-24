@@ -2,13 +2,16 @@
   <div class="dndflow">
     <VueFlow
         :id="'flow-mcd-' + route.params.idModel"
-        :edges="edges"
-        :nodes="nodes"
+        :edges="flowMCD?.edges"
+        :nodes="flowMCD?.nodes"
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
-        @drop="onDrop"
+        @drop="(e) => onDrop(e, route.params.idModel)"
+        @nodes-change="onChange"
+        @edges-change="onChange"
+        fit-view-on-init
     >
       <MiniMap/>
       <Controls/>
@@ -54,15 +57,15 @@
               <DialogTitle>Renommer le nom</DialogTitle>
             </DialogHeader>
 
-            <Input v-model="model.name" type="text"/>
+            <Input @keyup.enter="renameModel" v-model="model.name" type="text"/>
 
             <DialogFooter class="mt-3">
               <DialogClose as-child>
                 <Button type="button" variant="secondary">
-                  Fermer
+                  Annuler
                 </Button>
               </DialogClose>
-              <Button @click="onSubmit" :disabled="isRenamingModel">
+              <Button @click="renameModel" :disabled="isRenamingModel">
                 <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
                 {{ isRenamingModel ? 'Ajout...' : 'Ajouter' }}
               </Button>
@@ -70,6 +73,21 @@
 
           </DialogContent>
         </Dialog>
+
+        <Separator orientation="vertical" class="h-6"/>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button variant="outline" class=" border-none rounded-sm">
+                <Settings2 :size="18"/>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent class="bg-black text-white">
+              <p>Paramètres</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         <Separator orientation="vertical" class="h-6"/>
 
@@ -88,11 +106,36 @@
 
         <Separator orientation="vertical" class="h-6"/>
 
+        <div class="px-2">
+          <Button variant="outline" size="xs">
+            Mettre à niveau
+          </Button>
+        </div>
+      </Panel>
+
+      <Panel position="top-center" class="bg-white px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+
+        <div v-if="addNewNode" class="flex justify-between items-center gap-3 px-2 transition duration-150">
+          <Loader2 :size="18" class="animate-spin"/>
+          <span class="text-sm">Enregistrement...</span>
+        </div>
+        <div v-else class="flex justify-between items-center gap-3 px-2 transition duration-150">
+          <Check :size="18"/>
+          <span class="text-sm">Enregistré</span>
+        </div>
+
+        <Separator orientation="vertical" class="h-6"/>
 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button variant="outline" class="border-none rounded-sm">
+              <Button
+                  @click="addNode(route.params.idModel)"
+                  :draggable="true"
+                  @dragstart="onDragStart($event, 'input')"
+                  variant="outline"
+                  class="border-none rounded-sm"
+              >
                 <PanelTop :size="18"/>
               </Button>
             </TooltipTrigger>
@@ -102,13 +145,44 @@
           </Tooltip>
         </TooltipProvider>
 
+
         <Separator orientation="vertical" class="h-6"/>
 
-        <div class="px-2">
-          <Button variant="outline" size="xs">
-            Mettre à niveau
-          </Button>
-        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                  variant="outline"
+                  class="border-none rounded-sm"
+              >
+                <Undo2 :size="18" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent class="bg-black text-white">
+              <p>Undo</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <Separator orientation="vertical" class="h-6"/>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                  variant="outline"
+                  class="border-none rounded-sm"
+              >
+                <Redo2 :size="18" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent class="bg-black text-white">
+              <p>Redo</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+
       </Panel>
 
       <DropzoneBackground
@@ -139,7 +213,7 @@ import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation
 import {useMCDStore} from "~/stores/mcd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, CirclePlus, Loader2} from "lucide-vue-next";
+import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 
@@ -152,22 +226,12 @@ import {
 
 const route = useRoute()
 
-const {
-  onInit,
-  addNodes,
-  addEdges,
-  nodes,
-  edges,
-  onConnect,
-  onNodeClick,
-  onEdgeClick
-} = useVueFlow({id: 'flow-mcd-' + route.params.idModel})
 
 const mcdStore = useMCDStore()
+const {addNode} = mcdStore
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode} = storeToRefs(mcdStore)
 
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu} = storeToRefs(mcdStore)
-
-const {onDragOver, onDragLeave, isDragOver, onDrop} = useDragAndDrop()
+const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
 
 const nodeTypes = {
   customEntity: markRaw(CustomEntity),
@@ -180,25 +244,27 @@ const edgeTypes = {
 
 const model = ref(null)
 
+const flowMCD = computed(() => mcdStore.flowMCD);
+mcdStore.setFlowInstance(useVueFlow({id: 'flow-mcd-' + route.params.idModel}))
+
 onMounted(async () => {
+
 
   model.value = await $fetch("/api/models/read", {
     method: "GET",
     query: {id: route.params.idModel},
   });
 
-  console.log(model.value.name)
-
   if (model.value.nodes.length !== 0) {
-    addNodes(model.value.nodes)
+    flowMCD.value.addNodes(model.value.nodes)
   }
 
   if (model.value.edges.length !== 0) {
-    addEdges(model.value.edges)
+    flowMCD.value.addEdges(model.value.edges)
   }
 
 
-  onConnect((params) => {
+  flowMCD.value.onConnect((params) => {
 
     let newEdgeId = mcdStore.getIdEdge();
     let newEdge = {
@@ -220,7 +286,7 @@ onMounted(async () => {
       }
     }
 
-    addEdges([newEdge])
+    flowMCD.value.addEdges([newEdge])
 
     isSubMenuVisible.value = true
     elementsMenu.value = false
@@ -229,23 +295,35 @@ onMounted(async () => {
 
   })
 
-  onNodeClick((e) => {
+
+
+  flowMCD.value.onNodeClick((e) => {
     edgeIdSelected.value = null
     isSubMenuVisible.value = true
     nodeIdSelected.value = e.node.id
   })
 
-  onEdgeClick((e) => {
+  flowMCD.value.onEdgeClick((e) => {
     nodeIdSelected.value = null
     isSubMenuVisible.value = true
     edgeIdSelected.value = e.edge.id
   })
 })
 
+const onChange = (changes) => {
+  // changes are arrays of type `NodeChange` or `EdgeChange`
+  if(changes.length > 0 &&
+      changes[0].type === 'position' &&
+      changes[0].dragging === false &&
+      changes[0].id.startsWith('dndnode')) {
+    mcdStore.updateNodePositionDB(route.params.idModel, changes[0].id)
+  }
+}
+
+
 const isRenamingModel = ref(false)
 const showDialogRenameModel = ref(false)
-const onSubmit = async () => {
-  console.log('model.value.name',model.value.name)
+const renameModel = async () => {
   isRenamingModel.value = true
   const res = await $fetch(`/api/models/rename-model?id=${route.params.idModel}`, {
     method: "PUT",

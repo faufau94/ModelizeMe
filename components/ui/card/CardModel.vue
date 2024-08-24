@@ -33,7 +33,7 @@
                     <AlertDialogTitle>Renommer le nom</AlertDialogTitle>
                   </AlertDialogHeader>
 
-                  <Input v-model="model.name" type="text"/>
+                  <Input @keyup.enter="renameModel" v-model="model.name" type="text"/>
 
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
@@ -132,7 +132,7 @@ const showDialogRenameModel = ref(false);
 const isRenamingModel = ref(false);
 const deleteModel = async () => {
   isLoading.value = true;
-  console.log(props.model.id);
+
   const res = await $fetch(`/api/models/delete`, {
     method: 'DELETE',
     query: { id: props.model.id },

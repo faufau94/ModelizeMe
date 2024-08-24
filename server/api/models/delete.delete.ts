@@ -6,14 +6,10 @@ export default defineEventHandler(async (event) => {
 
     console.log(query)
 
-    const deleteUser = await prisma.model.delete({
+    return await prisma.model.delete({
         where: {
             id: parseInt(query.id),
         },
     })
-
-    console.log('deleteUser', deleteUser)
-
-    return deleteUser
 
 })
