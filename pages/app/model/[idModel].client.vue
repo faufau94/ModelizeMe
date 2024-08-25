@@ -1,5 +1,8 @@
 <template>
-  <div class="dndflow">
+  <div class="dndflow relative">
+
+    <MenuNode />
+
     <VueFlow
         :id="'flow-mcd-' + route.params.idModel"
         :edges="flowMCD?.edges"
@@ -202,8 +205,9 @@
 </template>
 
 <script setup>
-import {markRaw, onMounted} from "vue";
+import {computed, markRaw, onMounted, ref} from "vue";
 import CustomEdge from "~/components/flow/MyCustomEdge.vue";
+import MenuNode from "~/components/flow/MenuNode.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
 import DropzoneBackground from "~/components/flow/DropzoneBackground.vue";
 import {MiniMap} from "@vue-flow/minimap";
@@ -247,6 +251,13 @@ const model = ref(null)
 const flowMCD = computed(() => mcdStore.flowMCD);
 mcdStore.setFlowInstance(useVueFlow({id: 'flow-mcd-' + route.params.idModel}))
 
+mcdStore.flowMCD.onPaneClick((e) => {
+  if (isSubMenuVisible.value)
+    isSubMenuVisible.value = false
+  elementsMenu.value = false
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
+})
 onMounted(async () => {
 
 
@@ -337,4 +348,6 @@ const renameModel = async () => {
     showDialogRenameModel.value = false
   }
 }
+
+
 </script>

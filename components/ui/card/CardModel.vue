@@ -93,7 +93,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {Trash2, Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
+import {Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
 import {useToast} from '@/components/ui/toast/use-toast'
 import {Toaster} from '@/components/ui/toast'
 import {
