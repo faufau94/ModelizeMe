@@ -21,7 +21,5 @@ export default defineEventHandler(async event => {
         },
     })
 
-    console.log('newModel', newModel)
-
     return newModel
 });

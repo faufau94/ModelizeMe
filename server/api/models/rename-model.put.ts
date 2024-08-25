@@ -15,6 +15,5 @@ export default defineEventHandler(async (event) => {
             name: body.name
         },
     })
-    console.log(updateModelName)
     return updateModelName
 })

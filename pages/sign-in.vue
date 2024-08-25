@@ -25,7 +25,6 @@ const onSubmit = async () => {
     callbackUrl: '/app/dashboard'
   })
 
-  console.log(res)
 }
 
 const filteredProviders = computed(() => {

@@ -14,7 +14,6 @@ definePageMeta({
 
 const {signIn, getProviders, status} = useAuth()
 const providers = await getProviders()
-console.log(status.value)
 const signUpUserInfo = ref({
   name: '',
   firstName: '',

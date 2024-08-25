@@ -79,7 +79,6 @@ export const useMCDStore = defineStore('flow-mcd', () => {
     }
 
     async function updateNodePositionDB(idModel, idNode) {
-        console.log(idNode)
         const node = flowMCD.value.findNode(idNode)
         await $fetch(`/api/models/update`, {
             method: 'PUT',
