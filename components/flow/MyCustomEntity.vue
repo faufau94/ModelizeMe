@@ -7,7 +7,7 @@
     <div v-show="isNodeShown"
          @mouseover="isNodeHovered = false"
          @mouseout="isNodeHovered = true"
-         @click="removeNode(props.id)" class="absolute -top-12 left-1/2 -translate-x-5 bg-white w-10 hover:bg-gray-50 hover:cursor-pointer flex justify-center items-center h-9 rounded-lg transition transform duration-300">
+         @click="removeNodeById(props.id)" class="absolute -top-12 left-1/2 -translate-x-5 bg-white w-10 hover:bg-gray-50 hover:cursor-pointer flex justify-center items-center h-9 rounded-lg transition transform duration-300">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
     </div>
     <div class="flex justify-center items-center border-b rounded-t-xl py-3 px-4 md:px-5">
@@ -139,7 +139,7 @@ import {useMCDStore} from "~/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
 
 const mcdStore = useMCDStore()
-const { isSubMenuVisible, nodeIdSelected } = storeToRefs(mcdStore)
+const {removeNode} = mcdStore
 
 const props = defineProps({
   id: {
@@ -162,14 +162,14 @@ const entityDatas = ref({
   ]
 })
 
+const route = useRoute()
+
 const isNodeShown = ref(false)
 const isNodeHovered = ref(false)
 
-const removeNode = (id) => {
-  mcdStore.flowMCD.removeNodes(id, true, true);
-  isSubMenuVisible.value = false
+const removeNodeById = idNode => {
+  removeNode(route.params.idModel, idNode)
 }
-
 
 
 const sourceHandle = ref(0)

@@ -40,6 +40,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
             type: 'customEntity',
             position: position !== null ? position  : {x: Math.random() * 500, y: Math.random() * 500},
             draggable: true,
+            selected: false,
             data: {
                 name: '',
                 properties: [
@@ -78,8 +79,21 @@ export const useMCDStore = defineStore('flow-mcd', () => {
 
     }
 
+    async function removeNode(idModel, idNode) {
+        await $fetch(`/api/models/delete`, {
+            method: 'DELETE',
+            query: { idModel: idModel, idNode: idNode },
+            body: {
+                type: 'node',
+                action: 'removeNode'
+            }
+        });
+        flowMCD.value.removeNodes(idNode, true, true);
+    }
+
     async function updateNodePositionDB(idModel, idNode) {
         const node = flowMCD.value.findNode(idNode)
+        node.selected = false
         await $fetch(`/api/models/update`, {
             method: 'PUT',
             query: { id: idModel },
@@ -291,6 +305,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         addAssociation,
         setFlowInstance,
         createNewNode,
+        removeNode,
         updateNodePositionDB,
     }
 })

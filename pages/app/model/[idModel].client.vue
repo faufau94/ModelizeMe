@@ -1,7 +1,7 @@
 <template>
   <div class="dndflow relative">
 
-    <MenuNode />
+    <NodeMenu />
 
     <VueFlow
         :id="'flow-mcd-' + route.params.idModel"
@@ -207,7 +207,7 @@
 <script setup>
 import {computed, markRaw, onMounted, ref} from "vue";
 import CustomEdge from "~/components/flow/MyCustomEdge.vue";
-import MenuNode from "~/components/flow/MenuNode.vue";
+import NodeMenu from "~/components/flow/NodeMenu.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
 import DropzoneBackground from "~/components/flow/DropzoneBackground.vue";
 import {MiniMap} from "@vue-flow/minimap";
