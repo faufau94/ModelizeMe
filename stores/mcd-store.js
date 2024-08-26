@@ -92,7 +92,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         isSubMenuVisible.value = false
     }
 
-    async function updateNodePositionDB(idModel, idNode) {
+    async function updateNode(idModel, idNode) {
         const node = flowMCD.value.findNode(idNode)
         node.selected = false
         await $fetch(`/api/models/update`, {
@@ -307,6 +307,6 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         setFlowInstance,
         createNewNode,
         removeNode,
-        updateNodePositionDB,
+        updateNode,
     }
 })

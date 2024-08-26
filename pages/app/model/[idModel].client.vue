@@ -327,7 +327,7 @@ const onChange = (changes) => {
       changes[0].type === 'position' &&
       changes[0].dragging === false &&
       changes[0].id.startsWith('dndnode')) {
-    mcdStore.updateNodePositionDB(route.params.idModel, changes[0].id)
+    mcdStore.updateNode(route.params.idModel, changes[0].id)
   }
 }
 

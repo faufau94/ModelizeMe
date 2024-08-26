@@ -68,19 +68,19 @@
                                   :key="index"
                                   :value="item"
                                   @select="(ev) => {
-                            if (typeof ev.detail.value === 'string') {
-                              field.typeName = ev.detail.value
-                            }
-                            open = false
-                          }"
+                                    if (typeof ev.detail.value === 'string') {
+                                      field.typeName = ev.detail.value
+                                    }
+                                    open = false
+                                  }"
                               >
                                 {{ item }}
                                 <Check
                                     :class="{
-                              'ml-auto h-4 w-4': true,
-                              'opacity-100': field.typeName === item,
-                              'opacity-0': field.typeName !== item
-                            }"
+                                      'ml-auto h-4 w-4': true,
+                                      'opacity-100': field.typeName === item,
+                                      'opacity-0': field.typeName !== item
+                                    }"
                                 />
 
                               </CommandItem>
@@ -111,8 +111,9 @@
           <Button @click="isSubMenuVisible = false" variant="outline">
             Fermer
           </Button>
-          <Button>
-            Enregistrer
+          <Button @click="updateNode" :disabled="isLoading">
+            <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+            {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
           </Button>
         </div>
 
@@ -275,7 +276,7 @@ import {
 import {ScrollArea} from '@/components/ui/scroll-area'
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
-import {Check, ChevronsUpDown, CirclePlus, Trash2} from 'lucide-vue-next';
+import {Check, ChevronsUpDown, CirclePlus, Loader2, Trash2} from 'lucide-vue-next';
 import {onBeforeUnmount} from 'vue';
 
 const preventBodyScroll = () => {
@@ -292,7 +293,7 @@ onBeforeUnmount(() => {
 });
 const scrollAreaRef = ref(null);
 
-
+const route = useRoute();
 const mcdStore = useMCDStore();
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected} = storeToRefs(mcdStore);
 
@@ -302,10 +303,15 @@ watchEffect(() => {
   nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value);
 });
 
-const updateNode = () => {
+const isLoading = ref(false);
+const updateNode = async () => {
+  isLoading.value = true;
+  await mcdStore.updateNode(route.params.idModel, nodeData.value.id)
+
   mcdStore?.flowMCD.updateNodeData(nodeData.value.id, (node) => {
     node.data = nodeData.value.data;
   });
+  isLoading.value = false;
 };
 
 const updateEdgeName = (newName) => {
