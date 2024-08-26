@@ -20,84 +20,90 @@
             <Input v-model="nodeName" @input="updateNode" type="text"/>
           </div>
 
-          <p class="font-bold text-xl mt-10">Champs</p>
+          <div class="flex mt-10 justify-between items-center">
+
+            <div class="font-bold text-xl">Champs</div>
+            <div class="flex justify-end items-center">
+              <Button variant="outline" @click="addField">
+                <CirclePlus :size="20" class="mr-2"/>
+                Ajouter un champ
+              </Button>
+            </div>
+          </div>
           <div class="mt-6 space-y-2">
-            <TransitionGroup tag="ul" name="fade" class="space-y-2">
-            <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
-                 v-for="(field, index) in nodeData?.data?.properties" :key="index">
+            <ScrollArea ref="scrollAreaRef" class="h-[360px] pr-4 ">
+              <TransitionGroup tag="ul" name="fade">
+                <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
+                     v-for="(field, index) in nodeData?.data?.properties" :key="index">
 
-              <div class="w-full">
-                <Input
-                    v-model="field.propertyName"
-                    type="text"
-                    placeholder="Nom du champ"
-                />
-              </div>
+                  <div class="w-full p-1">
+                    <Input
+                        v-model="field.propertyName"
+                        type="text"
+                        placeholder="Nom du champ"
+                    />
+                  </div>
 
-                <div class="w-full">
-                  <Popover v-model:open="open">
-                    <PopoverTrigger as-child>
-                      <Button
-                          variant="outline"
-                          role="combobox"
-                          :aria-expanded="open"
-                          class="w-full justify-between"
-                      >
-                        {{ field.typeName || "Propriété" }}
-                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent class="w-full p-0">
-                      <Command>
-                        <CommandInput class="h-9" placeholder=""/>
-                        <CommandEmpty>Aucun résultat.</CommandEmpty>
-                        <CommandList>
-                          <CommandGroup>
-                            <CommandItem
-                                v-for="(item, index) in filteredProperty"
-                                :key="index"
-                                :value="item"
-                                @select="(ev) => {
+                  <div class="w-full">
+                    <Popover v-model:open="field.open">
+                      <PopoverTrigger as-child>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            :aria-expanded="field.open"
+                            class="w-full justify-between"
+                        >
+                          {{ field.typeName || "Propriété" }}
+                          <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent class="w-full p-0">
+                        <Command>
+                          <CommandInput class="h-9" placeholder=""/>
+                          <CommandEmpty>Aucun résultat.</CommandEmpty>
+                          <CommandList>
+                            <CommandGroup>
+                              <CommandItem
+                                  v-for="(item, index) in filteredProperty"
+                                  :key="index"
+                                  :value="item"
+                                  @select="(ev) => {
                             if (typeof ev.detail.value === 'string') {
                               field.typeName = ev.detail.value
                             }
                             open = false
                           }"
-                            >
-                              {{ item }}
-                              <Check
-                                  :class="{
+                              >
+                                {{ item }}
+                                <Check
+                                    :class="{
                               'ml-auto h-4 w-4': true,
                               'opacity-100': field.typeName === item,
                               'opacity-0': field.typeName !== item
                             }"
-                              />
+                                />
 
-                            </CommandItem>
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                              </CommandItem>
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+
+                  <div v-if="field?.propertyName !== 'id'" class="w-10">
+                    <Trash2 class="text-red-500 cursor-pointer" :size="16"
+                            @click="removeField(index)"/>
+                  </div>
+                  <div v-else class="w-10">
+
+                  </div>
                 </div>
+              </TransitionGroup>
+            </ScrollArea>
 
 
-              <div v-if="field?.propertyName !== 'id'" class="w-10">
-                <Trash2 class="text-red-500 cursor-pointer" :size="16"
-                        @click="removeField(index)"/>
-              </div>
-              <div v-else class="w-10">
-
-              </div>
-            </div>
-            </TransitionGroup>
-
-            <div class="flex justify-end items-center pt-3">
-              <Button variant="outline" @click="addField">
-                <CirclePlus :size="20" class="mr-2"/>
-                Ajouter un champs
-              </Button>
-            </div>
           </div>
         </div>
 
@@ -266,6 +272,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {ScrollArea} from '@/components/ui/scroll-area'
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
 import {Check, ChevronsUpDown, CirclePlus, Trash2} from 'lucide-vue-next';
@@ -283,6 +290,7 @@ const restoreBodyScroll = () => {
 onBeforeUnmount(() => {
   restoreBodyScroll();
 });
+const scrollAreaRef = ref(null);
 
 
 const mcdStore = useMCDStore();
@@ -306,14 +314,15 @@ const updateEdgeName = (newName) => {
 
 const addFieldAssociation = () => {
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
-    edge.data.properties.push({propertyName: "", typeName: ""});
+    edge.data.properties.push({propertyName: "", typeName: "", open: false});
   });
 };
 
 const addField = () => {
   mcdStore.flowMCD.updateNodeData(nodeData.value.id, (node) => {
-    node.data.properties.push({propertyName: "", typeName: ""});
+    node.data.properties.push({propertyName: "", typeName: "", open: false});
   });
+  scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
 };
 
 const removeField = (id) => {
@@ -446,7 +455,7 @@ let filteredProperty = computed(() =>
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  transform: scaleY(0.01) translate(30px, 0);
+  transform: translateY(30px, 0);
 }
 
 </style>
