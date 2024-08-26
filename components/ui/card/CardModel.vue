@@ -78,11 +78,12 @@
       <div class="flex gap-x-6 text-sm text-muted-foreground">
         <div class="flex items-center gap-x-2 justify-center">
           <PanelTop :size="15" />
-          {{ props.model.nodes.length }} nœuds
+          {{ props.model.nodes.length }} {{ props.model.nodes.length > 1 ? 'nœuds' : 'nœud' }}
+
         </div>
         <div class="flex items-center gap-x-2">
           <Workflow :size="15" />
-          {{ props.model.edges.length }} relations
+          {{ props.model.edges.length }} {{ props.model.edges.length > 1 ? 'relations' : 'relation' }}
         </div>
       </div>
         <div class="text-[11px] text-muted-foreground mt-3 text-right">

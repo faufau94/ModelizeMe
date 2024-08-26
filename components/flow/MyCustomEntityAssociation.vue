@@ -5,6 +5,7 @@
       v-bind="$attrs"
       @mouseover="showHandles"
       @mouseout="hideHandles">
+
     <div class="flex justify-center items-center rounded-t-xl py-3 px-4 md:px-5">
       <h3 v-if="props?.data?.name !== ''" class="text-lg font-bold text-center text-gray-800">
         {{ props?.data?.name }}

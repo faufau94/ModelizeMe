@@ -17,7 +17,7 @@
           <p class="font-bold text-2xl">Entité</p>
           <div class="max-w-sm mt-6">
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de l'entité</label>
-            <Input v-model="nodeName" @input="updateNode" type="text"/>
+            <Input v-model="nodeName" type="text"/>
           </div>
 
           <div class="flex mt-10 justify-between items-center">

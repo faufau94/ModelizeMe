@@ -53,11 +53,10 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         }
     }
 
-    async function addNode(idModel) {
+    async function addNode(idModel, duplicatedNode = null) {
 
         addNewNode.value = true
-
-        let newNode = createNewNode()
+        let newNode = duplicatedNode !== null ? duplicatedNode : createNewNode()
 
         const res = await $fetch(`/api/models/update`, {
             method: 'PUT',

@@ -217,7 +217,7 @@ import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation
 import {useMCDStore} from "~/stores/mcd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2} from "lucide-vue-next";
+import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, Trash2} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 
@@ -258,6 +258,7 @@ mcdStore.flowMCD.onPaneClick((e) => {
   nodeIdSelected.value = null
   edgeIdSelected.value = null
 })
+
 onMounted(async () => {
 
 
