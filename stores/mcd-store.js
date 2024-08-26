@@ -89,6 +89,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
             }
         });
         flowMCD.value.removeNodes(idNode, true, true);
+        isSubMenuVisible.value = false
     }
 
     async function updateNodePositionDB(idModel, idNode) {

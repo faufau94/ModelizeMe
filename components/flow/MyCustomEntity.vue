@@ -1,6 +1,7 @@
 <template>
 
   <div class="bg-white shadow-md rounded-2xl w-80 border relative border-transparent hover:border hover:border-1.5 hover:border-blue-600"
+       :style="{ 'border border-1.5 border-blue-600': props.selected }"
        v-bind="$attrs"
        @mouseover="showHandles"
        @mouseout="hideHandles">
@@ -140,6 +141,7 @@ import {storeToRefs} from "pinia";
 
 const mcdStore = useMCDStore()
 const {removeNode} = mcdStore
+const {isSubMenuVisible, nodeIdSelected} = storeToRefs(mcdStore)
 
 const props = defineProps({
   id: {

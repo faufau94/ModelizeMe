@@ -1,12 +1,16 @@
 <template>
   <Transition
-      name="slide-in-out"
+      name="drawer"
+      @before-enter="preventBodyScroll"
+      @after-leave="restoreBodyScroll"
   >
 
     <div v-if="isSubMenuVisible"
          key="submenu"
 
-         class="absolute z-40 top-0 right-0 h-screen flex flex-col transition-all duration-300 justify-between border-e bg-white">
+         class="absolute overflow-hidden z-40 w-96 px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
+
+    >
 
       <div v-if="nodeIdSelected !== null" class="px-5 mt-14">
         <p class="font-bold text-2xl">Entité</p>
@@ -241,6 +245,21 @@ import {
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
 import {Check, ChevronsUpDown, CirclePlus, Trash2} from 'lucide-vue-next';
+import { onBeforeUnmount } from 'vue';
+
+const preventBodyScroll = () => {
+  document.body.style.overflow = 'hidden';
+}
+
+const restoreBodyScroll = () => {
+  document.body.style.overflow = '';
+}
+
+// Assurez-vous de restaurer le scroll même si le composant est démonté
+onBeforeUnmount(() => {
+  restoreBodyScroll();
+});
+
 
 const mcdStore = useMCDStore();
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected} = storeToRefs(mcdStore);
@@ -363,21 +382,25 @@ let filteredPeople = computed(() =>
             person.toLowerCase().replace(/\s+/g, "").includes(query.value.toLowerCase().replace(/\s+/g, ""))
         )
 );
+
+
 </script>
 
 <style scoped>
-.slide-in-out-enter-active, .slide-in-out-leave-active {
-  transition: transform 0.3s ease;
+.drawer-enter-active, .drawer-leave-active {
+  transition: transform 0.4s ease;
 }
-.slide-in-out-enter {
+.drawer-enter-from,
+.drawer-leave-to {
   transform: translateX(100%);
+
 }
-.slide-in-out-leave-active {
+
+.drawer-leave-from {
   transform: translateX(0%);
 }
-.slide-in-out-leave-to {
-  transform: translateX(100%);
-}
+
+
 </style>
 
 <!--<template>
