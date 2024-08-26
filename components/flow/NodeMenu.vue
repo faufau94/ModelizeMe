@@ -8,85 +8,109 @@
     <div v-if="isSubMenuVisible"
          key="submenu"
 
-         class="absolute overflow-hidden z-40 w-96 px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
+         class="absolute overflow-hidden z-40 md:w-[450px] px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
 
     >
 
-      <div v-if="nodeIdSelected !== null" class="px-5 mt-14">
-        <p class="font-bold text-2xl">Entité</p>
-        <div class="max-w-sm mt-6">
-          <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de l'entité</label>
-          <Input v-model="nodeName" @input="updateNode" type="text"/>
-        </div>
+      <div v-if="nodeIdSelected !== null" class="px-5 py-10 mt-10 flex flex-col justify-between items-center h-full">
+        <div class="">
+          <p class="font-bold text-2xl">Entité</p>
+          <div class="max-w-sm mt-6">
+            <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de l'entité</label>
+            <Input v-model="nodeName" @input="updateNode" type="text"/>
+          </div>
 
-        <p class="font-bold text-xl mt-10">Champs</p>
-        <div class="max-w-sm mt-6 space-y-2">
-          <div class="sm:inline-flex flex sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full"
-               v-for="(field, index) in nodeData?.data?.properties">
-            <Input
-                v-model="field.propertyName"
-                type="text"
-                placeholder="Nom du champ"
-            />
+          <p class="font-bold text-xl mt-10">Champs</p>
+          <div class="mt-6 space-y-2">
+            <TransitionGroup tag="ul" name="fade" class="space-y-2">
+            <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
+                 v-for="(field, index) in nodeData?.data?.properties" :key="index">
 
-            <div class="flex-1">
-              <Popover v-model:open="open">
-                <PopoverTrigger as-child>
-                  <Button
-                      variant="outline"
-                      role="combobox"
-                      :aria-expanded="open"
-                      class="w-full justify-between"
-                  >
-                    {{ field.typeName || "" }}
-                    <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent class="w-full p-0">
-                  <Command>
-                    <CommandInput class="h-9" placeholder=""/>
-                    <CommandEmpty>Aucun résultat.</CommandEmpty>
-                    <CommandList>
-                      <CommandGroup>
-                        <CommandItem
-                            v-for="(item, index) in filteredPeople"
-                            :key="index"
-                            :value="item"
-                            @select="(ev) => {
+              <div class="w-full">
+                <Input
+                    v-model="field.propertyName"
+                    type="text"
+                    placeholder="Nom du champ"
+                />
+              </div>
+
+                <div class="w-full">
+                  <Popover v-model:open="open">
+                    <PopoverTrigger as-child>
+                      <Button
+                          variant="outline"
+                          role="combobox"
+                          :aria-expanded="open"
+                          class="w-full justify-between"
+                      >
+                        {{ field.typeName || "Propriété" }}
+                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-full p-0">
+                      <Command>
+                        <CommandInput class="h-9" placeholder=""/>
+                        <CommandEmpty>Aucun résultat.</CommandEmpty>
+                        <CommandList>
+                          <CommandGroup>
+                            <CommandItem
+                                v-for="(item, index) in filteredProperty"
+                                :key="index"
+                                :value="item"
+                                @select="(ev) => {
                             if (typeof ev.detail.value === 'string') {
                               field.typeName = ev.detail.value
                             }
                             open = false
                           }"
-                        >
-                          {{ item }}
-                          <Check
-                              :class="{
+                            >
+                              {{ item }}
+                              <Check
+                                  :class="{
                               'ml-auto h-4 w-4': true,
                               'opacity-100': field.typeName === item,
                               'opacity-0': field.typeName !== item
                             }"
-                          />
+                              />
 
-                        </CommandItem>
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                            </CommandItem>
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+
+              <div v-if="field?.propertyName !== 'id'" class="w-10">
+                <Trash2 class="text-red-500 cursor-pointer" :size="16"
+                        @click="removeField(index)"/>
+              </div>
+              <div v-else class="w-10">
+
+              </div>
             </div>
+            </TransitionGroup>
 
-            <Trash2 class="text-red-500 cursor-pointer" :size="25" v-if="field?.propertyName !== 'id'"
-                    @click="removeField(index)"/>
-          </div>
-
-          <div class="flex justify-end items-center pt-3">
-            <Button variant="outline" @click="addField">
-              <CirclePlus :size="20" class="mr-2"/>
-              Ajouter un champs
-            </Button>
+            <div class="flex justify-end items-center pt-3">
+              <Button variant="outline" @click="addField">
+                <CirclePlus :size="20" class="mr-2"/>
+                Ajouter un champs
+              </Button>
+            </div>
           </div>
         </div>
+
+        <div class="flex flex-col  w-full md:flex-row justify-end gap-4 self-end">
+          <Button @click="isSubMenuVisible = false" variant="outline">
+            Fermer
+          </Button>
+          <Button>
+            Enregistrer
+          </Button>
+        </div>
+
+
       </div>
 
       <div v-else-if="edgeIdSelected !== null" class="mt-14">
@@ -162,7 +186,7 @@
                 />
 
                 <div class="flex-1">
-                  <Popover v-model:open="open">
+                  <Popover :open="open">
                     <PopoverTrigger as-child>
                       <Button
                           variant="outline"
@@ -181,7 +205,7 @@
                         <CommandList>
                           <CommandGroup>
                             <CommandItem
-                                v-for="(item, index) in filteredPeople"
+                                v-for="(item, index) in filteredProperty"
                                 :key="index"
                                 :value="item"
                                 @select="(ev) => {
@@ -245,7 +269,7 @@ import {
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
 import {Check, ChevronsUpDown, CirclePlus, Trash2} from 'lucide-vue-next';
-import { onBeforeUnmount } from 'vue';
+import {onBeforeUnmount} from 'vue';
 
 const preventBodyScroll = () => {
   document.body.style.overflow = 'hidden';
@@ -375,7 +399,7 @@ const value = ref('')
 let selected = ref(type[0]);
 let query = ref("");
 
-let filteredPeople = computed(() =>
+let filteredProperty = computed(() =>
     query.value === ""
         ? type
         : type.filter((person) =>
@@ -390,6 +414,7 @@ let filteredPeople = computed(() =>
 .drawer-enter-active, .drawer-leave-active {
   transition: transform 0.4s ease;
 }
+
 .drawer-enter-from,
 .drawer-leave-to {
   transform: translateX(100%);
@@ -400,6 +425,29 @@ let filteredPeople = computed(() =>
   transform: translateX(0%);
 }
 
+.add-field-enter-active,
+.add-field-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.add-field-enter-from,
+.add-field-leave-to {
+  opacity: 0;
+}
+
+/* 1. declare transition */
+.fade-move,
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.55, 0, 0.1, 1);
+}
+
+/* 2. declare enter from and leave to state */
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: scaleY(0.01) translate(30px, 0);
+}
 
 </style>
 
@@ -461,14 +509,14 @@ let filteredPeople = computed(() =>
                       class="absolute mt-1 max-h-60 z-50 w-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm"
                   >
                     <div
-                        v-if="filteredPeople.length === 0 && query !== ''"
+                        v-if="filteredProperty.length === 0 && query !== ''"
                         class="relative cursor-default select-none px-4 py-2 text-gray-700"
                     >
                       Aucun résultat.
                     </div>
 
                     <ComboboxOption
-                        v-for="(person, index) in filteredPeople"
+                        v-for="(person, index) in filteredProperty"
                         as="template"
                         :key="index"
                         :value="person"
@@ -643,14 +691,14 @@ let filteredPeople = computed(() =>
                         class="absolute mt-1 max-h-60 z-50 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black/5 focus:outline-none sm:text-sm"
                     >
                       <div
-                          v-if="filteredPeople.length === 0 && query !== ''"
+                          v-if="filteredProperty.length === 0 && query !== ''"
                           class="relative cursor-default select-none px-4 py-2 text-gray-700"
                       >
                         Aucun résultat.
                       </div>
 
                       <ComboboxOption
-                          v-for="(person, index) in filteredPeople"
+                          v-for="(person, index) in filteredProperty"
                           as="template"
                           :key="index"
                           :value="person"
@@ -856,7 +904,7 @@ const type = [
 let selected = ref(type[0])
 let query = ref('')
 
-let filteredPeople = computed(() =>
+let filteredProperty = computed(() =>
     query.value === ''
         ? type
         : type.filter((person) =>

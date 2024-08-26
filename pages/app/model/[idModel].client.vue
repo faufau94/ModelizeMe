@@ -19,7 +19,7 @@
       <MiniMap/>
       <Controls/>
 
-      <Panel position="top-left" class="bg-white px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+      <Panel position="top-left" class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
@@ -116,7 +116,7 @@
         </div>
       </Panel>
 
-      <Panel position="top-center" class="bg-white px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+      <Panel position="top-center" class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
 
         <div v-if="addNewNode" class="flex justify-between items-center gap-3 px-2 transition duration-150">
           <Loader2 :size="18" class="animate-spin"/>
