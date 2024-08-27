@@ -71,7 +71,7 @@
                                     if (typeof ev.detail.value === 'string') {
                                       field.typeName = ev.detail.value
                                     }
-                                    open = false
+                                    field.open = false
                                   }"
                               >
                                 {{ item }}
@@ -120,8 +120,9 @@
 
       </div>
 
-      <div v-else-if="edgeIdSelected !== null" class="mt-14">
-        <div class="px-5 py-5">
+      <div v-else-if="edgeIdSelected !== null" class="px-5 py-10 mt-10 flex flex-col justify-between items-center h-full">
+
+        <div class="">
           <p class="font-bold text-xl">Cardinalité</p>
           <div class="max-w-sm mt-6 mb-6 flex justify-between items-center">
             <div>
@@ -171,85 +172,103 @@
           </div>
           <hr>
 
-          <div class="mt-10">
-            <p class="font-bold text-xl">Association</p>
-            <div class="max-w-sm mt-6">
-              <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de
-                l'association</label>
-              <Input :value="mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.name"
-                     @input="event => updateEdgeName(event.target.value)"
-                     type="text"
-                     placeholder=""/>
+
+          <p class="font-bold text-xl mt-10">Association</p>
+          <div class="max-w-sm mt-6">
+            <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">
+              Nom de l'association
+            </label>
+            <Input :value="mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.name"
+                   @input="event => updateEdgeName(event.target.value)"
+                   type="text"
+                   placeholder=""/>
+          </div>
+
+          <div class="flex mt-10 justify-between items-center">
+
+            <div class="font-bold text-xl">Champs</div>
+            <div class="flex justify-end items-center">
+              <Button variant="outline" @click="addField">
+                <CirclePlus :size="20" class="mr-2"/>
+                Ajouter un champ
+              </Button>
             </div>
+          </div>
+          <div class="mt-6 space-y-2">
+            <ScrollArea ref="scrollAreaRef" class="h-[360px] pr-4 ">
+              <TransitionGroup tag="ul" name="fade">
+                <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
+                     v-for="(field, index) in mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.properties">
+                    <Input
+                        v-model="field.propertyName"
+                        type="text"
+                        placeholder="Nom du champ"
+                    />
 
-            <p class="font-bold text-xl mt-10">Champs</p>
-            <div class="max-w-sm mt-6 space-y-2">
-              <div class="sm:inline-flex sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full"
-                   v-for="(field, index) in mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.properties">
-                <Input
-                    v-model="field.propertyName"
-                    type="text"
-                    placeholder="Nom du champ"
-                />
-
-                <div class="flex-1">
-                  <Popover :open="open">
-                    <PopoverTrigger as-child>
-                      <Button
-                          variant="outline"
-                          role="combobox"
-                          :aria-expanded="open"
-                          class="w-full justify-between"
-                      >
-                        {{ field.typeName || "Select type..." }}
-                        <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent class="w-full p-0">
-                      <Command>
-                        <CommandInput class="h-9" placeholder="Search type..."/>
-                        <CommandEmpty>No type found.</CommandEmpty>
-                        <CommandList>
-                          <CommandGroup>
-                            <CommandItem
-                                v-for="(item, index) in filteredProperty"
-                                :key="index"
-                                :value="item"
-                                @select="(ev) => {
+                    <div class="flex-1">
+                      <Popover :open="field.open">
+                        <PopoverTrigger as-child>
+                          <Button
+                              variant="outline"
+                              role="combobox"
+                              :aria-expanded="field.open"
+                              class="w-full justify-between"
+                          >
+                            {{ field.typeName || "Propriété" }}
+                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-full p-0">
+                          <Command>
+                            <CommandInput class="h-9" placeholder="Search type..."/>
+                            <CommandEmpty>Aucun résultat.</CommandEmpty>
+                            <CommandList>
+                              <CommandGroup>
+                                <CommandItem
+                                    v-for="(item, index) in filteredProperty"
+                                    :key="index"
+                                    :value="item"
+                                    @select="(ev) => {
                                 if (typeof ev.detail.value === 'string') {
                                   field.typeName = ev.detail.value
                                 }
-                                open = false
+                                field.open = false
                               }"
-                            >
-                              {{ item }}
-                              <Check
-                                  :class="{
+                                >
+                                  {{ item }}
+                                  <Check
+                                      :class="{
                                   'ml-auto h-4 w-4': true,
                                   'opacity-100': field.typeName === item,
                                   'opacity-0': field.typeName !== item
                                 }"
-                              />
+                                  />
 
-                            </CommandItem>
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                                </CommandItem>
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <Trash2 class="text-red-500 cursor-pointer" :size="25" @click="removeFieldAssociation(index)"/>
                 </div>
+              </TransitionGroup>
+            </ScrollArea>
 
-                <Trash2 class="text-red-500 cursor-pointer" :size="25" @click="removeFieldAssociation(index)"/>
-              </div>
 
-              <div class="flex justify-end items-center pt-3">
-                <Button variant="outline" @click="addFieldAssociation">
-                  <CirclePlus :size="20" class="mr-2"/>
-                  Ajouter un champs
-                </Button>
-              </div>
-            </div>
           </div>
+        </div>
+
+        <div class="flex flex-col  w-full md:flex-row justify-end gap-4 self-end">
+          <Button @click="isSubMenuVisible = false" variant="outline">
+            Fermer
+          </Button>
+          <Button @click="updateNode" :disabled="isLoading">
+            <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+            {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+          </Button>
         </div>
 
       </div>
@@ -328,7 +347,7 @@ const addField = () => {
   mcdStore.flowMCD.updateNodeData(nodeData.value.id, (node) => {
     node.data.properties.push({propertyName: "", typeName: "", open: false});
   });
-  scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
+  //scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
 };
 
 const removeField = (id) => {

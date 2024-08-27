@@ -39,11 +39,9 @@
                    width="500"
                    height="500"
     >
-      <body>
       <div>
         <MyCustomEntityAssociation :data="data" />
       </div>
-      </body>
     </foreignObject>
   </g>
 </template>

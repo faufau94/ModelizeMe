@@ -1,7 +1,7 @@
 <template>
   <div class="dndflow relative">
 
-    <NodeMenu />
+    <ElementMenu />
 
     <VueFlow
         :id="'flow-mcd-' + route.params.idModel"
@@ -207,7 +207,7 @@
 <script setup>
 import {computed, markRaw, onMounted, ref} from "vue";
 import CustomEdge from "~/components/flow/MyCustomEdge.vue";
-import NodeMenu from "~/components/flow/NodeMenu.vue";
+import ElementMenu from "~/components/flow/ElementMenu.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
 import DropzoneBackground from "~/components/flow/DropzoneBackground.vue";
 import {MiniMap} from "@vue-flow/minimap";
@@ -278,31 +278,13 @@ onMounted(async () => {
 
   flowMCD.value.onConnect((params) => {
 
-    let newEdgeId = mcdStore.getIdEdge();
-    let newEdge = {
-      id: newEdgeId,
-      source: params.source,
-      target: params.target,
-      sourceHandle: params.sourceHandle,
-      targetHandle: params.targetHandle,
-      type: 'customEdge',
-      updatable: true,
-      selectable: true,
-      style: null,
-      label: '',
-      data: {
-        name: '',
-        sourceCardinality: '',
-        targetCardinality: '',
-        properties: []
-      }
-    }
+    const newEdge = mcdStore.createNewEdge(params)
 
     flowMCD.value.addEdges([newEdge])
 
     isSubMenuVisible.value = true
     elementsMenu.value = false
-    edgeIdSelected.value = newEdgeId
+    edgeIdSelected.value = newEdge.id
     nodeIdSelected.value = null
 
   })
