@@ -36,8 +36,7 @@
 
     <foreignObject :x="center[0] - 230 /2"
                    :y="center[1] - 100 /2"
-                   width="500"
-                   height="500"
+                   class="w-60 h-full"
     >
       <div>
         <MyCustomEntityAssociation :data="data" />

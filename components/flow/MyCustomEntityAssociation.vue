@@ -1,7 +1,7 @@
 <template>
 
   <div
-      class="bg-white shadow-md rounded-[50px] w-60 h-24 border border-transparent hover:border hover:border-1.5 hover:border-blue-600"
+      class="bg-white shadow-md rounded-[50px] w-60 h-full border border-transparent hover:border hover:border-1.5 hover:border-blue-600"
       v-bind="$attrs"
       @mouseover="showHandles"
       @mouseout="hideHandles">
@@ -12,17 +12,12 @@
       </h3>
       <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
     </div>
-    <hr>
-    <div class="p-4 md:px-5" v-if="props?.data?.properties?.length !== 0">
-      <div class="flex justify-between items-center gap-6 py-1" v-for="field in props?.data?.properties">
-        <div class="flex font-bold items-center justify-center">
-          <div class=" w-8" v-if="field?.propertyName === 'id'">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="#ff0000" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"
-                 class="lucide lucide-key-round">
-              <path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/>
-              <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>
-            </svg>
+    <hr v-if="props?.data?.properties?.length !== 0">
+    <div class="md:px-5 py-3" v-if="props?.data?.properties?.length !== 0">
+      <div class="flex justify-between items-center gap-6  py-1" v-for="field in props?.data?.properties">
+        <div class="flex font-semibold items-center justify-center">
+          <div class=" w-8" v-if="field?.propertyName === 'Big Increment'">
+            <KeyRound :size="18" class="text-red-500" />
           </div>
           <div v-else class="w-8"></div>
 

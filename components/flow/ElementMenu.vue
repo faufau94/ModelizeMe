@@ -12,9 +12,9 @@
 
     >
 
-      <div v-if="nodeIdSelected !== null" class="px-5 py-10 mt-10 flex flex-col justify-between items-center h-full">
-        <div class="">
-          <p class="font-bold text-2xl">Entité</p>
+      <div v-if="nodeIdSelected !== null" class="px-5 py-10 flex flex-col justify-between items-center h-full">
+        <div class="w-full">
+          <p class="font-bold text-xl">Entité</p>
           <div class="max-w-sm mt-6">
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de l'entité</label>
             <Input v-model="nodeName" type="text"/>
@@ -120,17 +120,27 @@
 
       </div>
 
-      <div v-else-if="edgeIdSelected !== null" class="px-5 py-10 mt-10 flex flex-col justify-between items-center h-full">
+      <div v-else-if="edgeIdSelected !== null" class="px-5 py-10 flex flex-col justify-between items-center h-full">
 
-        <div class="">
+        <div class="w-full">
           <p class="font-bold text-xl">Cardinalité</p>
-          <div class="max-w-sm mt-6 mb-6 flex justify-between items-center">
+          <div class="max-w-sm mt-6 flex justify-between items-center">
             <div>
               <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
                   mcdStore.flowMCD.findEdge(edgeIdSelected)?.sourceNode?.data?.name
                 }}</label>
+            </div>
+            <div>
+              <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
+                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.targetNode?.data?.name
+                }}</label>
+            </div>
+          </div>
+          <div class="max-w-sm mb-6 flex justify-between items-center">
+
+            <div class="w-20">
               <Select v-model="sourceCardinality">
-                <SelectTrigger class="w-full">
+                <SelectTrigger >
                   <SelectValue placeholder="X,X"/>
                 </SelectTrigger>
                 <SelectContent>
@@ -144,17 +154,9 @@
               </Select>
             </div>
             <div>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                   stroke="#595959" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"
-                   class="lucide lucide-move-right">
-                <path d="M18 8L22 12L18 16"/>
-                <path d="M2 12H22"/>
-              </svg>
+              <MoveRight :stroke-width="1" :size="24" />
             </div>
-            <div>
-              <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
-                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.targetNode?.data?.name
-                }}</label>
+            <div class="w-20">
               <Select v-model="targetCardinality">
                 <SelectTrigger class="w-full">
                   <SelectValue placeholder="X,X"/>
@@ -178,8 +180,7 @@
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">
               Nom de l'association
             </label>
-            <Input :value="mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.name"
-                   @input="event => updateEdgeName(event.target.value)"
+            <Input v-model="edgeName"
                    type="text"
                    placeholder=""/>
           </div>
@@ -188,25 +189,28 @@
 
             <div class="font-bold text-xl">Champs</div>
             <div class="flex justify-end items-center">
-              <Button variant="outline" @click="addField">
+              <Button variant="outline" @click="addFieldAssociation">
                 <CirclePlus :size="20" class="mr-2"/>
                 Ajouter un champ
               </Button>
             </div>
           </div>
           <div class="mt-6 space-y-2">
-            <ScrollArea ref="scrollAreaRef" class="h-[360px] pr-4 ">
+            <ScrollArea ref="scrollAreaRef" class="h-[220px] pr-4">
               <TransitionGroup tag="ul" name="fade">
                 <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
-                     v-for="(field, index) in mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.properties">
+                     v-for="(field, index) in mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.properties" :key="index">
+
+                  <div class="w-full p-1">
                     <Input
                         v-model="field.propertyName"
                         type="text"
                         placeholder="Nom du champ"
                     />
+                  </div>
 
-                    <div class="flex-1">
-                      <Popover :open="field.open">
+                    <div class=" w-full">
+                      <Popover v-model:open="field.open">
                         <PopoverTrigger as-child>
                           <Button
                               variant="outline"
@@ -220,7 +224,7 @@
                         </PopoverTrigger>
                         <PopoverContent class="w-full p-0">
                           <Command>
-                            <CommandInput class="h-9" placeholder="Search type..."/>
+                            <CommandInput class="h-9" placeholder="Rechercher..."/>
                             <CommandEmpty>Aucun résultat.</CommandEmpty>
                             <CommandList>
                               <CommandGroup>
@@ -229,19 +233,19 @@
                                     :key="index"
                                     :value="item"
                                     @select="(ev) => {
-                                if (typeof ev.detail.value === 'string') {
-                                  field.typeName = ev.detail.value
-                                }
-                                field.open = false
-                              }"
+                                      if (typeof ev.detail.value === 'string') {
+                                        field.typeName = ev.detail.value
+                                      }
+                                      field.open = false
+                                    }"
                                 >
                                   {{ item }}
                                   <Check
                                       :class="{
-                                  'ml-auto h-4 w-4': true,
-                                  'opacity-100': field.typeName === item,
-                                  'opacity-0': field.typeName !== item
-                                }"
+                                        'ml-auto h-4 w-4': true,
+                                        'opacity-100': field.typeName === item,
+                                        'opacity-0': field.typeName !== item
+                                      }"
                                   />
 
                                 </CommandItem>
@@ -252,7 +256,7 @@
                       </Popover>
                     </div>
 
-                    <Trash2 class="text-red-500 cursor-pointer" :size="25" @click="removeFieldAssociation(index)"/>
+                    <Trash2 class="text-red-500 cursor-pointer" :size="35" @click="removeFieldAssociation(index)"/>
                 </div>
               </TransitionGroup>
             </ScrollArea>
@@ -265,7 +269,7 @@
           <Button @click="isSubMenuVisible = false" variant="outline">
             Fermer
           </Button>
-          <Button @click="updateNode" :disabled="isLoading">
+          <Button @click="updateEdge" :disabled="isLoading">
             <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
             {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
           </Button>
@@ -295,7 +299,7 @@ import {
 import {ScrollArea} from '@/components/ui/scroll-area'
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
-import {Check, ChevronsUpDown, CirclePlus, Loader2, Trash2} from 'lucide-vue-next';
+import {Check, ChevronsUpDown, CirclePlus, Loader2, Trash2, MoveRight} from 'lucide-vue-next';
 import {onBeforeUnmount} from 'vue';
 
 const preventBodyScroll = () => {
@@ -330,6 +334,12 @@ const updateNode = async () => {
   mcdStore?.flowMCD.updateNodeData(nodeData.value.id, (node) => {
     node.data = nodeData.value.data;
   });
+  isLoading.value = false;
+};
+
+const updateEdge = async () => {
+  isLoading.value = true;
+  await mcdStore.updateEdge(route.params.idModel, edgeIdSelected.value)
   isLoading.value = false;
 };
 
@@ -383,6 +393,15 @@ const nodeName = computed({
     if (nodeData && nodeData.value.data) {
       nodeData.value.data.name = value;
     }
+  },
+});
+
+const edgeName = computed({
+  get() {
+    return mcdStore.flowMCD.findEdge(edgeIdSelected.value)?.data?.name ?? ""
+  },
+  set(value) {
+    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.name = value;
   },
 });
 

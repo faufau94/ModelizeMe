@@ -126,6 +126,22 @@ export const useMCDStore = defineStore('flow-mcd', () => {
             }
         }
     }
+
+    async function updateEdge(idModel, idEdge) {
+        const edge = flowMCD.value.findEdge(idEdge)
+        console.log(edge)
+        edge.selected = false
+        await $fetch(`/api/models/update`, {
+            method: 'PUT',
+            query: { id: idModel },
+            body: {
+                edge: edge,
+                type: 'edge',
+                action: 'updateEdge'
+            }
+        });
+    }
+
     function addAssociation() {
 
         // Obtenir les informations de l'edge sélectionné
@@ -221,5 +237,6 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         createNewEdge,
         removeNode,
         updateNode,
+        updateEdge,
     }
 })
