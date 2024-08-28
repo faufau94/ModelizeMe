@@ -12,20 +12,20 @@
       </h3>
       <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
     </div>
-    <hr v-if="props?.data?.properties?.length !== 0">
-    <div class="md:px-5 py-3" v-if="props?.data?.properties?.length !== 0">
-      <div class="flex justify-between items-center gap-6  py-1" v-for="field in props?.data?.properties">
+    <hr >
+    <div class="md:px-4 py-5" >
+      <div class="flex justify-between items-center py-1" v-for="(field,index) in props?.data?.properties" :key="index">
         <div class="flex font-semibold items-center justify-center">
-          <div class=" w-8" v-if="field?.propertyName === 'Big Increment'">
-            <KeyRound :size="18" class="text-red-500" />
+          <div class="w-3 " v-if="field?.isPrimaryKey">
+            <KeyRound :size="13" class="text-red-500" />
           </div>
-          <div v-else class="w-8"></div>
+          <div v-else class="w-3"></div>
 
-          <div :class="{ 'underline' : field?.propertyName === 'id' }">
+          <div class="px-2" :class="{ 'underline' : field?.propertyName === 'id' }">
             {{ field?.propertyName }}
           </div>
         </div>
-        <div class="">
+        <div class=" pr-3">
           {{ field?.typeName }}
         </div>
       </div>
@@ -39,6 +39,7 @@ import {useNodesData} from '@vue-flow/core'
 import {computed, ref} from 'vue'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
+import {KeyRound} from 'lucide-vue-next';
 
 const mcdStore = useMCDStore()
 const {isSubMenuVisible, nodeIdSelected} = storeToRefs(mcdStore)

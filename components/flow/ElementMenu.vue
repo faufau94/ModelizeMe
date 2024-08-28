@@ -31,10 +31,17 @@
             </div>
           </div>
           <div class="mt-6 space-y-2">
-            <ScrollArea ref="scrollAreaRef" class="h-[360px] pr-4 ">
+            <ScrollArea ref="scrollAreaRef" class="h-[400px] pr-4 ">
               <TransitionGroup tag="ul" name="fade">
                 <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
                      v-for="(field, index) in nodeData?.data?.properties" :key="index">
+
+                  <div :class="[field?.propertyName === 'id' ?
+                                    'text-red-500 pointer-events-none' :
+                                    'text-gray-300 cursor-pointer pointer-events-auto']"
+                       @click="field.isPrimaryKey = !field.isPrimaryKey">
+                    <KeyRound :size="20" :class="[field.isPrimaryKey || field?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']" />
+                  </div>
 
                   <div class="w-full p-1">
                     <Input
@@ -92,13 +99,12 @@
                   </div>
 
 
-                  <div v-if="field?.propertyName !== 'id'" class="w-10">
-                    <Trash2 class="text-red-500 cursor-pointer" :size="16"
+                    <Trash2 class=" w-12 h-12"
+                            :class="[field?.propertyName === 'id' ?
+                                    'text-gray-300 pointer-events-none' :
+                                    'text-red-500 cursor-pointer pointer-events-auto']"
                             @click="removeField(index)"/>
-                  </div>
-                  <div v-else class="w-10">
 
-                  </div>
                 </div>
               </TransitionGroup>
             </ScrollArea>
@@ -201,6 +207,10 @@
                 <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
                      v-for="(field, index) in mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.properties" :key="index">
 
+                  <div class="cursor-pointer" @click="field.isPrimaryKey = !field.isPrimaryKey">
+                    <KeyRound :size="20" :class="[field.isPrimaryKey ? 'text-red-500' : 'text-gray-300']" />
+                  </div>
+
                   <div class="w-full p-1">
                     <Input
                         v-model="field.propertyName"
@@ -256,7 +266,7 @@
                       </Popover>
                     </div>
 
-                    <Trash2 class="text-red-500 cursor-pointer" :size="35" @click="removeFieldAssociation(index)"/>
+                    <Trash2 class="text-red-500 w-12 h-12 cursor-pointer" @click="removeFieldAssociation(index)"/>
                 </div>
               </TransitionGroup>
             </ScrollArea>
@@ -299,7 +309,7 @@ import {
 import {ScrollArea} from '@/components/ui/scroll-area'
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
-import {Check, ChevronsUpDown, CirclePlus, Loader2, Trash2, MoveRight} from 'lucide-vue-next';
+import {Check, ChevronsUpDown, CirclePlus, Loader2, Trash2, MoveRight, KeyRound} from 'lucide-vue-next';
 import {onBeforeUnmount} from 'vue';
 
 const preventBodyScroll = () => {
@@ -349,13 +359,13 @@ const updateEdgeName = (newName) => {
 
 const addFieldAssociation = () => {
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
-    edge.data.properties.push({propertyName: "", typeName: "", open: false});
+    edge.data.properties.push({propertyName: "", typeName: "", open: false, isPrimaryKey: false});
   });
 };
 
 const addField = () => {
   mcdStore.flowMCD.updateNodeData(nodeData.value.id, (node) => {
-    node.data.properties.push({propertyName: "", typeName: "", open: false});
+    node.data.properties.push({propertyName: "", typeName: "", open: false, isPrimaryKey: false});
   });
   //scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
 };
