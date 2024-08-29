@@ -40,6 +40,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
             type: 'customEntity',
             position: position !== null ? position  : {x: Math.random() * 500, y: Math.random() * 500},
             draggable: true,
+            selected: false,
             data: {
                 name: '',
                 properties: [
@@ -52,11 +53,10 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         }
     }
 
-    async function addNode(idModel) {
+    async function addNode(idModel, duplicatedNode = null) {
 
         addNewNode.value = true
-
-        let newNode = createNewNode()
+        let newNode = duplicatedNode !== null ? duplicatedNode : createNewNode()
 
         const res = await $fetch(`/api/models/update`, {
             method: 'PUT',
@@ -78,8 +78,22 @@ export const useMCDStore = defineStore('flow-mcd', () => {
 
     }
 
-    async function updateNodePositionDB(idModel, idNode) {
+    async function removeNode(idModel, idNode) {
+        await $fetch(`/api/models/delete`, {
+            method: 'DELETE',
+            query: { idModel: idModel, idNode: idNode },
+            body: {
+                type: 'node',
+                action: 'removeNode'
+            }
+        });
+        flowMCD.value.removeNodes(idNode, true, true);
+        isSubMenuVisible.value = false
+    }
+
+    async function updateNode(idModel, idNode) {
         const node = flowMCD.value.findNode(idNode)
+        node.selected = false
         await $fetch(`/api/models/update`, {
             method: 'PUT',
             query: { id: idModel },
@@ -91,114 +105,56 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         });
     }
 
-    /*
-    function addAssociation() {
-        const {findEdge, findNode, addNodes, addEdges, removeEdges} = useVueFlow('flow-mcd')
-
-        // get selected edge infos
-        let edge = findEdge(edgeIdSelected.value)
-
-        let getEdgeCenter = getStraightPath(edge);
-
-        let newNodeId = getIdNode()
-        let firstEdgeId = getIdEdge()
-        let secondEdgeId = getIdEdge()
-
-
-        // remove selected edge
-        removeEdges(edge)
-
-        // Create the node association
-
-        console.log('firstEdgeId', firstEdgeId)
-        console.log('secondEdgeId', secondEdgeId)
-
-        let newNode = {
-            id: newNodeId,
-            type: 'customEntityAssociation',
-            position: {x: getEdgeCenter[1] - 320 / 2, y: getEdgeCenter[2]},
-            data: {
-                name: '',
-                isAssociation: true,
-                relatedEdgeFirstPart: firstEdgeId,
-                relatedEdgeSecondPart: secondEdgeId,
-                relatedNodeSource: edge.source,
-                relatedNodeTarget: edge.target,
-                properties: []
-            }
-        }
-
-        const calculateHandlesNewNode =
-            determineHandles(findNode(edge.source), findNode(edge.target), newNode);
-
-
-        // Create two edges
-
-
-        let newEdge1 = {
-            id: firstEdgeId,
-            source: edge.source,
-            target: newNodeId,
-            sourceHandle: edge.sourceHandle,
-            targetHandle: calculateHandlesNewNode.sourceHandle,
-            type: edgeType.value,
+    function createNewEdge(params) {
+        let newEdgeId = getIdEdge();
+        return {
+            id: newEdgeId,
+            source: params.source,
+            target: params.target,
+            sourceHandle: params.sourceHandle,
+            targetHandle: params.targetHandle,
+            type: 'customEdge',
             updatable: true,
+            selectable: true,
             style: null,
-            label: edge.data?.sourceCardinality ?? '',
-            labelBgStyle: { fill: '#F2F5F7'},
+            label: '',
             data: {
                 name: '',
-                isAssociation: true,
-                // Define which part of the association relationship comes from
-                edgePart: 1,
-                relatedEdgeId: secondEdgeId,
-                relatedNodeAssociation: newNodeId,
                 sourceCardinality: '',
                 targetCardinality: '',
                 properties: []
             }
         }
-
-        console.log(newEdge1)
-
-        let newEdge2 = {
-            id: secondEdgeId,
-            source: newNodeId,
-            target: edge.target,
-            targetHandle: edge.targetHandle,
-            sourceHandle: calculateHandlesNewNode.targetHandle,
-            type: edgeType.value,
-            updatable: true,
-            style: null,
-            label: edge.data?.targetCardinality ?? '',
-            labelBgStyle: { fill: '#F2F5F7'},
-            data: {
-                name: '',
-                isAssociation: true,
-                edgePart: 2,
-                relatedEdgeId: firstEdgeId,
-                relatedNodeAssociation: newNodeId,
-                sourceCardinality: '',
-                targetCardinality: '',
-                properties: []
-            }
-        }
-
-        console.log(newEdge2)
-
-        addNodes(newNode)
-        addEdges([newEdge1, newEdge2])
-
-        // display
-        isSubMenuVisible.value = true
-        elementsMenu.value = false
-        console.log('newNodeId')
-        console.log(newNodeId)
-        edgeIdSelected.value = null
-        nodeIdSelected.value = newNodeId
-
     }
-    */
+
+    async function updateEdge(idModel, idEdge) {
+        const edge = flowMCD.value.findEdge(idEdge)
+        console.log(edge)
+        edge.selected = false
+        await $fetch(`/api/models/update`, {
+            method: 'PUT',
+            query: { id: idModel },
+            body: {
+                edge: edge,
+                type: 'edge',
+                action: 'updateEdge'
+            }
+        });
+    }
+
+    async function removeEdge(idModel, idEdge) {
+        await $fetch(`/api/models/delete`, {
+            method: 'DELETE',
+            query: { idModel: idModel, idEdge: idEdge },
+            body: {
+                type: 'edge',
+                action: 'removeEdge'
+            }
+        });
+        flowMCD.value.removeEdges(idEdge, true, true);
+        isSubMenuVisible.value = false
+    }
+
     function addAssociation() {
 
         // Obtenir les informations de l'edge sélectionné
@@ -291,6 +247,10 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         addAssociation,
         setFlowInstance,
         createNewNode,
-        updateNodePositionDB,
+        createNewEdge,
+        removeNode,
+        updateNode,
+        updateEdge,
+        removeEdge,
     }
 })

@@ -1,5 +1,8 @@
 <template>
-  <div class="dndflow">
+  <div class="dndflow relative">
+
+    <ElementMenu />
+
     <VueFlow
         :id="'flow-mcd-' + route.params.idModel"
         :edges="flowMCD?.edges"
@@ -16,11 +19,11 @@
       <MiniMap/>
       <Controls/>
 
-      <Panel position="top-left" class="bg-white px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+      <Panel position="top-left" class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button @click="async() => await navigateTo('/app/dashboard')" variant="outline"
+              <Button @click="goBack" variant="outline"
                       class="border-none rounded-sm">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -113,7 +116,7 @@
         </div>
       </Panel>
 
-      <Panel position="top-center" class="bg-white px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+      <Panel position="top-center" class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
 
         <div v-if="addNewNode" class="flex justify-between items-center gap-3 px-2 transition duration-150">
           <Loader2 :size="18" class="animate-spin"/>
@@ -202,8 +205,9 @@
 </template>
 
 <script setup>
-import {markRaw, onMounted} from "vue";
+import {computed, markRaw, onMounted, ref} from "vue";
 import CustomEdge from "~/components/flow/MyCustomEdge.vue";
+import ElementMenu from "~/components/flow/ElementMenu.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
 import DropzoneBackground from "~/components/flow/DropzoneBackground.vue";
 import {MiniMap} from "@vue-flow/minimap";
@@ -213,7 +217,7 @@ import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation
 import {useMCDStore} from "~/stores/mcd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2} from "lucide-vue-next";
+import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, Trash2} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 
@@ -247,6 +251,14 @@ const model = ref(null)
 const flowMCD = computed(() => mcdStore.flowMCD);
 mcdStore.setFlowInstance(useVueFlow({id: 'flow-mcd-' + route.params.idModel}))
 
+mcdStore.flowMCD.onPaneClick((e) => {
+  if (isSubMenuVisible.value)
+    isSubMenuVisible.value = false
+  elementsMenu.value = false
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
+})
+
 onMounted(async () => {
 
 
@@ -266,31 +278,13 @@ onMounted(async () => {
 
   flowMCD.value.onConnect((params) => {
 
-    let newEdgeId = mcdStore.getIdEdge();
-    let newEdge = {
-      id: newEdgeId,
-      source: params.source,
-      target: params.target,
-      sourceHandle: params.sourceHandle,
-      targetHandle: params.targetHandle,
-      type: 'customEdge',
-      updatable: true,
-      selectable: true,
-      style: null,
-      label: '',
-      data: {
-        name: '',
-        sourceCardinality: '',
-        targetCardinality: '',
-        properties: []
-      }
-    }
+    const newEdge = mcdStore.createNewEdge(params)
 
     flowMCD.value.addEdges([newEdge])
 
     isSubMenuVisible.value = true
     elementsMenu.value = false
-    edgeIdSelected.value = newEdgeId
+    edgeIdSelected.value = newEdge.id
     nodeIdSelected.value = null
 
   })
@@ -316,7 +310,7 @@ const onChange = (changes) => {
       changes[0].type === 'position' &&
       changes[0].dragging === false &&
       changes[0].id.startsWith('dndnode')) {
-    mcdStore.updateNodePositionDB(route.params.idModel, changes[0].id)
+    mcdStore.updateNode(route.params.idModel, changes[0].id)
   }
 }
 
@@ -337,4 +331,10 @@ const renameModel = async () => {
     showDialogRenameModel.value = false
   }
 }
+
+const goBack = async() => {
+  isSubMenuVisible.value = false
+  await navigateTo('/app/dashboard')
+}
+
 </script>

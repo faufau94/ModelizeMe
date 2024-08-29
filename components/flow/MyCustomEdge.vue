@@ -34,119 +34,128 @@
       </div>
     </EdgeLabelRenderer>
 
+
     <foreignObject :x="center[0] - 230 /2"
-                   :y="center[1] - 100 /2"
-                   width="500"
-                   height="500"
+                   :y="center[1] - foreignObjectHeight /2"
+                   width="230"
+                   :height="foreignObjectHeight"
+                   class="w-60 rounded-[50px]"
     >
-      <body>
       <div>
-        <MyCustomEntityAssociation :data="data" />
+        <MyCustomEntityAssociation :data="data"  />
       </div>
-      </body>
     </foreignObject>
   </g>
 </template>
 
-<script>
+<script setup lang="ts">
+import {computed, provide, ref} from 'vue';
+import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
 import {BaseEdge, EdgeLabelRenderer, getStraightPath} from "@vue-flow/core";
-import MyCustomEntityAssociation from "./MyCustomEntityAssociation.vue";
 
-export default {
-  components: {MyCustomEntityAssociation, BaseEdge, EdgeLabelRenderer },
-  props: ["id", "sourceX", "sourceY", "targetX", "targetY", "sourcePosition", "targetPosition", "data"],
-  computed: {
-    path() {
-      return getStraightPath({
-        sourceX: this.sourceX,
-        sourceY: this.sourceY,
-        targetX: this.targetX,
-        targetY: this.targetY,
-        sourcePosition: this.sourcePosition,
-        targetPosition: this.targetPosition,
-      });
-    },
-    style() {
-      return {
-        strokeWidth: 2,
-      };
-    },
-    sourceCardinality() {
-      return this.data?.sourceCardinality || null; // default value or data from edge
-    },
-    targetCardinality() {
-      return this.data?.targetCardinality || null; // default value or data from edge
-    },
+// Props
+const props = defineProps({
+  id: String,
+  sourceX: Number,
+  sourceY: Number,
+  targetX: Number,
+  targetY: Number,
+  sourcePosition: String,
+  targetPosition: String,
+  data: Object,
+});
 
-    center() {
-      const { sourceX, sourceY, targetX, targetY } = this;
-      return [(sourceX + targetX) / 2, (sourceY + targetY) / 2];
-    },
-    // Offsets for positioning the labels near the handles
+const foreignObjectHeight = ref(100);  // Default height
 
-    sourceLabelX() {
-      const offset = 30; // Adjust this value to move the label further from the handle
-      switch (this.sourcePosition) {
-        case 'left':
-          return this.sourceX - offset;
-        case 'right':
-          return this.sourceX + offset;
-        case 'top':
-          return this.sourceX;
-        case 'bottom':
-          return this.sourceX;
-        default:
-          return this.sourceX;
-      }
-    },
-    sourceLabelY() {
-      const offset = 30; // Adjust this value to move the label further from the handle
-      switch (this.sourcePosition) {
-        case 'left':
-          return this.sourceY;
-        case 'right':
-          return this.sourceY;
-        case 'top':
-          return this.sourceY - offset;
-        case 'bottom':
-          return this.sourceY + offset;
-        default:
-          return this.sourceY;
-      }
-    },
-    targetLabelX() {
-      const offset = 30; // Adjust this value to move the label further from the handle
-      switch (this.targetPosition) {
-        case 'left':
-          return this.targetX - offset;
-        case 'right':
-          return this.targetX + offset;
-        case 'top':
-          return this.targetX;
-        case 'bottom':
-          return this.targetX;
-        default:
-          return this.targetX;
-      }
-    },
-    targetLabelY() {
-      const offset = 30; // Adjust this value to move the label further from the handle
-      switch (this.targetPosition) {
-        case 'left':
-          return this.targetY;
-        case 'right':
-          return this.targetY;
-        case 'top':
-          return this.targetY - offset;
-        case 'bottom':
-          return this.targetY + offset;
-        default:
-          return this.targetY;
-      }
-    },
+// Provide a method to update the height
+provide('updateForeignObjectHeight', (height) => {
+  foreignObjectHeight.value = height;
+});
+
+// Computed properties
+const path = computed(() => {
+  return getStraightPath({
+    sourceX: props.sourceX,
+    sourceY: props.sourceY,
+    targetX: props.targetX,
+    targetY: props.targetY,
+    sourcePosition: props.sourcePosition,
+    targetPosition: props.targetPosition,
+  });
+});
+
+const style = computed(() => ({
+  strokeWidth: 2,
+}));
+
+const sourceCardinality = computed(() => props.data?.sourceCardinality || null);
+const targetCardinality = computed(() => props.data?.targetCardinality || null);
+
+const center = computed(() => {
+  const { sourceX, sourceY, targetX, targetY } = props;
+  return [(sourceX + targetX) / 2, (sourceY + targetY) / 2];
+});
+
+// Offsets for positioning the labels near the handles
+const offset = 30;
+
+const sourceLabelX = computed(() => {
+  switch (props.sourcePosition) {
+    case 'left':
+      return props.sourceX - offset;
+    case 'right':
+      return props.sourceX + offset;
+    case 'top':
+    case 'bottom':
+      return props.sourceX;
+    default:
+      return props.sourceX;
   }
-};
+});
+
+const sourceLabelY = computed(() => {
+  switch (props.sourcePosition) {
+    case 'top':
+      return props.sourceY - offset;
+    case 'bottom':
+      return props.sourceY + offset;
+    case 'left':
+    case 'right':
+      return props.sourceY;
+    default:
+      return props.sourceY;
+  }
+});
+
+const targetLabelX = computed(() => {
+  switch (props.targetPosition) {
+    case 'left':
+      return props.targetX - offset;
+    case 'right':
+      return props.targetX + offset;
+    case 'top':
+    case 'bottom':
+      return props.targetX;
+    default:
+      return props.targetX;
+  }
+});
+
+const targetLabelY = computed(() => {
+  switch (props.targetPosition) {
+    case 'top':
+      return props.targetY - offset;
+    case 'bottom':
+      return props.targetY + offset;
+    case 'left':
+    case 'right':
+      return props.targetY;
+    default:
+      return props.targetY;
+  }
+});
 </script>
+
 
 <style scoped>
 .edge-label {

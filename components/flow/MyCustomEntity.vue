@@ -1,15 +1,34 @@
 <template>
 
-  <div class="bg-white shadow-md rounded-2xl w-80 border relative border-transparent hover:border hover:border-1.5 hover:border-blue-600"
+  <div class="bg-white shadow-md rounded-2xl w-80 z-40 border relative border-transparent hover:border hover:border-1.5 hover:border-blue-400"
+       :style="{ 'border border-1.5 border-blue-400': props.selected }"
        v-bind="$attrs"
        @mouseover="showHandles"
        @mouseout="hideHandles">
+
+    <NodeToolbar
+        class="p-1 bg-white rounded-md"
+        @mouseover="isNodeHovered = false"
+        @mouseout="isNodeHovered = true"
+        :is-visible="isNodeShown" :position="Position.Top">
+      <Button @click="removeNodeById(props.id)" variant="outline" class=" border-none rounded-sm">
+        <Trash2 class="text-red-500" :size="20"/>
+      </Button>
+      <Button @click="duplicateNode()" variant="outline" class=" border-none rounded-sm">
+        <Copy class="text-gray-600" :size="20"/>
+      </Button>
+
+    </NodeToolbar>
+
+
+    <!--
     <div v-show="isNodeShown"
          @mouseover="isNodeHovered = false"
          @mouseout="isNodeHovered = true"
-         @click="removeNode(props.id)" class="absolute -top-12 left-1/2 -translate-x-5 bg-white w-10 hover:bg-gray-50 hover:cursor-pointer flex justify-center items-center h-9 rounded-lg transition transform duration-300">
+         @click="removeNodeById(props.id)" class="absolute -top-12 left-1/2 -translate-x-5 bg-white w-10 hover:bg-gray-50 hover:cursor-pointer flex justify-center items-center h-9 rounded-lg transition transform duration-300">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
     </div>
+    -->
     <div class="flex justify-center items-center border-b rounded-t-xl py-3 px-4 md:px-5">
       <div>
 
@@ -137,14 +156,25 @@ import {Handle, Position, useNodesData} from '@vue-flow/core'
 import {computed, ref} from 'vue'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
+import { NodeToolbar } from '@vue-flow/node-toolbar'
+import {Trash2, Copy} from "lucide-vue-next";
 
 const mcdStore = useMCDStore()
-const { isSubMenuVisible, nodeIdSelected } = storeToRefs(mcdStore)
+const {removeNode, createNewNode, addNode} = mcdStore
+const {isSubMenuVisible, nodeIdSelected} = storeToRefs(mcdStore)
 
 const props = defineProps({
   id: {
     type: String,
     required: true,
+  },
+  selected: {
+    type: Boolean,
+    required: false,
+  },
+  position: {
+    type: Object,
+    required: false,
   },
   data: {
     type: Object,
@@ -162,14 +192,32 @@ const entityDatas = ref({
   ]
 })
 
+const route = useRoute()
+
 const isNodeShown = ref(false)
 const isNodeHovered = ref(false)
 
-const removeNode = (id) => {
-  mcdStore.flowMCD.removeNodes(id, true, true);
-  isSubMenuVisible.value = false
+const removeNodeById = idNode => {
+  removeNode(route.params.idModel, idNode)
 }
 
+const duplicateNode = async () => {
+  let maxOffset = 50
+  // position close to the duplicated node
+  let positionNewNode = {
+        x: props?.position.x + (Math.random() * maxOffset * 2 - maxOffset),
+        y: props?.position.y + (Math.random() * maxOffset * 2 - maxOffset)
+      }
+  let newNode = createNewNode(positionNewNode)
+  let data = {...props.data}
+  newNode = {
+    ...newNode,
+    data: data
+  }
+
+  await addNode(route.params.idModel, newNode)
+
+}
 
 
 const sourceHandle = ref(0)
@@ -262,18 +310,24 @@ const sourceHandleStyle = computed(() => {
 
 const showHandles = () => {
   isNodeShown.value = true
+  isNodeHovered.value = true
   sourceHandle.value = 1
 }
 
 const hideHandles = () => {
-
   setTimeout(() => {
-    if(isNodeHovered.value) isNodeShown.value = false
-  }, 1000)
+    if (isNodeHovered.value) isNodeShown.value = false
+    isNodeHovered.value = false
+  }, 3000)
+
   sourceHandle.value = 0
 }
 
 
 </script>
+
+<style scoped>
+
+</style>
 
 

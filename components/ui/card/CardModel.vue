@@ -47,14 +47,14 @@
             </DropdownMenuItem>
             <DropdownMenuItem class="cursor-pointer">
               <AlertDialog>
-                <AlertDialogTrigger as-child>
+                <AlertDialogTrigger as-child >
                   <div @click.stop="showDialogDeleteModel = true" class="text-red-500">
                     Supprimer
                   </div>
                 </AlertDialogTrigger>
                 <AlertDialogContent v-if="showDialogDeleteModel">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Voulez-vous supprimer ce modèle?</AlertDialogTitle>
+                    <AlertDialogTitle>Voulez-vous supprimer ce modèle ?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Cette action est irréversible et supprimera définitement ce modèle.
                     </AlertDialogDescription>
@@ -76,13 +76,14 @@
     </CardHeader>
     <CardContent>
       <div class="flex gap-x-6 text-sm text-muted-foreground">
-        <div class="flex items-center gap-x-2 justify-center">
+        <div class="flex items-center gap-x-1 justify-center">
           <PanelTop :size="15" />
-          {{ props.model.nodes.length }} nœuds
+          {{ props.model.nodes.length }} {{ props.model.nodes.length > 1 ? 'nœuds' : 'nœud' }}
+
         </div>
-        <div class="flex items-center gap-x-2">
+        <div class="flex items-center gap-x-1">
           <Workflow :size="15" />
-          {{ props.model.edges.length }} relations
+          {{ props.model.edges.length }} {{ props.model.edges.length > 1 ? 'relations' : 'relation' }}
         </div>
       </div>
         <div class="text-[11px] text-muted-foreground mt-3 text-right">
@@ -93,7 +94,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {Trash2, Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
+import {Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
 import {useToast} from '@/components/ui/toast/use-toast'
 import {Toaster} from '@/components/ui/toast'
 import {
@@ -132,10 +133,15 @@ const showDialogRenameModel = ref(false);
 const isRenamingModel = ref(false);
 const deleteModel = async () => {
   isLoading.value = true;
+  console.log(props.model.id)
 
   const res = await $fetch(`/api/models/delete`, {
     method: 'DELETE',
     query: { id: props.model.id },
+    body: {
+      type: 'model',
+      action: 'removeModel'
+    }
   });
   if (res) {
     // remove model from list
