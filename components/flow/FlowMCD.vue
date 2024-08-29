@@ -101,22 +101,6 @@ onMounted(() => {
     isSubMenuVisible.value = true
     edgeIdSelected.value = e.edge.id
   })
-/*
-  const nodes = ref([
-    { id: '1', label: 'Node 1', position: { x: 250, y: 5 } },
-    { id: '2', label: 'Node 2', position: { x: 100, y: 100 } },
-    { id: '3', label: 'Node 3', position: { x: 400, y: 100 } },
-  ])
-
-  const edges = ref([
-    { id: 'e1-2', source: '1', target: '2' },
-    { id: 'e1-3', source: '1', target: '3' },
-  ])
-
-  mcdStore.flowMCD.addNodes(nodes.value)
-  mcdStore.flowMCD.addEdges(edges.value)
-
- */
 })
 
 

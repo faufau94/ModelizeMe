@@ -3,23 +3,20 @@ import {getServerSession} from "#auth";
 
 export default defineEventHandler(async event => {
 
-    const { title } = await readBody(event);
-
     const session = await getServerSession(event)
 
 
     const getCurrentUser = await prisma.user.findUnique({
-      where: {
-        email: session?.user?.email,
-      }
+        where: {
+            email: session?.user?.email,
+        }
     })
 
-    const newModel = await prisma.model.create({
-        data: {
-            name: title,
-            userId: getCurrentUser.id,
+    return await prisma.model.findMany({
+        where: {
+            userId: getCurrentUser.id
         },
     })
 
-    return newModel
 });
+

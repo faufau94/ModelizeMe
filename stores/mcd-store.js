@@ -1,11 +1,12 @@
 import {computed, ref} from "vue";
 import {defineStore} from "pinia";
 import {getStraightPath, useVueFlow} from "@vue-flow/core";
+import { v4 as uuidv4 } from 'uuid';
 
 export const useMCDStore = defineStore('flow-mcd', () => {
 
 
-    const flowMCD = useVueFlow('flow-mcd')
+    const flowMCD = ref(null)
 
     const isSubMenuVisible = ref(false)
     const elementsMenu = ref(false)
@@ -13,30 +14,31 @@ export const useMCDStore = defineStore('flow-mcd', () => {
     const nodeIdSelected = ref(null)
     const edgeIdSelected = ref(null)
 
+    const addNewNode = ref(false)
+
 
     const edgeTypes = ref(['smoothstep', 'straight', 'step', 'curve'])
     const edgeType = ref('straight')
 
-    const idNode = ref(0)
-
     function getIdNode() {
-        return `dndnode_${idNode.value++}`
+        return `dndnode_${uuidv4() + '_' + uuidv4()}`
     }
-
-    const idEdge = ref(0)
 
     function getIdEdge() {
-        return `dndedge_${idEdge.value++}`
+        return `dndedge_${uuidv4()+ '_' + uuidv4()}`
     }
 
-    function addNode() {
+    function setFlowInstance(instance) {
+        flowMCD.value = instance;  // Assigner l'instance de useVueFlow
+    }
 
+    function createNewNode(position = null) {
         let nodeId = getIdNode()
 
-        let newNode = {
+        return {
             id: nodeId,
             type: 'customEntity',
-            position: {x: Math.random() * 500, y: Math.random() * 500},
+            position: position !== null ? position  : {x: Math.random() * 500, y: Math.random() * 500},
             draggable: true,
             data: {
                 name: '',
@@ -48,14 +50,45 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 ]
             }
         }
+    }
+
+    async function addNode(idModel) {
+
+        addNewNode.value = true
+
+        let newNode = createNewNode()
+
+        const res = await $fetch(`/api/models/update`, {
+            method: 'PUT',
+            query: { id: idModel },
+            body: {
+                node: newNode,
+                type: 'node'
+            }
+        });
 
 
-        flowMCD.addNodes(newNode)
+        flowMCD.value.addNodes(newNode)
 
         isSubMenuVisible.value = true
         elementsMenu.value = false
-        nodeIdSelected.value = nodeId
+        nodeIdSelected.value = newNode.id
 
+        addNewNode.value = false
+
+    }
+
+    async function updateNodePositionDB(idModel, idNode) {
+        const node = flowMCD.value.findNode(idNode)
+        await $fetch(`/api/models/update`, {
+            method: 'PUT',
+            query: { id: idModel },
+            body: {
+                node: node,
+                type: 'node',
+                action: 'updateNode'
+            }
+        });
     }
 
     /*
@@ -169,7 +202,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
     function addAssociation() {
 
         // Obtenir les informations de l'edge sélectionné
-        let edge = flowMCD.findEdge(edgeIdSelected.value);
+        let edge = flowMCD.value.findEdge(edgeIdSelected.value);
 
         // Calculer la position centrale de l'edge
         let getEdgeCenter = getStraightPath(edge);
@@ -197,7 +230,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
          */
 
         // Mettre à jour les données de l'edge existant pour inclure le node intermédiaire
-        flowMCD.updateEdgeData(edge.id, { hasNodeAssociation: true });
+        flowMCD.value.updateEdgeData(edge.id, { hasNodeAssociation: true });
 
 
         // Afficher le sous-menu pour l'association
@@ -249,11 +282,15 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         models,
         nodeIdSelected,
         addNode,
+        addNewNode,
         getIdNode,
         getIdEdge,
         edgeType,
         edgeTypes,
         edgeIdSelected,
         addAssociation,
+        setFlowInstance,
+        createNewNode,
+        updateNodePositionDB,
     }
 })

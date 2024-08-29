@@ -9,7 +9,7 @@
       <h3 v-if="props?.data?.name !== ''" class="text-lg font-bold text-center text-gray-800">
         {{ props?.data?.name }}
       </h3>
-      <h3 v-else class="text-lg font-bold text-center text-gray-400">Association</h3>
+      <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
     </div>
     <hr>
     <div class="p-4 md:px-5" v-if="props?.data?.properties?.length !== 0">

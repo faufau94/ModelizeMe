@@ -18,7 +18,14 @@ export default defineNuxtConfig({
     "@sidebase/nuxt-auth",
     '@pinia/nuxt',
     "nuxt-lucide-icons",
+    'dayjs-nuxt'
   ],
+
+  dayjs: {
+    locales: ['en', 'fr'],
+    defaultLocale: 'fr',
+    plugins: ['relativeTime', 'localizedFormat'],
+  },
 
   runtimeConfig: {
     authSecret: 'oGDu}UC[pMovI1[c\'SLk+94bB3',
