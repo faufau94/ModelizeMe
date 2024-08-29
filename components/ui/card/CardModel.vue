@@ -54,7 +54,7 @@
                 </AlertDialogTrigger>
                 <AlertDialogContent v-if="showDialogDeleteModel">
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Voulez-vous supprimer ce modèle?</AlertDialogTitle>
+                    <AlertDialogTitle>Voulez-vous supprimer ce modèle ?</AlertDialogTitle>
                     <AlertDialogDescription>
                       Cette action est irréversible et supprimera définitement ce modèle.
                     </AlertDialogDescription>

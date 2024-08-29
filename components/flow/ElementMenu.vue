@@ -358,9 +358,11 @@ const {removeEdge} = mcdStore
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected} = storeToRefs(mcdStore);
 
 const nodeData = ref(null);
+const edgeData = ref(null);
 
 watchEffect(() => {
   nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value);
+  edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value);
 });
 
 const isLoading = ref(false);
@@ -423,8 +425,6 @@ const toggleSidebar = () => {
 
 const submenuDirection = ref("slide-left");
 
-const toggleSubmenu = () => {
-};
 
 const nodeName = computed({
   get() {
@@ -439,12 +439,15 @@ const nodeName = computed({
 
 const edgeName = computed({
   get() {
-    return mcdStore.flowMCD.findEdge(edgeIdSelected.value)?.data?.name ?? ""
+    return edgeData?.value?.data?.name ?? "";
   },
   set(value) {
-    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.name = value;
+    if (edgeData && edgeData.value.data) {
+      edgeData.value.data.name = value;
+    }
   },
 });
+
 
 const sourceCardinality = computed({
   get() {
