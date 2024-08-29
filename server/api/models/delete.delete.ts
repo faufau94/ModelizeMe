@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
     // Vérification du type de contenu et de l'action
     const isNode = body.type === 'node' && body.action === 'removeNode';
     const isEdge = body.type === 'edge' && body.action === 'removeEdge';
+    console.log(isNode, isEdge);
 
     if (isNode || isEdge) {
         // Sélectionne la colonne appropriée en fonction du type

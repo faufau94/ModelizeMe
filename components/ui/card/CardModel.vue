@@ -47,7 +47,7 @@
             </DropdownMenuItem>
             <DropdownMenuItem class="cursor-pointer">
               <AlertDialog>
-                <AlertDialogTrigger as-child>
+                <AlertDialogTrigger as-child >
                   <div @click.stop="showDialogDeleteModel = true" class="text-red-500">
                     Supprimer
                   </div>
@@ -133,10 +133,15 @@ const showDialogRenameModel = ref(false);
 const isRenamingModel = ref(false);
 const deleteModel = async () => {
   isLoading.value = true;
+  console.log(props.model.id)
 
   const res = await $fetch(`/api/models/delete`, {
     method: 'DELETE',
     query: { id: props.model.id },
+    body: {
+      type: 'model',
+      action: 'removeModel'
+    }
   });
   if (res) {
     // remove model from list
