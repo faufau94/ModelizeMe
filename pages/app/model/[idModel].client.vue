@@ -23,7 +23,7 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button @click="async() => await navigateTo('/app/dashboard')" variant="outline"
+              <Button @click="goBack" variant="outline"
                       class="border-none rounded-sm">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -332,5 +332,9 @@ const renameModel = async () => {
   }
 }
 
+const goBack = async() => {
+  isSubMenuVisible.value = false
+  await navigateTo('/app/dashboard')
+}
 
 </script>

@@ -40,7 +40,8 @@
                                     'text-red-500 pointer-events-none' :
                                     'text-gray-300 cursor-pointer pointer-events-auto']"
                        @click="field.isPrimaryKey = !field.isPrimaryKey">
-                    <KeyRound :size="20" :class="[field.isPrimaryKey || field?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']" />
+                    <KeyRound :size="20"
+                              :class="[field.isPrimaryKey || field?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']"/>
                   </div>
 
                   <div class="w-full p-1">
@@ -99,11 +100,11 @@
                   </div>
 
 
-                    <Trash2 class=" w-12 h-12"
-                            :class="[field?.propertyName === 'id' ?
+                  <Trash2 class=" w-12 h-12"
+                          :class="[field?.propertyName === 'id' ?
                                     'text-gray-300 pointer-events-none' :
                                     'text-red-500 cursor-pointer pointer-events-auto']"
-                            @click="removeField(index)"/>
+                          @click="removeField(index)"/>
 
                 </div>
               </TransitionGroup>
@@ -146,7 +147,7 @@
 
             <div class="w-20">
               <Select v-model="sourceCardinality">
-                <SelectTrigger >
+                <SelectTrigger>
                   <SelectValue placeholder="X,X"/>
                 </SelectTrigger>
                 <SelectContent>
@@ -160,7 +161,7 @@
               </Select>
             </div>
             <div>
-              <MoveRight :stroke-width="1" :size="24" />
+              <MoveRight :stroke-width="1" :size="24"/>
             </div>
             <div class="w-20">
               <Select v-model="targetCardinality">
@@ -208,7 +209,7 @@
                      v-for="(field, index) in mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.properties" :key="index">
 
                   <div class="cursor-pointer" @click="field.isPrimaryKey = !field.isPrimaryKey">
-                    <KeyRound :size="20" :class="[field.isPrimaryKey ? 'text-red-500' : 'text-gray-300']" />
+                    <KeyRound :size="20" :class="[field.isPrimaryKey ? 'text-red-500' : 'text-gray-300']"/>
                   </div>
 
                   <div class="w-full p-1">
@@ -219,54 +220,54 @@
                     />
                   </div>
 
-                    <div class=" w-full">
-                      <Popover v-model:open="field.open">
-                        <PopoverTrigger as-child>
-                          <Button
-                              variant="outline"
-                              role="combobox"
-                              :aria-expanded="field.open"
-                              class="w-full justify-between"
-                          >
-                            {{ field.typeName || "Propriété" }}
-                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-full p-0">
-                          <Command>
-                            <CommandInput class="h-9" placeholder="Rechercher..."/>
-                            <CommandEmpty>Aucun résultat.</CommandEmpty>
-                            <CommandList>
-                              <CommandGroup>
-                                <CommandItem
-                                    v-for="(item, index) in filteredProperty"
-                                    :key="index"
-                                    :value="item"
-                                    @select="(ev) => {
+                  <div class=" w-full">
+                    <Popover v-model:open="field.open">
+                      <PopoverTrigger as-child>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            :aria-expanded="field.open"
+                            class="w-full justify-between"
+                        >
+                          {{ field.typeName || "Propriété" }}
+                          <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent class="w-full p-0">
+                        <Command>
+                          <CommandInput class="h-9" placeholder="Rechercher..."/>
+                          <CommandEmpty>Aucun résultat.</CommandEmpty>
+                          <CommandList>
+                            <CommandGroup>
+                              <CommandItem
+                                  v-for="(item, index) in filteredProperty"
+                                  :key="index"
+                                  :value="item"
+                                  @select="(ev) => {
                                       if (typeof ev.detail.value === 'string') {
                                         field.typeName = ev.detail.value
                                       }
                                       field.open = false
                                     }"
-                                >
-                                  {{ item }}
-                                  <Check
-                                      :class="{
+                              >
+                                {{ item }}
+                                <Check
+                                    :class="{
                                         'ml-auto h-4 w-4': true,
                                         'opacity-100': field.typeName === item,
                                         'opacity-0': field.typeName !== item
                                       }"
-                                  />
+                                />
 
-                                </CommandItem>
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                              </CommandItem>
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
-                    <Trash2 class="text-red-500 w-12 h-12 cursor-pointer" @click="removeFieldAssociation(index)"/>
+                  <Trash2 class="text-red-500 w-12 h-12 cursor-pointer" @click="removeFieldAssociation(index)"/>
                 </div>
               </TransitionGroup>
             </ScrollArea>
@@ -275,14 +276,39 @@
           </div>
         </div>
 
-        <div class="flex flex-col  w-full md:flex-row justify-end gap-4 self-end">
-          <Button @click="isSubMenuVisible = false" variant="outline">
-            Fermer
-          </Button>
-          <Button @click="updateEdge" :disabled="isLoading">
-            <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
-            {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
-          </Button>
+        <div class="flex flex-col w-full md:flex-row justify-between items-center gap-4">
+          <div>
+            <AlertDialog>
+              <AlertDialogTrigger as-child>
+                <Button variant="destructive" class="border-none rounded-sm">
+                  Supprimer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer cette relation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action est irréversible
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <Button @click="removeEdgeById" variant="destructive" class="border-none rounded-sm">
+                    Supprimer
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+          <div class="space-x-4">
+            <Button @click="isSubMenuVisible = false" variant="outline">
+              Fermer
+            </Button>
+            <Button @click="updateEdge" :disabled="isLoading">
+              <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+              {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+            </Button>
+          </div>
         </div>
 
       </div>
@@ -328,6 +354,7 @@ const scrollAreaRef = ref(null);
 
 const route = useRoute();
 const mcdStore = useMCDStore();
+const {removeEdge} = mcdStore
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected} = storeToRefs(mcdStore);
 
 const nodeData = ref(null);
@@ -352,6 +379,10 @@ const updateEdge = async () => {
   await mcdStore.updateEdge(route.params.idModel, edgeIdSelected.value)
   isLoading.value = false;
 };
+
+const removeEdgeById = async () => {
+  await removeEdge(route.params.idModel, edgeIdSelected.value)
+}
 
 const updateEdgeName = (newName) => {
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, {name: newName});

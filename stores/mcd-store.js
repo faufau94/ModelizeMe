@@ -142,6 +142,19 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         });
     }
 
+    async function removeEdge(idModel, idEdge) {
+        await $fetch(`/api/models/delete`, {
+            method: 'DELETE',
+            query: { idModel: idModel, idEdge: idEdge },
+            body: {
+                type: 'edge',
+                action: 'removeEdge'
+            }
+        });
+        flowMCD.value.removeEdges(idEdge, true, true);
+        isSubMenuVisible.value = false
+    }
+
     function addAssociation() {
 
         // Obtenir les informations de l'edge sélectionné
@@ -238,5 +251,6 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         removeNode,
         updateNode,
         updateEdge,
+        removeEdge,
     }
 })
