@@ -22,7 +22,7 @@
           </div>
           <div v-else class="w-3"></div>
 
-          <div class="px-2" :class="{ 'underline' : field?.propertyName === 'id' }">
+          <div class="px-2" :class="{ 'underline' : field?.isPrimaryKey }">
             {{ field?.propertyName }}
           </div>
         </div>

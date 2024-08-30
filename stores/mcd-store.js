@@ -47,6 +47,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                     {
                         propertyName: "id",
                         typeName: "Big Increment",
+                        isPrimaryKey: true
                     },
                 ]
             }
@@ -129,7 +130,6 @@ export const useMCDStore = defineStore('flow-mcd', () => {
 
     async function updateEdge(idModel, idEdge) {
         const edge = flowMCD.value.findEdge(idEdge)
-        console.log(edge)
         edge.selected = false
         await $fetch(`/api/models/update`, {
             method: 'PUT',

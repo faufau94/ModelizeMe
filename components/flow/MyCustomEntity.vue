@@ -21,14 +21,6 @@
     </NodeToolbar>
 
 
-    <!--
-    <div v-show="isNodeShown"
-         @mouseover="isNodeHovered = false"
-         @mouseout="isNodeHovered = true"
-         @click="removeNodeById(props.id)" class="absolute -top-12 left-1/2 -translate-x-5 bg-white w-10 hover:bg-gray-50 hover:cursor-pointer flex justify-center items-center h-9 rounded-lg transition transform duration-300">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
-    </div>
-    -->
     <div class="flex justify-center items-center border-b rounded-t-xl py-3 px-4 md:px-5">
       <div>
 
@@ -39,14 +31,14 @@
       <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
     </div>
     <div class="p-4 md:px-5">
-      <div class="flex justify-between items-center gap-6 py-1" v-for="field in props?.data?.properties">
+      <div class="flex justify-between items-center gap-6 py-1" v-for="(field,index) in props?.data?.properties" :key="index">
         <div class="flex font-bold items-center justify-center">
-          <div class=" w-8" v-if="field?.propertyName === 'id'">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff0000" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+          <div class="w-5" v-if="field?.isPrimaryKey">
+            <KeyRound :size="13" class="text-red-500" />
           </div>
-          <div v-else class="w-8"></div>
+          <div v-else class="w-5"></div>
 
-          <div :class="{ 'underline' : field?.propertyName === 'id' }">
+          <div :class="{ 'underline' : field?.isPrimaryKey }">
             {{ field?.propertyName }}
           </div>
         </div>
@@ -63,92 +55,6 @@
       <Handle id="s4"  type="source" :position="Position.Right" :style="sourceHandleStyle"/>
     </div>
   </div>
-
-  <!--
-  <div class="flex flex-col bg-white border border-gray-200 shadow-sm rounded-xl p-8 md:p-5"
-       @mouseover="$emit('showHandles')"
-       @mouseout="$emit('hideHandles')">
-    <input
-        class="text-center w-full mb-2 border-0 focus:border-none focus:outline-none active:border-none"
-        placeholder="Nom de l'entité"
-        v-models="entityDatas.name"
-        type="text"
-        maxlength="20"
-    />
-    <hr class="my-2"/>
-
-    <div v-for="(input, index) in entityDatas.properties" :key="index">
-      <div class="flex justify-center items-center space-x-2 w-full bg-green-800">
-        <div class="flex items-center" v-if="index === 0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-               stroke="#000000" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"
-               class="lucide lucide-key-round">
-            <path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/>
-            <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>
-          </svg>
-        </div>
-
-        <div class="flex-1 flex items-center">
-          <input
-              class="text-center border-transparent w-full"
-              placeholder="Propriété"
-              v-models="input['propertyName']"
-              type="text"
-              maxlength="20"
-              :class="{'text-red-500': index === 0}"
-              :style="{textDecoration: index === 0 ? 'underline' : 'none', textDecorationColor: index === 0 ? 'red' : 'grey'}"
-          />
-        </div>
-
-        <div class="flex-1 flex items-center">
-          <input
-              class="text-center w-full"
-              placeholder="Type"
-              v-models="input['typeName']"
-              type="text"
-              maxlength="20"
-              :class="{'text-red-500': index === 0}"
-              :style="{textDecoration: index === 0 ? 'underline' : 'none', textDecorationColor: index === 0 ? 'red' : 'grey'}"
-          />
-        </div>
-
-        <div class="flex-1 flex items-center" v-if="index != 0">
-          <button
-              class="rounded-full p-1"
-              @click="removeProperty(index)"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                 stroke="#ff0000" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"
-                 class="lucide lucide-trash-2">
-              <path d="M3 6h18"/>
-              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-              <line x1="10" x2="10" y1="11" y2="17"/>
-              <line x1="14" x2="14" y1="11" y2="17"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-
-
-    <div class="flex justify-end items-end bg-green-800 mt-2">
-      <button
-          class="text-black rounded-full p-1"
-          @click="addProperty"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-             class="lucide lucide-plus">
-          <path d="M5 12h14"/>
-          <path d="M12 5v14"/>
-        </svg>
-      </button>
-    </div>
-    -->
-
-
-
 </template>
 
 <script lang="ts" setup>
@@ -157,7 +63,7 @@ import {computed, ref} from 'vue'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
 import { NodeToolbar } from '@vue-flow/node-toolbar'
-import {Trash2, Copy} from "lucide-vue-next";
+import {Trash2, Copy, KeyRound} from "lucide-vue-next";
 
 const mcdStore = useMCDStore()
 const {removeNode, createNewNode, addNode} = mcdStore

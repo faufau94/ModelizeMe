@@ -1,96 +1,100 @@
 <template>
   <div class="w-full max-w-6xl mx-auto px-4 py-8">
-    <div v-if="areModelsLoaded === true && (models === null || models.length === 0)">
-          <div class="flex flex-col items-center justify-center h-[80vh]">
-            <div class="text-center space-y-4">
-              <h3 class="text-2xl font-bold">Aucun résultat</h3>
-              <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
-              <Dialog>
-                <DialogTrigger as-child>
-                  <Button @click="showModel = true">
-                    <CirclePlus :size="20" class="mr-2"/>
-                    Créer un modèle
-                  </Button>
-                </DialogTrigger>
-                <DialogContent class="sm:max-w-[425px]" v-if="showModel">
-                  <DialogHeader>
-                    <DialogTitle>Nouveau modèle</DialogTitle>
-                    <DialogDescription>
-                      Ajouter un nouveau modèle.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <Input v-model="newModel.title" type="text"/>
-
-                  <DialogFooter class="mt-3">
-                    <DialogClose as-child>
-                      <Button @click="showModel = false" type="button" variant="secondary">
-                        Fermer
-                      </Button>
-                    </DialogClose>
-                    <Button @click="onSubmit" :disabled="isLoadingNewModel">
-                      <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
-                      {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
-                    </Button>
-                  </DialogFooter>
-
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
+    <div v-if="isLoadingPage" class="flex justify-center mt-32 items-center">
+      <Loader2 :size="30" class="animate-spin"/>
     </div>
     <div v-else>
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-bold">Modèles</h1>
-        <Toaster/>
-        <Dialog>
-          <DialogTrigger as-child>
-            <Button @click="showModel = true">
-              <CirclePlus :size="20" class="mr-2"/>
-              Nouveau modèle
-            </Button>
-          </DialogTrigger>
-          <DialogContent class="sm:max-w-[425px]" v-if="showModel">
-            <DialogHeader>
-              <DialogTitle>Nouveau modèle</DialogTitle>
-              <DialogDescription>
-                Ajouter un nouveau modèle.
-              </DialogDescription>
-            </DialogHeader>
-
-            <Input v-model="newModel.title" type="text"/>
-
-            <DialogFooter class="mt-3">
-              <DialogClose as-child>
-                <Button @click="showModel = false" type="button" variant="secondary">
-                  Fermer
+      <div v-if="areModelsLoaded === true && (models === null || models.length === 0)">
+        <div class="flex flex-col items-center justify-center h-[80vh]">
+          <div class="text-center space-y-4">
+            <h3 class="text-2xl font-bold">Aucun résultat</h3>
+            <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
+            <Dialog>
+              <DialogTrigger as-child>
+                <Button @click="showModel = true">
+                  <CirclePlus :size="20" class="mr-2"/>
+                  Créer un modèle
                 </Button>
-              </DialogClose>
-              <Button @click="onSubmit" :disabled="isLoadingNewModel">
-                <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
-                {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
-              </Button>
-            </DialogFooter>
+              </DialogTrigger>
+              <DialogContent class="sm:max-w-[425px]" v-if="showModel">
+                <DialogHeader>
+                  <DialogTitle>Nouveau modèle</DialogTitle>
+                  <DialogDescription>
+                    Ajouter un nouveau modèle.
+                  </DialogDescription>
+                </DialogHeader>
 
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div class="mb-6">
-        <div class="relative w-full max-w-sm items-center">
-          <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle" class="pl-10"/>
-          <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
-      <Search class="size-5 text-muted-foreground"/>
-    </span>
+                <Input v-model="newModel.title" type="text"/>
+
+                <DialogFooter class="mt-3">
+                  <DialogClose as-child>
+                    <Button @click="showModel = false" type="button" variant="secondary">
+                      Fermer
+                    </Button>
+                  </DialogClose>
+                  <Button @click="onSubmit" :disabled="isLoadingNewModel">
+                    <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
+                    {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
+                  </Button>
+                </DialogFooter>
+
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </div>
-      <div v-if="isLoading" class="flex justify-center mt-32 items-center">
-        <Loader2 :size="30" class="animate-spin"/>
-      </div>
-      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <CardModel v-for="(model, index) in filteredModels" :key="index" :model="model"/>
+      <div v-else>
+        <div class="flex items-center justify-between mb-6">
+          <h1 class="text-2xl font-bold">Modèles</h1>
+          <Toaster/>
+          <Dialog>
+            <DialogTrigger as-child>
+              <Button @click="showModel = true">
+                <CirclePlus :size="20" class="mr-2"/>
+                Nouveau modèle
+              </Button>
+            </DialogTrigger>
+            <DialogContent class="sm:max-w-[425px]" v-if="showModel">
+              <DialogHeader>
+                <DialogTitle>Nouveau modèle</DialogTitle>
+                <DialogDescription>
+                  Ajouter un nouveau modèle.
+                </DialogDescription>
+              </DialogHeader>
+
+              <Input v-model="newModel.title" type="text"/>
+
+              <DialogFooter class="mt-3">
+                <DialogClose as-child>
+                  <Button @click="showModel = false" type="button" variant="secondary">
+                    Fermer
+                  </Button>
+                </DialogClose>
+                <Button @click="onSubmit" :disabled="isLoadingNewModel">
+                  <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
+                  {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
+                </Button>
+              </DialogFooter>
+
+            </DialogContent>
+          </Dialog>
+        </div>
+        <div class="mb-6">
+          <div class="relative w-full max-w-sm items-center">
+            <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle" class="pl-10"/>
+            <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
+      <Search class="size-5 text-muted-foreground"/>
+    </span>
+          </div>
+        </div>
+        <div v-if="isLoading" class="flex justify-center mt-32 items-center">
+          <Loader2 :size="30" class="animate-spin"/>
+        </div>
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <CardModel v-for="(model, index) in filteredModels" :key="index" :model="model"/>
+        </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -117,8 +121,10 @@ const {toast} = useToast()
 
 const isLoading = ref(false);
 const areModelsLoaded = ref(false)
+const isLoadingPage = ref(true);
 
 onMounted(async () => {
+  isLoadingPage.value = false;
   isLoading.value = true;
   models.value = await $fetch('/api/models/list', {method: 'GET'});
   isLoading.value = false
