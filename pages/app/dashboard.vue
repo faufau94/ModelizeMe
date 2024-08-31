@@ -24,7 +24,7 @@
                   </DialogDescription>
                 </DialogHeader>
 
-                <Input v-model="newModel.title" type="text"/>
+                <Input @keyup.enter="onSubmit" v-model="newModel.title" type="text"/>
 
                 <DialogFooter class="mt-3">
                   <DialogClose as-child>
@@ -62,7 +62,7 @@
                 </DialogDescription>
               </DialogHeader>
 
-              <Input v-model="newModel.title" type="text"/>
+              <Input @keyup.enter="onSubmit" v-model="newModel.title" type="text"/>
 
               <DialogFooter class="mt-3">
                 <DialogClose as-child>

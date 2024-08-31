@@ -4,9 +4,10 @@
     <ElementMenu />
 
     <VueFlow
-        :id="'flow-mcd-' + route.params.idModel"
-        :edges="flowMCD?.edges"
-        :nodes="flowMCD?.nodes"
+        :id="getFlowId"
+        :key="activeTab"
+        :edges="currentFlow?.edges"
+        :nodes="currentFlow?.nodes"
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
         @dragover="onDragOver"
@@ -188,6 +189,57 @@
 
       </Panel>
 
+      <Panel position="top-right" class="bg-white mr-10 z-40 drop-shadow-md flex items-center rounded-sm">
+        <Tabs default-value="mcd" v-model="activeTab" class="w-full">
+          <TabsList class="grid grid-cols-3">
+
+            <!-- MCD Tab with Tooltip -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <TabsTrigger value="mcd">MCD</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-black text-white">
+                  <p>Modèle Conceptuel de Données</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- MLD Tab with Tooltip -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <TabsTrigger
+                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-none' : 'cursor-pointer']"
+                      :disabled="mcdStore.flowMCD.nodes.length === 0"
+                      value="mld"
+                      @click="generateMld">MLD</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-black text-white">
+                  <p>Modèle Logique de Données</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- MPD Tab with Tooltip -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <TabsTrigger
+                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-none' : 'cursor-pointer']"
+                      :disabled="mcdStore.flowMCD.nodes.length === 0"
+                      value="mpd"
+                      @click="generateMpd">MPD</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-black text-white">
+                  <p>Modèle Physique de Données</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </TabsList>
+        </Tabs>
+      </Panel>
+
       <DropzoneBackground
           :style="{
           backgroundColor: isDragOver ? '#e0eefa' : 'transparent',
@@ -220,6 +272,7 @@ import {storeToRefs} from "pinia";
 import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, Trash2} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import {
   Tooltip,
@@ -229,7 +282,6 @@ import {
 } from '@/components/ui/tooltip'
 
 const route = useRoute()
-
 
 const mcdStore = useMCDStore()
 const {addNode} = mcdStore
@@ -248,8 +300,11 @@ const edgeTypes = {
 
 const model = ref(null)
 
-const flowMCD = computed(() => mcdStore.flowMCD);
-mcdStore.setFlowInstance(useVueFlow({id: 'flow-mcd-' + route.params.idModel}))
+const isRenamingModel = ref(false)
+const showDialogRenameModel = ref(false)
+
+
+mcdStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
 
 mcdStore.flowMCD.onPaneClick((e) => {
   if (isSubMenuVisible.value)
@@ -261,26 +316,25 @@ mcdStore.flowMCD.onPaneClick((e) => {
 
 onMounted(async () => {
 
-
   model.value = await $fetch("/api/models/read", {
     method: "GET",
     query: {id: route.params.idModel},
   });
 
   if (model.value.nodes.length !== 0) {
-    flowMCD.value.addNodes(model.value.nodes)
+    mcdStore.flowMCD.addNodes(model.value.nodes)
   }
 
   if (model.value.edges.length !== 0) {
-    flowMCD.value.addEdges(model.value.edges)
+    mcdStore.flowMCD.addEdges(model.value.edges)
   }
 
 
-  flowMCD.value.onConnect((params) => {
+  mcdStore.flowMCD.onConnect((params) => {
 
     const newEdge = mcdStore.createNewEdge(params)
 
-    flowMCD.value.addEdges([newEdge])
+    mcdStore.flowMCD.addEdges([newEdge])
 
     isSubMenuVisible.value = true
     elementsMenu.value = false
@@ -289,15 +343,13 @@ onMounted(async () => {
 
   })
 
-
-
-  flowMCD.value.onNodeClick((e) => {
+  mcdStore.flowMCD.onNodeClick((e) => {
     edgeIdSelected.value = null
     isSubMenuVisible.value = true
     nodeIdSelected.value = e.node.id
   })
 
-  flowMCD.value.onEdgeClick((e) => {
+  mcdStore.flowMCD.onEdgeClick((e) => {
     nodeIdSelected.value = null
     isSubMenuVisible.value = true
     edgeIdSelected.value = e.edge.id
@@ -315,8 +367,6 @@ const onChange = (changes) => {
 }
 
 
-const isRenamingModel = ref(false)
-const showDialogRenameModel = ref(false)
 const renameModel = async () => {
   isRenamingModel.value = true
   const res = await $fetch(`/api/models/rename-model?id=${route.params.idModel}`, {
@@ -335,6 +385,38 @@ const renameModel = async () => {
 const goBack = async() => {
   isSubMenuVisible.value = false
   await navigateTo('/app/dashboard')
+}
+
+// Tabs
+const getFlowId = computed(() => {
+  if (activeTab.value === 'mcd') return 'flow-mcd-' + route.params.idModel;
+  if (activeTab.value === 'mld') return 'flow-mld-' + route.params.idModel;
+  if (activeTab.value === 'mpd') return 'flow-mpd-' + route.params.idModel;
+  return 'flow-mcd-' + route.params.idModel; // Default to MCD
+});
+
+const activeTab = ref('mcd')
+
+const getMCD = () => {
+
+  console.log(mcdStore.flowMCD.nodes)
+}
+
+const currentFlow = computed(() => {
+  if (activeTab.value === 'mcd') return mcdStore.flowMCD;
+  if (activeTab.value === 'mld') return {nodes: [], edges: []};
+  if (activeTab.value === 'mpd') return {nodes: [], edges: []};
+  return mcdStore.flowMCD; // Default to MCD
+});
+
+const  generateMld = () => {
+
+  console.log(currentFlow.value)
+  console.log('generate mld')
+}
+const generateMpd = () => {
+
+  console.log('generate mpd')
 }
 
 </script>
