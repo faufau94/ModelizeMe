@@ -14,6 +14,7 @@
         @drop="(e) => onDrop(e, route.params.idModel)"
         @nodes-change="onChange"
         @edges-change="onChange"
+        @edge-update="onEdgeUpdate"
         fit-view-on-init
     >
       <MiniMap/>
@@ -312,6 +313,11 @@ const onChange = (changes) => {
       changes[0].id.startsWith('dndnode')) {
     mcdStore.updateNode(route.params.idModel, changes[0].id)
   }
+}
+
+const onEdgeUpdate = async ({ edge, connection }) => {
+  mcdStore.flowMCD.updateEdge(edge, connection, false)
+  await mcdStore.updateEdge(route.params.idModel, edge.id)
 }
 
 

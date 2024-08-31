@@ -9,75 +9,77 @@
           <div class="text-center space-y-4">
             <h3 class="text-2xl font-bold">Aucun résultat</h3>
             <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
-            <Dialog>
-              <DialogTrigger as-child>
+            <AlertDialog>
+              <AlertDialogTrigger as-child>
                 <Button @click="showModel = true">
                   <CirclePlus :size="20" class="mr-2"/>
-                  Créer un modèle
+                  Nouveau modèle
                 </Button>
-              </DialogTrigger>
-              <DialogContent class="sm:max-w-[425px]" v-if="showModel">
-                <DialogHeader>
-                  <DialogTitle>Nouveau modèle</DialogTitle>
-                  <DialogDescription>
+              </AlertDialogTrigger>
+              <AlertDialogContent v-if="showModel">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Nouveau modèle</AlertDialogTitle>
+                  <AlertDialogDescription>
                     Ajouter un nouveau modèle.
-                  </DialogDescription>
-                </DialogHeader>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
 
-                <Input v-model="newModel.title" type="text"/>
+                <Input @keyup.enter="onSubmit" v-model="newModel.title" type="text"/>
 
-                <DialogFooter class="mt-3">
-                  <DialogClose as-child>
-                    <Button @click="showModel = false" type="button" variant="secondary">
+                <AlertDialogFooter class="mt-3">
+                  <AlertDialogCancel as-child>
+                    <Button @click="showModel = false; newModel.title = ''" variant="secondary">
                       Fermer
                     </Button>
-                  </DialogClose>
-                  <Button @click="onSubmit" :disabled="isLoadingNewModel">
-                    <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
-                    {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
-                  </Button>
-                </DialogFooter>
+                  </AlertDialogCancel>
+                  <AlertDialogAction as-child>
+                    <Button @click="onSubmit" :disabled="isLoadingNewModel">
+                      <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
+                      {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
+                    </Button>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
 
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
       </div>
       <div v-else>
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold">Modèles</h1>
-          <Toaster/>
-          <Dialog>
-            <DialogTrigger as-child>
+          <AlertDialog>
+            <AlertDialogTrigger as-child>
               <Button @click="showModel = true">
                 <CirclePlus :size="20" class="mr-2"/>
                 Nouveau modèle
               </Button>
-            </DialogTrigger>
-            <DialogContent class="sm:max-w-[425px]" v-if="showModel">
-              <DialogHeader>
-                <DialogTitle>Nouveau modèle</DialogTitle>
-                <DialogDescription>
+            </AlertDialogTrigger>
+            <AlertDialogContent v-if="showModel">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Nouveau modèle</AlertDialogTitle>
+                <AlertDialogDescription>
                   Ajouter un nouveau modèle.
-                </DialogDescription>
-              </DialogHeader>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
 
-              <Input v-model="newModel.title" type="text"/>
+              <Input @keyup.enter="onSubmit" v-model="newModel.title" type="text"/>
 
-              <DialogFooter class="mt-3">
-                <DialogClose as-child>
-                  <Button @click="showModel = false" type="button" variant="secondary">
+              <AlertDialogFooter class="mt-3">
+                <AlertDialogCancel as-child>
+                  <Button @click="showModel = false; newModel.title = ''" variant="secondary">
                     Fermer
                   </Button>
-                </DialogClose>
-                <Button @click="onSubmit" :disabled="isLoadingNewModel">
-                  <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
-                  {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
-                </Button>
-              </DialogFooter>
-
-            </DialogContent>
-          </Dialog>
+                </AlertDialogCancel>
+                <AlertDialogAction as-child>
+                  <Button @click="onSubmit" :disabled="isLoadingNewModel">
+                    <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
+                    {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
+                  </Button>
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
         <div class="mb-6">
           <div class="relative w-full max-w-sm items-center">
@@ -131,6 +133,7 @@ onMounted(async () => {
   areModelsLoaded.value = true
 })
 
+
 const searchTerm = ref("");
 
 const filteredModels = computed(() => {
@@ -144,6 +147,7 @@ const newModel = ref({
   title: "",
 });
 const isLoadingNewModel = ref(false);
+
 const onSubmit = async () => {
   if (newModel.value.title !== '') {
     isLoadingNewModel.value = true;
