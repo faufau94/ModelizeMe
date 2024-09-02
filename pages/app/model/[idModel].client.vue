@@ -117,7 +117,7 @@
         </div>
       </Panel>
 
-      <Panel position="top-center" class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+      <Panel v-if="activeTab === 'mcd'" position="top-center" class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
 
         <div v-if="addNewNode" class="flex justify-between items-center gap-3 px-2 transition duration-150">
           <Loader2 :size="18" class="animate-spin"/>
@@ -190,14 +190,14 @@
       </Panel>
 
       <Panel position="top-right" class="bg-white mr-10 z-40 drop-shadow-md flex items-center rounded-sm">
-        <Tabs default-value="mcd" v-model="activeTab" class="w-full">
+        <Tabs  default-value="mcd" v-model="activeTab" class="w-full">
           <TabsList class="grid grid-cols-3">
 
             <!-- MCD Tab with Tooltip -->
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <TabsTrigger value="mcd">MCD</TabsTrigger>
+                  <TabsTrigger :disabled="isChangingTab" value="mcd">MCD</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent class="bg-black text-white">
                   <p>Modèle Conceptuel de Données</p>
@@ -211,9 +211,10 @@
                 <TooltipTrigger as-child>
                   <TabsTrigger
                       :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-none' : 'cursor-pointer']"
-                      :disabled="mcdStore.flowMCD.nodes.length === 0"
-                      value="mld"
-                      @click="generateMld">MLD</TabsTrigger>
+                      :disabled="mcdStore.flowMCD.nodes.length === 0 || isChangingTab"
+                      value="mld">
+                    MLD
+                  </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent class="bg-black text-white">
                   <p>Modèle Logique de Données</p>
@@ -227,9 +228,10 @@
                 <TooltipTrigger as-child>
                   <TabsTrigger
                       :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-none' : 'cursor-pointer']"
-                      :disabled="mcdStore.flowMCD.nodes.length === 0"
-                      value="mpd"
-                      @click="generateMpd">MPD</TabsTrigger>
+                      :disabled="mcdStore.flowMCD.nodes.length === 0 || isChangingTab"
+                      value="mpd">
+                    MPD
+                  </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent class="bg-black text-white">
                   <p>Modèle Physique de Données</p>
@@ -267,6 +269,8 @@ import {Controls} from "@vue-flow/controls";
 import CustomEntity from "~/components/flow/MyCustomEntity.vue";
 import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation.vue";
 import {useMCDStore} from "~/stores/mcd-store.js";
+import {useMLDStore} from "~/stores/mld-store.js";
+import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
 import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, Trash2} from "lucide-vue-next";
@@ -284,6 +288,8 @@ import {
 const route = useRoute()
 
 const mcdStore = useMCDStore()
+const mldStore = useMLDStore()
+const mpdStore = useMPDStore()
 const {addNode} = mcdStore
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode} = storeToRefs(mcdStore)
 
@@ -305,6 +311,8 @@ const showDialogRenameModel = ref(false)
 
 
 mcdStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
+mldStore.setFlowInstance(useVueFlow('flow-mld-' + route.params.idModel))
+mpdStore.setFlowInstance(useVueFlow('flow-mpd-' + route.params.idModel))
 
 mcdStore.flowMCD.onPaneClick((e) => {
   if (isSubMenuVisible.value)
@@ -396,27 +404,19 @@ const getFlowId = computed(() => {
 });
 
 const activeTab = ref('mcd')
+const isChangingTab = ref(false)
 
-const getMCD = () => {
-
-  console.log(mcdStore.flowMCD.nodes)
-}
 
 const currentFlow = computed(() => {
   if (activeTab.value === 'mcd') return mcdStore.flowMCD;
-  if (activeTab.value === 'mld') return {nodes: [], edges: []};
+  if (activeTab.value === 'mld') {
+    isChangingTab.value = true
+    mldStore.generateMLDTest()
+    isChangingTab.value = false
+    return mldStore.flowMLD;
+  }
   if (activeTab.value === 'mpd') return {nodes: [], edges: []};
   return mcdStore.flowMCD; // Default to MCD
 });
-
-const  generateMld = () => {
-
-  console.log(currentFlow.value)
-  console.log('generate mld')
-}
-const generateMpd = () => {
-
-  console.log('generate mpd')
-}
 
 </script>

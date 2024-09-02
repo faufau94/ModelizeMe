@@ -5,7 +5,6 @@ import { v4 as uuidv4 } from 'uuid';
 
 export const useMCDStore = defineStore('flow-mcd', () => {
 
-
     const flowMCD = ref(null)
 
     const isSubMenuVisible = ref(false)

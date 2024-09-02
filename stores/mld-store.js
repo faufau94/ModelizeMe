@@ -1,42 +1,131 @@
 import {computed, ref} from "vue";
 import {defineStore} from "pinia";
 import {getStraightPath, useVueFlow} from "@vue-flow/core";
+import { useMCDStore } from "./mcd-store.js";
+import { v4 as uuidv4 } from 'uuid';
 
 export const useMLDStore = defineStore('flow-mld', () => {
 
-    const flowMLD = useVueFlow('flow-mld')
+    const flowMLD = ref(null)
 
-    const generateMLD = () => {
-        const useMCDStore = useMCDStore()
+    function getIdNodeMLD() {
+        return `dndnode_${uuidv4() + '_' + uuidv4()}`
+    }
 
+    function getIdEdgeMLD() {
+        return `dndedge_${uuidv4()+ '_' + uuidv4()}`
+    }
 
-        let idNodeMLD = 0
-        let idEdgeMLD = 0
+    function setFlowInstance(instance) {
+        flowMLD.value = instance;  // Assigner l'instance de useVueFlow
+    }
 
-        const getIdNodeMLD = () => {
-            return `dndnode_MLD_${idNodeMLD++}`
-        }
-        const getIdEdgeMLD = () => {
-            return `dndedge_MLD_${idEdgeMLD++}`
-        }
+    function generateMLDTest() {
+        const mcdStore = useMCDStore();
+        const { flowMCD } = mcdStore;
 
+        // 1. Vider flowMLD
+        flowMLD.value.setNodes([]);
+        flowMLD.value.setEdges([]);
 
+        // 2. Boucle sur les edges de flowMCD
+        flowMCD.getEdges.forEach(edge => {
+            const edgeData = JSON.parse(JSON.stringify(edge.data));
+
+            const sourceCardinality = edgeData.sourceCardinality.split(',');
+            const targetCardinality = edgeData.targetCardinality.split(',');
+
+            const sourceNode = flowMCD.findNode(edge.source);
+            const targetNode = flowMCD.findNode(edge.target);
+
+            // 3. Gestion des relations 1:n et 1:1
+            if ((sourceCardinality[1] === '1' && targetCardinality[1] === 'n') ||
+                (sourceCardinality[1] === 'n' && targetCardinality[1] === '1') ||
+                (sourceCardinality[1] === '1' && targetCardinality[1] === '1')) {
+
+                const oneSideNode = sourceCardinality[1] === '1' ? sourceNode : targetNode;
+                const manySideNode = sourceCardinality[1] === 'n' ? sourceNode : targetNode;
+
+                // Ajouter la clé étrangère au nœud "1"
+                oneSideNode.data.properties.push({
+                    propertyName: `${manySideNode.data.name}`,
+                    typeName: 'Foreign Key',
+                });
+
+                // Vérifier et ajouter les nœuds dans flowMLD
+                if (!flowMLD.value.findNode(oneSideNode.id)) {
+                    flowMLD.value.addNodes(oneSideNode);
+                }
+                if (!flowMLD.value.findNode(manySideNode.id)) {
+                    flowMLD.value.addNodes(manySideNode);
+                }
+
+                // Ajouter l'edge dans flowMLD
+                flowMLD.value.addEdges(edge);
+            }
+
+            // 4. Gestion des relations n:n
+            if (sourceCardinality[1] === 'n' && targetCardinality[1] === 'n') {
+                const centerPosition = calculateCenterPosition(sourceNode, targetNode);
+                const associationNode = {
+                    id: `assoc_${sourceNode.id}_${targetNode.id}`,
+                    type: 'customEntityAssociation',
+                    position: centerPosition,
+                    data: {
+                        name: `${sourceNode.data.name}_${targetNode.data.name}`,
+                        properties: [
+                            { propertyName: `${sourceNode.data.name}_ID`, typeName: 'Foreign Key' },
+                            { propertyName: `${targetNode.data.name}_ID`, typeName: 'Foreign Key' },
+                        ],
+                    },
+                };
+
+                // Ajouter le nœud central dans flowMLD
+                flowMLD.value.addNodes(associationNode);
+
+                // Créer les edges pour relier le nœud central aux deux nœuds d'origine
+                const edge1 = {
+                    id: `edge_${sourceNode.id}_${associationNode.id}`,
+                    source: sourceNode.id,
+                    target: associationNode.id,
+                    data: { name: `${sourceNode.data.name} to ${associationNode.data.name}` },
+                };
+                const edge2 = {
+                    id: `edge_${associationNode.id}_${targetNode.id}`,
+                    source: associationNode.id,
+                    target: targetNode.id,
+                    data: { name: `${associationNode.data.name} to ${targetNode.data.name}` },
+                };
+
+                flowMLD.value.addEdges(edge1);
+                flowMLD.value.addEdges(edge2);
+            }
+        });
+
+        // 5. Vérification des nœuds existants dans flowMLD
+        // Cela a déjà été fait lors de l'ajout des nœuds dans la boucle ci-dessus
+    }
+
+    function generateMLD () {
+        const mcdStore = useMCDStore()
+        const { flowMCD } = mcdStore
 
         // 1. vider flowMLD
-        // 2. faire un boucle des edge de useMCDStore.flowMCD
+        // 2. faire une boucle des edges de flowMCD
         // 3. pour chaque edge, vérifier si le cardinalité est x,1 - x,n et ajouter la clé étrangère au noeud x,1
         // 4. si cardinalité est x,1 - x,1, ajouter la clé étrangère au noeud x,1
         // 5. si cardinalité est x,n - x,n, ajouter un noeud central avec les clés primaires des deux noeuds
-        // 6. ajouter les noeuds et les edges dans flowMLD
+        // 6. vérifier si un noeud ou un edge existe déjà dans flowMLD, si oui, ne pas l'ajouter
+        // 7. ajouter les noeuds et les edges dans flowMLD
 
-        flowMLD.removeNodes(flowMLD.nodes.value, true)
+        flowMLD.value.removeNodes(flowMLD.value.nodes.value, true)
 
-        useMCDStore.flowMCD.getEdges.value.forEach(edge => {
+        flowMCD.getEdges.forEach(edge => {
             let edgeDatas = JSON.parse(JSON.stringify(edge.data))
 
             // First case : x,1 - x,n and second case : x,1 - x,1
-            let getSecondElementSource = edgeDatas.data.sourceCardinality.split(',')[1]
-            let getSecondElementTarget = edgeDatas.data.targetCardinality.split(',')[1]
+            let getSecondElementSource = edgeDatas.sourceCardinality.split(',')[1]
+            let getSecondElementTarget = edgeDatas.targetCardinality.split(',')[1]
 
             let extractedSecondElement = [getSecondElementSource, getSecondElementTarget]
 
@@ -48,7 +137,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
 
                 if (extractedSecondElement.includes('1') && extractedSecondElement.includes('n')) {
                     // get node (source or target) which have 1,1 to add foreign key
-                    if (edgeDatas.data.sourceCardinality.split(',')[1] === '1') {
+                    if (edgeDatas.sourceCardinality.split(',')[1] === '1') {
                         getIdFirstNode = edge.source
                         getIdSecondNode = edge.target
                     } else {
@@ -64,13 +153,13 @@ export const useMLDStore = defineStore('flow-mld', () => {
 
 
                 // check is node already exists in MLD
-                let firstNode = JSON.parse(JSON.stringify(flowMLD.findNode(getIdFirstNode) === undefined ?
-                    useMCDStore.flowMCD.findNode(getIdFirstNode) :
-                    flowMLD.findNode(getIdFirstNode)))
+                let firstNode = JSON.parse(JSON.stringify(flowMLD.value.findNode(getIdFirstNode) === undefined ?
+                    flowMCD.findNode(getIdFirstNode) :
+                    flowMLD.value.findNode(getIdFirstNode)))
 
-                let secondNode = JSON.parse(JSON.stringify(flowMLD.findNode(getIdSecondNode) === undefined ?
-                    useMCDStore.flowMCD.findNode(getIdSecondNode) :
-                    flowMLD.findNode(getIdSecondNode)))
+                let secondNode = JSON.parse(JSON.stringify(flowMLD.value.findNode(getIdSecondNode) === undefined ?
+                    flowMCD.findNode(getIdSecondNode) :
+                    flowMLD.value.findNode(getIdSecondNode)))
 
                 // add foreign key
                 firstNode.data.properties = [
@@ -91,12 +180,12 @@ export const useMLDStore = defineStore('flow-mld', () => {
                 secondNode.data.properties = secondNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
 
                 let newNodesList = [
-                    ...flowMLD.nodes.value,
+                    ...flowMLD.value.getNodes,
                     firstNode,
                     secondNode
                 ]
 
-                flowMLD.setNodes(newNodesList)
+                flowMLD.value.setNodes(newNodesList)
 
             } else if (extractedSecondElement[0] === 'n' && extractedSecondElement[1] === 'n') {
                 //Third case : x,n - x,n
@@ -105,8 +194,8 @@ export const useMLDStore = defineStore('flow-mld', () => {
                 getIdFirstNode = edge.source
                 getIdSecondNode = edge.target
 
-                let firstNode = JSON.parse(JSON.stringify(useMCDStore.flowMCD.findNode(getIdFirstNode)))
-                let secondNode = JSON.parse(JSON.stringify(useMCDStore.flowMCD.findNode(getIdSecondNode)))
+                let firstNode = JSON.parse(JSON.stringify(flowMCD.findNode(getIdFirstNode)))
+                let secondNode = JSON.parse(JSON.stringify(flowMCD.findNode(getIdSecondNode)))
 
 
                 // get center edge with the two nodes (for adding the central node)
@@ -118,7 +207,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         targetY: edge.targetNode.y,
                     }),
                 )
-                //let position = flowMLD.project({x: centerEdge.value[0], y: centerEdge.value[1]})
+                //let position = flowMLD.value.project({x: centerEdge.value[0], y: centerEdge.value[1]})
 
                 // create new node with primaries keys
                 /*
@@ -172,18 +261,18 @@ export const useMLDStore = defineStore('flow-mld', () => {
                 newNode.data.properties = newNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
 
                 let newNodesList = [
-                    ...flowMLD.nodes.value,
+                    ...flowMLD.value.getNodes,
                     firstNode,
                     secondNode,
                     newNode,
                 ]
 
-                flowMLD.setNodes(newNodesList)
+                flowMLD.value.setNodes(newNodesList)
 
                 // create two edge : one between firstnode and newNode, the second between newnode and secondnode
 
                 const calculateHandlesNewNode =
-                    determineHandles(useMCDStore.flowMCD.findNode(edge.source), useMCDStore.flowMCD.findNode(edge.target), newNode);
+                    determineHandles(flowMCD.findNode(edge.source), flowMCD.findNode(edge.target), newNode);
 
 
                 let newEdge1 = {
@@ -228,7 +317,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         properties: []
                     }
                 }
-                flowMLD.addEdges([newEdge1, newEdge2])
+                flowMLD.value.addEdges([newEdge1, newEdge2])
 
 
 
@@ -246,7 +335,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                   label: edgeCopy.data.name
                 }
                 let newEdgesList = [
-                  ...flowMLD.edges.value,
+                  ...flowMLD.value.edges.value,
                   edgeCopy
                 ]
 
@@ -254,7 +343,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                 let edgeCopy = JSON.parse(JSON.stringify(edge))
                 edgeCopy.data.sourceCardinality = ''
                 edgeCopy.data.targetCardinality = ''
-                flowMLD.setEdges(edgeCopy)
+                flowMLD.value.addEdges(edgeCopy)
             }
 
 
@@ -265,6 +354,8 @@ export const useMLDStore = defineStore('flow-mld', () => {
 
     return {
         flowMLD,
-        generateMLD
+        generateMLD,
+        generateMLDTest,
+        setFlowInstance
     }
 })
