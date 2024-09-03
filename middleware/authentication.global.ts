@@ -3,7 +3,7 @@ export default defineNuxtRouteMiddleware((to) => {
 
     // Return immediately if user is already authenticated
     if (status.value === 'authenticated' && to.path === '/') {
-        return navigateTo('/app/dashboard')
+        return navigateTo('/app')
     }
 
     if(status.value === 'unauthenticated' && to.path.startsWith('/app')) {

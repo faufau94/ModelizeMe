@@ -15,6 +15,7 @@
         @drop="(e) => onDrop(e, route.params.idModel)"
         @nodes-change="onChange"
         @edges-change="onChange"
+        @edge-update="onEdgeUpdate"
         fit-view-on-init
     >
       <MiniMap/>
@@ -374,6 +375,11 @@ const onChange = (changes) => {
   }
 }
 
+const onEdgeUpdate = async ({ edge, connection }) => {
+  mcdStore.flowMCD.updateEdge(edge, connection, false)
+  await mcdStore.updateEdge(route.params.idModel, edge.id)
+}
+
 
 const renameModel = async () => {
   isRenamingModel.value = true
@@ -392,7 +398,7 @@ const renameModel = async () => {
 
 const goBack = async() => {
   isSubMenuVisible.value = false
-  await navigateTo('/app/dashboard')
+  await navigateTo('/app')
 }
 
 // Tabs

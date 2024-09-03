@@ -46,7 +46,7 @@ const signUp = async () => {
     }, 5000)
       //message.value = {text: "", type: ""}
 
-    const userLogged = await signIn('credentials',{email: signUpUserInfo.value.email, password: signUpUserInfo.value.password, callbackUrl: '/app/dashboard'})
+    const userLogged = await signIn('credentials',{email: signUpUserInfo.value.email, password: signUpUserInfo.value.password, callbackUrl: '/app'})
 
     if(userLogged) {
       await router.push({path: "/"})
@@ -175,7 +175,7 @@ const filteredProviders = computed(() => {
               S'inscrire
             </Button>
             <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id"
-                    @click="signIn(provider?.id, { callbackUrl: '/app/dashboard' })">
+                    @click="signIn(provider?.id, { callbackUrl: '/app' })">
               Se connecter avec {{ provider?.name }}
             </Button>
           </div>
