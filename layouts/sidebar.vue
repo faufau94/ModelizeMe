@@ -41,7 +41,6 @@
                 to="/app/code-generator"
                 class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
                 :class="[route.path === '/app/code-generator' ? 'text-primary bg-muted': 'text-muted-foreground']"
-
             >
               <CodeXml class="h-4 w-4" />
               Générateur de code
