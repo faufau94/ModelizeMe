@@ -1,6 +1,6 @@
 <template>
 
-  <div class="w-full max-w-6xl mx-auto px-4 py-8">
+  <div class="w-full max-w-6xl mx-auto px-4 py-8 relative h-screen">
     <Form
         v-slot="{ meta, values, validate }"
     >
@@ -37,12 +37,13 @@
                     :disabled="state !== 'completed' && !meta.valid"
                 >
                   <Check v-if="state === 'completed'" class="size-5"/>
-                  <Circle v-if="state === 'active'"/>
-                  <Dot v-if="state === 'inactive'"/>
+                  <div>
+                    {{ step.step }}
+                  </div>
                 </Button>
               </StepperTrigger>
 
-              <div class="mt-5 flex flex-col items-center text-center">
+              <div class="mt-3 flex flex-col items-center text-center">
                 <StepperTitle
                     :class="[state === 'active' && 'text-primary']"
                     class="text-sm font-semibold transition lg:text-base"
@@ -83,25 +84,7 @@
             </template>
 
             <template v-if="stepIndex === 2">
-              <FormField v-slot="{ componentField }" name="password">
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" v-bind="componentField"/>
-                  </FormControl>
-                  <FormMessage/>
-                </FormItem>
-              </FormField>
-
-              <FormField v-slot="{ componentField }" name="confirmPassword">
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" v-bind="componentField"/>
-                  </FormControl>
-                  <FormMessage/>
-                </FormItem>
-              </FormField>
+              <ListItem />
             </template>
 
             <template v-if="stepIndex === 3">
@@ -133,22 +116,54 @@
                 </FormItem>
               </FormField>
             </template>
+
+
+            <template v-if="stepIndex === 4">
+              <FormField v-slot="{ componentField }" name="favoriteDrink">
+                <FormItem>
+                  <FormLabel>Drink</FormLabel>
+
+                  <Select v-bind="componentField">
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a drink"/>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="coffee">
+                          Coffe
+                        </SelectItem>
+                        <SelectItem value="tea">
+                          Tea
+                        </SelectItem>
+                        <SelectItem value="soda">
+                          Soda
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage/>
+                </FormItem>
+              </FormField>
+            </template>
           </div>
 
-          <div class="flex items-center justify-between mt-4">
+          <div class="absolute bottom-20 right-0 flex items-center justify-between mt-auto space-x-5">
             <Button :disabled="isPrevDisabled" variant="outline" size="sm" @click="prevStep()">
-              Back
+              Précédent
             </Button>
             <div class="flex items-center gap-3">
-              <Button v-if="stepIndex !== 3" :type="meta.valid ? 'button' : 'submit'" :disabled="isNextDisabled"
+              <Button v-if="stepIndex !== 4" :type="meta.valid ? 'button' : 'submit'" :disabled="isNextDisabled"
                       size="sm"
                       @click="meta.valid && nextStep()">
-                Next
+                Suivant
               </Button>
               <Button
-                  v-if="stepIndex === 3" size="sm" type="submit"
+                  v-if="stepIndex === 4" size="sm" type="submit"
               >
-                Submit
+                <CirclePlay class="w-5 h-5 mr-2" />
+                Générer
               </Button>
             </div>
           </div>
@@ -163,7 +178,7 @@ definePageMeta({
   layout: 'sidebar',
 });
 
-import {Check, Circle, Dot} from 'lucide-vue-next'
+import {Check, Circle, Dot, CirclePlay} from 'lucide-vue-next'
 
 import {h, ref} from 'vue'
 import {
@@ -181,24 +196,66 @@ import {Button} from '@/components/ui/button'
 import {toast} from '@/components/ui/toast'
 
 
+import ListItem from '@/components/code-generator/ListItem'
+
+
 const stepIndex = ref(1)
 const steps = [
   {
     step: 1,
-    title: 'Your details',
-    description: 'Provide your name and email',
+    title: 'Créer votre projet',
+    description: 'Infos principales',
   },
   {
     step: 2,
-    title: 'Your password',
-    description: 'Choose a password',
+    title: 'Choisir le framework',
+    description: 'Sélection du framework',
+    options: [
+      { name: 'Django', value: 'django' },
+      { name: 'Laravel', value: 'laravel' },
+      { name: 'Vite', value: 'vite' },
+      { name: 'Next.js', value: 'next' },
+      { name: 'Nuxt.js', value: 'nuxt' },
+      { name: 'Symfony', value: 'symfony' },
+    ],
   },
   {
     step: 3,
-    title: 'Your Favorite Drink',
-    description: 'Choose a drink',
+    title: 'Base de données',
+    description: 'Choix de la base',
+    options: [
+      { name: 'PostgreSQL', value: 'postgres' },
+      { name: 'MySQL', value: 'mysql' },
+      { name: 'SQLite', value: 'sqlite' },
+    ],
   },
-]
+  {
+    step: 4,
+    title: 'Choix de l\'ORM',
+    description: 'Gestion des données',
+    options: (framework) => {
+      switch (framework) {
+        case 'django':
+          return [{ name: 'SQLAlchemy', value: 'sqlalchemy' }];
+        case 'laravel':
+          return [{ name: 'Eloquent', value: 'eloquent' }];
+        case 'vite':
+        case 'next':
+        case 'nuxt':
+          return [
+            { name: 'Prisma', value: 'prisma' },
+            { name: 'TypeORM', value: 'typeorm' },
+          ];
+        case 'symfony':
+          return [{ name: 'Doctrine', value: 'doctrine' }];
+        default:
+          return [];
+      }
+    },
+  },
+];
+
+
 
 function onSubmit(values) {
   toast({
