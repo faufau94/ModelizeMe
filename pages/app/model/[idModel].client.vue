@@ -340,7 +340,7 @@ const renameModel = async () => {
 
 const goBack = async() => {
   isSubMenuVisible.value = false
-  await navigateTo('/app/dashboard')
+  await navigateTo('/app')
 }
 
 </script>

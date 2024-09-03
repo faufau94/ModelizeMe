@@ -22,7 +22,7 @@ const onSubmit = async () => {
   const res = await signIn('credentials', {
     email: logUserInfo.value.email,
     password: logUserInfo.value.password,
-    callbackUrl: '/app/dashboard'
+    callbackUrl: '/app'
   })
 
 }
