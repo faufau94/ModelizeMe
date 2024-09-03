@@ -109,7 +109,7 @@
         </div>
       </div>
     </div>
-    <div class="flex flex-col p-4">
+    <div class="flex flex-col">
       <div class="flex px-4 justify-between items-center">
         <NuxtLink to="/" class="flex items-center gap-2 font-semibold md:hidden">
           <!--

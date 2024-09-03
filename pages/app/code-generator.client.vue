@@ -149,7 +149,7 @@
             </template>
           </div>
 
-          <div class="absolute bottom-20 right-0 flex items-center justify-between mt-auto space-x-5">
+          <div class="absolute bottom-10 right-0 flex items-center justify-between mt-auto space-x-5">
             <Button :disabled="isPrevDisabled" variant="outline" size="sm" @click="prevStep()">
               Précédent
             </Button>
