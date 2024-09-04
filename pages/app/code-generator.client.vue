@@ -60,11 +60,34 @@
             </StepperItem>
           </div>
 
-          <div class="flex flex-col gap-4 mt-4">
+          <div class="flex flex-col gap-4 mt-4 px-7">
             <template v-if="stepIndex === 1">
-              <FormField v-slot="{ componentField }" name="fullName">
+              <div class="w-2/6 mx-auto mt-20 space-y-6">
+
+                <FormField v-slot="{ componentField }" name="model">
+                  <FormItem>
+                    <FormLabel>Modèle</FormLabel>
+
+                    <Select v-bind="componentField">
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selectionner un modèle" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem :value="model.id" v-for="model in models">
+                            {{ model.name }}
+                          </SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                </FormField>
+
+                <FormField v-slot="{ componentField }" name="name">
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>Nom du projet</FormLabel>
                   <FormControl>
                     <Input type="text" v-bind="componentField"/>
                   </FormControl>
@@ -72,15 +95,17 @@
                 </FormItem>
               </FormField>
 
-              <FormField v-slot="{ componentField }" name="email">
+              <FormField v-slot="{ componentField }" name="desc">
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input type="email" v-bind="componentField"/>
+                    <Textarea id="message" placeholder="Informations sur le projet" v-bind="componentField" />
                   </FormControl>
                   <FormMessage/>
                 </FormItem>
               </FormField>
+              </div>
+
             </template>
 
             <template v-if="stepIndex === 2">
@@ -99,7 +124,7 @@
 
           </div>
 
-          <div class="absolute bottom-10 right-0 flex items-center justify-between mt-auto space-x-5">
+          <div class="flex items-center justify-end mt-10 space-x-5 px-7">
             <Button :disabled="isPrevDisabled" variant="outline" size="sm" @click="prevStep()">
               Précédent
             </Button>
@@ -127,6 +152,7 @@
 import {useCodeGeneratorStore} from "@/stores/code-generator-store.js";
 import {storeToRefs} from "pinia";
 import {Check, CirclePlay} from 'lucide-vue-next'
+import { Textarea } from '@/components/ui/textarea'
 
 import {h} from 'vue'
 import {
@@ -141,9 +167,9 @@ import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/
 import {Input} from '@/components/ui/input'
 import {Button} from '@/components/ui/button'
 import {toast} from '@/components/ui/toast'
-
-
 import ListItem from '@/components/code-generator/ListItem'
+import prisma from '~/lib/prisma';
+
 
 definePageMeta({
   layout: 'sidebar',
@@ -152,7 +178,13 @@ definePageMeta({
 const codeGeneratorStore = useCodeGeneratorStore()
 const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
 
+const models = ref(null)
 
+onMounted(async () => {
+
+
+  models.value = await $fetch('/api/models/list', {method: 'GET'});
+})
 
 
 function onSubmit(values) {

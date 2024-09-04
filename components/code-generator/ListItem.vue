@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6">
+  <div class="py-6">
     <div class="max-w-6xl">
       <h2 class="text-xl mb-6 font-semibold">Sélectionnez une option</h2>
       <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
