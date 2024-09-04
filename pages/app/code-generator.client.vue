@@ -37,7 +37,7 @@
                     :disabled="state !== 'completed' && !meta.valid"
                 >
                   <Check v-if="state === 'completed'" class="size-5"/>
-                  <div>
+                  <div v-else>
                     {{ step.step }}
                   </div>
                 </Button>
@@ -84,69 +84,19 @@
             </template>
 
             <template v-if="stepIndex === 2">
-              <ListItem />
+              <ListItem :step-datas="steps.find(step => step.step === stepIndex)"/>
             </template>
 
             <template v-if="stepIndex === 3">
-              <FormField v-slot="{ componentField }" name="favoriteDrink">
-                <FormItem>
-                  <FormLabel>Drink</FormLabel>
-
-                  <Select v-bind="componentField">
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a drink"/>
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="coffee">
-                          Coffe
-                        </SelectItem>
-                        <SelectItem value="tea">
-                          Tea
-                        </SelectItem>
-                        <SelectItem value="soda">
-                          Soda
-                        </SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage/>
-                </FormItem>
-              </FormField>
+              <ListItem :step-datas="{ ...steps.find(step => step.step === stepIndex), options: steps[2].options(datas.framework) }"/>
             </template>
-
 
             <template v-if="stepIndex === 4">
-              <FormField v-slot="{ componentField }" name="favoriteDrink">
-                <FormItem>
-                  <FormLabel>Drink</FormLabel>
-
-                  <Select v-bind="componentField">
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a drink"/>
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="coffee">
-                          Coffe
-                        </SelectItem>
-                        <SelectItem value="tea">
-                          Tea
-                        </SelectItem>
-                        <SelectItem value="soda">
-                          Soda
-                        </SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage/>
-                </FormItem>
-              </FormField>
+              <ListItem :step-datas="steps.find(step => step.step === stepIndex)"/>
             </template>
+
+
+
           </div>
 
           <div class="absolute bottom-10 right-0 flex items-center justify-between mt-auto space-x-5">
@@ -162,7 +112,7 @@
               <Button
                   v-if="stepIndex === 4" size="sm" type="submit"
               >
-                <CirclePlay class="w-5 h-5 mr-2" />
+                <CirclePlay class="w-5 h-5 mr-2"/>
                 Générer
               </Button>
             </div>
@@ -174,13 +124,11 @@
 </template>
 
 <script setup>
-definePageMeta({
-  layout: 'sidebar',
-});
+import {useCodeGeneratorStore} from "@/stores/code-generator-store.js";
+import {storeToRefs} from "pinia";
+import {Check, CirclePlay} from 'lucide-vue-next'
 
-import {Check, Circle, Dot, CirclePlay} from 'lucide-vue-next'
-
-import {h, ref} from 'vue'
+import {h} from 'vue'
 import {
   Stepper,
   StepperDescription,
@@ -190,7 +138,6 @@ import {
   StepperTrigger
 } from '@/components/ui/stepper'
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form'
-import {Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select'
 import {Input} from '@/components/ui/input'
 import {Button} from '@/components/ui/button'
 import {toast} from '@/components/ui/toast'
@@ -198,62 +145,13 @@ import {toast} from '@/components/ui/toast'
 
 import ListItem from '@/components/code-generator/ListItem'
 
+definePageMeta({
+  layout: 'sidebar',
+});
 
-const stepIndex = ref(1)
-const steps = [
-  {
-    step: 1,
-    title: 'Créer votre projet',
-    description: 'Infos principales',
-  },
-  {
-    step: 2,
-    title: 'Choisir le framework',
-    description: 'Sélection du framework',
-    options: [
-      { name: 'Django', value: 'django' },
-      { name: 'Laravel', value: 'laravel' },
-      { name: 'Vite', value: 'vite' },
-      { name: 'Next.js', value: 'next' },
-      { name: 'Nuxt.js', value: 'nuxt' },
-      { name: 'Symfony', value: 'symfony' },
-    ],
-  },
-  {
-    step: 3,
-    title: 'Base de données',
-    description: 'Choix de la base',
-    options: [
-      { name: 'PostgreSQL', value: 'postgres' },
-      { name: 'MySQL', value: 'mysql' },
-      { name: 'SQLite', value: 'sqlite' },
-    ],
-  },
-  {
-    step: 4,
-    title: 'Choix de l\'ORM',
-    description: 'Gestion des données',
-    options: (framework) => {
-      switch (framework) {
-        case 'django':
-          return [{ name: 'SQLAlchemy', value: 'sqlalchemy' }];
-        case 'laravel':
-          return [{ name: 'Eloquent', value: 'eloquent' }];
-        case 'vite':
-        case 'next':
-        case 'nuxt':
-          return [
-            { name: 'Prisma', value: 'prisma' },
-            { name: 'TypeORM', value: 'typeorm' },
-          ];
-        case 'symfony':
-          return [{ name: 'Doctrine', value: 'doctrine' }];
-        default:
-          return [];
-      }
-    },
-  },
-];
+const codeGeneratorStore = useCodeGeneratorStore()
+const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
+
 
 
 
