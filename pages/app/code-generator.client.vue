@@ -181,8 +181,6 @@ const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
 const models = ref(null)
 
 onMounted(async () => {
-
-
   models.value = await $fetch('/api/models/list', {method: 'GET'});
 })
 
