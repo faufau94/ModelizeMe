@@ -52,8 +52,9 @@
               Equipe
             </NuxtLink>
             <NuxtLink
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary"
+                to="/app/galery"
+                class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
+                :class="[route.path === '/app/galery' ? 'text-primary bg-muted': 'text-muted-foreground']"
             >
               <GalleryHorizontalEnd class="h-4 w-4" />
               Galerie
@@ -63,7 +64,7 @@
                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary"
             >
               <Bolt class="h-4 w-4" />
-              Paramètre
+              Paramètres
             </NuxtLink>
           </nav>
         </div>
@@ -168,8 +169,9 @@
                 Equipe
               </NuxtLink>
               <NuxtLink
-                  href="#"
-                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
+                  to="/app/galery"
+                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 hover:text-foreground"
+                  :class="[route.path === '/app/galery' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <GalleryHorizontalEnd class="h-5 w-5" />
                 Galerie
@@ -179,7 +181,7 @@
                   class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
               >
                 <Bolt class="h-5 w-5" />
-                Paramètre
+                Paramètres
               </NuxtLink>
             </nav>
             <div class="mt-auto space-y-6">
