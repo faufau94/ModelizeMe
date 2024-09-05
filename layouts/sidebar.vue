@@ -45,8 +45,9 @@
               Générateur de code
             </NuxtLink>
             <NuxtLink
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary"
+                to="/app/team"
+                class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
+                :class="[route.path === '/app/team' ? 'text-primary bg-muted': 'text-muted-foreground']"
             >
               <Users class="h-4 w-4" />
               Equipe
@@ -161,8 +162,9 @@
                 Générateur de code
               </NuxtLink>
               <NuxtLink
-                  href="#"
+                  to="/app/team"
                   class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
+                  :class="[route.path === '/app/team' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <Users class="h-5 w-5" />
                 Equipe
