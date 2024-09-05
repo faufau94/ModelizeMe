@@ -8,8 +8,11 @@
 
         <h2 class="text-md font-bold mb-4">Categories</h2>
         <div class="grid gap-4">
-          <Label class="flex items-center gap-2 font-normal" v-for="category in categories">
-            <Checkbox v-model="selectedCategories[category.value]"/>
+          <Label class="flex items-center gap-2 font-normal" v-for="(category, index) in categories" :key="index">
+            <Checkbox
+                :checked="isCategorySelected(category.value)"
+                @update:checked="toggleCategory(category.value, $event)"
+            />
             {{ category.name }}
           </Label>
         </div>
@@ -96,11 +99,31 @@ const filteredModels = computed(() => {
     if (selectedCategories.value.length > 0 && !selectedCategories.value.includes(item.category)) {
       return false
     }
-    if (searchTerm.value.trim() !== "" && !item.title.toLowerCase().includes(searchTerm.value.toLowerCase())) {
+    if (searchTerm.value.trim() !== "" && !item.name.toLowerCase().includes(searchTerm.value.toLowerCase())) {
       return false
     }
     return true
   })
 })
+
+// Fonction pour vérifier si la catégorie est déjà sélectionnée
+const isCategorySelected = (categoryValue) => {
+  return selectedCategories.value.includes(categoryValue)
+}
+
+// Fonction pour ajouter ou retirer la catégorie dans le tableau
+const toggleCategory = (categoryValue, isChecked) => {
+  if (isChecked) {
+    // Ajouter la catégorie si elle est cochée
+    if (!selectedCategories.value.includes(categoryValue)) {
+      selectedCategories.value.push(categoryValue)
+    }
+  } else {
+    // Retirer la catégorie si elle est décochée
+    selectedCategories.value = selectedCategories.value.filter(
+        (c) => c !== categoryValue
+    )
+  }
+}
 
 </script>
