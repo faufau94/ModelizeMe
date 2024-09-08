@@ -19,7 +19,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     "nuxt-lucide-icons",
     'dayjs-nuxt',
-    '@vee-validate/nuxt'
+    '@vee-validate/nuxt',
   ],
 
   vite: {

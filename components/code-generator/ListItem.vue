@@ -2,53 +2,59 @@
   <div class="py-6">
     <div class="max-w-6xl">
       <h2 class="text-xl mb-6 font-semibold">Sélectionnez une option</h2>
-      <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        <div
-            class="border rounded-xl relative"
-            :class="[
-                { ['border-black bg-gray-50']: isSelected(item.value) },
-                item.hasOwnProperty('comingSoon') && item.comingSoon ? 'opacity-55 cursor-default pointer-events-none' : 'cursor-pointer hover:bg-gray-50 transition-all duration-150'] "
-            v-for="item in stepDatas.options" :key="item.id"
-            @click="selectOption(item.value)"
-        >
-          <div class="p-4">
-            <div class="flex items-start gap-x-4">
-              <Avatar class="h-14 w-14 bg-white border shadow-sm">
-                <AvatarImage class="p-2" :src="`/logos/${item.logoName}.svg`" alt="@radix-vue" />
-                <AvatarFallback>{{ item.logoName.charAt(0) }}</AvatarFallback>
-              </Avatar>
 
+      <!-- RadioGroup pour sélectionner l'option -->
+        <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 ">
+          <div
+              class="border rounded-xl relative"
+              :class="[
+                  { ['border-black bg-gray-50']: isSelected(item.value) },
+                  item.hasOwnProperty('comingSoon') && item.comingSoon ? 'opacity-55 cursor-default pointer-events-none' : 'cursor-pointer hover:bg-gray-50 transition-all duration-150'] "
+              v-for="item in stepDatas?.options"
+              :key="item.id"
+          >
+            <div class="p-4">
+              <div class="flex items-start gap-x-4">
+                <Label :for="item.value" class="ml-2">
+                  <Avatar class="h-14 w-14 bg-white border shadow-sm">
+                    <AvatarImage class="p-2" :src="`/logos/${item.logoName}.svg`" alt="@radix-vue" />
+                    <AvatarFallback>{{ item.logoName.charAt(0) }}</AvatarFallback>
+                  </Avatar>
 
-              <div>
-                <div class="flex gap-x-4">
-                  <h1 class="text-md font-semibold">
-                    {{ item.name }}
-                  </h1>
-                  <Badge variant="secondary" v-if="item.hasOwnProperty('comingSoon') && item.comingSoon">À venir...</Badge>
-                </div>
-                <p class="text-gray-600 text-sm mt-2">{{ item.description }}</p>
+                  <div>
+                    <div class="flex gap-x-4">
+                      <h1 class="text-md font-semibold">
+                        {{ item.name }}
+                      </h1>
+                      <Badge variant="secondary" v-if="item.hasOwnProperty('comingSoon') && item.comingSoon">À venir...</Badge>
+                    </div>
+                    <p class="text-gray-600 text-sm mt-2">{{ item.description }}</p>
+                  </div>
+                </Label>
               </div>
             </div>
           </div>
         </div>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import {ref} from 'vue'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {Badge} from '@/components/ui/badge'
+import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar'
+import {Label} from '@/components/ui/label'
+import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group'
 import {useCodeGeneratorStore} from "@/stores/code-generator-store.js";
 
 defineProps({
   stepDatas: Object,
 })
 
-
 const codeGeneratorStore = useCodeGeneratorStore()
 const {stepIndex, datas} = storeToRefs(codeGeneratorStore)
+
+const selectedOption = ref(null)
 
 // Vérifier si l'option est sélectionnée
 const isSelected = (value) => {
@@ -79,6 +85,7 @@ const selectOption = (value) => {
     default:
       break
   }
+  selectedOption.value = value
 }
 </script>
 

@@ -3,6 +3,7 @@
   <div class="w-full max-w-6xl mx-auto px-4 py-8 relative h-screen">
     <Form
         v-slot="{ meta, values, validate }"
+        as="" keep-values :validation-schema="toTypedSchema(formSchema[stepIndex - 1])"
     >
       <Stepper v-slot="{ isNextDisabled, isPrevDisabled, nextStep, prevStep }" v-model="stepIndex" class="block w-full">
         <form
@@ -66,7 +67,7 @@
 
                 <FormField v-slot="{ componentField }" name="model">
                   <FormItem>
-                    <FormLabel>Modèle</FormLabel>
+                    <FormLabel>Modèle *</FormLabel>
 
                     <Select v-bind="componentField">
                       <FormControl>
@@ -76,32 +77,33 @@
                       </FormControl>
                       <SelectContent>
                         <SelectGroup>
-                          <SelectItem :value="model.id" v-for="model in models">
+                          <SelectItem :value="model.id.toString()" v-for="model in models">
                             {{ model.name }}
                           </SelectItem>
                         </SelectGroup>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
                   </FormItem>
                 </FormField>
 
                 <FormField v-slot="{ componentField }" name="name">
                 <FormItem>
-                  <FormLabel>Nom du projet</FormLabel>
+                  <FormLabel>Nom du projet *</FormLabel>
                   <FormControl>
                     <Input type="text" v-bind="componentField"/>
                   </FormControl>
-                  <FormMessage/>
+                  <FormMessage />
                 </FormItem>
               </FormField>
 
-              <FormField v-slot="{ componentField }" name="desc">
+              <FormField v-slot="{ componentField }" name="description">
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea id="message" placeholder="Informations sur le projet" v-bind="componentField" />
                   </FormControl>
-                  <FormMessage/>
+                  <FormMessage />
                 </FormItem>
               </FormField>
               </div>
@@ -153,6 +155,10 @@ import {useCodeGeneratorStore} from "@/stores/code-generator-store.js";
 import {storeToRefs} from "pinia";
 import {Check, CirclePlay} from 'lucide-vue-next'
 import { Textarea } from '@/components/ui/textarea'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+
+import { toTypedSchema } from '@vee-validate/zod';
+import * as z from 'zod';
 
 import {h} from 'vue'
 import {
@@ -168,8 +174,6 @@ import {Input} from '@/components/ui/input'
 import {Button} from '@/components/ui/button'
 import {toast} from '@/components/ui/toast'
 import ListItem from '@/components/code-generator/ListItem'
-import prisma from '~/lib/prisma';
-
 
 definePageMeta({
   layout: 'sidebar',
@@ -183,6 +187,48 @@ const models = ref(null)
 onMounted(async () => {
   models.value = await $fetch('/api/models/list', {method: 'GET'});
 })
+
+const itemSchema = z.object({
+  id: z.string(),
+  selected: z.boolean(),
+});
+
+const formSchema = [
+  z.object({
+    model: z.string({
+      required_error: "Veuillez séléctionner une option",
+    }),
+    name: z.string({
+      required_error: "Veuillez entrer un nom",
+      invalid_type_error: "Le nom doit être une chaine de caractères",
+    }).min(3,'Le nom doit être supérieur à 3 caractères'),
+  }),
+  z.array(itemSchema)
+    .refine((items) => items.some((item) => item.selected), {
+      message: "Vous devez sélectionner au moins un élément.",
+    }),
+]
+/*
+const formSchema = [
+  z.object({
+    name: z.string().min(1, 'Veuillez entrer un nom'),
+    description: z.string(),
+    model: z.string().refine((val) => val !== '', {
+      message: "Veuillez sélectionner une option",
+    }),
+  }),
+  z.object({
+    framework: z.string().min(1,'Veuillez sélectionner un framework'),
+  }),
+  z.object({
+    orm: z.string().nonempty('Veuillez sélectionner un ORM'),
+  }),
+  z.object({
+    database: z.string().nonempty('Veuillez sélectionner une base de données'),
+  })
+];
+*/
+
 
 
 function onSubmit(values) {

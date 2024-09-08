@@ -26,41 +26,47 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
                     name: 'Django',
                     value: 'django',
                     logoName: 'django',
-                    description: 'Framework web Python avec administration prête à l’emploi.'
+                    description: 'Framework web Python avec administration prête à l’emploi.',
+                    selected: false
                 },
                 {
                     name: 'Laravel',
                     value: 'laravel',
                     logoName: 'laravel',
-                    description: 'Framework PHP élégant pour le développement web rapide.'
+                    description: 'Framework PHP élégant pour le développement web rapide.',
+                    selected: false
                 },
                 {
                     name: 'Vite',
                     value: 'vite',
                     comingSoon: true,
                     logoName: 'vite',
-                    description: 'Outil de build rapide pour projets frontend modernes.'
+                    description: 'Outil de build rapide pour projets frontend modernes.',
+                    selected: false
                 },
                 {
                     name: 'Next.js',
                     value: 'next',
                     comingSoon: true,
                     logoName: 'next',
-                    description: 'Framework React avec rendu côté serveur.'
+                    description: 'Framework React avec rendu côté serveur.',
+                    selected: false
                 },
                 {
                     name: 'Nuxt.js',
                     value: 'nuxt',
                     comingSoon: true,
                     logoName: 'nuxt',
-                    description: 'Framework Vue.js pour applications universelles.'
+                    description: 'Framework Vue.js pour applications universelles.',
+                    selected: false
                 },
                 {
                     name: 'Symfony',
                     value: 'symfony',
                     comingSoon: true,
                     logoName: 'symfony',
-                    description: 'Framework PHP complet avec une vaste communauté.'
+                    description: 'Framework PHP complet avec une vaste communauté.',
+                    selected: false
                 },
             ],
         },
@@ -75,14 +81,16 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
                             name: 'SQLAlchemy',
                             value: 'sqlalchemy',
                             logoName: 'sqlalchemy',
-                            description: 'ORM puissant et flexible pour Python.'
+                            description: 'ORM puissant et flexible pour Python.',
+                            selected: false
                         }];
                     case 'laravel':
                         return [{
                             name: 'Eloquent',
                             value: 'eloquent',
                             logoName: 'laravel',
-                            description: 'ORM intuitif intégré à Laravel.'
+                            description: 'ORM intuitif intégré à Laravel.',
+                            selected: false
                         }];
                     case 'vite':
                     case 'next':
@@ -92,13 +100,15 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
                                 name: 'Prisma',
                                 value: 'prisma',
                                 logoName: 'prisma',
-                                description: 'ORM moderne pour Node.js et TypeScript.'
+                                description: 'ORM moderne pour Node.js et TypeScript.',
+                                selected: false
                             },
                             {
                                 name: 'TypeORM',
                                 value: 'typeorm',
                                 logoName: 'typeorm',
-                                description: 'ORM robuste pour TypeScript/JavaScript.'
+                                description: 'ORM robuste pour TypeScript/JavaScript.',
+                                selected: false
                             },
                         ];
                     case 'symfony':
@@ -106,7 +116,8 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
                             name: 'Doctrine',
                             value: 'doctrine',
                             logoName: 'doctrine',
-                            description: 'ORM robuste pour Symfony.'
+                            description: 'ORM robuste pour Symfony.',
+                            selected: false
                         }];
                     default:
                         return [];
@@ -122,15 +133,23 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
                     name: 'PostgreSQL',
                     value: 'postgres',
                     logoName: 'postgresql',
-                    description: 'Base de données relationnelle avancée.'
+                    description: 'Base de données relationnelle avancée.',
+                    selected: false
                 },
                 {
                     name: 'MySQL',
                     value: 'mysql',
                     logoName: 'mysql',
-                    description: 'Base de données open-source performante.'
+                    description: 'Base de données open-source performante.',
+                    selected: false
                 },
-                {name: 'SQLite', value: 'sqlite', logoName: 'sqlite', description: 'Base de données légère intégrée.'},
+                {
+                    name: 'SQLite',
+                    value: 'sqlite',
+                    logoName: 'sqlite',
+                    description: 'Base de données légère intégrée.',
+                    selected: false
+                },
             ],
         },
     ])
