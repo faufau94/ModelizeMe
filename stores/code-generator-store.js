@@ -7,6 +7,7 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
     const datas = ref({
         title: '',
         description: '',
+        modelId: '',
         framework: '',
         database: '',
         orm: '',
@@ -21,6 +22,7 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
             step: 2,
             title: 'Framework',
             description: '',
+            type: 'framework',
             options: [
                 {
                     name: 'Django',
@@ -74,6 +76,7 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
             step: 3,
             title: 'ORM',
             description: '',
+            type: 'orm',
             options: (framework) => {
                 switch (framework) {
                     case 'django':
@@ -128,6 +131,7 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
             step: 4,
             title: 'Base de données',
             description: '',
+            type: 'database',
             options: [
                 {
                     name: 'PostgreSQL',
