@@ -102,7 +102,7 @@ const filteredProviders = computed(() => {
               Se connecter
             </Button>
 
-            <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id" @click="async () => await signIn(provider?.id, { callbackUrl: '/app/dashboard' })">
+            <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id" @click="async () => await signIn(provider?.id, { callbackUrl: '/app' })">
               Se connecter avec {{ provider?.name }}
             </Button>
           </div>
