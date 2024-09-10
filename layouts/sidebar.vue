@@ -46,8 +46,9 @@
               Générateur de code
             </NuxtLink>
             <NuxtLink
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary"
+                to="/app/team"
+                class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
+                :class="[route.path === '/app/team' ? 'text-primary bg-muted': 'text-muted-foreground']"
             >
               <Users class="h-4 w-4" />
               Equipe
@@ -86,25 +87,25 @@
 
           <client-only>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="secondary" size="icon" class="rounded-full">
-                <CircleUser class="h-5 w-5" />
-                <span class="sr-only">Menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Paramètres</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
-                  Se déconnecter
-                </NuxtLink>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="secondary" size="icon" class="rounded-full">
+                  <CircleUser class="h-5 w-5" />
+                  <span class="sr-only">Menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Paramètres</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
+                    Se déconnecter
+                  </NuxtLink>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </client-only>
         </div>
       </div>
@@ -166,8 +167,9 @@
                 Générateur de code
               </NuxtLink>
               <NuxtLink
-                  href="#"
+                  to="/app/team"
                   class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
+                  :class="[route.path === '/app/team' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <Users class="h-5 w-5" />
                 Equipe
@@ -204,25 +206,25 @@
               </Card>
 
               <client-only>
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="secondary" size="icon" class="rounded-full">
-                    <CircleUser class="h-5 w-5" />
-                    <span class="sr-only">Menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Paramètres</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
-                      Se déconnecter
-                    </NuxtLink>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button variant="secondary" size="icon" class="rounded-full">
+                      <CircleUser class="h-5 w-5" />
+                      <span class="sr-only">Menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Paramètres</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
+                        Se déconnecter
+                      </NuxtLink>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </client-only>
             </div>
           </SheetContent>
