@@ -38,8 +38,9 @@
               Modèles
             </NuxtLink>
             <NuxtLink
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary"
+                to="/app/code-generator"
+                class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
+                :class="[route.path === '/app/code-generator' ? 'text-primary bg-muted': 'text-muted-foreground']"
             >
               <CodeXml class="h-4 w-4" />
               Générateur de code
@@ -84,31 +85,34 @@
             </CardContent>
           </Card>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger as-child>
-              <Button variant="secondary" size="icon" class="rounded-full">
-                <CircleUser class="h-5 w-5" />
-                <span class="sr-only">Menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Paramètres</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
-                  Se déconnecter
-                </NuxtLink>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <client-only>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button variant="secondary" size="icon" class="rounded-full">
+                  <CircleUser class="h-5 w-5" />
+                  <span class="sr-only">Menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Paramètres</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
+                    Se déconnecter
+                  </NuxtLink>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </client-only>
         </div>
       </div>
     </div>
-    <div class="flex flex-col p-4">
+    <div class="flex flex-col">
       <div class="flex px-4 justify-between items-center">
-        <NuxtLink to="/" class="flex items-center gap-2 font-semibold">
+        <NuxtLink to="/" class="flex items-center gap-2 font-semibold md:hidden">
           <!--
           <Package2 class="h-6 w-6" />
           -->
@@ -155,8 +159,9 @@
                 Modèles
               </NuxtLink>
               <NuxtLink
-                  href="#"
-                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
+                  to="/app/code-generator"
+                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 hover:text-foreground"
+                  :class="[route.path === '/app/code-generator' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <CodeXml class="h-5 w-5" />
                 Générateur de code
@@ -200,25 +205,27 @@
                 </CardContent>
               </Card>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="secondary" size="icon" class="rounded-full">
-                    <CircleUser class="h-5 w-5" />
-                    <span class="sr-only">Menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>Paramètres</DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
-                      Se déconnecter
-                    </NuxtLink>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <client-only>
+                <DropdownMenu>
+                  <DropdownMenuTrigger as-child>
+                    <Button variant="secondary" size="icon" class="rounded-full">
+                      <CircleUser class="h-5 w-5" />
+                      <span class="sr-only">Menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Paramètres</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
+                        Se déconnecter
+                      </NuxtLink>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </client-only>
             </div>
           </SheetContent>
         </Sheet>
@@ -230,7 +237,7 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup>
 import {computed, ref} from "vue";
 import {Bolt, CircleUser, CodeXml, GalleryHorizontalEnd, Gauge, Menu, Search, Ungroup, Users} from 'lucide-vue-next'
 
