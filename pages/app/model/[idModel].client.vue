@@ -418,10 +418,10 @@ watch(activeTab, () => {
   isChangingTab.value = true
   if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
   if (activeTab.value === 'mld') {
-    currentFlow.value = {nodes: [], edges: []};
+    mldStore.generateMLDTest()
+    currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};
-
   isChangingTab.value = false
 })
 

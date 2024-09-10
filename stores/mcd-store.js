@@ -254,5 +254,6 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         updateNode,
         updateEdge,
         removeEdge,
+        determineHandles
     }
 })
