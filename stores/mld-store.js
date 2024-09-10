@@ -213,7 +213,8 @@ export const useMLDStore = defineStore('flow-mld', () => {
             }
         });
 
-        console.log('flowMLD', flowMLD.value);
+        console.log('flowMLD nodes', flowMLD.value.getNodes);
+        console.log('flowMLD edges', flowMLD.value.getEdges);
     }
 
     function generateMLD () {

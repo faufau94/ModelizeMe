@@ -7,6 +7,9 @@ export const useMCDStore = defineStore('flow-mcd', () => {
 
     const flowMCD = ref(null)
 
+    const activeTab = ref('mcd')
+
+
     const isSubMenuVisible = ref(false)
     const elementsMenu = ref(false)
     const models = ref([])
@@ -235,6 +238,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
 
     return {
         flowMCD,
+        activeTab,
         isSubMenuVisible,
         elementsMenu,
         models,
