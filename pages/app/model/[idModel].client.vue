@@ -412,7 +412,20 @@ const getFlowId = computed(() => {
 const activeTab = ref('mcd')
 const isChangingTab = ref(false)
 
+const currentFlow = ref(null)
 
+watch(activeTab, () => {
+  isChangingTab.value = true
+  if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
+  if (activeTab.value === 'mld') {
+    currentFlow.value = {nodes: [], edges: []};
+  }
+  if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};
+
+  isChangingTab.value = false
+})
+
+/*
 const currentFlow = computed(() => {
   if (activeTab.value === 'mcd') return mcdStore.flowMCD;
   if (activeTab.value === 'mld') {
@@ -424,5 +437,5 @@ const currentFlow = computed(() => {
   if (activeTab.value === 'mpd') return {nodes: [], edges: []};
   return mcdStore.flowMCD; // Default to MCD
 });
-
+*/
 </script>
