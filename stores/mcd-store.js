@@ -22,6 +22,8 @@ export const useMCDStore = defineStore('flow-mcd', () => {
     const edgeTypes = ref(['smoothstep', 'straight', 'step', 'curve'])
     const edgeType = ref('straight')
 
+    const foreignObjectHeight = ref(100);
+
     function getIdNode() {
         return `dndnode_${uuidv4() + '_' + uuidv4()}`
     }
@@ -49,7 +51,8 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                     {
                         propertyName: "id",
                         typeName: "Big Increment",
-                        isPrimaryKey: true
+                        isPrimaryKey: true,
+                        isForeignKey: false,
                     },
                 ]
             }
@@ -249,6 +252,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         getIdEdge,
         edgeType,
         edgeTypes,
+        foreignObjectHeight,
         edgeIdSelected,
         addAssociation,
         setFlowInstance,

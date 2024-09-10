@@ -392,13 +392,13 @@ const updateEdgeName = (newName) => {
 
 const addFieldAssociation = () => {
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
-    edge.data.properties.push({propertyName: "", typeName: "", open: false, isPrimaryKey: false});
+    edge.data.properties.push({propertyName: "", typeName: "", open: false, isPrimaryKey: false, isForeignKey: false});
   });
 };
 
 const addField = () => {
   mcdStore.flowMCD.updateNodeData(nodeData.value.id, (node) => {
-    node.data.properties.push({propertyName: "", typeName: "", open: false, isPrimaryKey: false});
+    node.data.properties.push({propertyName: "", typeName: "", open: false, isPrimaryKey: false, isForeignKey: false});
   });
   //scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
 };

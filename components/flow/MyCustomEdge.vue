@@ -4,7 +4,7 @@
     <BaseEdge :id="id" :style="style" :path="path[0]" />
 
     <!-- Rendu des labels avec EdgeLabelRenderer -->
-    <EdgeLabelRenderer v-if="sourceCardinality !== null">
+    <EdgeLabelRenderer v-if="sourceCardinality !== null || activeTab === 'mcd'">
       <div
           :style="{
           pointerEvents: 'all',
@@ -19,7 +19,7 @@
       </div>
     </EdgeLabelRenderer>
 
-    <EdgeLabelRenderer v-if="targetCardinality !== null">
+    <EdgeLabelRenderer v-if="targetCardinality !== null || activeTab === 'mcd'">
       <div
           :style="{
           pointerEvents: 'all',
@@ -41,7 +41,7 @@
                    :height="foreignObjectHeight"
                    class="w-60 rounded-[50px]"
     >
-      <div>
+      <div v-if="activeTab === 'mcd'">
         <MyCustomEntityAssociation :data="data"  />
       </div>
     </foreignObject>
@@ -52,6 +52,12 @@
 import {computed, provide, ref} from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
 import {BaseEdge, EdgeLabelRenderer, getStraightPath} from "@vue-flow/core";
+import {storeToRefs} from "pinia";
+import {useMCDStore} from "~/stores/mcd-store.js";
+
+
+const mcdStore = useMCDStore()
+const {activeTab, foreignObjectHeight} = storeToRefs(mcdStore)
 
 // Props
 const props = defineProps({
@@ -65,12 +71,6 @@ const props = defineProps({
   data: Object,
 });
 
-const foreignObjectHeight = ref(100);  // Default height
-
-// Provide a method to update the height
-provide('updateForeignObjectHeight', (height) => {
-  foreignObjectHeight.value = height;
-});
 
 // Computed properties
 const path = computed(() => {

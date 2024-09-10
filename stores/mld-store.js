@@ -1,8 +1,8 @@
 import {computed, ref} from "vue";
 import {defineStore} from "pinia";
-import {getStraightPath, useVueFlow} from "@vue-flow/core";
-import { useMCDStore } from "./mcd-store.js";
-import { v4 as uuidv4 } from 'uuid';
+import {getStraightPath, useVueFlow, MarkerType} from "@vue-flow/core";
+import {useMCDStore} from "./mcd-store.js";
+import {v4 as uuidv4} from 'uuid';
 
 export const useMLDStore = defineStore('flow-mld', () => {
 
@@ -13,14 +13,18 @@ export const useMLDStore = defineStore('flow-mld', () => {
     }
 
     function getIdEdgeMLD() {
-        return `dndedge_${uuidv4()+ '_' + uuidv4()}`
+        return `dndedge_${uuidv4() + '_' + uuidv4()}`
     }
 
     function setFlowInstance(instance) {
         flowMLD.value = instance;  // Assigner l'instance de useVueFlow
     }
 
-    function generateMLDTest() {
+    function nameToUpperCase(name) {
+        return name.trim().toUpperCase().replace(/\s+/g, '_');
+    }
+
+    function generateMLD() {
 
         // 1. vider flowMLD
         // 2. faire une boucle des edges de flowMCD
@@ -32,131 +36,134 @@ export const useMLDStore = defineStore('flow-mld', () => {
 
 
         const mcdStore = useMCDStore();
-        const { flowMCD } = mcdStore;
+        const {flowMCD} = mcdStore;
 
         // 1. Vider flowMLD
         flowMLD.value.setNodes([]);
         flowMLD.value.setEdges([]);
 
         // 2. Boucle sur les edges de flowMCD
+
         flowMCD.getEdges.forEach(edge => {
-            const edgeData = JSON.parse(JSON.stringify(edge.data));
+            const edgeCopy = JSON.parse(JSON.stringify(edge));
 
-            const sourceCardinality = edgeData.sourceCardinality.split(',');
-            const targetCardinality = edgeData.targetCardinality.split(',');
+            const sourceCardinality = edgeCopy.data.sourceCardinality.split(',');
+            const targetCardinality = edgeCopy.data.targetCardinality.split(',');
 
-            const sourceNode = flowMCD.findNode(edge.source);
-            const targetNode = flowMCD.findNode(edge.target);
+            console.log('edgeCopy', edgeCopy);
+            console.log('sourceCardinality', sourceCardinality);
+            console.log('targetCardinality', targetCardinality);
+
+            const sourceNode = JSON.parse(JSON.stringify(flowMCD.findNode(edge.source)));
+            const targetNode = JSON.parse(JSON.stringify(flowMCD.findNode(edge.target)));
+
+            // make the name of the node to uppercase
+            sourceNode.data.name = nameToUpperCase(sourceNode.data.name);
+            targetNode.data.name = nameToUpperCase(targetNode.data.name);
 
             // 3. Gestion des relations x:1 - 1:n et x:1 - x:1
-            if ((sourceCardinality[1] === '1' && targetCardinality[1] === 'n') ||
-                (sourceCardinality[1] === 'n' && targetCardinality[1] === '1') ||
+            if ((sourceCardinality[1] === '1' && targetCardinality[1] === 'N') ||
+                (sourceCardinality[1] === 'N' && targetCardinality[1] === '1') ||
                 (sourceCardinality[1] === '1' && targetCardinality[1] === '1')) {
+                console.log('Gestion des relations x:1 - 1:n et x:1 - x:1')
+                console.log('sourceCardinality', sourceCardinality);
+                console.log('targetCardinality', targetCardinality);
 
-                const oneSideNode = sourceCardinality[1] === '1' ? sourceNode : targetNode;
-                const manySideNode = sourceCardinality[1] === 'n' ? sourceNode : targetNode;
 
-                // Ajouter la clé étrangère au nœud "1"
-                oneSideNode.data.properties.push({
-                    propertyName: `${manySideNode.data.name}`,
-                    typeName: 'Foreign Key',
-                });
+                // Ajouter la clé étrangère au nœud ayant la cardinalité x:1
+                if(sourceCardinality[1] === '1' && targetCardinality[1] === 'N' ||
+                   sourceCardinality[1] === '1' && targetCardinality[1] === '1') {
+                    edgeCopy.markerEnd = MarkerType.ArrowClosed;
+                    sourceNode.data.properties.push({
+                        propertyName: `${targetNode.data.name.toLowerCase()}_id`,
+                        typeName: 'Foreign Key',
+                        isPrimaryKey: false,
+                        isForeignKey: true
+                    });
+                } else if(sourceCardinality[1] === 'N' && targetCardinality[1] === '1') {
+                    edgeCopy.markerEnd = MarkerType.ArrowClosed;
+                    targetNode.data.properties.push({
+                        propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
+                        typeName: 'Foreign Key',
+                        isPrimaryKey: false,
+                        isForeignKey: true
+                    });
+                }
+
+                // update edge type
+                edgeCopy.type = mcdStore.edgeType;
+                edgeCopy.label = edgeCopy?.name ?? '';
 
                 // Vérifier et ajouter les nœuds dans flowMLD
-                if (!flowMLD.value.findNode(oneSideNode.id)) {
-                    flowMLD.value.addNodes(oneSideNode);
-                }
-                if (!flowMLD.value.findNode(manySideNode.id)) {
-                    flowMLD.value.addNodes(manySideNode);
-                }
-
                 // Ajouter l'edge et les deux nodes en question dans flowMLD
-                if(!flowMLD.value.findEdge(edge.id)) {
-                    flowMLD.value.addEdges(edge);
-                }
-                if(!flowMLD.value.findNode(sourceNode.id)) {
+                if (!flowMLD.value.findNode(sourceNode.id)) {
                     flowMLD.value.addNodes(sourceNode);
                 }
-                if(!flowMLD.value.findNode(targetNode.id)) {
+                if (!flowMLD.value.findNode(targetNode.id)) {
                     flowMLD.value.addNodes(targetNode);
                 }
-
+                if (!flowMLD.value.findEdge(edgeCopy.id)) {
+                    flowMLD.value.addEdges(edgeCopy);
+                }
 
 
                 // 4. Gestion des relations n:n
-            } else if (sourceCardinality[1] === 'n' && targetCardinality[1] === 'n') {
+            } else if (sourceCardinality[1] === 'N' && targetCardinality[1] === 'N') {
+                console.log('Gestion des relations n:n')
+                console.log('sourceCardinality', sourceCardinality);
+                console.log('targetCardinality', targetCardinality);
+
                 let centerPosition = computed(() =>
                     getStraightPath({
-                        sourceX: edge.sourceNode.x,
-                        sourceY: edge.sourceNode.y,
-                        targetX: edge.targetNode.x,
-                        targetY: edge.targetNode.y,
+                        sourceX: edgeCopy.sourceNode.x,
+                        sourceY: edgeCopy.sourceNode.y,
+                        targetX: edgeCopy.targetNode.x,
+                        targetY: edgeCopy.targetNode.y,
                     }),
                 )
 
                 let associationNode = {
                     id: getIdNodeMLD(),
-                    type: 'customEntityAssociation',
-                    position: { x: centerPosition[1] - 320 / 2, y: centerPosition[2] },
+                    type: 'customEntity',
+                    position: {x: centerPosition[1] - 320 / 2, y: centerPosition[2]},
                     data: {
-                        name: `${sourceNode.data.name}_${targetNode.data.name}`,
+                        name: nameToUpperCase(edgeCopy.data.name),
                         isAssociation: true,
-                        relatedEdge: edge.id,
-                        relatedEdgeSource: edge.source,
-                        relatedEdgeTarget: edge.target,
+                        relatedEdge: edgeCopy.id,
+                        relatedEdgeSource: edgeCopy.source,
+                        relatedEdgeTarget: edgeCopy.target,
                         properties: [
                             // first key attribute (foreign keys)
-                            { propertyName: `${sourceNode.data.name}_ID`, typeName: 'Foreign Key' },
-                            { propertyName: `${targetNode.data.name}_ID`, typeName: 'Foreign Key' },
-                            ...edgeData.data.properties
+                            {
+                                propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
+                                typeName: 'Foreign Key',
+                                isPrimaryKey: false,
+                                isForeignKey: true
+                            },
+                            {
+                                propertyName: `${targetNode.data.name.toLowerCase()}_id`,
+                                typeName: 'Foreign Key',
+                                isPrimaryKey: false,
+                                isForeignKey: true
+                            },
+                            ...(edgeCopy?.data?.properties || [])
                         ]
                     }
                 };
-                /*
-                const associationNode = {
-                    id: `assoc_${sourceNode.id}_${targetNode.id}`,
-                    type: 'customEntityAssociation',
-                    position: centerPosition,
-                    data: {
-                        name: `${sourceNode.data.name}_${targetNode.data.name}`,
-                        properties: [
-                            { propertyName: `${sourceNode.data.name}_ID`, typeName: 'Foreign Key' },
-                            { propertyName: `${targetNode.data.name}_ID`, typeName: 'Foreign Key' },
-                        ],
-                    },
-                };
-
-                 */
-
-
-                // Créer les edges pour relier le nœud central aux deux nœuds d'origine
-                /*
-                const edge1 = {
-                    id: `edge_${sourceNode.id}_${associationNode.id}`,
-                    source: sourceNode.id,
-                    target: associationNode.id,
-                    data: { name: `${sourceNode.data.name} to ${associationNode.data.name}` },
-                };
-                const edge2 = {
-                    id: `edge_${associationNode.id}_${targetNode.id}`,
-                    source: associationNode.id,
-                    target: targetNode.id,
-                    data: { name: `${associationNode.data.name} to ${targetNode.data.name}` },
-                };
-                 */
 
                 // create two edge : one between firstnode and newNode, the second between newnode and secondnode
                 const calculateHandlesNewNode =
-                    mcdStore.determineHandles(flowMCD.findNode(edge.source), flowMCD.findNode(edge.target), associationNode);
+                    mcdStore.determineHandles(flowMCD.findNode(edgeCopy.source), flowMCD.findNode(edgeCopy.target), associationNode);
 
 
                 let newEdge1 = {
                     id: getIdEdgeMLD(),
                     source: sourceNode.id,
                     target: associationNode.id,
-                    sourceHandle: edge.sourceHandle,
+                    sourceHandle: edgeCopy.sourceHandle,
                     targetHandle: calculateHandlesNewNode.sourceHandle,
                     type: mcdStore.edgeType,
+                    markerStart: MarkerType.ArrowClosed,
                     style: null,
                     data: {
                         name: '',
@@ -176,11 +183,10 @@ export const useMLDStore = defineStore('flow-mld', () => {
                     source: associationNode.id,
                     target: targetNode.id,
                     sourceHandle: calculateHandlesNewNode.targetHandle,
-                    targetHandle: edge.targetHandle,
+                    targetHandle: edgeCopy.targetHandle,
                     type: mcdStore.edgeType,
+                    markerEnd: MarkerType.ArrowClosed,
                     style: null,
-                    label: edge.data?.targetCardinality ?? '',
-                    labelBgStyle: { fill: '#F2F5F7'},
                     data: {
                         name: '',
                         isFromAssociation: true,
@@ -192,281 +198,289 @@ export const useMLDStore = defineStore('flow-mld', () => {
                     }
                 }
 
-                // we add the association node to the list of nodes, with the two edges, with the two nodes
-                flowMLD.value.addEdges([newEdge1, newEdge2]);
-                flowMLD.value.addNodes(associationNode);
+                console.log('newEdge1', newEdge1);
+                console.log('newEdge2', newEdge2);
 
+                // we add the association node to the list of nodes, with the two edges, with the two nodes
                 if (!flowMLD.value.findNode(sourceNode.id)) {
                     flowMLD.value.addNodes(sourceNode);
                 }
-                if(!flowMLD.value.findNode(targetNode.id)) {
+                if (!flowMLD.value.findNode(targetNode.id)) {
                     flowMLD.value.addNodes(targetNode);
                 }
+                flowMLD.value.addNodes(associationNode);
+                flowMLD.value.addEdges([newEdge1, newEdge2]);
+
             }
         });
 
+
         // 7. Ajouter les nodes orphelins
+
         flowMCD.getNodes.forEach(node => {
-            const isNodeConnected = flowMCD.getEdges.some(edge => edge.source === node.id || edge.target === node.id);
-            if (!isNodeConnected && !flowMLD.value.findNode(node.id)) {
-                flowMLD.value.addNodes(node);
+
+            const copyNode = JSON.parse(JSON.stringify(node));
+
+            copyNode.data.name = nameToUpperCase(node.data.name);
+
+            const isNodeConnected = flowMCD.getEdges.some(edge => edge.source === copyNode.id || edge.target === copyNode.id);
+            if (!isNodeConnected && !flowMLD.value.findNode(copyNode.id)) {
+                flowMLD.value.addNodes(copyNode);
             }
         });
+
 
         console.log('flowMLD nodes', flowMLD.value.getNodes);
         console.log('flowMLD edges', flowMLD.value.getEdges);
     }
 
-    function generateMLD () {
-        const mcdStore = useMCDStore()
-        const { flowMCD } = mcdStore
-
-        // 1. vider flowMLD
-        // 2. faire une boucle des edges de flowMCD
-        // 3. pour chaque edge, vérifier si le cardinalité est x,1 - x,n et ajouter la clé étrangère au noeud x,1
-        // 4. si cardinalité est x,1 - x,1, ajouter la clé étrangère au noeud x,1
-        // 5. si cardinalité est x,n - x,n, ajouter un noeud central avec les clés primaires des deux noeuds
-        // 6. vérifier si un noeud ou un edge existe déjà dans flowMLD, si oui, ne pas l'ajouter
-        // 7. ajouter les noeuds et les edges dans flowMLD
-
-        flowMLD.value.removeNodes(flowMLD.value.nodes.value, true)
-
-        flowMCD.getEdges.forEach(edge => {
-            let edgeDatas = JSON.parse(JSON.stringify(edge.data))
-
-            // First case : x,1 - x,n and second case : x,1 - x,1
-            let getSecondElementSource = edgeDatas.sourceCardinality.split(',')[1]
-            let getSecondElementTarget = edgeDatas.targetCardinality.split(',')[1]
-
-            let extractedSecondElement = [getSecondElementSource, getSecondElementTarget]
-
-            let getIdFirstNode = '';
-            let getIdSecondNode = '';
-
-            if ((extractedSecondElement.includes('1') && extractedSecondElement.includes('n')) ||
-                (extractedSecondElement[0] === '1' && extractedSecondElement[1] === '1')) {
-
-                if (extractedSecondElement.includes('1') && extractedSecondElement.includes('n')) {
-                    // get node (source or target) which have 1,1 to add foreign key
-                    if (edgeDatas.sourceCardinality.split(',')[1] === '1') {
-                        getIdFirstNode = edge.source
-                        getIdSecondNode = edge.target
-                    } else {
-                        getIdFirstNode = edge.target
-                        getIdSecondNode = edge.source
-                    }
-
-                } else if (extractedSecondElement[0] === '1' && extractedSecondElement[1] === '1') {
-                    // get any of these nodes (source or target) which have 1,1 to add foreign key
-                    getIdFirstNode = edge.source
-                    getIdSecondNode = edge.target
-                }
-
-
-                // check is node already exists in MLD
-                let firstNode = JSON.parse(JSON.stringify(flowMLD.value.findNode(getIdFirstNode) === undefined ?
-                    flowMCD.findNode(getIdFirstNode) :
-                    flowMLD.value.findNode(getIdFirstNode)))
-
-                let secondNode = JSON.parse(JSON.stringify(flowMLD.value.findNode(getIdSecondNode) === undefined ?
-                    flowMCD.findNode(getIdSecondNode) :
-                    flowMLD.value.findNode(getIdSecondNode)))
-
-                // add foreign key
-                firstNode.data.properties = [
-                    ...firstNode.data.properties,
-                    {
-                        propertyName: `${secondNode.data.name}`,
-                        typeName: 'Foreign Key'
-                    },
-                ]
-
-
-                //firstNode.template = MyCustomEntityMLD
-                //secondNode.template = MyCustomEntityMLD
-
-
-                // Remove empty property and type name
-                firstNode.data.properties = firstNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
-                secondNode.data.properties = secondNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
-
-                let newNodesList = [
-                    ...flowMLD.value.getNodes,
-                    firstNode,
-                    secondNode
-                ]
-
-                flowMLD.value.setNodes(newNodesList)
-
-            } else if (extractedSecondElement[0] === 'n' && extractedSecondElement[1] === 'n') {
-                //Third case : x,n - x,n
-
-                // Get the source and target nodes
-                getIdFirstNode = edge.source
-                getIdSecondNode = edge.target
-
-                let firstNode = JSON.parse(JSON.stringify(flowMCD.findNode(getIdFirstNode)))
-                let secondNode = JSON.parse(JSON.stringify(flowMCD.findNode(getIdSecondNode)))
-
-
-                // get center edge with the two nodes (for adding the central node)
-                let centerEdge = computed(() =>
-                    getStraightPath({
-                        sourceX: edge.sourceNode.x,
-                        sourceY: edge.sourceNode.y,
-                        targetX: edge.targetNode.x,
-                        targetY: edge.targetNode.y,
-                    }),
-                )
-                //let position = flowMLD.value.project({x: centerEdge.value[0], y: centerEdge.value[1]})
-
-                // create new node with primaries keys
-                /*
-                let newNode = {
-                  id: `node_${genRand(10)}`,
-                  type,
-                  position,
-                  template: markRaw(MyCustomEntityMLD),
-                  x: position.x,
-                  y: position.y,
-                  data: {
-                    name: `${firstNode.data.name}_${secondNode.data.name}`,
-                    properties: [
-                      // first key attribute (primary key)
-                      firstNode.data.properties[0],
-                      secondNode.data.properties[0],
-                      ...edgeDatas.properties
-                    ]
-                  }
-                }
-                 */
-
-                let newNode = {
-                    id: getIdNodeMLD(),
-                    type: 'customEntityAssociation',
-                    position: { x: centerEdge[1] - 320 / 2, y: centerEdge[2] },
-                    data: {
-                        name: `${firstNode.data.name}_${secondNode.data.name}`,
-                        isAssociation: true,
-                        relatedEdge: edge.id,
-                        relatedEdgeSource: edge.source,
-                        relatedEdgeTarget: edge.target,
-                        properties: [
-                            // first key attribute (primary key)
-                            firstNode.data.properties[0],
-                            secondNode.data.properties[0],
-                            ...edgeDatas.data.properties
-                        ]
-                    }
-                };
-
-
-
-                //firstNode.template = MyCustomEntityMLD
-                //secondNode.template = MyCustomEntityMLD
-
-
-                // Remove empty property and type name
-                firstNode.data.properties = firstNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
-                secondNode.data.properties = secondNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
-                newNode.data.properties = newNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
-
-                let newNodesList = [
-                    ...flowMLD.value.getNodes,
-                    firstNode,
-                    secondNode,
-                    newNode,
-                ]
-
-                flowMLD.value.setNodes(newNodesList)
-
-                // create two edge : one between firstnode and newNode, the second between newnode and secondnode
-
-                const calculateHandlesNewNode =
-                    mcdStore.determineHandles(flowMCD.findNode(edge.source), flowMCD.findNode(edge.target), newNode);
-
-
-                let newEdge1 = {
-                    id: getIdEdgeMLD(),
-                    source: edge.source,
-                    target: newNode.id,
-                    sourceHandle: edge.sourceHandle,
-                    targetHandle: calculateHandlesNewNode.sourceHandle,
-                    type: edgeType.value,
-                    style: null,
-                    data: {
-                        name: '',
-                        isFromAssociation: true,
-                        isAssociation: true,
-                        // Define which part of the association relationship comes from
-                        edgePart: 1,
-                        sourceCardinality: '',
-                        targetCardinality: '',
-                        properties: []
-                    }
-                }
-
-
-                let newEdge2 = {
-                    id: getIdEdgeMLD(),
-                    source: newNode.id,
-                    target: edge.target,
-                    targetHandle: edge.targetHandle,
-                    sourceHandle: calculateHandlesNewNode.targetHandle,
-                    type: edgeType.value,
-                    updatable: true,
-                    style: null,
-                    label: edge.data?.targetCardinality ?? '',
-                    labelBgStyle: { fill: '#F2F5F7'},
-                    data: {
-                        name: '',
-                        isFromAssociation: true,
-                        isAssociation: true,
-                        edgePart: 2,
-                        sourceCardinality: '',
-                        targetCardinality: '',
-                        properties: []
-                    }
-                }
-                flowMLD.value.addEdges([newEdge1, newEdge2])
-
-
-
-            }
-
-            // edge part
-            if (!(extractedSecondElement[0] === 'n' && extractedSecondElement[1] === 'n')) {
-                // Add edges node from mcd into mld
-                /*
-                let edgeCopy = JSON.parse(JSON.stringify(edge))
-                delete edgeCopy.template
-
-                edgeCopy = {
-                  ...edgeCopy,
-                  label: edgeCopy.data.name
-                }
-                let newEdgesList = [
-                  ...flowMLD.value.edges.value,
-                  edgeCopy
-                ]
-
-                 */
-                let edgeCopy = JSON.parse(JSON.stringify(edge))
-                edgeCopy.data.sourceCardinality = ''
-                edgeCopy.data.targetCardinality = ''
-                flowMLD.value.addEdges(edgeCopy)
-            }
-
-
-        })
-
-    }
+    // function generateMLD() {
+    //     const mcdStore = useMCDStore()
+    //     const {flowMCD} = mcdStore
+    //
+    //     // 1. vider flowMLD
+    //     // 2. faire une boucle des edges de flowMCD
+    //     // 3. pour chaque edge, vérifier si le cardinalité est x,1 - x,n et ajouter la clé étrangère au noeud x,1
+    //     // 4. si cardinalité est x,1 - x,1, ajouter la clé étrangère au noeud x,1
+    //     // 5. si cardinalité est x,n - x,n, ajouter un noeud central avec les clés primaires des deux noeuds
+    //     // 6. vérifier si un noeud ou un edge existe déjà dans flowMLD, si oui, ne pas l'ajouter
+    //     // 7. ajouter les noeuds et les edges dans flowMLD
+    //
+    //     flowMLD.value.removeNodes(flowMLD.value.nodes.value, true)
+    //
+    //     flowMCD.getEdges.forEach(edge => {
+    //         let edgeDatas = JSON.parse(JSON.stringify(edge.data))
+    //
+    //         // First case : x,1 - x,n and second case : x,1 - x,1
+    //         let getSecondElementSource = edgeDatas.sourceCardinality.split(',')[1]
+    //         let getSecondElementTarget = edgeDatas.targetCardinality.split(',')[1]
+    //
+    //         let extractedSecondElement = [getSecondElementSource, getSecondElementTarget]
+    //
+    //         let getIdFirstNode = '';
+    //         let getIdSecondNode = '';
+    //
+    //         if ((extractedSecondElement.includes('1') && extractedSecondElement.includes('n')) ||
+    //             (extractedSecondElement[0] === '1' && extractedSecondElement[1] === '1')) {
+    //
+    //             if (extractedSecondElement.includes('1') && extractedSecondElement.includes('n')) {
+    //                 // get node (source or target) which have 1,1 to add foreign key
+    //                 if (edgeDatas.sourceCardinality.split(',')[1] === '1') {
+    //                     getIdFirstNode = edge.source
+    //                     getIdSecondNode = edge.target
+    //                 } else {
+    //                     getIdFirstNode = edge.target
+    //                     getIdSecondNode = edge.source
+    //                 }
+    //
+    //             } else if (extractedSecondElement[0] === '1' && extractedSecondElement[1] === '1') {
+    //                 // get any of these nodes (source or target) which have 1,1 to add foreign key
+    //                 getIdFirstNode = edge.source
+    //                 getIdSecondNode = edge.target
+    //             }
+    //
+    //
+    //             // check is node already exists in MLD
+    //             let firstNode = JSON.parse(JSON.stringify(flowMLD.value.findNode(getIdFirstNode) === undefined ?
+    //                 flowMCD.findNode(getIdFirstNode) :
+    //                 flowMLD.value.findNode(getIdFirstNode)))
+    //
+    //             let secondNode = JSON.parse(JSON.stringify(flowMLD.value.findNode(getIdSecondNode) === undefined ?
+    //                 flowMCD.findNode(getIdSecondNode) :
+    //                 flowMLD.value.findNode(getIdSecondNode)))
+    //
+    //             // add foreign key
+    //             firstNode.data.properties = [
+    //                 ...firstNode.data.properties,
+    //                 {
+    //                     propertyName: `${secondNode.data.name}`,
+    //                     typeName: 'Foreign Key'
+    //                 },
+    //             ]
+    //
+    //
+    //             //firstNode.template = MyCustomEntityMLD
+    //             //secondNode.template = MyCustomEntityMLD
+    //
+    //
+    //             // Remove empty property and type name
+    //             firstNode.data.properties = firstNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
+    //             secondNode.data.properties = secondNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
+    //
+    //             let newNodesList = [
+    //                 ...flowMLD.value.getNodes,
+    //                 firstNode,
+    //                 secondNode
+    //             ]
+    //
+    //             flowMLD.value.setNodes(newNodesList)
+    //
+    //         } else if (extractedSecondElement[0] === 'n' && extractedSecondElement[1] === 'n') {
+    //             //Third case : x,n - x,n
+    //
+    //             // Get the source and target nodes
+    //             getIdFirstNode = edge.source
+    //             getIdSecondNode = edge.target
+    //
+    //             let firstNode = JSON.parse(JSON.stringify(flowMCD.findNode(getIdFirstNode)))
+    //             let secondNode = JSON.parse(JSON.stringify(flowMCD.findNode(getIdSecondNode)))
+    //
+    //
+    //             // get center edge with the two nodes (for adding the central node)
+    //             let centerEdge = computed(() =>
+    //                 getStraightPath({
+    //                     sourceX: edge.sourceNode.x,
+    //                     sourceY: edge.sourceNode.y,
+    //                     targetX: edge.targetNode.x,
+    //                     targetY: edge.targetNode.y,
+    //                 }),
+    //             )
+    //             //let position = flowMLD.value.project({x: centerEdge.value[0], y: centerEdge.value[1]})
+    //
+    //             // create new node with primaries keys
+    //             /*
+    //             let newNode = {
+    //               id: `node_${genRand(10)}`,
+    //               type,
+    //               position,
+    //               template: markRaw(MyCustomEntityMLD),
+    //               x: position.x,
+    //               y: position.y,
+    //               data: {
+    //                 name: `${firstNode.data.name}_${secondNode.data.name}`,
+    //                 properties: [
+    //                   // first key attribute (primary key)
+    //                   firstNode.data.properties[0],
+    //                   secondNode.data.properties[0],
+    //                   ...edgeDatas.properties
+    //                 ]
+    //               }
+    //             }
+    //              */
+    //
+    //             let newNode = {
+    //                 id: getIdNodeMLD(),
+    //                 type: 'customEntityAssociation',
+    //                 position: {x: centerEdge[1] - 320 / 2, y: centerEdge[2]},
+    //                 data: {
+    //                     name: `${firstNode.data.name}_${secondNode.data.name}`,
+    //                     isAssociation: true,
+    //                     relatedEdge: edge.id,
+    //                     relatedEdgeSource: edge.source,
+    //                     relatedEdgeTarget: edge.target,
+    //                     properties: [
+    //                         // first key attribute (primary key)
+    //                         firstNode.data.properties[0],
+    //                         secondNode.data.properties[0],
+    //                         ...edgeDatas.data.properties
+    //                     ]
+    //                 }
+    //             };
+    //
+    //
+    //             //firstNode.template = MyCustomEntityMLD
+    //             //secondNode.template = MyCustomEntityMLD
+    //
+    //
+    //             // Remove empty property and type name
+    //             firstNode.data.properties = firstNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
+    //             secondNode.data.properties = secondNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
+    //             newNode.data.properties = newNode.data.properties.filter(el => el.propertyName !== "" && el.typeName !== "")
+    //
+    //             let newNodesList = [
+    //                 ...flowMLD.value.getNodes,
+    //                 firstNode,
+    //                 secondNode,
+    //                 newNode,
+    //             ]
+    //
+    //             flowMLD.value.setNodes(newNodesList)
+    //
+    //             // create two edge : one between firstnode and newNode, the second between newnode and secondnode
+    //
+    //             const calculateHandlesNewNode =
+    //                 mcdStore.determineHandles(flowMCD.findNode(edge.source), flowMCD.findNode(edge.target), newNode);
+    //
+    //
+    //             let newEdge1 = {
+    //                 id: getIdEdgeMLD(),
+    //                 source: edge.source,
+    //                 target: newNode.id,
+    //                 sourceHandle: edge.sourceHandle,
+    //                 targetHandle: calculateHandlesNewNode.sourceHandle,
+    //                 type: edgeType.value,
+    //                 style: null,
+    //                 data: {
+    //                     name: '',
+    //                     isFromAssociation: true,
+    //                     isAssociation: true,
+    //                     // Define which part of the association relationship comes from
+    //                     edgePart: 1,
+    //                     sourceCardinality: '',
+    //                     targetCardinality: '',
+    //                     properties: []
+    //                 }
+    //             }
+    //
+    //
+    //             let newEdge2 = {
+    //                 id: getIdEdgeMLD(),
+    //                 source: newNode.id,
+    //                 target: edge.target,
+    //                 targetHandle: edge.targetHandle,
+    //                 sourceHandle: calculateHandlesNewNode.targetHandle,
+    //                 type: edgeType.value,
+    //                 updatable: true,
+    //                 style: null,
+    //                 label: edge.data?.targetCardinality ?? '',
+    //                 labelBgStyle: {fill: '#F2F5F7'},
+    //                 data: {
+    //                     name: '',
+    //                     isFromAssociation: true,
+    //                     isAssociation: true,
+    //                     edgePart: 2,
+    //                     sourceCardinality: '',
+    //                     targetCardinality: '',
+    //                     properties: []
+    //                 }
+    //             }
+    //             flowMLD.value.addEdges([newEdge1, newEdge2])
+    //
+    //
+    //         }
+    //
+    //         // edge part
+    //         if (!(extractedSecondElement[0] === 'n' && extractedSecondElement[1] === 'n')) {
+    //             // Add edges node from mcd into mld
+    //             /*
+    //             let edgeCopy = JSON.parse(JSON.stringify(edge))
+    //             delete edgeCopy.template
+    //
+    //             edgeCopy = {
+    //               ...edgeCopy,
+    //               label: edgeCopy.data.name
+    //             }
+    //             let newEdgesList = [
+    //               ...flowMLD.value.edges.value,
+    //               edgeCopy
+    //             ]
+    //
+    //              */
+    //             let edgeCopy = JSON.parse(JSON.stringify(edge))
+    //             edgeCopy.data.sourceCardinality = ''
+    //             edgeCopy.data.targetCardinality = ''
+    //             flowMLD.value.addEdges(edgeCopy)
+    //         }
+    //
+    //
+    //     })
+    //
+    // }
 
 
     return {
         flowMLD,
         generateMLD,
-        generateMLDTest,
         setFlowInstance
     }
 })

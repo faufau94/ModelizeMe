@@ -16,7 +16,6 @@
         @nodes-change="onChange"
         @edges-change="onChange"
         @edge-update="onEdgeUpdate"
-        fit-view-on-init
     >
       <MiniMap/>
       <Controls/>
@@ -294,7 +293,7 @@ const mcdStore = useMCDStore()
 const mldStore = useMLDStore()
 const mpdStore = useMPDStore()
 const {addNode} = mcdStore
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab} = storeToRefs(mcdStore)
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType} = storeToRefs(mcdStore)
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
 
@@ -304,7 +303,7 @@ const nodeTypes = {
 }
 
 const edgeTypes = {
-  customEdge: markRaw(CustomEdge),
+  customEdge: markRaw(CustomEdge)
 };
 
 const model = ref(null)
@@ -427,7 +426,7 @@ watch(activeTab, () => {
   isChangingTab.value = true
   if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
   if (activeTab.value === 'mld') {
-    mldStore.generateMLDTest()
+    mldStore.generateMLD()
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};

@@ -37,10 +37,13 @@
           <div class="w-5" v-if="field?.isPrimaryKey">
             <KeyRound :size="13" class="text-red-500" />
           </div>
+          <div class="w-5" v-else-if="field?.isForeignKey">
+            <KeyRound :size="13" class="text-gray-500" />
+          </div>
           <div v-else class="w-5"></div>
 
           <div :class="{ 'underline' : field?.isPrimaryKey }">
-            {{ field?.propertyName }}
+            {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
           </div>
         </div>
         <div class="">
