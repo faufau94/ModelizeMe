@@ -18,8 +18,15 @@ export default defineNuxtConfig({
     "@sidebase/nuxt-auth",
     '@pinia/nuxt',
     "nuxt-lucide-icons",
-    'dayjs-nuxt'
+    'dayjs-nuxt',
+    '@vee-validate/nuxt',
   ],
+
+  vite: {
+    optimizeDeps: {
+      exclude: ['vee-validate']
+    }
+  },
 
   dayjs: {
     locales: ['en', 'fr'],
