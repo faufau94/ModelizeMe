@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^1.1.4",
     "@headlessui/vue": "^1.7.22",
     "@pinia/nuxt": "^0.5.3",
     "@preline/overlay": "^2.3.0",

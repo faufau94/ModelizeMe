@@ -187,6 +187,17 @@
           </Tooltip>
         </TooltipProvider>
 
+        <Separator orientation="vertical" class="h-6"/>
+
+
+        <Button
+            @click="autoLayout"
+            variant="outline"
+            class="border-none rounded-sm"
+        >
+          AutoLayout
+        </Button>
+
 
       </Panel>
 
@@ -286,6 +297,7 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
+import {useLayout} from "../../../composables/useLayout.js";
 
 const route = useRoute()
 
@@ -445,17 +457,19 @@ watch(activeTab, () => {
   isChangingTab.value = false
 })
 
-/*
-const currentFlow = computed(() => {
-  if (activeTab.value === 'mcd') return mcdStore.flowMCD;
-  if (activeTab.value === 'mld') {
-    isChangingTab.value = true
-    mldStore.generateMLDTest()
-    isChangingTab.value = false
-    return mldStore.flowMLD;
-  }
-  if (activeTab.value === 'mpd') return {nodes: [], edges: []};
-  return mcdStore.flowMCD; // Default to MCD
-});
-*/
+// just for testing
+const autoLayout = () => {
+
+
+// Appel de la fonction après l'initialisation du graphe ou après la création des nœuds et des arêtes
+  const { nodes, edges } = useLayout(mcdStore.flowMCD);
+  mcdStore.flowMCD.setNodes(nodes);
+  mcdStore.flowMCD.setEdges(edges);
+
+  // Adjust the view to fit the new layout
+  nextTick(() => {
+    mcdStore.flowMCD.fitView({ padding: 0.1 })
+  })
+}
+
 </script>
