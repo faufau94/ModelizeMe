@@ -1,6 +1,6 @@
 import dagre from '@dagrejs/dagre';
 
-export function useLayout(currentFlow) {
+export function useLayout(currentFlow, direction = 'LR') {
     console.log(currentFlow);
     const nodes = currentFlow.getNodes;
     const edges = currentFlow.getEdges;
@@ -8,10 +8,10 @@ export function useLayout(currentFlow) {
     // Initialisation du graphe dagre
     const g = new dagre.graphlib.Graph();
     g.setGraph({
-        nodesep: 200,  // Espace entre les nœuds
-        edgesep: 400,  // Espace entre les arêtes
-        ranksep: 500, // Espacement des rangs (on ne l'utilise pas ici mais nécessaire pour dagre)
-        rankdir: 'TB'
+        nodesep: 20,  // Espace entre les nœuds
+        edgesep: 30,  // Espace entre les arêtes
+        ranksep: 30, // Espacement des rangs (on ne l'utilise pas ici mais nécessaire pour dagre)
+        rankdir: direction
     });
 
     g.setDefaultEdgeLabel(() => ({}));

@@ -191,11 +191,22 @@
 
 
         <Button
-            @click="autoLayout"
+            @click="autoLayout('LR')"
             variant="outline"
             class="border-none rounded-sm"
         >
-          AutoLayout
+          <Workflow :size="18"/>
+        </Button>
+
+        <Separator orientation="vertical" class="h-6"/>
+
+
+        <Button
+            @click="reorganize"
+            variant="outline"
+            class="border-none rounded-sm"
+        >
+          <WandSparkles :size="18"/>
         </Button>
 
 
@@ -286,7 +297,7 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, Trash2} from "lucide-vue-next";
+import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, WandSparkles, Workflow} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
@@ -298,6 +309,7 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip'
 import {useLayout} from "../../../composables/useLayout.js";
+import {useReorganize} from "../../../composables/useReorganize.js";
 
 const route = useRoute()
 
@@ -440,9 +452,10 @@ const getFlowId = computed(() => {
 
 const isChangingTab = ref(false)
 
-const currentFlow = ref(null)
+const currentFlow = ref(mcdStore.flowMCD)
 
 watch(activeTab, () => {
+  console.log('watch')
   isChangingTab.value = true
   if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
   if (activeTab.value === 'mld') {
@@ -458,13 +471,27 @@ watch(activeTab, () => {
 })
 
 // just for testing
-const autoLayout = () => {
-
-
-// Appel de la fonction après l'initialisation du graphe ou après la création des nœuds et des arêtes
-  const { nodes, edges } = useLayout(mcdStore.flowMCD);
+const autoLayout = (direction) => {
+  const { nodes, edges } = useLayout(currentFlow?.value, direction);
   mcdStore.flowMCD.setNodes(nodes);
   mcdStore.flowMCD.setEdges(edges);
+
+  // Adjust the view to fit the new layout
+  nextTick(() => {
+    mcdStore.flowMCD.fitView({ padding: 0.1 })
+  })
+}
+
+const reorganize = () => {
+  const { reorganizeNodesAndEdges } = useReorganize(currentFlow?.value);
+
+// Applique la réorganisation des nodes pour éviter les chevauchements
+  const { nodes, edges } = reorganizeNodesAndEdges();
+
+
+  mcdStore.flowMCD.setNodes(nodes);
+  mcdStore.flowMCD.setEdges(edges);
+
 
   // Adjust the view to fit the new layout
   nextTick(() => {

@@ -3,6 +3,7 @@ import {defineStore} from "pinia";
 import {getBezierPath, useVueFlow, MarkerType} from "@vue-flow/core";
 import {useMCDStore} from "./mcd-store.js";
 import {v4 as uuidv4} from 'uuid';
+import {useReorganize} from "../composables/useReorganize.js";
 
 export const useMLDStore = defineStore('flow-mld', () => {
 
@@ -233,9 +234,22 @@ export const useMLDStore = defineStore('flow-mld', () => {
             }
         });
 
+        /*
+        const { reorganizeNodesAndEdges } = useReorganize(flowMLD.value);
 
-        console.log('flowMLD nodes', flowMLD.value.getNodes);
-        console.log('flowMLD edges', flowMLD.value.getEdges);
+// Applique la réorganisation des nodes pour éviter les chevauchements
+        const { nodes, edges } = reorganizeNodesAndEdges();
+
+
+        flowMLD.value.setNodes(nodes);
+        flowMLD.value.setEdges(edges);
+
+         */
+        /*
+        const { nodes, edges } = useLayout(flowMLD.value);
+        flowMLD.value.setNodes(nodes);
+        flowMLD.value.setEdges(edges);
+         */
     }
 
     // function generateMLD() {
