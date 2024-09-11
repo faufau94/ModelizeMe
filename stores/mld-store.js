@@ -1,6 +1,6 @@
 import {computed, ref} from "vue";
 import {defineStore} from "pinia";
-import {getStraightPath, useVueFlow, MarkerType} from "@vue-flow/core";
+import {getBezierPath, useVueFlow, MarkerType} from "@vue-flow/core";
 import {useMCDStore} from "./mcd-store.js";
 import {v4 as uuidv4} from 'uuid';
 
@@ -74,7 +74,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                 if(sourceCardinality[1] === '1' && targetCardinality[1] === 'N' ||
                    sourceCardinality[1] === '1' && targetCardinality[1] === '1') {
                     edgeCopy.markerEnd = MarkerType.ArrowClosed;
-                    sourceNode.data.properties.push({
+                    sourceNode.data.properties.splice(1, 0, {
                         propertyName: `${targetNode.data.name.toLowerCase()}_id`,
                         typeName: 'Foreign Key',
                         isPrimaryKey: false,
@@ -82,7 +82,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                     });
                 } else if(sourceCardinality[1] === 'N' && targetCardinality[1] === '1') {
                     edgeCopy.markerEnd = MarkerType.ArrowClosed;
-                    targetNode.data.properties.push({
+                    targetNode.data.properties.splice(1, 0, {
                         propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
                         typeName: 'Foreign Key',
                         isPrimaryKey: false,
@@ -113,19 +113,23 @@ export const useMLDStore = defineStore('flow-mld', () => {
                 console.log('sourceCardinality', sourceCardinality);
                 console.log('targetCardinality', targetCardinality);
 
+                console.log('edgeCopy.sourceNode', edgeCopy.sourceNode);
+                console.log('edgeCopy.targetNode', edgeCopy.targetNode);
+
                 let centerPosition = computed(() =>
-                    getStraightPath({
-                        sourceX: edgeCopy.sourceNode.x,
-                        sourceY: edgeCopy.sourceNode.y,
-                        targetX: edgeCopy.targetNode.x,
-                        targetY: edgeCopy.targetNode.y,
+                    getBezierPath({
+                        sourceX: edgeCopy.sourceX,
+                        sourceY: edgeCopy.sourceY,
+                        targetX: edgeCopy.targetX,
+                        targetY: edgeCopy.targetY,
                     }),
                 )
+
 
                 let associationNode = {
                     id: getIdNodeMLD(),
                     type: 'customEntity',
-                    position: {x: centerPosition[1] - 320 / 2, y: centerPosition[2]},
+                    position: {x: centerPosition.value[1] - 320 / 2, y: centerPosition.value[2]},
                     data: {
                         name: nameToUpperCase(edgeCopy.data.name),
                         isAssociation: true,

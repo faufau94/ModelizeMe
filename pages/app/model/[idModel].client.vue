@@ -261,7 +261,7 @@
 </template>
 
 <script setup>
-import {computed, markRaw, onMounted, ref} from "vue";
+import {computed, markRaw, onMounted, ref, nextTick} from "vue";
 import CustomEdge from "~/components/flow/MyCustomEdge.vue";
 import ElementMenu from "~/components/flow/ElementMenu.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
@@ -370,6 +370,14 @@ onMounted(async () => {
       edgeIdSelected.value = e.edge.id
     }
   })
+
+  await nextTick(() => {
+    mcdStore.flowMCD.fitView()
+  })
+})
+
+onUnmounted(() => {
+  activeTab.value = 'mcd'
 })
 
 const onChange = (changes) => {
@@ -430,6 +438,10 @@ watch(activeTab, () => {
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};
+
+  nextTick(() => {
+    currentFlow.value.fitView()
+  })
   isChangingTab.value = false
 })
 
