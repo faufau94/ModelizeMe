@@ -26,6 +26,7 @@
     "@vue-flow/node-toolbar": "^1.1.0",
     "@vueuse/core": "^10.11.1",
     "bcrypt": "^5.1.1",
+    "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "d3-force": "^3.0.0",

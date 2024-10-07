@@ -38,9 +38,9 @@
               Modèles
             </NuxtLink>
             <NuxtLink
-                to="/app/code-generator"
+                to="/app/generator"
                 class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
-                :class="[route.path === '/app/code-generator' ? 'text-primary bg-muted': 'text-muted-foreground']"
+                :class="[route.path === '/app/generator' ? 'text-primary bg-muted': 'text-muted-foreground']"
             >
               <CodeXml class="h-4 w-4" />
               Générateur de code
@@ -159,9 +159,9 @@
                 Modèles
               </NuxtLink>
               <NuxtLink
-                  to="/app/code-generator"
+                  to="/app/generator"
                   class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 hover:text-foreground"
-                  :class="[route.path === '/app/code-generator' ? 'text-primary bg-muted': 'text-muted-foreground']"
+                  :class="[route.path === '/app/generator' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <CodeXml class="h-5 w-5" />
                 Générateur de code

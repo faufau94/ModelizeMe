@@ -50,8 +50,9 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 properties: [
                     {
                         propertyName: "id",
-                        typeName: "Big Increment",
+                        typeName: "Big Integer",
                         isPrimaryKey: true,
+                        autoIncrement: true,
                         isForeignKey: false,
                     },
                 ]

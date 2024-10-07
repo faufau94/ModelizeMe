@@ -79,6 +79,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         propertyName: `${targetNode.data.name.toLowerCase()}_id`,
                         typeName: 'Foreign Key',
                         isPrimaryKey: false,
+                        autoIncrement: false,
                         isForeignKey: true
                     });
                 } else if(sourceCardinality[1] === 'N' && targetCardinality[1] === '1') {
@@ -87,6 +88,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
                         typeName: 'Foreign Key',
                         isPrimaryKey: false,
+                        autoIncrement: false,
                         isForeignKey: true
                     });
                 }
@@ -143,12 +145,14 @@ export const useMLDStore = defineStore('flow-mld', () => {
                                 propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
                                 typeName: 'Foreign Key',
                                 isPrimaryKey: false,
+                                autoIncrement: false,
                                 isForeignKey: true
                             },
                             {
                                 propertyName: `${targetNode.data.name.toLowerCase()}_id`,
                                 typeName: 'Foreign Key',
                                 isPrimaryKey: false,
+                                autoIncrement: false,
                                 isForeignKey: true
                             },
                             ...(edgeCopy?.data?.properties || [])

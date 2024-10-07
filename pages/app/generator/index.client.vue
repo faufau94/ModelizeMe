@@ -128,7 +128,7 @@
           </div>
 
           <div class="flex items-center justify-end mt-10 space-x-5 px-7">
-            <Button :disabled="isPrevDisabled" variant="outline" size="sm" @click="prevStep()">
+            <Button :disabled="isPrevDisabled || isGenerating" variant="outline" size="sm" @click="prevStep()">
               Précédent
             </Button>
             <div class="flex items-center gap-3">
@@ -138,10 +138,14 @@
                 Suivant
               </Button>
               <Button
-                  v-if="stepIndex === 4" size="sm" type="submit"
+                  :disabled="isGenerating"
+                  v-if="stepIndex === 4"
+                  size="sm"
+                  type="submit"
               >
-                <CirclePlay class="w-5 h-5 mr-2"/>
-                Générer
+                <CirclePlay v-if="!isGenerating" class="w-5 h-5 mr-2"/>
+                <Loader2 v-if="isGenerating" class="w-4 h-4 mr-2 animate-spin" />
+                {{ isGenerating ? 'Génération...' : 'Générer' }}
               </Button>
             </div>
           </div>
@@ -152,9 +156,9 @@
 </template>
 
 <script setup>
-import {useCodeGeneratorStore} from "@/stores/code-generator-store.js";
+import {useCodeGeneratorStore} from "@/stores/generator-store.js";
 import {storeToRefs} from "pinia";
-import {Check, CirclePlay} from 'lucide-vue-next'
+import {Check, CirclePlay, Loader2} from 'lucide-vue-next'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/components/ui/toast/use-toast'
@@ -175,7 +179,7 @@ import {
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form'
 import {Input} from '@/components/ui/input'
 import {Button} from '@/components/ui/button'
-import ListItem from '@/components/code-generator/ListItem'
+import ListItem from '@/components/generator/ListItem'
 
 definePageMeta({
   layout: 'sidebar',
@@ -184,9 +188,11 @@ definePageMeta({
 const codeGeneratorStore = useCodeGeneratorStore()
 const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
 
+const router = useRouter()
 const models = ref(null)
 const { toast } = useToast()
 
+const isGenerating = ref(false)
 
 onMounted(async () => {
   models.value = await $fetch('/api/models/list', {method: 'GET'});
@@ -233,11 +239,30 @@ const formSchema = [
   }),
 ]
 
-function onSubmit(values) {
-  toast({
-    title: 'You submitted the following values:',
-    description: h('pre', {class: 'mt-2 w-[340px] rounded-md bg-slate-950 p-4'}, h('code', {class: 'text-white'}, JSON.stringify(datas.value, null, 2))),
-  })
+async function onSubmit(values) {
+
+  isGenerating.value = true
+
+  const response = await $fetch('/api/generator/generate', {
+    method: 'POST',
+    body: datas.value,
+  });
+
+  if (response.status === 200) {
+    console.log('Projet généré:', response.projectName);
+    toast({
+      title: 'Le projet a bien été généré.',
+      description: 'Vous pouvez le télécharger ou bien le cloner sur un dépôt git.',
+    })
+  } else {
+    console.error('Erreur:', response.error);
+    toast({
+      title: 'Problème de génération.',
+      description: 'Il y a eu un problème lors de la génération du projet. Réessayez.',
+    })
+  }
+  isGenerating.value = false
+  await navigateTo({path: `/app/generator/result/${projectName}`})
 }
 </script>
 
