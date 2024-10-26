@@ -9,77 +9,14 @@
           <div class="text-center space-y-4">
             <h3 class="text-2xl font-bold">Aucun résultat</h3>
             <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
-            <AlertDialog>
-              <AlertDialogTrigger as-child>
-                <Button @click="showModel = true">
-                  <CirclePlus :size="20" class="mr-2"/>
-                  Nouveau modèle
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent v-if="showModel">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Nouveau modèle</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Ajouter un nouveau modèle.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-
-                <Input @keyup.enter="onSubmit" v-model="newModel.title" type="text"/>
-
-                <AlertDialogFooter class="mt-3">
-                  <AlertDialogCancel as-child>
-                    <Button @click="showModel = false; newModel.title = ''" variant="secondary">
-                      Fermer
-                    </Button>
-                  </AlertDialogCancel>
-                  <AlertDialogAction as-child>
-                    <Button @click="onSubmit" :disabled="isLoadingNewModel">
-                      <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
-                      {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
-                    </Button>
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
+            <CreateModelDialog />
           </div>
         </div>
       </div>
       <div v-else>
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold">Modèles</h1>
-          <AlertDialog>
-            <AlertDialogTrigger as-child>
-              <Button @click="showModel = true">
-                <CirclePlus :size="20" class="mr-2"/>
-                Nouveau modèle
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent v-if="showModel">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Nouveau modèle</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Ajouter un nouveau modèle.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-
-              <Input @keyup.enter="onSubmit" v-model="newModel.title" type="text"/>
-
-              <AlertDialogFooter class="mt-3">
-                <AlertDialogCancel as-child>
-                  <Button @click="showModel = false; newModel.title = ''" variant="secondary">
-                    Fermer
-                  </Button>
-                </AlertDialogCancel>
-                <AlertDialogAction as-child>
-                  <Button @click="onSubmit" :disabled="isLoadingNewModel">
-                    <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
-                    {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
-                  </Button>
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <CreateModelDialog />
         </div>
         <div class="mb-6">
           <div class="relative w-full max-w-sm items-center">
@@ -102,15 +39,16 @@
 
 <script setup>
 import {computed, ref} from 'vue';
-import {CirclePlus, Search, Loader2} from 'lucide-vue-next';
+import {Search, Loader2} from 'lucide-vue-next';
 import CardModel from "~/components/ui/card/CardModel.vue";
-import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 
-import Toaster from '@/components/ui/toast/Toaster.vue'
-import {useToast} from '@/components/ui/toast/use-toast'
-import {ToastAction} from '@/components/ui/toast'
+import { Input } from '@/components/ui/input'
+//import Toaster from '@/components/ui/toast/Toaster.vue'
+//import {useToast} from '@/components/ui/toast/use-toast'
+//import {ToastAction} from '@/components/ui/toast'
 import {useMCDStore} from "@/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
+import CreateModelDialog from "../../components/flow/CreateModelDialog.vue";
 
 definePageMeta({
   layout: 'sidebar',
@@ -119,7 +57,7 @@ definePageMeta({
 const mcdStore = useMCDStore()
 const {models} = storeToRefs(mcdStore)
 
-const {toast} = useToast()
+//const {toast} = useToast()
 
 const isLoading = ref(false);
 const areModelsLoaded = ref(false)
@@ -134,6 +72,8 @@ onMounted(async () => {
 })
 
 
+
+
 const searchTerm = ref("");
 
 const filteredModels = computed(() => {
@@ -142,63 +82,5 @@ const filteredModels = computed(() => {
   )
 });
 
-const showModel = ref(false);
-const newModel = ref({
-  title: "",
-});
-const isLoadingNewModel = ref(false);
 
-const onSubmit = async () => {
-  if (newModel.value.title !== '') {
-    isLoadingNewModel.value = true;
-    const res = await $fetch('/api/models/create', {
-      method: 'POST',
-      body: {
-        title: newModel.value.title
-      },
-    });
-
-    if (res) {
-      isLoadingNewModel.value = false;
-      showModel.value = false;
-      await navigateTo('/app/model/' + res.id.toString());
-    }
-
-  } else {
-    toast({
-      title: 'Champ vide',
-      description: 'Vous devez renseigner un nom pour votre modèle.',
-      variant: 'destructive',
-      action: h(ToastAction, {
-        altText: 'Réessayer',
-      }, {
-        default: () => 'Réessayer',
-      }),
-    });
-  }
-
-}
 </script>
-
-
-<!--
-<template>
-
-
-
-  <client-only>
-    <div class="dndflow">
-      <Sidebar/>
-
-      <FlowMCD/>
-
-      <FlowMLD/>
-    </div>
-  </client-only>
-</template>
-<script setup lang="ts">
-import FlowMCD from "~/components/flow/FlowMCD.vue";
-import FlowMLD from "~/components/flow/FlowMLD.vue";
-import Sidebar from "~/components/flow/Sidebar.vue";
-</script>
-  -->

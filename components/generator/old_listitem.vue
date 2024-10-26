@@ -40,7 +40,7 @@
 import {ref} from 'vue'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {useCodeGeneratorStore} from "@/stores/code-generator-store.js";
+import {useCodeGeneratorStore} from "@/stores/generator-store.js";
 
 defineProps({
   stepDatas: Object,

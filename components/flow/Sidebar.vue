@@ -616,7 +616,7 @@ const hasAnAssociation = computed(() => (
 const type = [
   'String',
   'Integer',
-  'Big Increment',
+  'Big Integer',
   'Boolean',
   'Date',
   'Time',
