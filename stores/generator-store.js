@@ -1,7 +1,7 @@
 import {defineStore} from "pinia";
 import {ref} from "vue";
 
-export const useCodeGeneratorStore = defineStore('code-generator', () => {
+export const useCodeGeneratorStore = defineStore('generator', () => {
 
     const stepIndex = ref(1)
     const datas = ref({
@@ -39,6 +39,15 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
                     selected: false
                 },
                 {
+                    name: 'Nuxt.js',
+                    value: 'nuxt',
+                    //comingSoon: true,
+                    logoName: 'nuxt',
+                    description: 'Framework Vue.js pour applications universelles.',
+                    selected: false
+                },
+                /*
+                {
                     name: 'Vite',
                     value: 'vite',
                     comingSoon: true,
@@ -55,14 +64,6 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
                     selected: false
                 },
                 {
-                    name: 'Nuxt.js',
-                    value: 'nuxt',
-                    comingSoon: true,
-                    logoName: 'nuxt',
-                    description: 'Framework Vue.js pour applications universelles.',
-                    selected: false
-                },
-                {
                     name: 'Symfony',
                     value: 'symfony',
                     comingSoon: true,
@@ -70,6 +71,8 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
                     description: 'Framework PHP complet avec une vaste communauté.',
                     selected: false
                 },
+
+                 */
             ],
         },
         {
@@ -80,13 +83,22 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
             options: (framework) => {
                 switch (framework) {
                     case 'django':
-                        return [{
-                            name: 'SQLAlchemy',
-                            value: 'sqlalchemy',
-                            logoName: 'sqlalchemy',
-                            description: 'ORM puissant et flexible pour Python.',
-                            selected: false
-                        }];
+                        return [
+                            {
+                                name: 'Django ORM',
+                                value: 'django_orm',
+                                logoName: 'django',
+                                description: 'ORM natif de Django.',
+                                selected: false
+                            },
+                            {
+                                name: 'SQLAlchemy',
+                                value: 'sqlalchemy',
+                                logoName: 'sqlalchemy',
+                                description: 'ORM puissant et flexible pour Python.',
+                                selected: false
+                            },
+                        ];
                     case 'laravel':
                         return [{
                             name: 'Eloquent',
@@ -135,7 +147,7 @@ export const useCodeGeneratorStore = defineStore('code-generator', () => {
             options: [
                 {
                     name: 'PostgreSQL',
-                    value: 'postgres',
+                    value: 'postgresql',
                     logoName: 'postgresql',
                     description: 'Base de données relationnelle avancée.',
                     selected: false

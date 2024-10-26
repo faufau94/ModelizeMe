@@ -1,12 +1,13 @@
 <template>
   <div class="dndflow relative">
 
-    <ElementMenu />
+    <ElementMenu/>
 
     <VueFlow
-        :id="'flow-mcd-' + route.params.idModel"
-        :edges="flowMCD?.edges"
-        :nodes="flowMCD?.nodes"
+        :id="getFlowId"
+        :key="activeTab"
+        :edges="currentFlow?.edges"
+        :nodes="currentFlow?.nodes"
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
         @dragover="onDragOver"
@@ -15,7 +16,6 @@
         @nodes-change="onChange"
         @edges-change="onChange"
         @edge-update="onEdgeUpdate"
-        fit-view-on-init
     >
       <MiniMap/>
       <Controls/>
@@ -117,7 +117,8 @@
         </div>
       </Panel>
 
-      <Panel position="top-center" class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+      <Panel v-if="activeTab === 'mcd'" position="top-center"
+             class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
 
         <div v-if="addNewNode" class="flex justify-between items-center gap-3 px-2 transition duration-150">
           <Loader2 :size="18" class="animate-spin"/>
@@ -159,7 +160,7 @@
                   variant="outline"
                   class="border-none rounded-sm"
               >
-                <Undo2 :size="18" />
+                <Undo2 :size="18"/>
               </Button>
             </TooltipTrigger>
             <TooltipContent class="bg-black text-white">
@@ -177,7 +178,7 @@
                   variant="outline"
                   class="border-none rounded-sm"
               >
-                <Redo2 :size="18" />
+                <Redo2 :size="18"/>
               </Button>
             </TooltipTrigger>
             <TooltipContent class="bg-black text-white">
@@ -186,10 +187,86 @@
           </Tooltip>
         </TooltipProvider>
 
+        <Separator orientation="vertical" class="h-6"/>
+
+
+        <Button
+            @click="autoLayout('LR')"
+            variant="outline"
+            class="border-none rounded-sm"
+        >
+          <Workflow :size="18"/>
+        </Button>
+
+        <Separator orientation="vertical" class="h-6"/>
+
+
+        <Button
+            @click="reorganize"
+            variant="outline"
+            class="border-none rounded-sm"
+        >
+          <WandSparkles :size="18"/>
+        </Button>
+
 
       </Panel>
 
+      <Panel position="top-right" class="bg-white mr-10 z-40 drop-shadow-md flex items-center rounded-sm">
+        <Tabs default-value="mcd" v-model="activeTab" class="w-full">
+          <TabsList class="grid grid-cols-3">
+
+            <!-- MCD Tab with Tooltip -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <TabsTrigger :disabled="isChangingTab" value="mcd">MCD</TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-black text-white">
+                  <p>Modèle Conceptuel de Données</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- MLD Tab with Tooltip -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <TabsTrigger
+                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-none' : 'cursor-pointer']"
+                      :disabled="mcdStore.flowMCD.nodes.length === 0 || isChangingTab"
+                      value="mld">
+                    MLD
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-black text-white">
+                  <p>Modèle Logique de Données</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <!-- MPD Tab with Tooltip -->
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <TabsTrigger
+                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-none' : 'cursor-pointer']"
+                      :disabled="mcdStore.flowMCD.nodes.length === 0 || isChangingTab"
+                      value="mpd">
+                    MPD
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-black text-white">
+                  <p>Modèle Physique de Données</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </TabsList>
+        </Tabs>
+      </Panel>
+
       <DropzoneBackground
+          v-if="activeTab === 'mcd'"
           :style="{
           backgroundColor: isDragOver ? '#e0eefa' : 'transparent',
           transition: 'background-color 0.2s ease',
@@ -206,7 +283,7 @@
 </template>
 
 <script setup>
-import {computed, markRaw, onMounted, ref} from "vue";
+import {computed, markRaw, onMounted, ref, nextTick} from "vue";
 import CustomEdge from "~/components/flow/MyCustomEdge.vue";
 import ElementMenu from "~/components/flow/ElementMenu.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
@@ -216,11 +293,14 @@ import {Controls} from "@vue-flow/controls";
 import CustomEntity from "~/components/flow/MyCustomEntity.vue";
 import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation.vue";
 import {useMCDStore} from "~/stores/mcd-store.js";
+import {useMLDStore} from "~/stores/mld-store.js";
+import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, Trash2} from "lucide-vue-next";
+import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, WandSparkles, Workflow} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
+import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
 
 import {
   Tooltip,
@@ -228,13 +308,16 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
+import {useLayout} from "../../../composables/useLayout.js";
+import {useReorganize} from "../../../composables/useReorganize.js";
 
 const route = useRoute()
 
-
 const mcdStore = useMCDStore()
+const mldStore = useMLDStore()
+const mpdStore = useMPDStore()
 const {addNode} = mcdStore
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode} = storeToRefs(mcdStore)
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType} = storeToRefs(mcdStore)
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
 
@@ -244,24 +327,30 @@ const nodeTypes = {
 }
 
 const edgeTypes = {
-  customEdge: markRaw(CustomEdge),
+  customEdge: markRaw(CustomEdge)
 };
 
 const model = ref(null)
 
-const flowMCD = computed(() => mcdStore.flowMCD);
-mcdStore.setFlowInstance(useVueFlow({id: 'flow-mcd-' + route.params.idModel}))
+const isRenamingModel = ref(false)
+const showDialogRenameModel = ref(false)
+
+
+mcdStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
+mldStore.setFlowInstance(useVueFlow('flow-mld-' + route.params.idModel))
+mpdStore.setFlowInstance(useVueFlow('flow-mpd-' + route.params.idModel))
 
 mcdStore.flowMCD.onPaneClick((e) => {
-  if (isSubMenuVisible.value)
-    isSubMenuVisible.value = false
-  elementsMenu.value = false
-  nodeIdSelected.value = null
-  edgeIdSelected.value = null
+  if (activeTab.value === 'mcd') {
+    if (isSubMenuVisible.value)
+      isSubMenuVisible.value = false
+    elementsMenu.value = false
+    nodeIdSelected.value = null
+    edgeIdSelected.value = null
+  }
 })
 
 onMounted(async () => {
-
 
   model.value = await $fetch("/api/models/read", {
     method: "GET",
@@ -269,19 +358,19 @@ onMounted(async () => {
   });
 
   if (model.value.nodes.length !== 0) {
-    flowMCD.value.addNodes(model.value.nodes)
+    mcdStore.flowMCD.addNodes(model.value.nodes)
   }
 
   if (model.value.edges.length !== 0) {
-    flowMCD.value.addEdges(model.value.edges)
+    mcdStore.flowMCD.addEdges(model.value.edges)
   }
 
 
-  flowMCD.value.onConnect((params) => {
+  mcdStore.flowMCD.onConnect((params) => {
 
     const newEdge = mcdStore.createNewEdge(params)
 
-    flowMCD.value.addEdges([newEdge])
+    mcdStore.flowMCD.addEdges([newEdge])
 
     isSubMenuVisible.value = true
     elementsMenu.value = false
@@ -290,39 +379,49 @@ onMounted(async () => {
 
   })
 
-
-
-  flowMCD.value.onNodeClick((e) => {
-    edgeIdSelected.value = null
-    isSubMenuVisible.value = true
-    nodeIdSelected.value = e.node.id
+  mcdStore.flowMCD.onNodeClick((e) => {
+    if (activeTab.value === 'mcd') {
+      edgeIdSelected.value = null
+      isSubMenuVisible.value = true
+      nodeIdSelected.value = e.node.id
+    }
   })
 
-  flowMCD.value.onEdgeClick((e) => {
-    nodeIdSelected.value = null
-    isSubMenuVisible.value = true
-    edgeIdSelected.value = e.edge.id
+  mcdStore.flowMCD.onEdgeClick((e) => {
+    if (activeTab.value === 'mcd') {
+      nodeIdSelected.value = null
+      isSubMenuVisible.value = true
+      edgeIdSelected.value = e.edge.id
+    }
   })
+
+  await nextTick(() => {
+    mcdStore.flowMCD.fitView()
+  })
+})
+
+onUnmounted(() => {
+  activeTab.value = 'mcd'
 })
 
 const onChange = (changes) => {
   // changes are arrays of type `NodeChange` or `EdgeChange`
-  if(changes.length > 0 &&
+  if (changes.length > 0 &&
       changes[0].type === 'position' &&
       changes[0].dragging === false &&
-      changes[0].id.startsWith('dndnode')) {
+      changes[0].id.startsWith('dndnode') &&
+      activeTab.value === 'mcd'
+  ) {
     mcdStore.updateNode(route.params.idModel, changes[0].id)
   }
 }
 
-const onEdgeUpdate = async ({ edge, connection }) => {
+const onEdgeUpdate = async ({edge, connection}) => {
   mcdStore.flowMCD.updateEdge(edge, connection, false)
   await mcdStore.updateEdge(route.params.idModel, edge.id)
 }
 
 
-const isRenamingModel = ref(false)
-const showDialogRenameModel = ref(false)
 const renameModel = async () => {
   isRenamingModel.value = true
   const res = await $fetch(`/api/models/rename-model?id=${route.params.idModel}`, {
@@ -338,9 +437,66 @@ const renameModel = async () => {
   }
 }
 
-const goBack = async() => {
+const goBack = async () => {
   isSubMenuVisible.value = false
   await navigateTo('/app')
+}
+
+// Tabs
+const getFlowId = computed(() => {
+  if (activeTab.value === 'mcd') return 'flow-mcd-' + route.params.idModel;
+  if (activeTab.value === 'mld') return 'flow-mld-' + route.params.idModel;
+  if (activeTab.value === 'mpd') return 'flow-mpd-' + route.params.idModel;
+  return 'flow-mcd-' + route.params.idModel; // Default to MCD
+});
+
+const isChangingTab = ref(false)
+
+const currentFlow = ref(mcdStore.flowMCD)
+
+watch(activeTab, () => {
+  console.log('watch')
+  isChangingTab.value = true
+  if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
+  if (activeTab.value === 'mld') {
+    mldStore.generateMLD()
+    currentFlow.value = mldStore.flowMLD;
+  }
+  if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};
+
+  nextTick(() => {
+    currentFlow.value.fitView()
+  })
+  isChangingTab.value = false
+})
+
+// just for testing
+const autoLayout = (direction) => {
+  const { nodes, edges } = useLayout(currentFlow?.value, direction);
+  mcdStore.flowMCD.setNodes(nodes);
+  mcdStore.flowMCD.setEdges(edges);
+
+  // Adjust the view to fit the new layout
+  nextTick(() => {
+    mcdStore.flowMCD.fitView({ padding: 0.1 })
+  })
+}
+
+const reorganize = () => {
+  const { reorganizeNodesAndEdges } = useReorganize(currentFlow?.value);
+
+// Applique la réorganisation des nodes pour éviter les chevauchements
+  const { nodes, edges } = reorganizeNodesAndEdges();
+
+
+  mcdStore.flowMCD.setNodes(nodes);
+  mcdStore.flowMCD.setEdges(edges);
+
+
+  // Adjust the view to fit the new layout
+  nextTick(() => {
+    mcdStore.flowMCD.fitView({ padding: 0.1 })
+  })
 }
 
 </script>

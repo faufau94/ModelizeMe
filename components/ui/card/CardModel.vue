@@ -2,7 +2,7 @@
   <Card @click="openModel" class="cursor-pointer hover:border-gray-300 hover:shadow-md duration-150 transition">
     <CardHeader class="flex flex-row items-start gap-4 space-y-0">
       <div class="space-y-1 flex-1">
-        <CardTitle class="text-lg">{{ props.model.name }}</CardTitle>
+        <CardTitle class="text-lg">{{ modelName.name }}</CardTitle>
       </div>
       <div class="rounded-md text-secondary-foreground">
 
@@ -12,7 +12,7 @@
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button @click.stop="" variant="secondary" class="px-2 shadow-none bg-white">
-              <EllipsisVertical :size="15" />
+              <EllipsisVertical :size="15"/>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -33,21 +33,29 @@
                     <AlertDialogTitle>Renommer le nom</AlertDialogTitle>
                   </AlertDialogHeader>
 
-                  <Input @keyup.enter="renameModel" v-model="model.name" type="text"/>
-
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <Button @click="renameModel" :disabled="isRenamingModel">
-                      <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
-                      {{ isRenamingModel ? 'Ajout...' : 'Ajouter' }}
-                    </Button>
-                  </AlertDialogFooter>
+                  <form @submit="renameModel">
+                    <FormField v-slot="{ componentField }" name="name">
+                      <FormItem>
+                        <FormLabel>Nom</FormLabel>
+                        <FormControl>
+                          <Input type="text" v-bind="componentField" @keyup.enter="renameModel"/>
+                        </FormControl>
+                        <FormMessage />
+                        <FormControl class="float-right">
+                          <Button type="submit" :disabled="isRenamingModel">
+                            <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
+                            {{ isRenamingModel ? 'Changement...' : 'Renommer' }}
+                          </Button>
+                        </FormControl>
+                      </FormItem>
+                    </FormField>
+                  </form>
                 </AlertDialogContent>
               </AlertDialog>
             </DropdownMenuItem>
             <DropdownMenuItem class="cursor-pointer">
               <AlertDialog>
-                <AlertDialogTrigger as-child >
+                <AlertDialogTrigger as-child>
                   <div @click.stop="showDialogDeleteModel = true" class="text-red-500">
                     Supprimer
                   </div>
@@ -77,18 +85,18 @@
     <CardContent>
       <div class="flex gap-x-6 text-sm text-muted-foreground">
         <div class="flex items-center gap-x-1 justify-center">
-          <PanelTop :size="15" />
+          <PanelTop :size="15"/>
           {{ props.model.nodes.length }} {{ props.model.nodes.length > 1 ? 'nœuds' : 'nœud' }}
 
         </div>
         <div class="flex items-center gap-x-1">
-          <Workflow :size="15" />
+          <Workflow :size="15"/>
           {{ props.model.edges.length }} {{ props.model.edges.length > 1 ? 'relations' : 'relation' }}
         </div>
       </div>
-        <div class="text-[11px] text-muted-foreground mt-3 text-right">
-          Modifié le {{ $dayjs(props.model.updatedAt).format('DD-MM-YYYY à HH:mm') }}
-        </div>
+      <div class="text-[11px] text-muted-foreground mt-3 text-right">
+        Modifié le {{ $dayjs(props.model.updatedAt).format('DD-MM-YYYY à HH:mm') }}
+      </div>
     </CardContent>
   </Card>
 </template>
@@ -107,7 +115,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import {useMCDStore} from "@/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
-
+import {toTypedSchema} from "@vee-validate/zod";
+import * as z from "zod";
+import {useForm} from 'vee-validate'
 
 
 const props = defineProps({
@@ -118,9 +128,9 @@ const props = defineProps({
 });
 
 const mcdStore = useMCDStore()
-const { models } = storeToRefs(mcdStore)
+const {models} = storeToRefs(mcdStore)
 
-const { toast } = useToast()
+const {toast} = useToast()
 
 const openModel = async () => {
   await navigateTo(`/app/model/${props.model.id}`);
@@ -137,7 +147,7 @@ const deleteModel = async () => {
 
   const res = await $fetch(`/api/models/delete`, {
     method: 'DELETE',
-    query: { id: props.model.id },
+    query: {id: props.model.id},
     body: {
       type: 'model',
       action: 'removeModel'
@@ -155,18 +165,36 @@ const deleteModel = async () => {
   }
 }
 
-const renameModel = async () => {
+const formSchema = toTypedSchema(z.object({
+  name: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
+}))
+
+
+const modelName = ref({
+  name: props.model.name,
+})
+
+const { handleSubmit, values } = useForm({
+  validationSchema: formSchema,
+  initialValues: modelName.value,
+  validateOnMount: false,
+})
+
+const renameModel = handleSubmit(async (values) => {
   isRenamingModel.value = true
   const res = await $fetch(`/api/models/rename-model?id=${props.model.id}`, {
     method: "PUT",
     body: {
-      name: props.model.name
+      name: values.name
     }
   });
 
   if (res) {
+    modelName.value.name = values.name
     isRenamingModel.value = false
     showDialogRenameModel.value = false
   }
-}
+})
 </script>

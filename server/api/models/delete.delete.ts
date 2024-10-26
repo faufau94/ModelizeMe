@@ -34,6 +34,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Suppression générale du modèle si aucune autre condition n'est remplie
+    console.log('Deleting model', query);
     return await prisma.model.delete({
         where: { id: parseInt(query.id) },
     });

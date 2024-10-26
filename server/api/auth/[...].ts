@@ -1,4 +1,5 @@
 import GithubProvider from 'next-auth/providers/github'
+import GitlabProvider from 'next-auth/providers/gitlab'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from "next-auth/providers/credentials"
 import { NuxtAuthHandler } from '#auth'
@@ -39,20 +40,104 @@ export default NuxtAuthHandler({
             }
         }),
         // @ts-expect-error Use .default here for it to work during SSR.
-        GithubProvider.default({
-            clientId: useRuntimeConfig().githubClientId,
-            clientSecret: useRuntimeConfig().githubClientSecret
-        }),
         GoogleProvider.default({
             clientId: useRuntimeConfig().googleClientId,
             clientSecret: useRuntimeConfig().googleClientSecret
         }),
 
+        GithubProvider.default({
+            clientId: useRuntimeConfig().githubClientId,
+            clientSecret: useRuntimeConfig().githubClientSecret
+        }),
+
+        GitlabProvider.default({
+            clientId: useRuntimeConfig().gitlabClientId,
+            clientSecret: useRuntimeConfig().gitlabClientSecret
+        }),
+
+
     ],
     callbacks: {
         /* on before signin */
         async signIn({ user, account, profile, email, credentials }) {
+            if (account.provider !== 'credentials') {
+                const providerId = account.providerAccountId;
 
+                // Vérifier si un utilisateur existe déjà avec cet email
+                const existingUser = await prisma.user.findUnique({
+                    where: { email: user.email },
+                    include: { linkedAccounts: true }, // Inclure les comptes liés
+                });
+
+                if (!existingUser) {
+                    // Créer un nouvel utilisateur si l'utilisateur n'existe pas
+                    await prisma.user.create({
+                        data: {
+                            email: user.email,
+                            name: user.name,
+                            first_name: user?.name,
+                            image: user.picture || user.avatar_url,
+                            linkedAccounts: {
+                                create: {
+                                    provider: account.provider,
+                                    providerId: providerId,
+                                    accessToken: account.access_token,
+                                    refreshToken: account.refresh_token || null,
+                                    username: profile?.login || user.email,
+                                },
+                            },
+                        },
+                    });
+                } else {
+                    // Si l'utilisateur existe déjà, vérifier s'il a déjà ce provider lié
+                    const linkedAccount = existingUser.linkedAccounts.find(
+                        acc => acc.provider === account.provider && acc.providerId === providerId
+                    );
+
+                    if (!linkedAccount) {
+                        // Ajouter un nouveau compte lié si ce provider n'est pas encore associé à l'utilisateur
+                        await prisma.linkedAccount.create({
+                            data: {
+                                userId: existingUser.id,
+                                provider: account.provider,
+                                providerId: providerId,
+                                accessToken: account.access_token,
+                                refreshToken: account.refresh_token || null,
+                                username: profile?.login || user.email,
+                            },
+                        });
+                    } else {
+                        // Si le compte lié existe déjà, mettre à jour les jetons d'accès (optionnel)
+                        await prisma.linkedAccount.update({
+                            where: {
+                                id: linkedAccount.id,
+                            },
+                            data: {
+                                accessToken: account.access_token,
+                                refreshToken: account.refresh_token || null,
+                                updatedAt: new Date(),
+                            },
+                        });
+                    }
+                }
+            } else {
+                // Gestion pour les utilisateurs qui se connectent avec email/password
+                const existingUser = await prisma.user.findUnique({
+                    where: { email: credentials.email },
+                });
+
+                if (existingUser && await bcrypt.compare(credentials.password, existingUser.password)) {
+                    return existingUser;
+                } else {
+                    return null; // Mauvais email ou mot de passe
+                }
+            }
+
+            // Retourner true pour permettre la connexion
+            return true;
+        },
+        /*
+        async signIn({ user, account, profile, email, credentials }) {
             if (account.provider !== 'credentials') {
                 const providerId = account.providerAccountId;
 
@@ -70,7 +155,7 @@ export default NuxtAuthHandler({
                             email: user.email,
                             name: user.name,
                             first_name: user?.name,
-                            image: user.picture || user.avatar_url, // profile.avatar_url pour GitHub
+                            image: user.picture || user.avatar_url,
                             provider: account.provider,
                             providerAccountId: providerId,
                         },
@@ -81,12 +166,21 @@ export default NuxtAuthHandler({
             // Retourner true pour permettre la connexion
             return true;
         },
+         */
         /* on session retrival */
         async session({ session, user, token }) {
             if (user) {
-                session.user.id = user.id;
+                session.user = {
+                    ...session.user,
+                    id: user.id,
+                    accounts: user.accounts || [],
+                };
             } else if (token) {
-                session.user.id = token.id;
+                session.user = {
+                    ...session.user,
+                    id: token.id,
+                    accounts: token.accounts || [],
+                };
             }
             return session;
         },
@@ -97,5 +191,11 @@ export default NuxtAuthHandler({
             }
             return token;
         }
-    }
+    },
+    events: {
+        async linkAccount(message) {
+            // Ici, message contient les informations sur l'utilisateur, le compte lié et le provider
+            console.log('Compte lié:', message);
+        },
+    },
 })

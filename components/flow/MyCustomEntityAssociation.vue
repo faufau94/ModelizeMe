@@ -40,19 +40,17 @@ import {inject, onMounted, onUpdated, ref} from 'vue'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {KeyRound, Trash2} from 'lucide-vue-next';
 import {Button} from '@/components/ui/button';
+import {storeToRefs} from "pinia";
 
 const mcdStore = useMCDStore()
-const {removeEdge} = mcdStore
-
-const updateForeignObjectHeight = inject('updateForeignObjectHeight');
-
+const {foreignObjectHeight} = storeToRefs(mcdStore)
 const content = ref(null);
+
 
 // Watch for changes in content and update height
 const updateHeight = () => {
   if (content.value) {
-    const height = content.value.offsetHeight;
-    updateForeignObjectHeight(height);
+    foreignObjectHeight.value = content.value.offsetHeight;
   }
 };
 

@@ -19,6 +19,7 @@ model User {
   image String?
   provider String?
   providerAccountId String?
+  linkedAccounts LinkedAccount[] // Relation vers les comptes liés
   models Model[]
 }
 
@@ -32,6 +33,21 @@ model Model {
   userId    Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt @default(now())
+}
+
+model LinkedAccount {
+  id            Int      @id @default(autoincrement())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int
+  provider      String   // e.g., 'github', 'gitlab'
+  providerId    String   // Identifiant unique sur le provider
+  accessToken   String   // Jeton d'accès pour l'API du provider
+  refreshToken  String?  // Jeton de rafraîchissement (optionnel)
+  username      String?  // Nom d'utilisateur sur le provider
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([provider, providerId]) // Assure qu'un même compte ne soit lié qu'une seule fois
 }
 
 enum ModelType {

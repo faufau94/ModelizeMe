@@ -11,13 +11,13 @@
             <RadioGroup :modelValue="selectedOption" @update:modelValue="selectOption" v-bind="componentField"
                         class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               <!-- Utilisation d'un label pour rendre la carte entière cliquable -->
-              <label v-for="item in stepDatas.options" :key="item.id" class="cursor-pointer">
+              <label v-for="item in stepDatas.options" :key="item.id">
                 <div
                     class="border rounded-xl relative h-28"
                     :class="[
                     selectedOption === item.value ? 'border-black' : 'border-gray-200',  // Contrôle immédiat de la bordure
                     item.hasOwnProperty('comingSoon') && item.comingSoon
-                      ? 'opacity-30 cursor-default pointer-events-none'
+                      ? 'opacity-40 cursor-default pointer-events-none'
                       : 'cursor-pointer hover:bg-gray-50 transition-all duration-150',
                   ]"
                 >
@@ -71,7 +71,7 @@ import {Badge} from '@/components/ui/badge'
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar'
 import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group'
 import {FormField, FormItem, FormLabel, FormControl, FormMessage} from '@/components/ui/form'
-import {useCodeGeneratorStore} from '@/stores/code-generator-store.js'
+import {useCodeGeneratorStore} from '@/stores/generator-store.js'
 
 defineProps({
   stepDatas: Object,
