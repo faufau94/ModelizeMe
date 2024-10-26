@@ -95,15 +95,13 @@ const items = [
 ]
 
 const filteredModels = computed(() => {
-  return items.filter((item) => {
-    if (selectedCategories.value.length > 0 && !selectedCategories.value.includes(item.category)) {
-      return false
-    }
-    if (searchTerm.value.trim() !== "" && !item.name.toLowerCase().includes(searchTerm.value.toLowerCase())) {
-      return false
-    }
-    return true
-  })
+  if (selectedCategories.value.length > 0) {
+    return items.filter((item) => selectedCategories.value.includes(item.category))
+  } else if (searchTerm.value.trim() !== "") {
+    return items.filter((item) => item.name.toLowerCase().includes(searchTerm.value.toLowerCase()))
+  } else {
+    return items
+  }
 })
 
 // Fonction pour vérifier si la catégorie est déjà sélectionnée

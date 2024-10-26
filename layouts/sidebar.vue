@@ -54,8 +54,9 @@
               Equipe
             </NuxtLink>
             <NuxtLink
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary"
+                href="/app/galery"
+                class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
+                :class="[route.path === '/app/galery' ? 'text-primary bg-muted': 'text-muted-foreground']"
             >
               <GalleryHorizontalEnd class="h-4 w-4" />
               Galerie
@@ -175,8 +176,9 @@
                 Equipe
               </NuxtLink>
               <NuxtLink
-                  href="#"
+                  to="/app/galery"
                   class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
+                  :class="[route.path === '/app/galery' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <GalleryHorizontalEnd class="h-5 w-5" />
                 Galerie
