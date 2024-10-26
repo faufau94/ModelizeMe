@@ -73,10 +73,12 @@ const router = useRouter();
 const formSchema = toTypedSchema(z.object({
   projectName: z.string({
     required_error: "Veuillez remplir le champs.",
-  }).min(2, 'Le nom du projet doit contenir au moins 2 caractères.').max(50, 'Le nom du projet ne doit pas dépasser 50 caractères.'),
+  }).min(2, 'Le nom du projet doit contenir au moins 2 caractères.')
+    .max(50, 'Le nom du projet ne doit pas dépasser 50 caractères.'),
   branchName: z.string({
     required_error: "Veuillez remplir le champs.",
-  }).min(2, 'Le nom du projet doit contenir au moins 2 caractères.').max(50, 'Le nom de la branche ne doit pas dépasser 50 caractères.'),
+  }).min(2, 'Le nom du projet doit contenir au moins 2 caractères.')
+    .max(50, 'Le nom de la branche ne doit pas dépasser 50 caractères.'),
 }));
 
 const project = ref({

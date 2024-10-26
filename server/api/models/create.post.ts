@@ -5,7 +5,7 @@ export default defineEventHandler(async event => {
 
     const { title } = await readBody(event);
 
-    const session = await getServerSession(event)
+    const session = await getServerSession(event);
 
 
     const getCurrentUser = await prisma.user.findUnique({
