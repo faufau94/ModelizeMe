@@ -1,7 +1,5 @@
 <template>
-
   <div class="w-full max-w-6xl mx-auto px-4 py-8 relative h-screen">
-    <Toaster />
     <Form
         v-slot="{ meta, values, validate }"
         as="" keep-values :validation-schema="toTypedSchema(formSchema[stepIndex - 1])"
@@ -162,12 +160,11 @@ import {Check, CirclePlay, Loader2} from 'lucide-vue-next'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/components/ui/toast/use-toast'
-import { Toaster } from '@/components/ui/toast'
 
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 
-import {h, ref} from 'vue'
+import {ref} from 'vue'
 import {
   Stepper,
   StepperDescription,
@@ -188,7 +185,6 @@ definePageMeta({
 const codeGeneratorStore = useCodeGeneratorStore()
 const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
 
-const router = useRouter()
 const models = ref(null)
 const { toast } = useToast()
 
@@ -250,10 +246,7 @@ async function onSubmit(values) {
 
   if (response.status === 200) {
     console.log('Projet généré:', response.projectName);
-    toast({
-      title: 'Le projet a bien été généré.',
-      description: 'Vous pouvez le télécharger ou bien le cloner sur un dépôt git.',
-    })
+    await navigateTo({path: `/app/generator/result/${response.projectName}`})
   } else {
     console.error('Erreur:', response.error);
     toast({
@@ -262,7 +255,6 @@ async function onSubmit(values) {
     })
   }
   isGenerating.value = false
-  await navigateTo({path: `/app/generator/result/${projectName}`})
 }
 </script>
 
