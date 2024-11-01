@@ -98,9 +98,7 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button variant="outline" class=" border-none rounded-sm">
-                <Download :size="18"/>
-              </Button>
+              <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :modelName="model?.name" />
             </TooltipTrigger>
             <TooltipContent class="bg-black text-white">
               <p>Exporter</p>
@@ -310,7 +308,11 @@ import {
 } from '@/components/ui/tooltip'
 import {useLayout} from "../../../composables/useLayout.js";
 import {useReorganize} from "../../../composables/useReorganize.js";
+import { getLayoutedElements, elkOptions } from '@/utils/useElk.js';
+import ExportImportDropdown from "../../../components/flow/ExportImportDropdown.vue";
 
+
+const { vueFlowRef } = useVueFlow();
 const route = useRoute()
 
 const mcdStore = useMCDStore()
@@ -396,7 +398,7 @@ onMounted(async () => {
   })
 
   await nextTick(() => {
-    mcdStore.flowMCD.fitView()
+    mcdStore.flowMCD.fitView({ padding: 0.4 })
   })
 })
 
@@ -478,10 +480,28 @@ const autoLayout = (direction) => {
 
   // Adjust the view to fit the new layout
   nextTick(() => {
-    mcdStore.flowMCD.fitView({ padding: 0.1 })
+    mcdStore.flowMCD.fitView({ padding: 0.4 })
   })
 }
 
+
+const reorganize = () => {
+  const opts = { ...elkOptions };
+  const ns = currentFlow.value.getNodes;
+  const es = currentFlow.value.getEdges;
+
+  getLayoutedElements(ns, es, opts).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
+    mcdStore.flowMCD.setNodes(layoutedNodes);
+    mcdStore.flowMCD.setEdges(layoutedEdges);
+
+    nextTick(() => {
+      mcdStore.flowMCD.fitView({ padding: 0.4 });
+    });
+  });
+};
+
+
+/*
 const reorganize = () => {
   const { reorganizeNodesAndEdges } = useReorganize(currentFlow?.value);
 
@@ -498,5 +518,7 @@ const reorganize = () => {
     mcdStore.flowMCD.fitView({ padding: 0.1 })
   })
 }
+
+ */
 
 </script>
