@@ -16,6 +16,12 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Download } from 'lucide-vue-next';
+import DropFile from "@/components/flow/DropFile.vue";
+
+import {
+  Dialog,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 const props = defineProps({
   vueFlowRef: Element,
@@ -25,7 +31,6 @@ const props = defineProps({
 const { exportAsImage } = useScreenshot();
 
 const handleExport = (type) => {
-  console.log(props.vueFlowRef)
   // Accéder directement à l'élément DOM contenant le diagramme
   const flowElement = props.vueFlowRef;
 
@@ -38,6 +43,8 @@ const handleExport = (type) => {
 </script>
 
 <template>
+  <Dialog>
+
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
       <Button variant="outline" class=" border-none rounded-sm">
@@ -54,10 +61,17 @@ const handleExport = (type) => {
         <DropdownMenuPortal>
           <DropdownMenuSubContent>
             <DropdownMenuItem>
-              <span>Importer un fichier XML</span>
+              <DialogTrigger>
+                Importer un fichier XML
+              </DialogTrigger>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <span>Importer un fichier JSON</span>
+            <DropdownMenuItem class="opacity-25">
+              <DialogTrigger>
+                Importer un fichier SQL (coming soon...)
+              </DialogTrigger>
+            </DropdownMenuItem>
+            <DropdownMenuItem class="opacity-25">
+              <span>Importer un fichier JSON (coming soon...)</span>
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuPortal>
@@ -82,4 +96,8 @@ const handleExport = (type) => {
       </DropdownMenuSub>
     </DropdownMenuContent>
   </DropdownMenu>
+    <DropFile menu-item="Importer un fichier" />
+
+  </Dialog>
+
 </template>

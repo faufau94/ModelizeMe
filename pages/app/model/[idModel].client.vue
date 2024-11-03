@@ -108,8 +108,12 @@
 
         <Separator orientation="vertical" class="h-6"/>
 
-        <div class="px-2">
-          <Button variant="outline" size="xs">
+        <div>
+<!--          <Button variant="outline" class="border-none">-->
+<!--            Mettre à niveau-->
+<!--          </Button>-->
+          <Button class="bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md px-4 py-2 inline-flex items-center">
+            <Crown class="mr-2 h-4 w-4 text-yellow-400 fill-yellow-400"/>
             Mettre à niveau
           </Button>
         </div>
@@ -156,6 +160,7 @@
             <TooltipTrigger>
               <Button
                   variant="outline"
+                  disabled
                   class="border-none rounded-sm"
               >
                 <Undo2 :size="18"/>
@@ -174,6 +179,7 @@
             <TooltipTrigger>
               <Button
                   variant="outline"
+                  disabled
                   class="border-none rounded-sm"
               >
                 <Redo2 :size="18"/>
@@ -189,6 +195,7 @@
 
 
         <Button
+            disabled
             @click="autoLayout('LR')"
             variant="outline"
             class="border-none rounded-sm"
@@ -200,6 +207,7 @@
 
 
         <Button
+            disabled
             @click="reorganize"
             variant="outline"
             class="border-none rounded-sm"
@@ -295,7 +303,7 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, WandSparkles, Workflow} from "lucide-vue-next";
+import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, WandSparkles, Workflow, Crown} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
@@ -306,13 +314,12 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
-import {useLayout} from "../../../composables/useLayout.js";
-import {useReorganize} from "../../../composables/useReorganize.js";
+import {useLayout} from "@/composables/useLayout.js";
+import {useReorganize} from "@/composables/useReorganize.js";
 import { getLayoutedElements, elkOptions } from '@/utils/useElk.js';
-import ExportImportDropdown from "../../../components/flow/ExportImportDropdown.vue";
+import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
 
-const { vueFlowRef } = useVueFlow();
 const route = useRoute()
 
 const mcdStore = useMCDStore()
