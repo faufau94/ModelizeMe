@@ -73,15 +73,15 @@
         <div class="mt-auto p-4 space-y-3">
           <Card>
             <CardHeader class="p-2 pt-0 md:p-4">
-              <CardTitle class="text-xl">Upgrade to Pro</CardTitle>
+              <CardTitle class="text-xl">Mettre à niveau</CardTitle>
               <CardDescription>
-                Unlock all features and get unlimited access to our support
-                team.
+                Débloquez toutes les fonctionnalités.
               </CardDescription>
             </CardHeader>
             <CardContent class="p-2 pt-0 md:p-4 md:pt-0">
-              <Button size="sm" class="w-full">
-                Upgrade
+              <Button class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md px-4 py-2 inline-flex items-center">
+                <Crown class="mr-2 h-4 w-4 text-yellow-400 fill-yellow-400"/>
+                Mettre à niveau
               </Button>
             </CardContent>
           </Card>
@@ -193,16 +193,16 @@
             </nav>
             <div class="mt-auto space-y-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>Upgrade to Pro</CardTitle>
+                <CardHeader class="p-2 pt-0 md:p-4">
+                  <CardTitle class="text-xl">Mettre à niveau</CardTitle>
                   <CardDescription>
-                    Unlock all features and get unlimited access to our
-                    support team.
+                    Débloquez toutes les fonctionnalités.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Button size="sm" class="w-full">
-                    Upgrade
+                <CardContent class="p-2 pt-0 md:p-4 md:pt-0">
+                  <Button class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md px-4 py-2 inline-flex items-center">
+                    <Crown class="mr-2 h-4 w-4 text-yellow-400 fill-yellow-400"/>
+                    Mettre à niveau
                   </Button>
                 </CardContent>
               </Card>
@@ -241,7 +241,18 @@
 
 <script setup>
 import {computed, ref} from "vue";
-import {Bolt, CircleUser, CodeXml, GalleryHorizontalEnd, Gauge, Menu, Search, Ungroup, Users} from 'lucide-vue-next'
+import {
+  Bolt,
+  CircleUser,
+  CodeXml,
+  Crown,
+  GalleryHorizontalEnd,
+  Gauge,
+  Menu,
+  Search,
+  Ungroup,
+  Users
+} from 'lucide-vue-next'
 
 import {Button} from '@/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
