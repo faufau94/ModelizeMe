@@ -12,6 +12,7 @@
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
     "@headlessui/vue": "^1.7.22",
+    "@nuxtjs/tailwindcss": "^6.12.1",
     "@pinia/nuxt": "^0.5.3",
     "@preline/overlay": "^2.3.0",
     "@preline/select": "^2.3.0",
@@ -26,11 +27,14 @@
     "@vue-flow/node-toolbar": "^1.1.0",
     "@vueuse/core": "^10.11.1",
     "@xmldom/xmldom": "^0.9.5",
+    "autoprefixer": "^10.4.20",
     "bcrypt": "^5.1.1",
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "d3-force": "^3.0.0",
+    "dayjs": "^1.11.11",
+    "dayjs-nuxt": "^2.1.11",
     "elkjs": "^0.9.3",
     "html-to-image": "^1.11.11",
     "lucide-vue-next": "^0.427.0",
@@ -38,25 +42,22 @@
     "nuxt": "^3.12.4",
     "nuxt-lucide-icons": "^1.0.5",
     "pinia": "^2.2.1",
+    "postcss": "^8.4.41",
     "preline": "^2.3.0",
+    "prisma": "5.22.0",
     "radix-vue": "^1.9.3",
     "shadcn-nuxt": "^0.10.4",
     "tailwind-merge": "^2.4.0",
     "tailwind-variants": "^0.2.1",
+    "tailwindcss": "^3.4.9",
     "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.5.4",
     "uuid": "^11.0.2",
     "vue": "latest",
     "zod": "^3.23.8"
   },
   "packageManager": "pnpm@9.7.0+sha512.dc09430156b427f5ecfc79888899e1c39d2d690f004be70e05230b72cb173d96839587545d09429b55ac3c429c801b4dc3c0e002f653830a420fa2dd4e3cf9cf",
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.12.1",
-    "@prisma/client": "^5.19.1",
-    "autoprefixer": "^10.4.20",
-    "dayjs": "^1.11.11",
-    "dayjs-nuxt": "^2.1.9",
-    "postcss": "^8.4.41",
-    "tailwindcss": "^3.4.9",
-    "typescript": "^5.5.4"
+    "@prisma/client": "^5.22.0"
   }
 }
