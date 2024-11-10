@@ -112,10 +112,7 @@
 <!--          <Button variant="outline" class="border-none">-->
 <!--            Mettre à niveau-->
 <!--          </Button>-->
-          <Button class="bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md px-4 py-2 inline-flex items-center">
-            <Crown class="mr-2 h-4 w-4 text-yellow-400 fill-yellow-400"/>
-            Mettre à niveau
-          </Button>
+          <PricingDialog />
         </div>
       </Panel>
 
@@ -305,6 +302,7 @@ import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
 import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, WandSparkles, Workflow, Crown} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
+import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
 
