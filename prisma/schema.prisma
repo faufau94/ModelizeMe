@@ -21,6 +21,7 @@ model User {
   providerAccountId String?
   linkedAccounts LinkedAccount[] // Relation vers les comptes liés
   models Model[]
+  @@map("users")
 }
 
 model Model {
@@ -33,6 +34,7 @@ model Model {
   userId    Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt @default(now())
+  @@map("models")
 }
 
 model LinkedAccount {
@@ -47,7 +49,8 @@ model LinkedAccount {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  @@unique([provider, providerId]) // Assure qu'un même compte ne soit lié qu'une seule fois
+  @@unique([provider, providerId])
+  @@map("linked_accounts")
 }
 
 enum ModelType {

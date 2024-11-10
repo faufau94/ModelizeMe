@@ -1,5 +1,5 @@
 -- CreateTable
-CREATE TABLE `User` (
+CREATE TABLE `users` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `email` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NULL,
@@ -9,10 +9,10 @@ CREATE TABLE `User` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AlterTable
-ALTER TABLE `User` ADD COLUMN `first_name` VARCHAR(191) NULL;
+ALTER TABLE `users` ADD COLUMN `first_name` VARCHAR(191) NULL;
 
 -- CreateTable
-CREATE TABLE `Model` (
+CREATE TABLE `models` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `content` JSON NOT NULL,
     `type` ENUM('MCD', 'MLD', 'MPD') NOT NULL DEFAULT 'MLD',
@@ -22,4 +22,4 @@ CREATE TABLE `Model` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- AddForeignKey
-ALTER TABLE `Model` ADD CONSTRAINT `Model_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `models` ADD CONSTRAINT `Model_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
