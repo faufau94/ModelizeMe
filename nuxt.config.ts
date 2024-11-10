@@ -28,12 +28,6 @@ export default defineNuxtConfig({
     }
   },
 
-  nitro: {
-    externals: {
-      inline: ['@prisma/client']
-    }
-  },
-
   dayjs: {
     locales: ['en', 'fr'],
     defaultLocale: 'fr',

@@ -78,10 +78,7 @@
               </CardDescription>
             </CardHeader>
             <CardContent class="p-2 pt-0 md:p-4 md:pt-0">
-              <Button class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md px-4 py-2 inline-flex items-center">
-                <Crown class="mr-2 h-4 w-4 text-yellow-400 fill-yellow-400"/>
-                Mettre à niveau
-              </Button>
+              <PricingDialog />
             </CardContent>
           </Card>
 
@@ -199,10 +196,7 @@
                   </CardDescription>
                 </CardHeader>
                 <CardContent class="p-2 pt-0 md:p-4 md:pt-0">
-                  <Button class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-md px-4 py-2 inline-flex items-center">
-                    <Crown class="mr-2 h-4 w-4 text-yellow-400 fill-yellow-400"/>
-                    Mettre à niveau
-                  </Button>
+                  <PricingDialog />
                 </CardContent>
               </Card>
 
@@ -266,6 +260,7 @@ import {
 import {Input} from '@/components/ui/input'
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet'
 
+import PricingDialog from "@/components/PricingDialog.vue";
 
 const route = useRoute()
 
