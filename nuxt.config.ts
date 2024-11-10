@@ -36,7 +36,8 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     authSecret: 'oGDu}UC[pMovI1[c\'SLk+94bB3',
-    authOrigin: 'http://localhost:3000',
+    authOrigin: '',
+    baseURL: '',
 
     githubClientId: 'Ov23liTzb1cUucHiHKfs',
     githubClientSecret: 'c46bb3466b34cbe61e364a116672f38b6e7aca23',
@@ -51,8 +52,8 @@ export default defineNuxtConfig({
   auth: {
     isEnabled: true,
     disableServerSideAuth: false,
-    originEnvKey: 'AUTH_ORIGIN',
-    baseURL: 'http://localhost:3000/api/auth',
+    originEnvKey: process.env.NUXT_AUTH_ORIGIN || '',
+    baseURL: process.env.NUXT_BASE_URL || '',
     provider: {
       type: 'authjs',
       trustHost: false,

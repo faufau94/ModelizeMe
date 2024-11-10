@@ -1,17 +1,17 @@
-/*
-  Warnings:
+--CreateTable
+CREATE TABLE `User` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(191) NOT NULL,
+    `name` VARCHAR(191) NULL,
 
-  - You are about to drop the `post` table. If the table is not empty, all the data it contains will be lost.
+    UNIQUE INDEX `User_email_key`(`email`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-*/
--- DropForeignKey
-ALTER TABLE `post` DROP FOREIGN KEY `Post_authorId_fkey`;
 
 -- AlterTable
 ALTER TABLE `user` ADD COLUMN `first_name` VARCHAR(191) NULL;
 
--- DropTable
-DROP TABLE `post`;
 
 -- CreateTable
 CREATE TABLE `Model` (
