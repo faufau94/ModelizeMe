@@ -8,10 +8,8 @@ CREATE TABLE `User` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `first_name` VARCHAR(191) NULL;
-
+ALTER TABLE `User` ADD COLUMN `first_name` VARCHAR(191) NULL;
 
 -- CreateTable
 CREATE TABLE `Model` (
