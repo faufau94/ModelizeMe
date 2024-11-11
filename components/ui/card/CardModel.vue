@@ -132,6 +132,8 @@ const props = defineProps({
   },
 });
 
+console.log(props)
+
 const mcdStore = useMCDStore()
 const {models} = storeToRefs(mcdStore)
 

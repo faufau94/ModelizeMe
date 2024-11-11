@@ -10,8 +10,8 @@
         <div class="grid gap-4">
           <Label class="flex items-center gap-2 font-normal" v-for="(category, index) in categories" :key="index">
             <Checkbox
-                :checked="isCategorySelected(category.value)"
-                @update:checked="toggleCategory(category.value, $event)"
+                :checked="isCategorySelected(category.name)"
+                @update:checked="toggleCategory(category.name, $event)"
             />
             {{ category.name }}
           </Label>
@@ -43,7 +43,7 @@ import {Label} from '@/components/ui/label'
 import {Checkbox} from '@/components/ui/checkbox'
 import {Input} from '@/components/ui/input'
 
-import CardModel from "~/components/ui/card/CardModel.vue";
+import CardModel from "@/components/ui/card/CardModel.vue";
 
 import {CirclePlus, Loader2, LucideCable, Search} from 'lucide-vue-next'
 
@@ -54,53 +54,57 @@ definePageMeta({
 const isLoading = ref(false);
 const selectedCategories = ref([])
 const searchTerm = ref("")
+//
+// const categories = [
+//   {name: 'E-commerce', value: 'ecommerce'},
+//   {name: 'CRM', value: 'crm'},
+//   {name: 'E-learning', value: 'elearning'},
+//   {name: 'Billing', value: 'billing'},
+// ]
 
-const categories = [
-  {name: 'E-commerce', value: 'ecommerce'},
-  {name: 'CRM', value: 'crm'},
-  {name: 'E-learning', value: 'elearning'},
-  {name: 'Billing', value: 'billing'},
-]
-const items = [
-  {
-    name: "Model 1",
-    nodes: [],
-    edges: [],
-    category: 'ecommerce',
-  },
-  {
-    name: "Model 2",
-    nodes: [],
-    edges: [],
-    category: 'ecommerce',
-  },
-  {
-    name: "Model 3",
-    nodes: [],
-    edges: [],
-    category: 'billing',
-  },
-  {
-    name: "Model 4",
-    nodes: [],
-    edges: [],
-    category: 'ecommerce',
-  },
-  {
-    name: "Model 5",
-    nodes: [],
-    edges: [],
-    category: 'elearning',
-  },
-]
+const categories = ref([])
+// const items = [
+//   {
+//     name: "Model 1",
+//     nodes: [],
+//     edges: [],
+//     category: 'ecommerce',
+//   },
+//   {
+//     name: "Model 2",
+//     nodes: [],
+//     edges: [],
+//     category: 'ecommerce',
+//   },
+//   {
+//     name: "Model 3",
+//     nodes: [],
+//     edges: [],
+//     category: 'billing',
+//   },
+//   {
+//     name: "Model 4",
+//     nodes: [],
+//     edges: [],
+//     category: 'ecommerce',
+//   },
+//   {
+//     name: "Model 5",
+//     nodes: [],
+//     edges: [],
+//     category: 'elearning',
+//   },
+// ]
+
+const items = ref([])
 
 const filteredModels = computed(() => {
   if (selectedCategories.value.length > 0) {
-    return items.filter((item) => selectedCategories.value.includes(item.category))
+    return items.value.filter((item) => selectedCategories.value.includes(item.Galery[0].category.name))
   } else if (searchTerm.value.trim() !== "") {
-    return items.filter((item) => item.name.toLowerCase().includes(searchTerm.value.toLowerCase()))
+    return items.value.filter((item) => item.name.toLowerCase().includes(searchTerm.value.toLowerCase()))
   } else {
-    return items
+    return items.value
   }
 })
 
@@ -123,5 +127,27 @@ const toggleCategory = (categoryValue, isChecked) => {
     )
   }
 }
+
+onMounted(async () => {
+
+  // get categories
+  const resCategories = await $fetch("/api/categories/list")
+  console.log(resCategories)
+  if (resCategories) {
+    categories.value = resCategories
+  }
+
+  // get models
+  const resModels = await $fetch("/api/models/list", {
+    method: "GET",
+    query: {
+      onlyTemplates: true
+    }
+  })
+  console.log(resModels)
+  if (resModels) {
+    items.value = resModels
+  }
+})
 
 </script>

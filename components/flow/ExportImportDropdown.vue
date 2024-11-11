@@ -28,6 +28,8 @@ const props = defineProps({
   modelName: String,
 });
 
+const isOpen = ref(false);
+const toggleDialog = () => isOpen.value = !isOpen.value;
 const { exportAsImage } = useScreenshot();
 
 const handleExport = (type) => {
@@ -43,7 +45,7 @@ const handleExport = (type) => {
 </script>
 
 <template>
-  <Dialog>
+  <Dialog v-model:open="isOpen">
 
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
@@ -96,7 +98,7 @@ const handleExport = (type) => {
       </DropdownMenuSub>
     </DropdownMenuContent>
   </DropdownMenu>
-    <DropFile menu-item="Importer un fichier" />
+    <DropFile menu-item="Importer un fichier" @toggle-dialog="toggleDialog" />
 
   </Dialog>
 

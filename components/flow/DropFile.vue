@@ -119,6 +119,10 @@ defineProps({
   menuItem: String,
 })
 
+const emit = defineEmits(['toggleDialog'])
+
+const route = useRoute()
+
 
 const { convertSQLToFlowElements, convertXMLToFlowElements } = useConvertToFlowElements();
 const mcdStore = useMCDStore()
@@ -131,22 +135,24 @@ const errorMessage = ref('')
 const allowedFileTypes = ['.xml', '.sql']
 const isConvertingFile = ref(false)
 
-const handleFile = () => {
+const handleFile = async () => {
   isConvertingFile.value = true
   if (file.value) {
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const fileContent = e.target.result;
       const fileType = file.value.name.split('.').pop().toLowerCase();
 
       let nodes, edges;
 
       if (fileType === 'sql') {
-        ({nodes, edges} = convertSQLToFlowElements(fileContent));
+        ({nodes, edges} = await convertSQLToFlowElements(fileContent, route.params.idModel));
       } else if (fileType === 'xml') {
-        ({nodes, edges} = convertXMLToFlowElements(fileContent));
+        ({nodes, edges} = await convertXMLToFlowElements(fileContent, route.params.idModel));
       }
+
+      console.log(nodes, edges)
 
       if (nodes && edges) {
         mcdStore.flowMCD.addNodes(nodes);
@@ -157,6 +163,7 @@ const handleFile = () => {
     reader.readAsText(file.value);
   }
   isConvertingFile.value = false
+  emit('toggleDialog')
 }
 
 const onDragOver = () => {
