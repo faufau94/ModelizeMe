@@ -62,6 +62,7 @@
                         placeholder="Ajouter une catégorie"
                         class="w-full border rounded-md p-2 mb-2"
                     />
+                    <div v-if="categoryAlreadyExistsMessage !== ''" class="text-red-500 text-sm py-2">{{categoryAlreadyExistsMessage}}</div>
                     <Button @click.prevent="addCategory" class="w-full">
                       Ajouter
                     </Button>
@@ -75,8 +76,9 @@
       </form>
 
       <DialogFooter>
-        <Button type="submit" form="dialogForm">
-          Créer
+        <Button type="submit" form="dialogForm" :disabled="isCreatingGaleryModel">
+          <Loader2 v-if="isCreatingGaleryModel" class="w-4 h-4 mr-2 animate-spin"/>
+          {{ isCreatingGaleryModel ? 'Création...' : 'Créer' }}
         </Button>
       </DialogFooter>
     </DialogContent>
@@ -120,7 +122,7 @@ import { Input } from '@/components/ui/input'
 import {useToast} from '@/components/ui/toast/use-toast'
 import {Toaster} from '@/components/ui/toast'
 import { toTypedSchema } from '@vee-validate/zod'
-import { Check, ChevronsUpDown, GalleryHorizontalEnd } from 'lucide-vue-next'
+import {Check, ChevronsUpDown, GalleryHorizontalEnd, Loader2} from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import * as z from 'zod'
 
@@ -143,27 +145,39 @@ const { handleSubmit, setFieldValue, values } = useForm({
   },
 })
 
+const isCreatingGaleryModel = ref(false)
+const categoryAlreadyExistsMessage = ref('')
 const newCategory = ref('')
 const { toast } = useToast()
 const isOpen = ref(false)
 const addCategory = () => {
-  if (newCategory.value.trim() && !categories.value.find(cat => cat.value === newCategory.value.trim())) {
+  if (newCategory.value.trim() && !categories.value.find(cat => cat.value.toLowerCase() === newCategory.value.trim().toLowerCase())) {
     const value = newCategory.value.trim()
-    categories.value.push({ label: value, value })
+    categories.value.push({ label: value, value: value.toLowerCase() })
     setFieldValue('category', value)
     newCategory.value = ''
   } else {
-    toast({
-      title: 'Category already exists or invalid',
-      description: 'Please provide a unique category name.',
-    })
+    categoryAlreadyExistsMessage.value = 'Cette catégorie existe déjà.'
   }
 }
 
+watch(() => isOpen.value, () => {
+  if(isOpen.value === false) {
+    newCategory.value = ''
+    categoryAlreadyExistsMessage.value = ''
+  }
+})
 const onSubmit = handleSubmit((values) => {
+  isCreatingGaleryModel.value = true
+
   isOpen.value = false
-  toast({
-    title: 'Ce modèle a été ajouté à la galerie.',
-  })
+  newCategory.value = ''
+  categoryAlreadyExistsMessage.value = ''
+})
+
+onUnmounted(() => {
+  isOpen.value = false
+  newCategory.value = ''
+  categoryAlreadyExistsMessage.value = ''
 })
 </script>
