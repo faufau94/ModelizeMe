@@ -94,12 +94,10 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button variant="outline" class=" border-none rounded-sm">
-                <Settings2 :size="18"/>
-              </Button>
+              <CreateGaleryTemplate />
             </TooltipTrigger>
             <TooltipContent class="bg-black text-white">
-              <p>Paramètres</p>
+              <p>Créer un modèle de galerie</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -311,7 +309,7 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, WandSparkles, Workflow, Crown} from "lucide-vue-next";
+import {PanelTop, Download, Undo2, Redo2, Loader2, Check, WandSparkles, Workflow} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
@@ -331,6 +329,7 @@ import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 import {toTypedSchema} from "@vee-validate/zod";
 import * as z from "zod";
 import {useForm} from 'vee-validate'
+import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 
 
 const route = useRoute()

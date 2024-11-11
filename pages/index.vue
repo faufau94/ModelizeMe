@@ -57,17 +57,17 @@ const {data, signOut} = useAuth()
     <main class="flex-1 flex items-center justify-center px-4 md:px-6">
 
       <div
-          class="relative mx-auto flex items-center justify-center overflow-hidden p-32"
+          class="relative mx-auto flex items-center justify-center overflow-hidden p-52"
       >
+        <div class="max-w-6xl text-center space-y-4">
         <client-only>
-          <UiMeteors :number="20"/>
+          <UiMeteors :number="10"/>
           <!--<UiRetroGrid />-->
         </client-only>
-        <div class="max-w-2xl text-center space-y-4 z-50">
-          <h1 class="text-4xl font-bold tracking-tighter sm:text-5xl">
-            Modélisez. Générez. Codez.
+          <h1 class="text-5xl font-bold tracking-tighter sm:text-7xl">
+            Modélisez. Générez. Profitez.
           </h1>
-          <p class="text-muted-foreground md:text-xl">
+          <p class="text-muted-foreground text-sm md:text-lg max-w-3xl mx-auto">
             Modélisez vos bases de données en toute simplicité, en tenant compte de chaque détail. Générez
             automatiquement le code adapté à vos besoins et commencez à coder sans perdre de temps.
           </p>
