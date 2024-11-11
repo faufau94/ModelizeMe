@@ -33,10 +33,23 @@ export default NuxtAuthHandler({
                         email: credentials.email,
                     }
                 })
-                if(user && await bcrypt.compare(credentials.password, user.password)) {
-                    return user
+                // Vérifier si l'utilisateur existe et si le mot de passe est correct
+                if (!user) {
+                    return {
+                        status : "error",
+                        message: "Cet email n'existe pas."
+                    }
                 }
-                return null
+
+                const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
+                if (!isPasswordValid) {
+                    return {
+                        status : "error",
+                        message: "Mot de passe incorrect."
+                    }
+                }
+
+                return user
             }
         }),
         // @ts-expect-error Use .default here for it to work during SSR.

@@ -1,42 +1,3 @@
-<script setup lang="ts">
-import {Button} from '~/components/ui/button'
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
-import {Input} from '~/components/ui/input'
-import {Label} from '~/components/ui/label'
-/*
-definePageMeta({
-  auth: { unauthenticatedOnly: true, navigateAuthenticatedTo: '/app/dashboard' }
-})
-
- */
-
-const { signIn, getProviders } = useAuth()
-const providers = await getProviders()
-
-const logUserInfo = ref({
-  email: '',
-  password: ''
-})
-
-const onSubmit = async () => {
-  const res = await signIn('credentials', {
-    email: logUserInfo.value.email,
-    password: logUserInfo.value.password,
-    callbackUrl: '/app'
-  })
-
-}
-
-const filteredProviders = computed(() => {
-  return Object.keys(providers)
-      .filter(key => key !== 'credentials')
-      .reduce((result, key) => {
-        result[key] = providers[key]
-        return result
-      }, {})
-})
-</script>
-
 <template>
 
   <div class="min-h-screen flex flex-col">
@@ -70,42 +31,51 @@ const filteredProviders = computed(() => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div class="grid gap-4">
-            <div class="grid gap-2">
-              <Label for="email">Email</Label>
-              <Input
-                  v-model="logUserInfo.email"
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  required
-              />
-            </div>
-            <div class="grid gap-2">
-              <div class="flex items-center">
-                <Label for="password">Mot de passe</Label>
-                <!--
-                <a href="#" class="ml-auto inline-block text-sm underline">
-                  Mot de passe oublié ?
-                </a>
-                -->
-              </div>
-              <Input
-                  v-model="logUserInfo.password"
-                  id="password"
-                  type="password"
-                  required
-              />
-            </div>
-            <Button type="submit" class="w-full"
-                    @click="() => onSubmit()">
-              Se connecter
-            </Button>
+          <form @submit.prevent="onSubmit">
+            <div class="grid gap-4">
+              <FormField name="email" v-slot="{ field }">
+                <FormItem>
+                  <FormLabel for="email">Email</FormLabel>
+                  <FormControl>
+                    <Input v-bind="field" id="email" type="email" placeholder="john@example.com" required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
 
-            <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id" @click="async () => await signIn(provider?.id, { callbackUrl: '/app' })">
-              Se connecter avec {{ provider?.name }}
-            </Button>
-          </div>
+              <FormField name="password" v-slot="{ field }">
+                <FormItem>
+                  <div class="flex items-center">
+                    <FormLabel for="password">Mot de passe</FormLabel>
+                    <!--
+                    <a href="#" class="ml-auto inline-block text-sm underline">
+                      Mot de passe oublié ?
+                    </a>
+                    -->
+                  </div>
+                  <FormControl>
+                    <Input v-bind="field" id="password" type="password" required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField name="submit-button">
+                <FormControl class="w-full">
+                  <Button type="submit" :disabled="isLoading">
+                    <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                    {{ isLoading ? "Chargement..." : "Se connecter" }}
+                  </Button>
+                </FormControl>
+              </FormField>
+
+              <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
+                <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: '/app' })">
+                  Continuer avec {{ provider?.name }}
+                </Button>
+              </div>
+            </div>
+          </Form>
           <div class="mt-4 text-center text-sm">
             Pas encore de compte ?
             <NuxtLink to="/sign-up" class="underline">
@@ -119,3 +89,62 @@ const filteredProviders = computed(() => {
 
 
 </template>
+
+<script setup>
+import {Button} from '~/components/ui/button'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
+import {Input} from '~/components/ui/input'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+
+import {Loader2} from "lucide-vue-next";
+
+import {useForm} from 'vee-validate'
+import {toTypedSchema} from "@vee-validate/zod";
+import * as z from "zod";
+
+const formSchema = toTypedSchema(z.object({
+  email: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).email({message: "Adresse email invalide."}),
+  password: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.')
+}))
+
+const form = useForm({
+  validationSchema: formSchema,
+})
+
+const {signIn, getProviders} = useAuth()
+const providers = await getProviders()
+
+const isLoading = ref(false)
+
+const onSubmit = form.handleSubmit(async (values) => {
+  const res = await signIn('credentials', {
+    email: values.email,
+    password: values.password,
+    callbackUrl: '/app'
+  })
+
+  console.log(res)
+
+})
+
+const filteredProviders = computed(() => {
+  return Object.keys(providers)
+      .filter(key => key !== 'credentials')
+      .reduce((result, key) => {
+        result[key] = providers[key]
+        return result
+      }, {})
+})
+</script>

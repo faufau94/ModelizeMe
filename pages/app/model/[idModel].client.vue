@@ -52,7 +52,7 @@
 
         <Dialog>
           <DialogTrigger as-child>
-            <Button @click="showDialogRenameModel = true" variant="outline" class=" border-none rounded-sm">
+            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="outline" class=" border-none rounded-sm">
               {{ model?.name }}
             </Button>
           </DialogTrigger>
@@ -61,20 +61,31 @@
               <DialogTitle>Renommer le nom</DialogTitle>
             </DialogHeader>
 
-            <Input @keyup.enter="renameModel" v-model="model.name" type="text"/>
+            <form @submit="renameModel">
+              <FormField v-slot="{ componentField }" name="name">
+                <FormItem>
+                  <FormLabel>Nom</FormLabel>
+                  <FormControl>
+                    <Input type="text" v-bind="componentField" @keyup.enter="renameModel"/>
+                  </FormControl>
+                  <FormMessage />
+                  <FormControl class="float-right">
+                    <DialogFooter>
 
-            <DialogFooter class="mt-3">
-              <DialogClose as-child>
-                <Button type="button" variant="secondary">
-                  Annuler
-                </Button>
-              </DialogClose>
-              <Button @click="renameModel" :disabled="isRenamingModel">
-                <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
-                {{ isRenamingModel ? 'Ajout...' : 'Ajouter' }}
-              </Button>
-            </DialogFooter>
-
+                    <DialogClose as-child>
+                      <Button type="button" variant="secondary">
+                        Annuler
+                      </Button>
+                    </DialogClose>
+                    <Button type="submit" :disabled="isRenamingModel">
+                      <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
+                      {{ isRenamingModel ? 'Changement...' : 'Renommer' }}
+                    </Button>
+                    </DialogFooter>
+                  </FormControl>
+                </FormItem>
+              </FormField>
+            </form>
           </DialogContent>
         </Dialog>
 
@@ -317,6 +328,10 @@ import {useReorganize} from "@/composables/useReorganize.js";
 import { getLayoutedElements, elkOptions } from '@/utils/useElk.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
+import {toTypedSchema} from "@vee-validate/zod";
+import * as z from "zod";
+import {useForm} from 'vee-validate'
+
 
 const route = useRoute()
 
@@ -340,6 +355,8 @@ const edgeTypes = {
 const model = ref(null)
 
 const isRenamingModel = ref(false)
+
+
 const showDialogRenameModel = ref(false)
 
 
@@ -364,6 +381,13 @@ onMounted(async () => {
     query: {id: route.params.idModel},
   });
 
+  if(model.value) {
+    setValues({
+      name: model.value.name,
+    });
+  }
+
+
   if (model.value.nodes.length !== 0) {
     mcdStore.flowMCD.addNodes(model.value.nodes)
   }
@@ -371,6 +395,7 @@ onMounted(async () => {
   if (model.value.edges.length !== 0) {
     mcdStore.flowMCD.addEdges(model.value.edges)
   }
+
 
 
   mcdStore.flowMCD.onConnect((params) => {
@@ -429,20 +454,36 @@ const onEdgeUpdate = async ({edge, connection}) => {
 }
 
 
-const renameModel = async () => {
+const formSchema = toTypedSchema(z.object({
+  name: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
+}))
+
+
+const { handleSubmit, setValues } = useForm({
+  validationSchema: formSchema,
+  initialValues: {
+    name: ''
+  },
+  validateOnMount: false,
+})
+
+const renameModel = handleSubmit(async (values) => {
   isRenamingModel.value = true
   const res = await $fetch(`/api/models/rename-model?id=${route.params.idModel}`, {
     method: "PUT",
     body: {
-      name: model.value.name
+      name: values.name
     }
   });
 
   if (res) {
+    model.value.name = values.name
     isRenamingModel.value = false
     showDialogRenameModel.value = false
   }
-}
+})
 
 const goBack = async () => {
   isSubMenuVisible.value = false

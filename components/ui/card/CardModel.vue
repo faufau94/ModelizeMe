@@ -42,6 +42,11 @@
                         </FormControl>
                         <FormMessage />
                         <FormControl class="float-right">
+                          <DialogClose as-child>
+                            <Button type="button" variant="secondary">
+                              Annuler
+                            </Button>
+                          </DialogClose>
                           <Button type="submit" :disabled="isRenamingModel">
                             <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
                             {{ isRenamingModel ? 'Changement...' : 'Renommer' }}
