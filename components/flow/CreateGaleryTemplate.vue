@@ -160,7 +160,7 @@ const addCategory = async () => {
     });
     if (res) {
       const value = newCategory.value.trim()
-      categories.value.push({label: value, value: value.toLowerCase(), id: res.data.value.id})
+      categories.value.push({label: value, value: value.toLowerCase(), id: res.id})
       setFieldValue('category', value)
       newCategory.value = ''
     } else {
