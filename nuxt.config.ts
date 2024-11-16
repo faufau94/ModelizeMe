@@ -25,6 +25,11 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       exclude: ['vee-validate']
+    },
+    resolve: {
+      alias: {
+        ".prisma/client/index-browser": "./node_modules/.prisma/client/index-browser.js"
+      }
     }
   },
 
