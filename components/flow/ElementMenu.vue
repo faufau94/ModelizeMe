@@ -37,7 +37,7 @@
                      v-for="(field, index) in nodeData?.data?.properties" :key="index">
 
                   <div :class="[field?.propertyName === 'id' ?
-                                    'text-red-500 pointer-events-none' :
+                                    'text-red-500 pointer-events-none ' :
                                     'text-gray-300 cursor-pointer pointer-events-auto']"
                        @click="field.isPrimaryKey = !field.isPrimaryKey">
                     <KeyRound :size="20"
@@ -49,6 +49,7 @@
                         v-model="field.propertyName"
                         type="text"
                         placeholder="Nom du champ"
+                        :disabled="field?.propertyName === 'id'"
                     />
                   </div>
 
@@ -60,6 +61,7 @@
                             role="combobox"
                             :aria-expanded="field.open"
                             class="w-full justify-between"
+                            :disabled="field?.propertyName === 'id'"
                         >
                           {{ field.typeName || "Propriété" }}
                           <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
@@ -102,7 +104,7 @@
 
                   <Trash2 class=" w-12 h-12"
                           :class="[field?.propertyName === 'id' ?
-                                    'text-gray-300 pointer-events-none' :
+                                    'text-gray-300 pointer-events-none invisible' :
                                     'text-red-500 cursor-pointer pointer-events-auto']"
                           @click="removeField(index)"/>
 
