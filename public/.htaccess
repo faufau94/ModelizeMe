@@ -1,0 +1,71 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/biso2928/modelize-me"
+PassengerBaseURI "/"
+PassengerNodejs "/home/biso2928/nodevenv/modelize-me/22/bin/node"
+PassengerAppType node
+PassengerStartupFile loader.cjs
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION BEGIN
+<IfModule Litespeed>
+</IfModule>
+# DO NOT REMOVE OR MODIFY. CLOUDLINUX ENV VARS CONFIGURATION END
+
+# Activer le moteur de réécriture
+RewriteEngine On
+RewriteBase /
+
+# Forcer le HTTPS si nécessaire
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+RewriteCond %{REQUEST_URI} ^/_nuxt/
+RewriteRule ^ - [L]
+
+# Assurez-vous que les fichiers dans _nuxt/builds/meta sont accessibles sans restriction
+RewriteCond %{REQUEST_URI} ^/_nuxt/builds/meta/
+RewriteRule ^ - [L]
+
+# Permettre l'accès direct aux ressources statiques (assets, images, etc.)
+RewriteCond %{REQUEST_FILENAME} -f
+RewriteRule ^ - [L]
+
+# Gestion des erreurs 404 : Rediriger vers index.html pour les routes non trouvées (mode SPA)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ /index.html [L]
+
+# Désactiver l'indexation des dossiers
+Options -Indexes
+
+# Définir la compression pour optimiser le temps de chargement des ressources
+<IfModule mod_deflate.c>
+  # Activer la compression pour les types de contenu courants
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript 
+application/json application/xml application/font-woff2 application/font-woff
+</IfModule>
+
+# Activer le cache du navigateur pour les ressources statiques afin d'optimiser la performance
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpg "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType text/javascript "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType application/x-javascript "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 year"
+  ExpiresByType application/pdf "access plus 1 month"
+  ExpiresByType application/x-shockwave-flash "access plus 1 month"
+</IfModule>
+
+# Headers de sécurité
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: https: http:;"
+</IfModule>
+
