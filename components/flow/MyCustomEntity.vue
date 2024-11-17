@@ -1,10 +1,11 @@
 <template>
 
   <div class="bg-white shadow-md rounded-2xl w-80 z-40 relative hover:bg-zinc-50"
-       :class="props.selected ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
+       :class="props.selected || nodeIdSelected === props.id ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
        v-bind="$attrs"
        @mouseover="showHandles"
-       @mouseout="hideHandles">
+       @mousedown="showHandles"
+       @mouseout="props.selected || nodeIdSelected === props.id ? showHandles : hideHandles()">
 
     <NodeToolbar
         v-if="activeTab === 'mcd'"
@@ -63,7 +64,7 @@
 
 <script lang="ts" setup>
 import {Handle, Position, useNodesData} from '@vue-flow/core'
-import {computed, ref} from 'vue'
+import {computed, ref, watch} from 'vue'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
 import { NodeToolbar } from '@vue-flow/node-toolbar'
@@ -71,7 +72,7 @@ import {Trash2, Copy, KeyRound} from "lucide-vue-next";
 
 const mcdStore = useMCDStore()
 const {removeNode, createNewNode, addNode} = mcdStore
-const {activeTab} = storeToRefs(mcdStore)
+const {activeTab, nodeIdSelected} = storeToRefs(mcdStore)
 
 const props = defineProps({
   id: {
@@ -101,6 +102,15 @@ const entityDatas = ref({
     },
   ]
 })
+
+watch(() => props.selected || nodeIdSelected.value === props.id, (newVal) => {
+  console.log(newVal)
+  if (newVal) {
+    showHandles();
+  } else {
+    hideHandles();
+  }
+});
 
 const route = useRoute()
 

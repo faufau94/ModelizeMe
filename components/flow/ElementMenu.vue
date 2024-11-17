@@ -34,7 +34,7 @@
             <ScrollArea ref="scrollAreaRef" class="h-[400px] pr-4 ">
 
               <draggable
-                  v-model="nodeData.data.properties"
+                  v-model="listProperties"
                   item-key="id"
                   animation="200"
               >
@@ -43,7 +43,7 @@
                   <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full">
 
                     <div class="w-14 h-14 flex justify-center items-center"
-                         v-if="!filteredProperty.includes(element.typeName)">
+                         v-if="!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété'">
 
                       <TooltipProvider>
                         <Tooltip>
@@ -408,6 +408,8 @@ const {isSubMenuVisible, nodeIdSelected, edgeIdSelected} = storeToRefs(mcdStore)
 
 const nodeData = ref(null);
 const edgeData = ref(null);
+
+const listProperties = computed(() => nodeData?.value?.data?.properties);
 
 watchEffect(() => {
   nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value);
