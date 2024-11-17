@@ -103,7 +103,6 @@ const selectOption = (value) => {
 const selectedOption = computed(() => {
   switch (stepIndex.value) {
     case 2:
-      console.log(datas.value.framework)
       return datas.value.framework
     case 3:
       return datas.value.orm

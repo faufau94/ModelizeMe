@@ -2,7 +2,6 @@
 
     <DialogContent :onInteractOutside="(e) => {
       e.preventDefault()
-      console.log('interactOutside')
     }" class="sm:max-w-md">
       <DialogHeader>
         <DialogTitle>Importer un fichier</DialogTitle>
@@ -152,7 +151,6 @@ const handleFile = async () => {
         ({nodes, edges} = await convertXMLToFlowElements(fileContent, route.params.idModel));
       }
 
-      console.log(nodes, edges)
 
       if (nodes && edges) {
         mcdStore.flowMCD.addNodes(nodes);

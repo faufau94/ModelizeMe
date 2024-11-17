@@ -191,7 +191,6 @@ const message = ref({
 
 const isLoading = ref(false)
 const signUp = form.handleSubmit(async (values) => {
-  console.log(values)
   isLoading.value = true
 
   const res = await useFetch('/api/auth/sign-up', {

@@ -202,7 +202,6 @@ const onSubmit = handleSubmit(async (values) => {
 
 onMounted(async () => {
   const res = await useFetch("/api/categories/list")
-  console.log(res.data.value)
   if (res.data.value) {
     categories.value = res.data.value.map(cat => ({label: cat.name, value: cat.name.toLowerCase(), id: cat.id}))
   }

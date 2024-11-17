@@ -1,7 +1,6 @@
 import dagre from '@dagrejs/dagre';
 
 export function useLayout(currentFlow, direction = 'LR') {
-    console.log(currentFlow);
     const nodes = currentFlow.getNodes;
     const edges = currentFlow.getEdges;
 

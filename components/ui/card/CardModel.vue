@@ -132,7 +132,6 @@ const props = defineProps({
   },
 });
 
-console.log(props)
 
 const mcdStore = useMCDStore()
 const {models} = storeToRefs(mcdStore)
@@ -150,7 +149,6 @@ const showDialogRenameModel = ref(false);
 const isRenamingModel = ref(false);
 const deleteModel = async () => {
   isLoading.value = true;
-  console.log(props.model.id)
 
   const res = await $fetch(`/api/models/delete`, {
     method: 'DELETE',

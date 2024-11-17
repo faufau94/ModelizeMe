@@ -138,7 +138,6 @@ export const useConvertToFlowElements = () => {
     // Fonction pour enregistrer les nœuds et arêtes en base de données via l'API import
     async function saveNodesAndEdgesToDatabase(nodes, edges, modelId) {
         try {
-            console.log("Enregistrement des nœuds et arêtes :", nodes, edges, modelId);
             await $fetch('/api/models/import', {
                 method: 'PUT',
                 body: {
@@ -171,7 +170,6 @@ export const useConvertToFlowElements = () => {
 
         await saveNodesAndEdgesToDatabase(nodes, edges, modelId);
 
-        console.log("Nodes and edges saved to database:", nodes, edges);
         return { nodes, edges };
     }
 
