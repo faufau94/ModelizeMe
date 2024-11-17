@@ -166,21 +166,24 @@
 
         <div class="w-full">
           <p class="font-bold text-xl">Cardinalité</p>
-          <div class="max-w-sm mt-6 flex justify-between items-center">
-            <div>
+          <div class="mt-6 flex justify-between items-center w-full">
+            <div class="w-full">
               <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
-                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.sourceNode?.data?.name
+                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.sourceNode?.data?.name.toUpperCase()
                 }}</label>
             </div>
-            <div>
+            <div class="w-full">
+
+            </div>
+            <div class="w-full">
               <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
-                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.targetNode?.data?.name
+                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.targetNode?.data?.name.toUpperCase()
                 }}</label>
             </div>
           </div>
-          <div class="max-w-sm mb-6 flex justify-between items-center">
+          <div class="mb-6 flex justify-between items-center w-full">
 
-            <div class="w-20">
+            <div class="w-full">
               <Select v-model="sourceCardinality">
                 <SelectTrigger>
                   <SelectValue placeholder="X,X"/>
@@ -195,10 +198,10 @@
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            <div class="w-full flex justify-center items-center">
               <MoveRight :stroke-width="1" :size="24"/>
             </div>
-            <div class="w-20">
+            <div class="w-full">
               <Select v-model="targetCardinality">
                 <SelectTrigger class="w-full">
                   <SelectValue placeholder="X,X"/>
@@ -227,89 +230,216 @@
                    placeholder=""/>
           </div>
 
-          <div class="flex mt-10 justify-between items-center">
+          <div v-if="checkIfTwoNRelation">
+            <div class="flex mt-10 justify-between items-center">
 
-            <div class="font-bold text-xl">Champs</div>
-            <div class="flex justify-end items-center">
-              <Button variant="outline" @click="addFieldAssociation">
-                <CirclePlus :size="20" class="mr-2"/>
-                Ajouter un champ
-              </Button>
+              <div class="font-bold text-xl">Champs</div>
+              <div class="flex justify-end items-center">
+                <Button variant="outline" @click="addFieldAssociation">
+                  <CirclePlus :size="20" class="mr-2"/>
+                  Ajouter un champ
+                </Button>
+              </div>
             </div>
+
+
+            <div class="mt-6 space-y-2">
+            <ScrollArea ref="scrollAreaRef" class="h-[250px] pr-4 ">
+
+              <draggable
+                  v-model="listPropertiesRelation"
+                  item-key="id"
+                  animation="200"
+              >
+                <template #item="{element}">
+
+                  <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full">
+
+                    <div class="w-14 h-14 flex justify-center items-center"
+                         v-if="!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété'">
+
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger as-child>
+                            <CircleAlert :size="18" class="text-red-500"/>
+                          </TooltipTrigger>
+                          <TooltipContent class="text-center">
+                            Cette propriété n'est pas éligible. <br> Choisissez une propriété valable dans la liste.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div v-else class="w-14 h-14">
+
+                    </div>
+
+                    <div
+                        class="w-12 h-9 flex justify-center items-center text-gray-300 hover:bg-gray-50 hover:rounded cursor-pointer">
+                      <GripVertical :size="20" class=" group-hover:visible"/>
+                    </div>
+
+                    <div class="flex justify-center items-center" :class="[element?.propertyName === 'id' ?
+                                    'text-red-500 pointer-events-none ' :
+                                    'text-gray-300 cursor-pointer pointer-events-auto']"
+                         @click="element.isPrimaryKey = !element.isPrimaryKey">
+                      <KeyRound :size="20"
+                                :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']"/>
+                    </div>
+
+                    <div class="w-full p-1">
+                      <Input
+                          v-model="element.propertyName"
+                          type="text"
+                          placeholder="Nom du champ"
+                          :disabled="element?.propertyName === 'id'"
+                      />
+                    </div>
+
+                    <div class="w-full">
+                      <Popover v-model:open="element.open">
+                        <PopoverTrigger as-child>
+                          <Button
+                              variant="outline"
+                              role="combobox"
+                              :aria-expanded="element.open"
+                              class="w-full justify-between font-normal"
+                              :class="[!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété' ? 'border-red-500' : '',
+                                    element?.typeName === 'Propriété' ? 'text-gray-500 font-normal' : '']"
+                              :disabled="element?.propertyName === 'id'"
+                          >
+                            {{ element.typeName }}
+                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-full p-0">
+                          <Command>
+                            <CommandInput class="h-9" placeholder=""/>
+                            <CommandEmpty>Aucun résultat.</CommandEmpty>
+                            <CommandList>
+                              <CommandGroup>
+                                <CommandItem
+                                    v-for="(item, index) in filteredProperty"
+                                    :key="index"
+                                    :value="item"
+                                    @select="(ev) => {
+                                    if (typeof ev.detail.value === 'string') {
+                                      element.typeName = ev.detail.value
+                                    }
+                                    element.open = false
+                                  }"
+                                >
+                                  {{ item }}
+                                  <Check
+                                      :class="{
+                                      'ml-auto h-4 w-4': true,
+                                      'opacity-100': element.typeName === item,
+                                      'opacity-0': element.typeName !== item
+                                    }"
+                                  />
+
+                                </CommandItem>
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+
+                    <Trash2 class=" w-12 h-12"
+                            :class="[element?.propertyName === 'id' ?
+                                    'text-gray-300 pointer-events-none invisible' :
+                                    'text-red-500 cursor-pointer pointer-events-auto']"
+                            @click="removeFieldAssociation(element.id)"/>
+
+                  </div>
+                </template>
+
+              </draggable>
+            </ScrollArea>
+
+
           </div>
-          <div class="mt-6 space-y-2">
-            <ScrollArea ref="scrollAreaRef" class="h-[220px] pr-4">
-              <TransitionGroup tag="ul" name="fade">
-                <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
-                     v-for="(field, index) in mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.properties" :key="index">
 
-                  <div class="cursor-pointer" @click="field.isPrimaryKey = !field.isPrimaryKey">
-                    <KeyRound :size="20" :class="[field.isPrimaryKey ? 'text-red-500' : 'text-gray-300']"/>
-                  </div>
 
-                  <div class="w-full p-1">
-                    <Input
-                        v-model="field.propertyName"
-                        type="text"
-                        placeholder="Nom du champ"
-                    />
-                  </div>
+            <!--
+            <div class="mt-6 space-y-2">
+              <ScrollArea ref="scrollAreaRef" class="h-[220px] pr-4">
+                <TransitionGroup tag="ul" name="fade">
+                  <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
+                       v-for="(field, index) in mcdStore.flowMCD.findEdge(edgeIdSelected)?.data?.properties"
+                       :key="index">
 
-                  <div class=" w-full">
-                    <Popover v-model:open="field.open">
-                      <PopoverTrigger as-child>
-                        <Button
-                            variant="outline"
-                            role="combobox"
-                            :aria-expanded="field.open"
-                            class="w-full justify-between"
-                            :disabled="field?.propertyName === 'id' && field?.typeName !== 'Propriété'"
-                        >
-                          {{ field.typeName }}
-                          <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent class="w-full p-0">
-                        <Command>
-                          <CommandInput class="h-9" placeholder="Rechercher..."/>
-                          <CommandEmpty>Aucun résultat.</CommandEmpty>
-                          <CommandList>
-                            <CommandGroup>
-                              <CommandItem
-                                  v-for="(item, index) in filteredProperty"
-                                  :key="index"
-                                  :value="item"
-                                  @select="(ev) => {
+                    <div class="cursor-pointer" @click="field.isPrimaryKey = !field.isPrimaryKey">
+                      <KeyRound :size="20" :class="[field.isPrimaryKey ? 'text-red-500' : 'text-gray-300']"/>
+                    </div>
+
+                    <div class="w-full p-1">
+                      <Input
+                          v-model="field.propertyName"
+                          type="text"
+                          placeholder="Nom du champ"
+                      />
+                    </div>
+
+                    <div class=" w-full">
+                      <Popover v-model:open="field.open">
+                        <PopoverTrigger as-child>
+                          <Button
+                              variant="outline"
+                              role="combobox"
+                              :aria-expanded="field.open"
+                              class="w-full justify-between"
+                              :disabled="field?.propertyName === 'id' && field?.typeName !== 'Propriété'"
+                          >
+                            {{ field.typeName }}
+                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent class="w-full p-0">
+                          <Command>
+                            <CommandInput class="h-9" placeholder="Rechercher..."/>
+                            <CommandEmpty>Aucun résultat.</CommandEmpty>
+                            <CommandList>
+                              <CommandGroup>
+                                <CommandItem
+                                    v-for="(item, index) in filteredProperty"
+                                    :key="index"
+                                    :value="item"
+                                    @select="(ev) => {
                                       if (typeof ev.detail.value === 'string') {
                                         field.typeName = ev.detail.value
                                       }
                                       field.open = false
                                     }"
-                              >
-                                {{ item }}
-                                <Check
-                                    :class="{
+                                >
+                                  {{ item }}
+                                  <Check
+                                      :class="{
                                         'ml-auto h-4 w-4': true,
                                         'opacity-100': field.typeName === item,
                                         'opacity-0': field.typeName !== item
                                       }"
-                                />
+                                  />
 
-                              </CommandItem>
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                                </CommandItem>
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <Trash2 class="text-red-500 w-12 h-12 cursor-pointer" @click="removeFieldAssociation(index)"/>
                   </div>
-
-                  <Trash2 class="text-red-500 w-12 h-12 cursor-pointer" @click="removeFieldAssociation(index)"/>
-                </div>
-              </TransitionGroup>
-            </ScrollArea>
+                </TransitionGroup>
+              </ScrollArea>
 
 
+            </div>
+            -->
           </div>
+
         </div>
 
         <div class="flex flex-col w-full md:flex-row justify-between items-center gap-4">
@@ -385,7 +515,7 @@ import {
 } from 'lucide-vue-next';
 import {onBeforeUnmount} from 'vue';
 import draggable from 'vuedraggable';
-import { v4 as uuidv4 } from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 
 const preventBodyScroll = () => {
   document.body.style.overflow = 'hidden';
@@ -410,6 +540,7 @@ const nodeData = ref(null);
 const edgeData = ref(null);
 
 const listProperties = computed(() => nodeData?.value?.data?.properties);
+const listPropertiesRelation = computed(() => edgeData?.value?.data?.properties);
 
 watchEffect(() => {
   nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value);
@@ -442,6 +573,7 @@ const updateEdgeName = (newName) => {
 };
 
 const addFieldAssociation = () => {
+  console.log(edgeIdSelected.value)
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
     edge.data.properties.push({
       id: uuidv4(),
@@ -538,9 +670,9 @@ const targetCardinality = computed({
   },
 });
 
-const hasAnAssociation = computed(
-    () => edgeIdSelected.value !== null && mcdStore.flowMCD.findEdge(edgeIdSelected.value)?.data?.hasNodeAssociation
-);
+const checkIfTwoNRelation = computed(() => {
+  return sourceCardinality.value.split(',')[1] === 'N' && targetCardinality.value.split(',')[1] === 'N';
+});
 
 const type = [
   "String",

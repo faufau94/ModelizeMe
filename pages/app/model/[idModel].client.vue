@@ -370,6 +370,8 @@ mcdStore.flowMCD.onPaneClick((e) => {
     elementsMenu.value = false
     nodeIdSelected.value = null
     edgeIdSelected.value = null
+
+
   }
 })
 
@@ -415,6 +417,8 @@ onMounted(async () => {
       edgeIdSelected.value = null
       isSubMenuVisible.value = true
       nodeIdSelected.value = e.node.id
+
+
     }
   })
 

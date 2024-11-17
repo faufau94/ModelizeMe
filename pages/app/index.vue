@@ -7,7 +7,7 @@
       <div v-if="areModelsLoaded === true && (models === null || models.length === 0)">
         <div class="flex flex-col items-center justify-center h-[80vh]">
           <div class="text-center space-y-4">
-            <h3 class="text-2xl font-bold">Aucun résultat</h3>
+            <h3 class="text-2xl font-bold">Aucun modèles</h3>
             <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
             <CreateModelDialog />
           </div>

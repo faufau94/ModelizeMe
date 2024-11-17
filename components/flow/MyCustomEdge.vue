@@ -118,58 +118,62 @@ const center = computed(() => {
 const offset = 30;
 
 const sourceLabelX = computed(() => {
-  switch (props.sourcePosition) {
+  const { sx, sourcePos } = edgeParams.value;
+  switch (sourcePos) {
     case 'left':
-      return props.sourceX - offset;
+      return sx - offset;
     case 'right':
-      return props.sourceX + offset;
+      return sx + offset;
     case 'top':
     case 'bottom':
-      return props.sourceX;
+      return sx;
     default:
-      return props.sourceX;
+      return sx;
   }
 });
 
 const sourceLabelY = computed(() => {
-  switch (props.sourcePosition) {
+  const { sy, sourcePos } = edgeParams.value;
+  switch (sourcePos) {
     case 'top':
-      return props.sourceY - offset;
+      return sy - offset;
     case 'bottom':
-      return props.sourceY + offset;
+      return sy + offset;
     case 'left':
     case 'right':
-      return props.sourceY;
+      return sy;
     default:
-      return props.sourceY;
+      return sy;
   }
 });
 
 const targetLabelX = computed(() => {
-  switch (props.targetPosition) {
+  const { tx, targetPos } = edgeParams.value;
+  switch (targetPos) {
     case 'left':
-      return props.targetX - offset;
+      return tx - offset;
     case 'right':
-      return props.targetX + offset;
+      return tx + offset;
     case 'top':
     case 'bottom':
-      return props.targetX;
+      return tx;
     default:
-      return props.targetX;
+      return tx;
   }
 });
 
 const targetLabelY = computed(() => {
-  switch (props.targetPosition) {
+  const { ty, targetPos } = edgeParams.value;
+  switch (targetPos) {
     case 'top':
-      return props.targetY - offset;
+      return ty - offset;
     case 'bottom':
-      return props.targetY + offset;
+      return ty + offset;
     case 'left':
     case 'right':
-      return props.targetY;
+      return ty;
     default:
-      return props.targetY;
+      return ty;
   }
 });
 </script>
