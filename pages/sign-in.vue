@@ -135,7 +135,6 @@ const onSubmit = form.handleSubmit(async (values) => {
     callbackUrl: '/app'
   })
 
-  console.log(res)
 
 })
 

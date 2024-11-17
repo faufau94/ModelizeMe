@@ -1,7 +1,7 @@
 <template>
   <g>
     <!-- Dessiner l'arête avec BaseEdge -->
-    <BaseEdge :id="id" :style="style" :path="path[0]" />
+    <BaseEdge :id="id" :style="style" :path="edgePath[0]" />
 
     <!-- Rendu des labels avec EdgeLabelRenderer -->
     <EdgeLabelRenderer v-if="sourceCardinality !== null || activeTab === 'mcd'">
@@ -34,30 +34,29 @@
       </div>
     </EdgeLabelRenderer>
 
-
-    <foreignObject :x="center[0] - 230 /2"
-                   :y="center[1] - foreignObjectHeight /2"
+    <foreignObject :x="center[0] - 230 / 2"
+                   :y="center[1] - foreignObjectHeight / 2"
                    width="230"
                    :height="foreignObjectHeight"
                    class="w-60 rounded-[50px]"
     >
       <div v-if="activeTab === 'mcd'">
-        <MyCustomEntityAssociation :data="data"  />
+        <MyCustomEntityAssociation :data="data" />
       </div>
     </foreignObject>
   </g>
 </template>
 
 <script setup lang="ts">
-import {computed, provide, ref} from 'vue';
+import { computed, watchEffect, ref } from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
-import {BaseEdge, EdgeLabelRenderer, getStraightPath} from "@vue-flow/core";
-import {storeToRefs} from "pinia";
-import {useMCDStore} from "~/stores/mcd-store.js";
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, useNode } from "@vue-flow/core";
+import { storeToRefs } from "pinia";
+import { useMCDStore } from "~/stores/mcd-store.js";
+import { getEdgeParams } from '~/utils/useFloatingEdge.js';
 
-
-const mcdStore = useMCDStore()
-const {activeTab, foreignObjectHeight} = storeToRefs(mcdStore)
+const mcdStore = useMCDStore();
+const { activeTab, foreignObjectHeight } = storeToRefs(mcdStore);
 
 // Props
 const props = defineProps({
@@ -68,19 +67,38 @@ const props = defineProps({
   targetY: Number,
   sourcePosition: String,
   targetPosition: String,
+  sourceNode: Object,
+  targetNode: Object,
   data: Object,
 });
 
+// Références pour les paramètres de l'arête
+const edgeParams = ref({
+  sx: 0,
+  sy: 0,
+  tx: 0,
+  ty: 0,
+  sourcePos: null,
+  targetPos: null,
+});
 
-// Computed properties
-const path = computed(() => {
-  return getStraightPath({
-    sourceX: props.sourceX,
-    sourceY: props.sourceY,
-    targetX: props.targetX,
-    targetY: props.targetY,
-    sourcePosition: props.sourcePosition,
-    targetPosition: props.targetPosition,
+// Mise à jour des paramètres de l'arête
+watchEffect(() => {
+  if (props.sourceNode && props.targetNode) {
+    edgeParams.value = getEdgeParams(props.sourceNode, props.targetNode);
+  }
+});
+
+// Calcul du chemin de l'arête
+const edgePath = computed(() => {
+  const { sx, sy, tx, ty, sourcePos, targetPos } = edgeParams.value;
+  return getBezierPath({
+    sourceX: sx,
+    sourceY: sy,
+    sourcePosition: sourcePos,
+    targetPosition: targetPos,
+    targetX: tx,
+    targetY: ty,
   });
 });
 
@@ -96,7 +114,7 @@ const center = computed(() => {
   return [(sourceX + targetX) / 2, (sourceY + targetY) / 2];
 });
 
-// Offsets for positioning the labels near the handles
+// Offsets pour positionner les labels près des poignées
 const offset = 30;
 
 const sourceLabelX = computed(() => {
@@ -155,7 +173,6 @@ const targetLabelY = computed(() => {
   }
 });
 </script>
-
 
 <style scoped>
 .edge-label {

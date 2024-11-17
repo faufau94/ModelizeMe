@@ -6,7 +6,6 @@ export default defineEventHandler(async (event) => {
 
 
     try {
-        console.log('Téléchargement du code source...');
         return await $fetch('http://modelizeme-generator.org/api/download-project', {
             method: 'POST',
             body: {

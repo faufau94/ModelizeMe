@@ -132,7 +132,6 @@ onMounted(async () => {
 
   // get categories
   const resCategories = await $fetch("/api/categories/list")
-  console.log(resCategories)
   if (resCategories) {
     categories.value = resCategories
   }
@@ -144,7 +143,6 @@ onMounted(async () => {
       onlyTemplates: true
     }
   })
-  console.log(resModels)
   if (resModels) {
     items.value = resModels
   }

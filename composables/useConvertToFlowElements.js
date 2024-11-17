@@ -57,7 +57,8 @@ export const useConvertToFlowElements = () => {
                 const attribute = attributes[j];
                 columns.push({
                     propertyName: attribute.getAttribute("name"),
-                    typeName: attribute.getAttribute("type"),
+                    typeName: attribute.getAttribute("type").charAt(0).toUpperCase()
+                              + attribute.getAttribute("type").slice(1).toLowerCase(),
                     isPrimaryKey: attribute.getAttribute("isPrimaryKey") === "true",
                     isForeignKey: attribute.getAttribute("isForeignKey") === "true",
                     referencedTable: attribute.getAttribute("referencedTable"),
@@ -76,6 +77,22 @@ export const useConvertToFlowElements = () => {
     // Fonction pour créer les nœuds Vue-Flow à partir des entités
     function createNodesFromEntities(entities) {
         const nodes = entities.map((entity) => {
+
+            // Check if 'id' property exists and has typeName "Integer", then replace it with "Big Integer"
+            const idProperty = entity.properties.find(prop => prop.propertyName.toLowerCase() === 'id' && (prop.typeName.toLowerCase() === 'integer'));
+            if (idProperty) {
+                idProperty.typeName = 'Big Integer';
+            } else {
+                // If 'id' property does not exist, add it as a primary key
+                entity.properties.unshift({
+                    propertyName: "id",
+                    typeName: "Big Integer",
+                    isPrimaryKey: true,
+                    autoIncrement: true,
+                    isForeignKey: false,
+                });
+            }
+
             return {
                 id: `dndnode_${uuidv4()}`, // Générer un ID unique pour chaque nœud qui commence par 'dndnode_'
                 type: 'customEntity',
@@ -138,7 +155,6 @@ export const useConvertToFlowElements = () => {
     // Fonction pour enregistrer les nœuds et arêtes en base de données via l'API import
     async function saveNodesAndEdgesToDatabase(nodes, edges, modelId) {
         try {
-            console.log("Enregistrement des nœuds et arêtes :", nodes, edges, modelId);
             await $fetch('/api/models/import', {
                 method: 'PUT',
                 body: {
@@ -171,7 +187,6 @@ export const useConvertToFlowElements = () => {
 
         await saveNodesAndEdgesToDatabase(nodes, edges, modelId);
 
-        console.log("Nodes and edges saved to database:", nodes, edges);
         return { nodes, edges };
     }
 

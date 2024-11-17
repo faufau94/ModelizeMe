@@ -2,7 +2,7 @@
   <Card @click="openModel" class="cursor-pointer hover:border-gray-300 hover:shadow-md duration-150 transition">
     <CardHeader class="flex flex-row items-start gap-4 space-y-0">
       <div class="space-y-1 flex-1">
-        <CardTitle class="text-lg">{{ modelName.name }}</CardTitle>
+        <CardTitle class="text-lg">{{ modelName?.name.length > 20 ? modelName?.name.substring(0, 20) + '...' : modelName?.name }}</CardTitle>
       </div>
       <div class="rounded-md text-secondary-foreground">
 
@@ -74,7 +74,7 @@
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <Button @click.stop="deleteModel" :disabled="isLoading">
+                    <Button @keyup.enter="deleteModel" @click.stop="deleteModel" :disabled="isLoading">
                       <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
                       {{ isLoading ? 'Suppression...' : 'Supprimer' }}
                     </Button>
@@ -132,7 +132,6 @@ const props = defineProps({
   },
 });
 
-console.log(props)
 
 const mcdStore = useMCDStore()
 const {models} = storeToRefs(mcdStore)
@@ -150,7 +149,6 @@ const showDialogRenameModel = ref(false);
 const isRenamingModel = ref(false);
 const deleteModel = async () => {
   isLoading.value = true;
-  console.log(props.model.id)
 
   const res = await $fetch(`/api/models/delete`, {
     method: 'DELETE',

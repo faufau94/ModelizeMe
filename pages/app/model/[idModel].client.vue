@@ -53,7 +53,7 @@
         <Dialog>
           <DialogTrigger as-child>
             <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="outline" class=" border-none rounded-sm">
-              {{ model?.name }}
+              {{ model?.name.length > 20 ? model?.name.substring(0, 20) + '...' : model?.name }}
             </Button>
           </DialogTrigger>
           <DialogContent class="sm:max-w-[425px]" v-if="showDialogRenameModel">
@@ -286,8 +286,8 @@
       >
       </DropzoneBackground>
 
-      <template #connection-line="{ sourceX, sourceY, targetX, targetY }">
-        <CustomEdge :source-x="sourceX" :source-y="sourceY" :target-x="targetX" :target-y="targetY"/>
+      <template #connection-line="{ sourceX, sourceY, targetX, targetY, sourceNode, targetNode }">
+        <CustomEdge v-if="sourceNode && targetNode" :source-x="sourceX" :source-y="sourceY" :target-x="targetX" :target-y="targetY" :source-node="sourceNode" :target-node="targetNode"/>
       </template>
     </VueFlow>
   </div>
@@ -502,7 +502,6 @@ const isChangingTab = ref(false)
 const currentFlow = ref(mcdStore.flowMCD)
 
 watch(activeTab, () => {
-  console.log('watch')
   isChangingTab.value = true
   if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
   if (activeTab.value === 'mld') {

@@ -1,0 +1,81 @@
+import { ref } from 'vue';
+import { Position } from '@vue-flow/core';
+
+// Function to get the center position of a node
+function getNodeCenter(node) {
+    return {
+        x: node.position.x + node.dimensions.width / 2,
+        y: node.position.y + node.dimensions.height / 2,
+    };
+}
+
+// Function to get handle coordinates based on position
+function getHandleCoordsByPosition(node, handlePosition) {
+    // Access the 'source' handles from handleBounds
+    const handle = node.handleBounds.source.find(
+        (h) => h.position === handlePosition,
+    );
+
+    if (!handle) {
+        console.error('Handle not found for position:', handlePosition);
+        return [null, null];
+    }
+
+    let offsetX = handle.width / 2;
+    let offsetY = handle.height / 2;
+
+    switch (handlePosition) {
+        case Position.Left:
+            offsetX = 0;
+            break;
+        case Position.Right:
+            offsetX = handle.width;
+            break;
+        case Position.Top:
+            offsetY = 0;
+            break;
+        case Position.Bottom:
+            offsetY = handle.height;
+            break;
+    }
+
+    const x = node.position.x + handle.x + offsetX;
+    const y = node.position.y + handle.y + offsetY;
+
+    return [x, y];
+}
+
+// Function to get parameters for positioning a node relative to another node
+function getParams(nodeA, nodeB) {
+    const centerA = getNodeCenter(nodeA);
+    const centerB = getNodeCenter(nodeB);
+
+    const horizontalDiff = Math.abs(centerA.x - centerB.x);
+    const verticalDiff = Math.abs(centerA.y - centerB.y);
+
+    let position;
+
+    if (horizontalDiff > verticalDiff) {
+        position = centerA.x > centerB.x ? Position.Left : Position.Right;
+    } else {
+        position = centerA.y > centerB.y ? Position.Top : Position.Bottom;
+    }
+
+    const [x, y] = getHandleCoordsByPosition(nodeA, position);
+    return [x, y, position];
+}
+
+// Exported function to get edge parameters between source and target nodes
+export function getEdgeParams(source, target) {
+    const [sx, sy, sourcePos] = getParams(source, target);
+    const [tx, ty, targetPos] = getParams(target, source);
+
+    return {
+        sx,
+        sy,
+        tx,
+        ty,
+        sourcePos,
+        targetPos,
+    };
+}
