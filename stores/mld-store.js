@@ -112,12 +112,6 @@ export const useMLDStore = defineStore('flow-mld', () => {
 
                 // 4. Gestion des relations n:n
             } else if (sourceCardinality[1] === 'N' && targetCardinality[1] === 'N') {
-                console.log('Gestion des relations n:n')
-                console.log('sourceCardinality', sourceCardinality);
-                console.log('targetCardinality', targetCardinality);
-
-                console.log('edgeCopy.sourceNode', edgeCopy.sourceNode);
-                console.log('edgeCopy.targetNode', edgeCopy.targetNode);
 
                 let centerPosition = computed(() =>
                     getBezierPath({
@@ -498,6 +492,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
     //     })
     //
     // }
+
 
 
     return {

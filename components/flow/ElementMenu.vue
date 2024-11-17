@@ -8,7 +8,7 @@
     <div v-if="isSubMenuVisible"
          key="submenu"
 
-         class="absolute overflow-hidden z-40 md:w-[450px] px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
+         class="absolute overflow-hidden z-40 md:w-[500px] px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
 
     >
 
@@ -36,7 +36,24 @@
                 <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full"
                      v-for="(field, index) in nodeData?.data?.properties" :key="index">
 
-                  <div :class="[field?.propertyName === 'id' ?
+                  <div class="w-14 h-14 flex justify-center items-center" v-if="!filteredProperty.includes(field.typeName)">
+
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger as-child>
+                        <CircleAlert :size="18" class="text-red-500" />
+                      </TooltipTrigger>
+                      <TooltipContent class="text-center">
+                        Cette propriété n'est pas éligible. <br> Choisissez une propriété valable dans la liste.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  </div>
+                  <div v-else class="w-14 h-14">
+
+                  </div>
+
+                  <div class="flex justify-center items-center" :class="[field?.propertyName === 'id' ?
                                     'text-red-500 pointer-events-none ' :
                                     'text-gray-300 cursor-pointer pointer-events-auto']"
                        @click="field.isPrimaryKey = !field.isPrimaryKey">
@@ -61,6 +78,7 @@
                             role="combobox"
                             :aria-expanded="field.open"
                             class="w-full justify-between"
+                            :class="!filteredProperty.includes(field.typeName) ? 'border-red-500' : ''"
                             :disabled="field?.propertyName === 'id'"
                         >
                           {{ field.typeName || "Propriété" }}
@@ -109,6 +127,7 @@
                           @click="removeField(index)"/>
 
                 </div>
+
               </TransitionGroup>
             </ScrollArea>
 
@@ -295,7 +314,7 @@
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <Button @click="removeEdgeById" variant="destructive" class="border-none rounded-sm">
+                  <Button @keyup.enter="removeEdgeById" @click="removeEdgeById" variant="destructive" class="border-none rounded-sm">
                     Supprimer
                   </Button>
                 </AlertDialogFooter>
@@ -337,7 +356,7 @@ import {
 import {ScrollArea} from '@/components/ui/scroll-area'
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
-import {Check, ChevronsUpDown, CirclePlus, Loader2, Trash2, MoveRight, KeyRound} from 'lucide-vue-next';
+import {Check, ChevronsUpDown, CirclePlus, Loader2, Trash2, MoveRight, KeyRound, CircleAlert} from 'lucide-vue-next';
 import {onBeforeUnmount} from 'vue';
 
 const preventBodyScroll = () => {

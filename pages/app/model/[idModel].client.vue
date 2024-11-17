@@ -53,7 +53,7 @@
         <Dialog>
           <DialogTrigger as-child>
             <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="outline" class=" border-none rounded-sm">
-              {{ model?.name }}
+              {{ model?.name.length > 20 ? model?.name.substring(0, 20) + '...' : model?.name }}
             </Button>
           </DialogTrigger>
           <DialogContent class="sm:max-w-[425px]" v-if="showDialogRenameModel">
