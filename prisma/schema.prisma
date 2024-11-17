@@ -28,11 +28,12 @@ model User {
 
 model Model {
   id        Int       @id @default(autoincrement())
+  reference String?    @default(uuid())
   name      String
   nodes     Json      @default("[]")
   edges     Json      @default("[]")
   type      ModelType @default(MCD)
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now()) @updatedAt
@@ -43,7 +44,7 @@ model Model {
 
 model Galery {
   id         Int      @id @default(autoincrement())
-  model      Model    @relation(fields: [modelId], references: [id])
+  model      Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
   modelId    Int
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId Int
@@ -65,7 +66,7 @@ model Category {
 
 model LinkedAccount {
   id           Int      @id @default(autoincrement())
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       Int
   provider     String // e.g., 'github', 'gitlab'
   providerId   String // Identifiant unique sur le provider
