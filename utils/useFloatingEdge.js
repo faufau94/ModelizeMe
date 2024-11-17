@@ -3,7 +3,6 @@ import { Position } from '@vue-flow/core';
 
 // Function to get the center position of a node
 function getNodeCenter(node) {
-    console.log(node);
     return {
         x: node.position.x + node.dimensions.width / 2,
         y: node.position.y + node.dimensions.height / 2,
@@ -68,13 +67,9 @@ function getParams(nodeA, nodeB) {
 
 // Exported function to get edge parameters between source and target nodes
 export function getEdgeParams(source, target) {
-    console.log("source et target")
-    console.log(source, target)
     const [sx, sy, sourcePos] = getParams(source, target);
     const [tx, ty, targetPos] = getParams(target, source);
 
-    console.log('last result')
-    console.log(sx, sy, tx, ty, sourcePos, targetPos)
     return {
         sx,
         sy,

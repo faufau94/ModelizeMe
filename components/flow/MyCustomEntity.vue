@@ -1,7 +1,7 @@
 <template>
 
-  <div class="bg-white shadow-md rounded-2xl w-80 z-40 border relative border-transparent hover:border hover:border-1.5 hover:border-blue-400"
-       :style="{ 'border border-1.5 border-blue-400': props.selected }"
+  <div class="bg-white shadow-md rounded-2xl w-80 z-40 relative hover:bg-zinc-50"
+       :class="props.selected ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
        v-bind="$attrs"
        @mouseover="showHandles"
        @mouseout="hideHandles">
@@ -27,7 +27,7 @@
 
       </div>
       <h3 v-if="props?.data?.name !== ''" class="text-lg font-bold text-center text-gray-800">
-        {{ props?.data?.name }}
+        {{ props?.data?.name.toUpperCase() }}
       </h3>
       <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
     </div>
@@ -213,8 +213,8 @@ const removeProperty = (index) => {
 const sourceHandleStyle = computed(() => {
   return {
     backgroundColor: '#8392A6',
-    padding: '5px',
-    opacity: sourceHandle.value
+    padding: '7px',
+    opacity: sourceHandle.value,
   }
 })
 
@@ -237,7 +237,26 @@ const hideHandles = () => {
 </script>
 
 <style scoped>
+.vue-flow__handle {
+  width: 8px;
+  height: 8px;
+}
 
+.vue-flow__handle-top {
+  top: -15px;
+}
+
+.vue-flow__handle-bottom {
+  bottom: -15px;
+}
+
+.vue-flow__handle-left {
+  left: -15px;
+}
+
+.vue-flow__handle-right {
+  right: -15px;
+}
 </style>
 
 
