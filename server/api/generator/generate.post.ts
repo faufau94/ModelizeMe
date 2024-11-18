@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
         const response = await $fetch(process.env.URL_BACKEND + '/api/generate-project', {
             method: 'POST',
             body: {
-                title,
+                title: title.replace(/ /g, '-'),
                 framework,
                 database,
                 orm,
