@@ -2,7 +2,8 @@
 
   <div
       ref="content"
-      class="relative bg-white shadow-md rounded-[50px] border border-transparent hover:border hover:border-1.5 hover:border-blue-600"
+       class="bg-white shadow-md rounded-[50px] z-40 relative hover:bg-zinc-50 cursor-pointer"
+       :class="props.selected || edgeIdSelected === props.id ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
       v-bind="$attrs"
       @mouseover="showHandles"
       @mouseout="hideHandles">
@@ -43,7 +44,7 @@ import {Button} from '@/components/ui/button';
 import {storeToRefs} from "pinia";
 
 const mcdStore = useMCDStore()
-const {foreignObjectHeight} = storeToRefs(mcdStore)
+const {foreignObjectHeight, edgeIdSelected} = storeToRefs(mcdStore)
 const content = ref(null);
 
 
@@ -66,6 +67,10 @@ onUpdated(() => {
 const props = defineProps({
   id: {
     type: String,
+    required: false,
+  },
+  selected: {
+    type: Boolean,
     required: false,
   },
   data: {

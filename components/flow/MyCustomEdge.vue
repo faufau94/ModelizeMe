@@ -34,6 +34,7 @@
       </div>
     </EdgeLabelRenderer>
 
+    <!--
     <foreignObject :x="center[0] - 230 / 2"
                    :y="center[1] - foreignObjectHeight / 2"
                    width="230"
@@ -41,14 +42,31 @@
                    class="w-60 rounded-[50px]"
     >
       <div v-if="activeTab === 'mcd'">
-        <MyCustomEntityAssociation :data="data" />
+        <MyCustomEntityAssociation :data="data" :selected="selected" />
       </div>
     </foreignObject>
+    -->
+
+
+    <EdgeLabelRenderer>
+    <div
+        :style="{
+        pointerEvents: 'all',
+        position: 'absolute',
+        transform: `translate(-50%, -50%) translate(${edgePath[1]}px,${edgePath[2]}px)`,
+      }"
+        class="nodrag nopan"
+    >
+      <div @click="onclick" v-if="activeTab === 'mcd'">
+        <MyCustomEntityAssociation :data="data" :selected="selected" />
+      </div>
+    </div>
+    </EdgeLabelRenderer>
   </g>
 </template>
 
 <script setup lang="ts">
-import { computed, watchEffect, ref } from 'vue';
+import { computed, watchEffect, ref, watch} from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, useNode } from "@vue-flow/core";
 import { storeToRefs } from "pinia";
@@ -56,11 +74,14 @@ import { useMCDStore } from "~/stores/mcd-store.js";
 import { getEdgeParams } from '~/utils/useFloatingEdge.js';
 
 const mcdStore = useMCDStore();
-const { activeTab, foreignObjectHeight } = storeToRefs(mcdStore);
+const { activeTab, foreignObjectHeight, nodeIdSelected,
+  isSubMenuVisible, edgeIdSelected} = storeToRefs(mcdStore);
 
 // Props
 const props = defineProps({
   id: String,
+  selected: Boolean,
+  animated: Boolean,
   sourceX: Number,
   sourceY: Number,
   targetX: Number,
@@ -87,7 +108,12 @@ watchEffect(() => {
   if (props.sourceNode && props.targetNode) {
     edgeParams.value = getEdgeParams(props.sourceNode, props.targetNode);
   }
+
+  const edge = mcdStore.flowMCD.findEdge(props.id)
+  edge.animated = props.selected
+
 });
+
 
 // Calcul du chemin de l'arête
 const edgePath = computed(() => {
@@ -101,6 +127,16 @@ const edgePath = computed(() => {
     targetY: ty,
   });
 });
+
+const onclick = () => {
+  nodeIdSelected.value = null
+  isSubMenuVisible.value = true
+  edgeIdSelected.value = props.id
+
+  const edge = mcdStore.flowMCD.findEdge(props.id)
+  edge.selected = true
+  edge.animated = true
+}
 
 const style = computed(() => ({
   strokeWidth: 2,
