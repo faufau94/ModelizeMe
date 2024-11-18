@@ -573,7 +573,6 @@ const updateEdgeName = (newName) => {
 };
 
 const addFieldAssociation = () => {
-  console.log(edgeIdSelected.value)
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
     edge.data.properties.push({
       id: uuidv4(),
@@ -671,7 +670,12 @@ const targetCardinality = computed({
 });
 
 const checkIfTwoNRelation = computed(() => {
-  return sourceCardinality.value.split(',')[1] === 'N' && targetCardinality.value.split(',')[1] === 'N';
+  if(sourceCardinality.value.split(',')[1] === 'N' && targetCardinality.value.split(',')[1] === 'N') {
+    return true;
+  } else {
+    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.properties = [];
+    return false;
+  }
 });
 
 const type = [
