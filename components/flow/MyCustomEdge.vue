@@ -34,6 +34,7 @@
       </div>
     </EdgeLabelRenderer>
 
+    <!--
     <foreignObject :x="center[0] - 230 / 2"
                    :y="center[1] - foreignObjectHeight / 2"
                    width="230"
@@ -44,6 +45,23 @@
         <MyCustomEntityAssociation :data="data" :selected="selected" />
       </div>
     </foreignObject>
+    -->
+
+
+    <EdgeLabelRenderer>
+    <div
+        :style="{
+        pointerEvents: 'all',
+        position: 'absolute',
+        transform: `translate(-50%, -50%) translate(${edgePath[1]}px,${edgePath[2]}px)`,
+      }"
+        class="nodrag nopan"
+    >
+      <div @click="onclick" v-if="activeTab === 'mcd'">
+        <MyCustomEntityAssociation :data="data" :selected="selected" />
+      </div>
+    </div>
+    </EdgeLabelRenderer>
   </g>
 </template>
 
@@ -56,7 +74,8 @@ import { useMCDStore } from "~/stores/mcd-store.js";
 import { getEdgeParams } from '~/utils/useFloatingEdge.js';
 
 const mcdStore = useMCDStore();
-const { activeTab, foreignObjectHeight } = storeToRefs(mcdStore);
+const { activeTab, foreignObjectHeight, nodeIdSelected,
+  isSubMenuVisible, edgeIdSelected} = storeToRefs(mcdStore);
 
 // Props
 const props = defineProps({
@@ -108,6 +127,16 @@ const edgePath = computed(() => {
     targetY: ty,
   });
 });
+
+const onclick = () => {
+  nodeIdSelected.value = null
+  isSubMenuVisible.value = true
+  edgeIdSelected.value = props.id
+
+  const edge = mcdStore.flowMCD.findEdge(props.id)
+  edge.selected = true
+  edge.animated = true
+}
 
 const style = computed(() => ({
   strokeWidth: 2,
