@@ -41,14 +41,14 @@
                    class="w-60 rounded-[50px]"
     >
       <div v-if="activeTab === 'mcd'">
-        <MyCustomEntityAssociation :data="data" />
+        <MyCustomEntityAssociation :data="data" :selected="selected" />
       </div>
     </foreignObject>
   </g>
 </template>
 
 <script setup lang="ts">
-import { computed, watchEffect, ref } from 'vue';
+import { computed, watchEffect, ref, watch} from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, useNode } from "@vue-flow/core";
 import { storeToRefs } from "pinia";
@@ -61,6 +61,8 @@ const { activeTab, foreignObjectHeight } = storeToRefs(mcdStore);
 // Props
 const props = defineProps({
   id: String,
+  selected: Boolean,
+  animated: Boolean,
   sourceX: Number,
   sourceY: Number,
   targetX: Number,
@@ -87,7 +89,12 @@ watchEffect(() => {
   if (props.sourceNode && props.targetNode) {
     edgeParams.value = getEdgeParams(props.sourceNode, props.targetNode);
   }
+
+  const edge = mcdStore.flowMCD.findEdge(props.id)
+  edge.animated = props.selected
+
 });
+
 
 // Calcul du chemin de l'arête
 const edgePath = computed(() => {
