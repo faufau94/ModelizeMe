@@ -76,6 +76,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                    sourceCardinality[1] === '1' && targetCardinality[1] === '1') {
                     edgeCopy.markerEnd = MarkerType.ArrowClosed;
                     sourceNode.data.properties.splice(1, 0, {
+                        id: uuidv4(),
                         propertyName: `${targetNode.data.name.toLowerCase()}_id`,
                         typeName: 'Foreign Key',
                         isPrimaryKey: false,
@@ -85,6 +86,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                 } else if(sourceCardinality[1] === 'N' && targetCardinality[1] === '1') {
                     edgeCopy.markerEnd = MarkerType.ArrowClosed;
                     targetNode.data.properties.splice(1, 0, {
+                        id: uuidv4(),
                         propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
                         typeName: 'Foreign Key',
                         isPrimaryKey: false,
@@ -159,6 +161,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         properties: [
                             // first key attribute (foreign keys)
                             {
+                                id: uuidv4(),
                                 propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
                                 typeName: 'Foreign Key',
                                 isPrimaryKey: false,
@@ -166,6 +169,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
                                 isForeignKey: true
                             },
                             {
+                                id: uuidv4(),
                                 propertyName: `${targetNode.data.name.toLowerCase()}_id`,
                                 typeName: 'Foreign Key',
                                 isPrimaryKey: false,

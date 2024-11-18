@@ -49,6 +49,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 name: '',
                 properties: [
                     {
+                        id: uuidv4(),
                         propertyName: "id",
                         typeName: "Big Integer",
                         isPrimaryKey: true,

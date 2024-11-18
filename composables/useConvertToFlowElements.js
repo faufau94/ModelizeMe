@@ -22,6 +22,7 @@ export const useConvertToFlowElements = () => {
                 const referencedTable = matchColumn[6] || null;
 
                 columns.push({
+                    id: uuidv4(),
                     propertyName: columnName,
                     typeName: columnType,
                     isPrimaryKey: isPrimaryKey,
@@ -56,6 +57,7 @@ export const useConvertToFlowElements = () => {
             for (let j = 0; j < attributes.length; j++) {
                 const attribute = attributes[j];
                 columns.push({
+                    id: uuidv4(),
                     propertyName: attribute.getAttribute("name"),
                     typeName: attribute.getAttribute("type").charAt(0).toUpperCase()
                               + attribute.getAttribute("type").slice(1).toLowerCase(),
@@ -85,6 +87,7 @@ export const useConvertToFlowElements = () => {
             } else {
                 // If 'id' property does not exist, add it as a primary key
                 entity.properties.unshift({
+                    id: uuidv4(),
                     propertyName: "id",
                     typeName: "Big Integer",
                     isPrimaryKey: true,
