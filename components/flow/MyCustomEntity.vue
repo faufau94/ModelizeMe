@@ -1,6 +1,6 @@
 <template>
 
-  <div class="bg-white shadow-md rounded-2xl w-80 z-40 relative hover:bg-zinc-50"
+  <div class="bg-white shadow-md rounded-2xl w-80 z-40 relative hover:bg-zinc-50 cursor-pointer"
        :class="props.selected || nodeIdSelected === props.id ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
        v-bind="$attrs"
        @mouseover="showHandles"

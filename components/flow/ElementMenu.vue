@@ -34,7 +34,8 @@
             <ScrollArea ref="scrollAreaRef" class="h-[400px] pr-4 ">
 
               <draggable
-                  v-model="listProperties"
+                  v-if="nodeData && nodeData.data?.properties"
+                  v-model="nodeData.data.properties"
                   item-key="id"
                   animation="200"
               >
@@ -247,7 +248,8 @@
             <ScrollArea ref="scrollAreaRef" class="h-[250px] pr-4 ">
 
               <draggable
-                  v-model="listPropertiesRelation"
+                  v-if="edgeData && edgeData.data?.properties"
+                  v-model="edgeData.data.properties"
                   item-key="id"
                   animation="200"
               >
@@ -486,7 +488,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watchEffect} from "vue";
+import {computed, ref, watchEffect, watch} from "vue";
 import {storeToRefs} from "pinia";
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {Input} from '@/components/ui/input';
@@ -539,13 +541,11 @@ const {isSubMenuVisible, nodeIdSelected, edgeIdSelected} = storeToRefs(mcdStore)
 const nodeData = ref(null);
 const edgeData = ref(null);
 
-const listProperties = computed(() => nodeData?.value?.data?.properties);
-const listPropertiesRelation = computed(() => edgeData?.value?.data?.properties);
-
 watchEffect(() => {
   nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value);
   edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value);
 });
+
 
 const isLoading = ref(false);
 const updateNode = async () => {
