@@ -121,10 +121,10 @@ const edgePath = computed(() => {
   return getBezierPath({
     sourceX: sx,
     sourceY: sy,
-    sourcePosition: sourcePos,
-    targetPosition: targetPos,
     targetX: tx,
     targetY: ty,
+    sourcePosition: sourcePos,
+    targetPosition: targetPos,
   });
 });
 

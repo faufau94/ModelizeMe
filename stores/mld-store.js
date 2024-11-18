@@ -106,7 +106,30 @@ export const useMLDStore = defineStore('flow-mld', () => {
                     flowMLD.value.addNodes(targetNode);
                 }
                 if (!flowMLD.value.findEdge(edgeCopy.id)) {
-                    flowMLD.value.addEdges(edgeCopy);
+
+                    // Get the best edge position
+                    const {
+                        sx,
+                        sy,
+                        tx,
+                        ty,
+                        sourcePos,
+                        targetPos,
+                    } = getEdgeParams(sourceNode, targetNode)
+
+                    console.log(edgeCopy)
+                    console.log('juste après')
+                    console.log(sourceNode, targetNode, sx, sy, tx, ty, sourcePos, targetPos)
+
+                    flowMLD.value.addEdges({
+                        ...edgeCopy,
+                        sourceX: sx,
+                        sourceY: sy,
+                        targetX: tx,
+                        targetY: ty,
+                        sourcePosition: sourcePos,
+                        targetPosition: targetPos,
+                    });
                 }
 
 
@@ -201,8 +224,6 @@ export const useMLDStore = defineStore('flow-mld', () => {
                     }
                 }
 
-                console.log('newEdge1', newEdge1);
-                console.log('newEdge2', newEdge2);
 
                 // we add the association node to the list of nodes, with the two edges, with the two nodes
                 if (!flowMLD.value.findNode(sourceNode.id)) {
@@ -235,7 +256,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
         /*
         const { reorganizeNodesAndEdges } = useReorganize(flowMLD.value);
 
-// Applique la réorganisation des nodes pour éviter les chevauchements
+        // Applique la réorganisation des nodes pour éviter les chevauchements
         const { nodes, edges } = reorganizeNodesAndEdges();
 
 

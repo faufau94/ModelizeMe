@@ -94,7 +94,7 @@ export const useConvertToFlowElements = () => {
             }
 
             return {
-                id: `dndnode_${uuidv4()}`, // Générer un ID unique pour chaque nœud qui commence par 'dndnode_'
+                id: `dndnode_${uuidv4() + '_' + uuidv4()}`, // Générer un ID unique pour chaque nœud qui commence par 'dndnode_'
                 type: 'customEntity',
                 position: { x: Math.random() * 500, y: Math.random() * 500 },
                 draggable: true,
@@ -128,7 +128,7 @@ export const useConvertToFlowElements = () => {
                     // Vérifier que les nœuds source et cible existent avant de créer l'arête
                     if (sourceNode && targetNode) {
                         edges.push({
-                            id: `dndedge_${uuidv4()}`,
+                            id: `dndedge_${uuidv4()+ '_' + uuidv4()}`,
                             source: sourceNode,
                             target: targetNode,
                             sourceHandle: 's1',
