@@ -1,11 +1,11 @@
 <template>
 
   <div class="bg-white shadow-md rounded-2xl w-80 z-40 relative hover:bg-zinc-50 cursor-pointer"
-       :class="props.selected || nodeIdSelected === props.id ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
+       :class="nodeIdSelected === props.id ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
        v-bind="$attrs"
        @mouseover="showHandles"
        @mousedown="showHandles"
-       @mouseout="props.selected || nodeIdSelected === props.id ? showHandles : hideHandles()">
+       @mouseout="nodeIdSelected === props.id ? showHandles : hideHandles()">
 
     <NodeToolbar
         v-if="activeTab === 'mcd'"
@@ -103,7 +103,7 @@ const entityDatas = ref({
   ]
 })
 
-watch(() => props.selected || nodeIdSelected.value === props.id, (newVal) => {
+watch(() => nodeIdSelected.value === props.id, (newVal) => {
   console.log(newVal)
   if (newVal) {
     showHandles();
