@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
 
 
     try {
-        return await $fetch('http://modelizeme-generator.org/api/download-project', {
+        return await $fetch(process.env.URL_BACKEND + '/api/download-project', {
             method: 'POST',
             body: {
                 projectName
