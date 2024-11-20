@@ -20,7 +20,34 @@
             <Input v-model="nodeName" type="text"/>
           </div>
 
-          <div class="flex mt-10 justify-between items-center">
+          <div class="w-full flex items-center justify-start gap-x-8">
+            <div class="items-top flex gap-x-2 mt-5">
+              <Checkbox id="field-timestamp" v-model:checked="nodeTimestamps"/>
+              <div class="grid gap-1.5 leading-none">
+                <label
+                    for="field-timestamp"
+                    class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Inclure les horodatages
+                </label>
+              </div>
+            </div>
+
+            <div class="items-top flex gap-x-2 mt-5">
+              <Checkbox id="field-soft-deletes" v-model:checked="nodeSoftDeletes"/>
+              <div class="grid gap-1.5 leading-none">
+                <label
+                    for="field-soft-deletes"
+                    class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Inclure le soft-deletes
+                </label>
+              </div>
+            </div>
+          </div>
+
+
+          <div class="flex mt-5 justify-between items-center">
 
             <div class="font-bold text-xl">Champs</div>
             <div class="flex justify-end items-center">
@@ -133,12 +160,22 @@
                       </Popover>
                     </div>
 
+                    <template class="w-16 h-16" v-if="element?.propertyName !== 'id'">
+                      <NullableIcon class="w-16 h-16 cursor-pointer"
+                                    @click="element.isNullable = !element.isNullable"
+                                    :class="[element?.isNullable ?
+                                    'text-black' :
+                                    'text-gray-400']"
+                      />
+                    </template>
+                    <div v-else class="w-16 h-16"></div>
 
                     <Trash2 class=" w-12 h-12"
                             :class="[element?.propertyName === 'id' ?
                                     'text-gray-300 pointer-events-none invisible' :
                                     'text-red-500 cursor-pointer pointer-events-auto']"
                             @click="removeField(element.id)"/>
+
 
                   </div>
                 </template>
@@ -231,6 +268,32 @@
                    placeholder=""/>
           </div>
 
+          <div v-if="checkIfTwoNRelation" class="w-full flex items-center justify-start gap-x-8">
+            <div class="items-top flex gap-x-2 mt-5">
+              <Checkbox id="field-timestamp" v-model:checked="edgeTimestamps"/>
+              <div class="grid gap-1.5 leading-none">
+                <label
+                    for="field-timestamp"
+                    class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Inclure les horodatages
+                </label>
+              </div>
+            </div>
+
+            <div class="items-top flex gap-x-2 mt-5">
+              <Checkbox id="field-soft-deletes" v-model:checked="edgeSoftDeletes"/>
+              <div class="grid gap-1.5 leading-none">
+                <label
+                    for="field-soft-deletes"
+                    class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Inclure le soft-deletes
+                </label>
+              </div>
+            </div>
+          </div>
+
           <div v-if="checkIfTwoNRelation">
             <div class="flex mt-10 justify-between items-center">
 
@@ -245,123 +308,133 @@
 
 
             <div class="mt-6 space-y-2">
-            <ScrollArea ref="scrollAreaRef" class="h-[250px] pr-4 ">
+              <ScrollArea ref="scrollAreaRef" class="h-[250px] pr-4 ">
 
-              <draggable
-                  v-if="edgeData && edgeData.data?.properties"
-                  v-model="edgeData.data.properties"
-                  item-key="id"
-                  animation="200"
-              >
-                <template #item="{element}">
+                <draggable
+                    v-if="edgeData && edgeData.data?.properties"
+                    v-model="edgeData.data.properties"
+                    item-key="id"
+                    animation="200"
+                >
+                  <template #item="{element}">
 
-                  <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full">
+                    <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full">
 
-                    <div class="w-14 h-14 flex justify-center items-center"
-                         v-if="!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété'">
+                      <div class="w-14 h-14 flex justify-center items-center"
+                           v-if="!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété'">
 
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger as-child>
-                            <CircleAlert :size="18" class="text-red-500"/>
-                          </TooltipTrigger>
-                          <TooltipContent class="text-center">
-                            Cette propriété n'est pas éligible. <br> Choisissez une propriété valable dans la liste.
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <div v-else class="w-14 h-14">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger as-child>
+                              <CircleAlert :size="18" class="text-red-500"/>
+                            </TooltipTrigger>
+                            <TooltipContent class="text-center">
+                              Cette propriété n'est pas éligible. <br> Choisissez une propriété valable dans la liste.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <div v-else class="w-14 h-14">
 
-                    </div>
+                      </div>
 
-                    <div
-                        class="w-12 h-9 flex justify-center items-center text-gray-300 hover:bg-gray-50 hover:rounded cursor-pointer">
-                      <GripVertical :size="20" class=" group-hover:visible"/>
-                    </div>
+                      <div
+                          class="w-12 h-9 flex justify-center items-center text-gray-300 hover:bg-gray-50 hover:rounded cursor-pointer">
+                        <GripVertical :size="20" class=" group-hover:visible"/>
+                      </div>
 
-                    <div class="flex justify-center items-center" :class="[element?.propertyName === 'id' ?
+                      <div class="flex justify-center items-center" :class="[element?.propertyName === 'id' ?
                                     'text-red-500 pointer-events-none ' :
                                     'text-gray-300 cursor-pointer pointer-events-auto']"
-                         @click="element.isPrimaryKey = !element.isPrimaryKey">
-                      <KeyRound :size="20"
-                                :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']"/>
-                    </div>
+                           @click="element.isPrimaryKey = !element.isPrimaryKey">
+                        <KeyRound :size="20"
+                                  :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']"/>
+                      </div>
 
-                    <div class="w-full p-1">
-                      <Input
-                          v-model="element.propertyName"
-                          type="text"
-                          placeholder="Nom du champ"
-                          :disabled="element?.propertyName === 'id'"
-                      />
-                    </div>
+                      <div class="w-full p-1">
+                        <Input
+                            v-model="element.propertyName"
+                            type="text"
+                            placeholder="Nom du champ"
+                            :disabled="element?.propertyName === 'id'"
+                        />
+                      </div>
 
-                    <div class="w-full">
-                      <Popover v-model:open="element.open">
-                        <PopoverTrigger as-child>
-                          <Button
-                              variant="outline"
-                              role="combobox"
-                              :aria-expanded="element.open"
-                              class="w-full justify-between font-normal"
-                              :class="[!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété' ? 'border-red-500' : '',
+                      <div class="w-full">
+                        <Popover v-model:open="element.open">
+                          <PopoverTrigger as-child>
+                            <Button
+                                variant="outline"
+                                role="combobox"
+                                :aria-expanded="element.open"
+                                class="w-full justify-between font-normal"
+                                :class="[!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété' ? 'border-red-500' : '',
                                     element?.typeName === 'Propriété' ? 'text-gray-500 font-normal' : '']"
-                              :disabled="element?.propertyName === 'id'"
-                          >
-                            {{ element.typeName }}
-                            <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent class="w-full p-0">
-                          <Command>
-                            <CommandInput class="h-9" placeholder=""/>
-                            <CommandEmpty>Aucun résultat.</CommandEmpty>
-                            <CommandList>
-                              <CommandGroup>
-                                <CommandItem
-                                    v-for="(item, index) in filteredProperty"
-                                    :key="index"
-                                    :value="item"
-                                    @select="(ev) => {
+                                :disabled="element?.propertyName === 'id'"
+                            >
+                              {{ element.typeName }}
+                              <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50"/>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent class="w-full p-0">
+                            <Command>
+                              <CommandInput class="h-9" placeholder=""/>
+                              <CommandEmpty>Aucun résultat.</CommandEmpty>
+                              <CommandList>
+                                <CommandGroup>
+                                  <CommandItem
+                                      v-for="(item, index) in filteredProperty"
+                                      :key="index"
+                                      :value="item"
+                                      @select="(ev) => {
                                     if (typeof ev.detail.value === 'string') {
                                       element.typeName = ev.detail.value
                                     }
                                     element.open = false
                                   }"
-                                >
-                                  {{ item }}
-                                  <Check
-                                      :class="{
+                                  >
+                                    {{ item }}
+                                    <Check
+                                        :class="{
                                       'ml-auto h-4 w-4': true,
                                       'opacity-100': element.typeName === item,
                                       'opacity-0': element.typeName !== item
                                     }"
-                                  />
+                                    />
 
-                                </CommandItem>
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
+                                  </CommandItem>
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <template class="w-16 h-16" v-if="element?.propertyName !== 'id'">
+                        <NullableIcon class="w-16 h-16 cursor-pointer"
+                                      @click="element.isNullable = !element.isNullable"
+                                      :class="[element?.isNullable ?
+                                    'text-black' :
+                                    'text-gray-400']"
+                        />
+                      </template>
+                      <div v-else class="w-16 h-16"></div>
 
 
-                    <Trash2 class=" w-12 h-12"
-                            :class="[element?.propertyName === 'id' ?
+                      <Trash2 class=" w-12 h-12"
+                              :class="[element?.propertyName === 'id' ?
                                     'text-gray-300 pointer-events-none invisible' :
                                     'text-red-500 cursor-pointer pointer-events-auto']"
-                            @click="removeFieldAssociation(element.id)"/>
+                              @click="removeFieldAssociation(element.id)"/>
 
-                  </div>
-                </template>
+                    </div>
+                  </template>
 
-              </draggable>
-            </ScrollArea>
+                </draggable>
+              </ScrollArea>
 
 
-          </div>
+            </div>
 
 
             <!--
@@ -515,6 +588,7 @@ import {
   CircleAlert,
   GripVertical
 } from 'lucide-vue-next';
+import NullableIcon from '@/components/icon/nullable-icon';
 import {onBeforeUnmount} from 'vue';
 import draggable from 'vuedraggable';
 import {v4 as uuidv4} from 'uuid';
@@ -581,7 +655,8 @@ const addFieldAssociation = () => {
       open: false,
       isPrimaryKey: false,
       autoIncrement: false,
-      isForeignKey: false
+      isForeignKey: false,
+      isNullable: false,
     });
   });
 };
@@ -595,7 +670,8 @@ const addField = () => {
       open: false,
       isPrimaryKey: false,
       autoIncrement: false,
-      isForeignKey: false
+      isForeignKey: false,
+      isNullable: false,
     });
   });
   //scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
@@ -639,6 +715,30 @@ const nodeName = computed({
   },
 });
 
+const nodeTimestamps = computed({
+  get() {
+    console.log(nodeData?.value?.data)
+    return nodeData?.value?.data?.hasTimestamps;
+  },
+  set(value) {
+    console.log(value)
+    if (nodeData && nodeData.value.data) {
+      nodeData.value.data.hasTimestamps = value;
+    }
+  },
+});
+
+const nodeSoftDeletes = computed({
+  get() {
+    return nodeData?.value?.data?.usesSoftDeletes;
+  },
+  set(value) {
+    if (nodeData && nodeData.value.data) {
+      nodeData.value.data.usesSoftDeletes = value;
+    }
+  },
+});
+
 const edgeName = computed({
   get() {
     return edgeData?.value?.data?.name ?? "";
@@ -646,6 +746,28 @@ const edgeName = computed({
   set(value) {
     if (edgeData && edgeData.value.data) {
       edgeData.value.data.name = value;
+    }
+  },
+});
+
+const edgeTimestamps = computed({
+  get() {
+    return edgeData?.value?.data?.hasTimestamps;
+  },
+  set(value) {
+    if (edgeData && edgeData.value.data) {
+      edgeData.value.data.hasTimestamps = value;
+    }
+  },
+});
+
+const edgeSoftDeletes = computed({
+  get() {
+    return edgeData?.value?.data?.usesSoftDeletes;
+  },
+  set(value) {
+    if (edgeData && edgeData.value.data) {
+      edgeData.value.data.usesSoftDeletes = value;
     }
   },
 });
@@ -670,7 +792,7 @@ const targetCardinality = computed({
 });
 
 const checkIfTwoNRelation = computed(() => {
-  if(sourceCardinality.value.split(',')[1] === 'N' && targetCardinality.value.split(',')[1] === 'N') {
+  if (sourceCardinality.value.split(',')[1] === 'N' && targetCardinality.value.split(',')[1] === 'N') {
     return true;
   } else {
     mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.properties = [];

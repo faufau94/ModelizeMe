@@ -19,6 +19,7 @@ export const useConvertToFlowElements = () => {
                 const columnType = matchColumn[2];
                 const isPrimaryKey = matchColumn[5] === 'PRIMARY KEY';
                 const isForeignKey = matchColumn[5] && matchColumn[5].startsWith('FOREIGN KEY');
+                const isNullable = matchColumn[0].toLowerCase().includes('null');
                 const referencedTable = matchColumn[6] || null;
 
                 columns.push({
@@ -27,6 +28,7 @@ export const useConvertToFlowElements = () => {
                     typeName: columnType,
                     isPrimaryKey: isPrimaryKey,
                     isForeignKey: isForeignKey,
+                    isNullable: isNullable,
                     referencedTable: referencedTable,
                 });
             }
@@ -34,6 +36,8 @@ export const useConvertToFlowElements = () => {
             entities.push({
                 name: tableName,
                 properties: columns,
+                hasTimestamps: true,
+                usesSoftDeletes: false,
             });
         }
 
@@ -60,9 +64,10 @@ export const useConvertToFlowElements = () => {
                     id: uuidv4(),
                     propertyName: attribute.getAttribute("name"),
                     typeName: attribute.getAttribute("type").charAt(0).toUpperCase()
-                              + attribute.getAttribute("type").slice(1).toLowerCase(),
+                        + attribute.getAttribute("type").slice(1).toLowerCase(),
                     isPrimaryKey: attribute.getAttribute("isPrimaryKey") === "true",
                     isForeignKey: attribute.getAttribute("isForeignKey") === "true",
+                    isNullable: attribute.getAttribute("isNullable") === "true",
                     referencedTable: attribute.getAttribute("referencedTable"),
                 });
             }
@@ -70,6 +75,8 @@ export const useConvertToFlowElements = () => {
             entities.push({
                 name: tableName,
                 properties: columns,
+                hasTimestamps: true,
+                usesSoftDeletes: false,
             });
         }
 
@@ -93,6 +100,7 @@ export const useConvertToFlowElements = () => {
                     isPrimaryKey: true,
                     autoIncrement: true,
                     isForeignKey: false,
+                    isNullable: false,
                 });
             }
 
@@ -105,6 +113,8 @@ export const useConvertToFlowElements = () => {
                 data: {
                     name: entity.name,
                     properties: entity.properties,
+                    hasTimestamps: true,
+                    usesSoftDeletes: false,
                 },
             };
         });
@@ -145,6 +155,8 @@ export const useConvertToFlowElements = () => {
                                 sourceCardinality: '1',
                                 targetCardinality: 'N',
                                 properties: [],
+                                hasTimestamps: true,
+                                usesSoftDeletes: false,
                             },
                         });
                     }

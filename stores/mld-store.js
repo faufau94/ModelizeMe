@@ -81,7 +81,8 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         typeName: 'Foreign Key',
                         isPrimaryKey: false,
                         autoIncrement: false,
-                        isForeignKey: true
+                        isForeignKey: true,
+                        isNullable: false,
                     });
                 } else if(sourceCardinality[1] === 'N' && targetCardinality[1] === '1') {
                     edgeCopy.markerEnd = MarkerType.ArrowClosed;
@@ -91,7 +92,8 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         typeName: 'Foreign Key',
                         isPrimaryKey: false,
                         autoIncrement: false,
-                        isForeignKey: true
+                        isForeignKey: true,
+                        isNullable: false,
                     });
                 }
 
@@ -158,6 +160,8 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         relatedEdge: edgeCopy.id,
                         relatedEdgeSource: edgeCopy.source,
                         relatedEdgeTarget: edgeCopy.target,
+                        hasTimestamps: true,
+                        usesSoftDeletes: false,
                         properties: [
                             // first key attribute (foreign keys)
                             {
@@ -166,7 +170,8 @@ export const useMLDStore = defineStore('flow-mld', () => {
                                 typeName: 'Foreign Key',
                                 isPrimaryKey: false,
                                 autoIncrement: false,
-                                isForeignKey: true
+                                isForeignKey: true,
+                                isNullable: false,
                             },
                             {
                                 id: uuidv4(),
@@ -174,7 +179,8 @@ export const useMLDStore = defineStore('flow-mld', () => {
                                 typeName: 'Foreign Key',
                                 isPrimaryKey: false,
                                 autoIncrement: false,
-                                isForeignKey: true
+                                isForeignKey: true,
+                                isNullable: false,
                             },
                             ...(edgeCopy?.data?.properties || [])
                         ]

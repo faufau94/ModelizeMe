@@ -2,7 +2,7 @@
 
   <div
       ref="content"
-       class="bg-white shadow-md rounded-[50px] z-40 w-60 relative hover:bg-zinc-50 cursor-pointer"
+       class="bg-white shadow-md rounded-[50px] z-40 w-80 relative hover:bg-zinc-50 cursor-pointer"
        :class="props.selected || edgeIdSelected === props.id ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
       v-bind="$attrs"
       @mouseover="showHandles"
@@ -16,19 +16,91 @@
     </div>
     <hr >
     <div class="md:px-4 py-5" >
-      <div class="flex justify-between items-center py-1" v-for="(field,index) in props?.data?.properties" :key="index">
-        <div class="flex font-semibold items-center justify-center">
-          <div class="w-3 " v-if="field?.isPrimaryKey">
-            <KeyRound :size="13" class="text-red-500" />
+      <div class="flex justify-between items-center gap-6 py-1" v-for="(field,index) in props?.data?.properties"
+           :key="index">
+        <div class="flex font-bold items-center justify-center">
+          <div class="w-5" v-if="field?.isPrimaryKey">
+            <KeyRound :size="13" class="text-red-500"/>
           </div>
-          <div v-else class="w-3"></div>
+          <div class="w-5" v-else-if="field?.isForeignKey">
+            <KeyRound :size="13" class="text-gray-500"/>
+          </div>
+          <div v-else class="w-5"></div>
 
-          <div class="px-2" :class="{ 'underline' : field?.isPrimaryKey }">
-            {{ field?.propertyName }}
+          <div :class="{ 'underline' : field?.isPrimaryKey }">
+            {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
           </div>
         </div>
-        <div class=" pr-3">
-          {{ field?.typeName }}
+
+        <div class="flex justify-end items-end">
+          <div class="">
+            {{ field?.typeName }}
+          </div>
+          <div class="w-5" v-if="field?.propertyName !== 'id'">
+            <NullableIcon class="w-5 h-5 cursor-pointer"
+                          @click="field.isNullable = !field.isNullable"
+                          :class="[field?.isNullable ?
+                                    'text-black' :
+                                    'text-gray-400']"
+            />
+          </div>
+          <div v-else class="w-5"></div>
+        </div>
+      </div>
+
+      <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-6 py-1">
+        <div class="flex font-bold items-center justify-center">
+          <div class="w-5"></div>
+
+          <div class="text-gray-500 font-normal">
+            created_at
+          </div>
+        </div>
+        <div class="flex justify-end items-end">
+          <div class="">
+            Timestamp
+          </div>
+
+          <div>
+            <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-6 py-1">
+        <div class="flex font-bold items-center justify-center">
+          <div class="w-5"></div>
+          <div class="text-gray-500 font-normal">
+            updated_at
+          </div>
+        </div>
+        <div class="flex justify-end items-end">
+          <div class="">
+            Timestamp
+          </div>
+
+          <div>
+            <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="props?.data?.usesSoftDeletes" class="flex justify-between items-center gap-6 py-1">
+        <div class="flex font-bold items-center justify-center">
+          <div class="w-5"></div>
+
+          <div class="text-gray-500 font-normal">
+            deleted_at
+          </div>
+        </div>
+        <div class="flex justify-end items-end">
+          <div class="">
+            Timestamp
+          </div>
+
+          <div>
+            <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
+          </div>
         </div>
       </div>
     </div>
@@ -42,6 +114,7 @@ import {useMCDStore} from "~/stores/mcd-store.js";
 import {KeyRound, Trash2} from 'lucide-vue-next';
 import {Button} from '@/components/ui/button';
 import {storeToRefs} from "pinia";
+import NullableIcon from '@/components/icon/nullable-icon';
 
 const mcdStore = useMCDStore()
 const {foreignObjectHeight, edgeIdSelected} = storeToRefs(mcdStore)

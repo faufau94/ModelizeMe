@@ -47,6 +47,8 @@ export const useMCDStore = defineStore('flow-mcd', () => {
             selected: false,
             data: {
                 name: '',
+                hasTimestamps: true,
+                usesSoftDeletes: false,
                 properties: [
                     {
                         id: uuidv4(),
@@ -55,6 +57,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                         isPrimaryKey: true,
                         autoIncrement: true,
                         isForeignKey: false,
+                        isNullable: false,
                     },
                 ]
             }
@@ -130,6 +133,8 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 name: '',
                 sourceCardinality: '',
                 targetCardinality: '',
+                hasTimestamps: false,
+                usesSoftDeletes: false,
                 properties: []
             }
         }
@@ -184,6 +189,8 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 relatedEdge: edge.id,
                 relatedEdgeSource: edge.source,
                 relatedEdgeTarget: edge.target,
+                hasTimestamps: true,
+usesSoftDeletes: false,
                 properties: []
             }
         };

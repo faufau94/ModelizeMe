@@ -33,13 +33,14 @@
       <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
     </div>
     <div class="p-4 md:px-5">
-      <div class="flex justify-between items-center gap-6 py-1" v-for="(field,index) in props?.data?.properties" :key="index">
+      <div class="flex justify-between items-center gap-6 py-1" v-for="(field,index) in props?.data?.properties"
+           :key="index">
         <div class="flex font-bold items-center justify-center">
           <div class="w-5" v-if="field?.isPrimaryKey">
-            <KeyRound :size="13" class="text-red-500" />
+            <KeyRound :size="13" class="text-red-500"/>
           </div>
           <div class="w-5" v-else-if="field?.isForeignKey">
-            <KeyRound :size="13" class="text-gray-500" />
+            <KeyRound :size="13" class="text-gray-500"/>
           </div>
           <div v-else class="w-5"></div>
 
@@ -47,17 +48,87 @@
             {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
           </div>
         </div>
-        <div class="">
-          {{ field?.typeName }}
+
+        <div class="flex justify-end items-end">
+          <div class="">
+            {{ field?.typeName }}
+          </div>
+          <div class="w-5" v-if="field?.propertyName !== 'id'">
+            <NullableIcon class="w-5 h-5 cursor-pointer"
+                          @click="field.isNullable = !field.isNullable"
+                          :class="[field?.isNullable ?
+                                    'text-black' :
+                                    'text-gray-400']"
+            />
+          </div>
+          <div v-else class="w-5"></div>
         </div>
       </div>
+
+
+      <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-6 py-1">
+        <div class="flex font-bold items-center justify-center">
+          <div class="w-5"></div>
+
+          <div class="text-gray-500 font-normal">
+            created_at
+          </div>
+        </div>
+        <div class="flex justify-end items-end">
+          <div class="">
+            Timestamp
+          </div>
+
+          <div>
+            <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-6 py-1">
+        <div class="flex font-bold items-center justify-center">
+          <div class="w-5"></div>
+          <div class="text-gray-500 font-normal">
+            updated_at
+          </div>
+        </div>
+        <div class="flex justify-end items-end">
+          <div class="">
+            Timestamp
+          </div>
+
+          <div>
+            <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="props?.data?.usesSoftDeletes" class="flex justify-between items-center gap-6 py-1">
+        <div class="flex font-bold items-center justify-center">
+          <div class="w-5"></div>
+
+          <div class="text-gray-500 font-normal">
+            deleted_at
+          </div>
+        </div>
+        <div class="flex justify-end items-end">
+          <div class="">
+            Timestamp
+          </div>
+
+          <div>
+            <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div v-if="activeTab === 'mcd'">
-      <Handle id="s1"  type="source" :position="Position.Left" :style="sourceHandleStyle"/>
-      <Handle id="s2"  type="source" :position="Position.Top" :style="sourceHandleStyle"/>
-      <Handle id="s3"  type="source" :position="Position.Bottom" :style="sourceHandleStyle"/>
-      <Handle id="s4"  type="source" :position="Position.Right" :style="sourceHandleStyle"/>
+      <Handle id="s1" type="source" :position="Position.Left" :style="sourceHandleStyle"/>
+      <Handle id="s2" type="source" :position="Position.Top" :style="sourceHandleStyle"/>
+      <Handle id="s3" type="source" :position="Position.Bottom" :style="sourceHandleStyle"/>
+      <Handle id="s4" type="source" :position="Position.Right" :style="sourceHandleStyle"/>
     </div>
   </div>
 </template>
@@ -67,8 +138,9 @@ import {Handle, Position, useNodesData} from '@vue-flow/core'
 import {computed, ref, watch} from 'vue'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
-import { NodeToolbar } from '@vue-flow/node-toolbar'
+import {NodeToolbar} from '@vue-flow/node-toolbar'
 import {Trash2, Copy, KeyRound} from "lucide-vue-next";
+import NullableIcon from '@/components/icon/nullable-icon';
 
 const mcdStore = useMCDStore()
 const {removeNode, createNewNode, addNode} = mcdStore
@@ -95,6 +167,8 @@ const props = defineProps({
 
 const entityDatas = ref({
   name: '',
+  hasTimestamps: true,
+  usesSoftDeletes: false,
   properties: [
     {
       propertyName: "",
@@ -125,9 +199,9 @@ const duplicateNode = async () => {
   let maxOffset = 50
   // position close to the duplicated node
   let positionNewNode = {
-        x: props?.position.x + (Math.random() * maxOffset * 2 - maxOffset),
-        y: props?.position.y + (Math.random() * maxOffset * 2 - maxOffset)
-      }
+    x: props?.position.x + (Math.random() * maxOffset * 2 - maxOffset),
+    y: props?.position.y + (Math.random() * maxOffset * 2 - maxOffset)
+  }
   let newNode = createNewNode(positionNewNode)
   let data = {...props.data}
   newNode = {

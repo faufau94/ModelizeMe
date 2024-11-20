@@ -77,6 +77,8 @@ onMounted(() => {
         name: '',
         sourceCardinality: '',
         targetCardinality: '',
+        hasTimestamps: false,
+        usesSoftDeletes: false,
         properties: []
       }
     }
