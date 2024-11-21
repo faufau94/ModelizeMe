@@ -9,14 +9,14 @@
           <div class="text-center space-y-4">
             <h3 class="text-2xl font-bold">Aucun modèles</h3>
             <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
-            <CreateModelDialog />
+            <CreateModelDialog/>
           </div>
         </div>
       </div>
       <div v-else>
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold">Modèles</h1>
-          <CreateModelDialog />
+          <CreateModelDialog/>
         </div>
         <div class="mb-6">
           <div class="relative w-full max-w-sm items-center">
@@ -42,7 +42,7 @@ import {computed, ref} from 'vue';
 import {Search, Loader2} from 'lucide-vue-next';
 import CardModel from "~/components/ui/card/CardModel.vue";
 
-import { Input } from '@/components/ui/input'
+import {Input} from '@/components/ui/input'
 //import Toaster from '@/components/ui/toast/Toaster.vue'
 //import {useToast} from '@/components/ui/toast/use-toast'
 //import {ToastAction} from '@/components/ui/toast'
@@ -72,11 +72,10 @@ onMounted(async () => {
 })
 
 
-
-
 const searchTerm = ref("");
 
 const filteredModels = computed(() => {
+  if (searchTerm.value === "") return models?.value
   return models?.value?.filter((card) =>
       card.name.toLowerCase().includes(searchTerm.value.toLowerCase())
   )
