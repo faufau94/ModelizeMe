@@ -509,7 +509,9 @@ watch(activeTab, () => {
   isChangingTab.value = true
   if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
   if (activeTab.value === 'mld') {
-    mldStore.generateMLD()
+    const {nodesMLD, edgesMLD} = mldStore.generateMLD(mcdStore.flowMCD.getNodes.value, mcdStore.flowMCD.getEdges.value)
+    mldStore.flowMLD.setNodes(nodesMLD)
+    mldStore.flowMLD.setEdges(edgesMLD)
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};

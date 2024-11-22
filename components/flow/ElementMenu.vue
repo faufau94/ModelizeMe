@@ -160,15 +160,26 @@
                       </Popover>
                     </div>
 
-                    <template class="w-16 h-16" v-if="element?.propertyName !== 'id'">
-                      <NullableIcon class="w-16 h-16 cursor-pointer"
-                                    @click="element.isNullable = !element.isNullable"
-                                    :class="[element?.isNullable ?
+
+                    <div class="w-[15%] h-[15%]" v-if="element?.propertyName !== 'id'">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <NullableIcon class="w-[22px] h-[22px] cursor-pointer"
+                                          @click="element.isNullable = !element.isNullable"
+                                          :class="[element?.isNullable ?
                                     'text-black' :
                                     'text-gray-400']"
-                      />
-                    </template>
-                    <div v-else class="w-16 h-16"></div>
+                            />
+
+                          </TooltipTrigger>
+                          <TooltipContent class="bg-black text-white">
+                            <p>Est Nullable ?</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div v-else class="w-[15%] h-10"></div>
 
                     <Trash2 class=" w-12 h-12"
                             :class="[element?.propertyName === 'id' ?
@@ -410,15 +421,22 @@
                         </Popover>
                       </div>
 
-                      <template class="w-16 h-16" v-if="element?.propertyName !== 'id'">
-                        <NullableIcon class="w-16 h-16 cursor-pointer"
-                                      @click="element.isNullable = !element.isNullable"
-                                      :class="[element?.isNullable ?
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <NullableIcon class="w-[22px] h-[22px] cursor-pointer"
+                                            @click="element.isNullable = !element.isNullable"
+                                            :class="[element?.isNullable ?
                                     'text-black' :
                                     'text-gray-400']"
-                        />
-                      </template>
-                      <div v-else class="w-16 h-16"></div>
+                              />
+
+                            </TooltipTrigger>
+                            <TooltipContent class="bg-black text-white">
+                              <p>Est Nullable ?</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
 
 
                       <Trash2 class=" w-12 h-12"
@@ -574,6 +592,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from '@/components/ui/tooltip'
 import {ScrollArea} from '@/components/ui/scroll-area'
 import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList} from '@/components/ui/command';
