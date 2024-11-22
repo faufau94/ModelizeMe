@@ -840,6 +840,8 @@ const type = [
   "Timestamp",
   "UUID",
   "Binary",
+  "Image",
+  "File",
   "Json",
 ];
 

@@ -21,21 +21,6 @@ export const useMLDStore = defineStore('flow-mld', () => {
         flowMLD.value = instance;  // Assigner l'instance de useVueFlow
     }
 
-    function nameToUpperCase(name) {
-        return name.trim().toUpperCase().replace(/\s+/g, '_');
-    }
-
-    async function updateNodesEdgesMLD(idModel) {
-        await $fetch(`/api/models/mld/update`, {
-            method: 'PUT',
-            query: { id: idModel },
-            body: {
-                nodes_mld: flowMLD.value.getNodes,
-                edges_mld: flowMLD.value.getEdges,
-            }
-        });
-    }
-
     function generateMLD(nodes, edges) {
         const mcdStore = useMCDStore();
 

@@ -370,8 +370,6 @@ mcdStore.flowMCD.onPaneClick((e) => {
     elementsMenu.value = false
     nodeIdSelected.value = null
     edgeIdSelected.value = null
-
-
   }
 })
 
