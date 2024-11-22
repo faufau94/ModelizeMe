@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event);
-    const { title, modelId, framework, database, orm } = body;
+    const { title, modelId, framework, database, orm, nodes, edges } = body;
 
     try {
 
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
 
 
         // Créer un objet MLD
-        const mld = { nodes: model.nodes_mld, edges: model.edges_mld };
+        const mld = { nodes: nodes, edges: edges};
 
         console.log('Génération du code...');
         // Étape 2 : Appeler l'API Lumen pour la génération du projet

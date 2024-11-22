@@ -36,29 +36,24 @@ export const useMLDStore = defineStore('flow-mld', () => {
         });
     }
 
-    function generateMLD(nodes = null, edges = null) {
+    function generateMLD(nodes, edges) {
         const mcdStore = useMCDStore();
-        const {flowMCD} = mcdStore;
 
-        // Determine whether to use provided nodes and edges or use from store
-        const useTemp = nodes && edges;
 
         // Create appropriate flow instances
-        const mcdFlow = useTemp ? useVueFlow('flow-mcd-tmp') : flowMCD;
-        const mldFlow = useTemp ? useVueFlow('flow-mld-tmp') : flowMLD.value;
+        const mcdFlow = useVueFlow('flow-mcd-tmp')
+        const mldFlow = useVueFlow('flow-mld-tmp')
 
+        console.log('nodes', nodes);
+        console.log('edges', edges);
 
-        console.log('mcdFlow', mcdFlow.getNodes, mcdFlow.getEdges);
-        if (useTemp) {
-            mcdFlow.setNodes(nodes);
-            mcdFlow.setEdges(edges);
-        } else {
-            mldFlow.setNodes([]);
-            mldFlow.setEdges([]);
-        }
+        mcdFlow.setNodes(nodes);
+        mcdFlow.setEdges(edges);
+
+        console.log('mcdFlow', mcdFlow.getNodes.value, mcdFlow.getEdges.value);
 
         // Loop through edges of MCD
-        mcdFlow.getEdges.forEach(edge => {
+        mcdFlow.getEdges.value.forEach(edge => {
             const edgeCopy = JSON.parse(JSON.stringify(edge));
 
             const sourceCardinality = edgeCopy.data.sourceCardinality.split(',');
@@ -68,38 +63,45 @@ export const useMLDStore = defineStore('flow-mld', () => {
             const targetNode = JSON.parse(JSON.stringify(mcdFlow.findNode(edge.target)));
 
             // Convert node names to uppercase
-            sourceNode.data.name = nameToUpperCase(sourceNode.data.name);
-            targetNode.data.name = nameToUpperCase(targetNode.data.name);
+            //sourceNode.data.name = nameToUpperCase(sourceNode.data.name);
+            //targetNode.data.name = nameToUpperCase(targetNode.data.name);
 
             // Handle x:1 - 1:n and x:1 - x:1 relationships
             if ((sourceCardinality[1] === '1' && targetCardinality[1] === 'N') ||
                 (sourceCardinality[1] === 'N' && targetCardinality[1] === '1') ||
                 (sourceCardinality[1] === '1' && targetCardinality[1] === '1')) {
 
-                // Add foreign key to node with x:1 cardinality
-                if (sourceCardinality[1] === '1' && (targetCardinality[1] === 'N' || targetCardinality[1] === '1')) {
-                    edgeCopy.markerEnd = MarkerType.ArrowClosed;
-                    sourceNode.data.properties.splice(1, 0, {
+                // Add foreign key to node with x:n - x:1 cardinalities or x:1 - x:1 cardinalities
+                // Function to add foreign key and relationship properties
+                const addForeignKey = (node, foreignTableName) => {
+                    node.data.properties.splice(1, 0, {
                         id: uuidv4(),
-                        propertyName: `${targetNode.data.name.toLowerCase()}_id`,
-                        typeName: 'Foreign Key',
+                        propertyName: `${foreignTableName.toLowerCase()}_id`,
+                        typeName: 'Big Integer',
                         isPrimaryKey: false,
                         autoIncrement: false,
                         isForeignKey: true,
+                        foreignTable: foreignTableName,
                         isNullable: false,
                     });
+                };
+
+                // Determine relationship type, add foreign key, and set relationship property
+                edgeCopy.markerEnd = MarkerType.ArrowClosed;
+
+                if (sourceCardinality[1] === '1' && targetCardinality[1] === 'N') {
+                    addForeignKey(sourceNode, targetNode.data.name);
+                    sourceNode.data.relationship = 'OneToMany';
+                } else if (sourceCardinality[1] === '1' && targetCardinality[1] === '1') {
+                    addForeignKey(sourceNode, targetNode.data.name);
+                    sourceNode.data.relationship = 'OneToOne';
                 } else if (sourceCardinality[1] === 'N' && targetCardinality[1] === '1') {
-                    edgeCopy.markerEnd = MarkerType.ArrowClosed;
-                    targetNode.data.properties.splice(1, 0, {
-                        id: uuidv4(),
-                        propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
-                        typeName: 'Foreign Key',
-                        isPrimaryKey: false,
-                        autoIncrement: false,
-                        isForeignKey: true,
-                        isNullable: false,
-                    });
+                    addForeignKey(targetNode, sourceNode.data.name);
+                    targetNode.data.relationship = 'ManyToOne';
                 }
+
+
+
 
                 // Update edge type and label
                 edgeCopy.type = mcdStore.edgeType;
@@ -148,23 +150,30 @@ export const useMLDStore = defineStore('flow-mld', () => {
                         relatedEdgeTarget: edgeCopy.target,
                         hasTimestamps: true,
                         usesSoftDeletes: false,
+                        sourceCardinality: edgeCopy.data.sourceCardinality,
+                        targetCardinality: edgeCopy.data.targetCardinality,
+                        relationship: 'ManyToMany',
+                        relatedSourceNodeName: sourceNode.data.name,
+                        relatedTargetNodeName: targetNode.data.name,
                         properties: [
                             {
                                 id: uuidv4(),
                                 propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
-                                typeName: 'Foreign Key',
+                                typeName: 'Big Integer',
                                 isPrimaryKey: false,
                                 autoIncrement: false,
                                 isForeignKey: true,
+                                foreignTable: sourceNode.data.name,
                                 isNullable: false,
                             },
                             {
                                 id: uuidv4(),
                                 propertyName: `${targetNode.data.name.toLowerCase()}_id`,
-                                typeName: 'Foreign Key',
+                                typeName: 'Big Integer',
                                 isPrimaryKey: false,
                                 autoIncrement: false,
                                 isForeignKey: true,
+                                foreignTable: targetNode.data.name,
                                 isNullable: false,
                             },
                             ...(edgeCopy?.data?.properties || [])
@@ -228,11 +237,11 @@ export const useMLDStore = defineStore('flow-mld', () => {
         });
 
         // Add orphan nodes
-        mcdFlow.getNodes.forEach(node => {
+        mcdFlow.getNodes.value.forEach(node => {
             const copyNode = JSON.parse(JSON.stringify(node));
-            copyNode.data.name = nameToUpperCase(node.data.name);
+            //copyNode.data.name = nameToUpperCase(node.data.name);
 
-            const isNodeConnected = mcdFlow.getEdges.some(edge => edge.source === copyNode.id || edge.target === copyNode.id);
+            const isNodeConnected = mcdFlow.getEdges.value.some(edge => edge.source === copyNode.id || edge.target === copyNode.id);
             if (!isNodeConnected && !mldFlow.findNode(copyNode.id)) {
                 mldFlow.addNodes(copyNode);
             }
@@ -242,10 +251,9 @@ export const useMLDStore = defineStore('flow-mld', () => {
         mcdFlow.$destroy();
 
         // Return the results
-        const newNodesMLD = JSON.parse(JSON.stringify(mldFlow.getNodes));
-        const newEdgesMLD = JSON.parse(JSON.stringify(mldFlow.getEdges));
-        console.log('newNodesMLD', newNodesMLD);
-        console.log('newEdgesMLD', newEdgesMLD);
+        const newNodesMLD = JSON.parse(JSON.stringify(mldFlow.getNodes.value));
+        const newEdgesMLD = JSON.parse(JSON.stringify(mldFlow.getEdges.value));
+
         mldFlow.$destroy();
         return {
             nodesMLD: newNodesMLD,
