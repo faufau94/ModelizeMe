@@ -117,24 +117,8 @@ import {storeToRefs} from "pinia";
 import NullableIcon from '@/components/icon/nullable-icon';
 
 const mcdStore = useMCDStore()
-const {foreignObjectHeight, edgeIdSelected} = storeToRefs(mcdStore)
+const {edgeIdSelected} = storeToRefs(mcdStore)
 const content = ref(null);
-
-
-// Watch for changes in content and update height
-const updateHeight = () => {
-  if (content.value) {
-    foreignObjectHeight.value = content.value.offsetHeight;
-  }
-};
-
-onMounted(() => {
-  updateHeight();
-});
-
-onUpdated(() => {
-  updateHeight();
-});
 
 
 const props = defineProps({

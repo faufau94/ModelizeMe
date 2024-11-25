@@ -370,8 +370,6 @@ mcdStore.flowMCD.onPaneClick((e) => {
     elementsMenu.value = false
     nodeIdSelected.value = null
     edgeIdSelected.value = null
-
-
   }
 })
 
@@ -509,7 +507,14 @@ watch(activeTab, () => {
   isChangingTab.value = true
   if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
   if (activeTab.value === 'mld') {
-    mldStore.generateMLD()
+    console.log(mcdStore.flowMCD.getNodes)
+    console.log(mcdStore.flowMCD.getEdges)
+
+    const { nodesMLD, edgesMLD } = mldStore.generateMLD(mcdStore.flowMCD.getNodes, mcdStore.flowMCD.getEdges)
+    mldStore.flowMLD.setNodes(nodesMLD)
+    mldStore.flowMLD.setEdges(edgesMLD)
+    console.log('mldStore.flowMLD.getNodes', mldStore.flowMLD.getNodes)
+    console.log('mldStore.flowMLD.getEdges', mldStore.flowMLD.getEdges)
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};

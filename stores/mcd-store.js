@@ -2,6 +2,7 @@ import {computed, ref} from "vue";
 import {defineStore} from "pinia";
 import {getStraightPath, useVueFlow} from "@vue-flow/core";
 import { v4 as uuidv4 } from 'uuid';
+import {useMLDStore} from "./mld-store.js";
 
 export const useMCDStore = defineStore('flow-mcd', () => {
 
@@ -153,6 +154,18 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 action: 'updateEdge'
             }
         });
+
+        // const mldStore = useMLDStore()
+        // mldStore.generateMLD()
+        // await $fetch(`/api/models/mld/update`, {
+        //     method: 'PUT',
+        //     query: { id: idModel },
+        //     body: {
+        //         nodes_mld: mldStore.flowMLD.getNodes,
+        //         edges_mld: mldStore.flowMLD.getEdges,
+        //     }
+        // });
+
     }
 
     async function removeEdge(idModel, idEdge) {

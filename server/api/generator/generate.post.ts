@@ -2,20 +2,23 @@ import prisma from '@/lib/prisma';
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event);
-    const { title, modelId, framework, database, orm } = body;
+    const { title, modelId, framework, database, orm, nodes, edges } = body;
 
     try {
+
         // Étape 1 : Récupérer le modèle dans la base de données à partir de modelId
         const model = await prisma.model.findUnique({
             where: { id: parseInt(modelId, 10) },
-            select: { nodes: true, edges: true }
+            select: { nodes_mld: true, edges_mld: true }
         });
 
         if (!model) {
             throw new Error('Modèle introuvable');
         }
 
-        const mcd = { nodes: model.nodes, edges: model.edges };
+
+        // Créer un objet MLD
+        const mld = { nodes: nodes, edges: edges};
 
         console.log('Génération du code...');
         // Étape 2 : Appeler l'API Lumen pour la génération du projet
@@ -26,7 +29,7 @@ export default defineEventHandler(async (event) => {
                 framework,
                 database,
                 orm,
-                mcd
+                mld
             }
         });
         console.log(response)

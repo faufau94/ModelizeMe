@@ -2,7 +2,7 @@
   <Card @click="openModel" class="cursor-pointer hover:border-gray-300 hover:shadow-md duration-150 transition">
     <CardHeader class="flex flex-row items-start gap-4 space-y-0">
       <div class="space-y-1 flex-1">
-        <CardTitle class="text-lg">{{ modelName?.name.length > 20 ? modelName?.name.substring(0, 20) + '...' : modelName?.name }}</CardTitle>
+        <CardTitle class="text-lg">{{ props?.model?.name.length > 20 ? props?.model?.name.substring(0, 20) + '...' : props?.model?.name }}</CardTitle>
       </div>
       <div class="rounded-md text-secondary-foreground">
 
