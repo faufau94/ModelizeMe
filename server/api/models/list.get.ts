@@ -36,7 +36,9 @@ export default defineEventHandler(async event => {
         let models;
 
         try {
-            if (query.onlyTemplates === 'true') {
+            const onlyTemplates = query.onlyTemplates === 'true';
+
+            if (onlyTemplates) {
                 models = await prisma.model.findMany({
                     where: {
                         userId: getCurrentUser.id,

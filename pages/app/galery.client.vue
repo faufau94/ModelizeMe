@@ -140,7 +140,7 @@ onMounted(async () => {
   const resModels = await $fetch("/api/models/list", {
     method: "GET",
     query: {
-      onlyTemplates: true
+      onlyTemplates: 'true'
     }
   })
   if (resModels) {
