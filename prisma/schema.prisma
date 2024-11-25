@@ -32,8 +32,6 @@ model Model {
   name      String
   nodes     Json      @default("[]")
   edges     Json      @default("[]")
-  nodes_mld     Json      @default("[]")
-  edges_mld     Json      @default("[]")
   type      ModelType @default(MCD)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
