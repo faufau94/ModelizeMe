@@ -55,6 +55,7 @@ export default defineEventHandler(async event => {
             //         },
             //     });
             // } else {
+            console.log(getCurrentUser.id)
                 models = await prisma.model.findMany({
                     where: {
                         userId: getCurrentUser.id,
