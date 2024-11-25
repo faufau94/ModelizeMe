@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "yarn prisma migrate deploy && nuxt build",
+    "build": "nuxt build && npx prisma migrate deploy",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
