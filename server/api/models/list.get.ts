@@ -36,32 +36,32 @@ export default defineEventHandler(async event => {
         let models;
 
         try {
-            // const onlyTemplates = query.onlyTemplates === 'true';
-            //
-            // if (onlyTemplates) {
-            //     models = await prisma.model.findMany({
-            //         where: {
-            //             userId: getCurrentUser.id,
-            //             Galery: {
-            //                 some: {},
-            //             },
-            //         },
-            //         include: {
-            //             Galery: {
-            //                 include: {
-            //                     category: true,
-            //                 },
-            //             },
-            //         },
-            //     });
-            // } else {
+            const onlyTemplates = query.onlyTemplates === 'true';
+
+            if (onlyTemplates) {
+                models = await prisma.model.findMany({
+                    where: {
+                        userId: getCurrentUser.id,
+                        Galery: {
+                            some: {},
+                        },
+                    },
+                    include: {
+                        Galery: {
+                            include: {
+                                category: true,
+                            },
+                        },
+                    },
+                });
+            } else {
             console.log(getCurrentUser.id)
                 models = await prisma.model.findMany({
                     where: {
                         userId: getCurrentUser.id,
                     },
                 });
-            // }
+            }
         } catch (error) {
             console.error('Error fetching models:', error);
             throw createError({
