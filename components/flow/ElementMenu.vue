@@ -730,7 +730,7 @@ const submenuDirection = ref("slide-left");
 
 const nodeName = computed({
   get() {
-    return nodeData?.value?.data?.name.toUpperCase() ?? "";
+    return nodeData?.value?.data?.name ?? "";
   },
   set(value) {
     if (nodeData && nodeData.value.data) {
