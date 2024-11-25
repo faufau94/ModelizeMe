@@ -1,5 +1,6 @@
 import prisma from "~/lib/prisma";
 import { getServerSession } from "#auth";
+import {H3Error} from "h3";
 
 export default defineEventHandler(async event => {
     try {
