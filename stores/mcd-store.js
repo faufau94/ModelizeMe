@@ -134,7 +134,7 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 name: '',
                 sourceCardinality: '',
                 targetCardinality: '',
-                hasTimestamps: false,
+                hasTimestamps: true,
                 usesSoftDeletes: false,
                 properties: []
             }
