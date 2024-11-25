@@ -56,51 +56,76 @@ export const useMLDStore = defineStore('flow-mld', () => {
                 (sourceCardinality[1] === 'N' && targetCardinality[1] === '1') ||
                 (sourceCardinality[1] === '1' && targetCardinality[1] === '1')) {
 
-                // Add foreign key to node with x:n - x:1 cardinalities or x:1 - x:1 cardinalities
-                // Function to add foreign key and relationship properties
-                const addForeignKey = (node, foreignTableName) => {
-                    node.data.properties.splice(1, 0, {
-                        id: uuidv4(),
-                        propertyName: `${foreignTableName.toLowerCase()}_id`,
-                        typeName: 'Big Integer',
-                        isPrimaryKey: false,
-                        autoIncrement: false,
-                        isForeignKey: true,
-                        foreignTable: foreignTableName,
-                        isNullable: false,
-                    });
-                };
 
-                // Determine relationship type, add foreign key, and set relationship property
+                // Déterminer le type de relation, ajouter la clé étrangère et configurer le marqueur d'edge
                 edgeCopy.markerEnd = MarkerType.ArrowClosed;
-
-                if (sourceCardinality[1] === '1' && targetCardinality[1] === 'N') {
-                    addForeignKey(sourceNode, targetNode.data.name);
-                    sourceNode.data.relationship = 'OneToMany';
-                } else if (sourceCardinality[1] === '1' && targetCardinality[1] === '1') {
-                    addForeignKey(sourceNode, targetNode.data.name);
-                    sourceNode.data.relationship = 'OneToOne';
-                } else if (sourceCardinality[1] === 'N' && targetCardinality[1] === '1') {
-                    addForeignKey(targetNode, sourceNode.data.name);
-                    targetNode.data.relationship = 'ManyToOne';
-                }
-
-
-
-
-                // Update edge type and label
+                // Mettre à jour le type d'edge et son label
                 edgeCopy.type = mcdStore.edgeType;
                 edgeCopy.label = edgeCopy?.name ?? '';
 
-                // Add nodes and edge to MLD
-                if (!mldFlow.findNode(sourceNode.id)) {
-                    mldFlow.addNodes(sourceNode);
+                // Fonction pour ajouter une clé étrangère à un nœud
+                const addForeignKey = (foreignTable, relationshipType) => ({
+                    id: uuidv4(),
+                    propertyName: `${foreignTable.data.name.toLowerCase()}_id`,
+                    typeName: 'Big Integer',
+                    isPrimaryKey: false,
+                    autoIncrement: false,
+                    isForeignKey: true,
+                    foreignTable: foreignTable.data.name,
+                    isNullable: false,
+                    relationship: relationshipType,
+                });
+
+                const handleNodeUpdate = (node, newProperty) => {
+                    const updatedNode = {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            properties: [
+                                ...node.data.properties.slice(0, 1), // Clé primaire
+                                newProperty, // Clé étrangère
+                                ...node.data.properties.slice(1) // Autres propriétés
+                            ],
+                        },
+                    };
+
+                    if (!mldFlow.findNode(node.id)) {
+                        mldFlow.addNodes(updatedNode); // Ajouter le nœud avec les modifications
+                    } else {
+                        mldFlow.updateNode(node.id, (currentNode) => ({
+                            ...currentNode,
+                            data: {
+                                ...currentNode.data,
+                                properties: [
+                                    ...currentNode.data.properties.slice(0, 1), // Clé primaire
+                                    newProperty, // Clé étrangère
+                                    ...currentNode.data.properties.slice(1) // Autres propriétés
+                                ],
+                            },
+                        }));
+                    }
+                };
+
+                // Logique principale pour déterminer où ajouter la clé étrangère
+                let newProperty;
+                if (sourceCardinality[1] === '1' && targetCardinality[1] === 'N') {
+                    newProperty = addForeignKey(targetNode, 'OneToMany');
+                    handleNodeUpdate(sourceNode, newProperty);
+                } else if (sourceCardinality[1] === '1' && targetCardinality[1] === '1') {
+                    newProperty = addForeignKey(targetNode, 'OneToOne');
+                    handleNodeUpdate(sourceNode, newProperty);
+                } else if (sourceCardinality[1] === 'N' && targetCardinality[1] === '1') {
+                    newProperty = addForeignKey(sourceNode, 'ManyToOne');
+                    handleNodeUpdate(targetNode, newProperty);
                 }
-                if (!mldFlow.findNode(targetNode.id)) {
-                    mldFlow.addNodes(targetNode);
-                }
+
+
+                // Ajouter les nœuds restants s'ils ne sont pas encore dans le flux
+                if (!mldFlow.findNode(sourceNode.id)) mldFlow.addNodes(sourceNode);
+                if (!mldFlow.findNode(targetNode.id)) mldFlow.addNodes(targetNode);
+
                 if (!mldFlow.findEdge(edgeCopy.id)) {
-                    const { sx, sy, tx, ty, sourcePos, targetPos } = getEdgeParams(sourceNode, targetNode);
+                    const {sx, sy, tx, ty, sourcePos, targetPos} = getEdgeParams(sourceNode, targetNode);
                     mldFlow.addEdges({
                         ...edgeCopy,
                         sourceX: sx,
@@ -245,8 +270,6 @@ export const useMLDStore = defineStore('flow-mld', () => {
             edgesMLD: newEdgesMLD
         };
     }
-
-
 
 
     return {

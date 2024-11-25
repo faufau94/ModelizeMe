@@ -44,7 +44,7 @@
           </div>
           <div v-else class="w-5"></div>
 
-          <div :class="{ 'underline' : field?.isPrimaryKey }">
+          <div :class="{ 'underline' : field?.isPrimaryKey }" class="truncate w-32">
             {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
           </div>
         </div>
