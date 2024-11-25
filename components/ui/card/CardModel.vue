@@ -74,7 +74,7 @@
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <Button @keyup.enter="deleteModel" @click.stop="deleteModel" :disabled="isLoading">
+                    <Button variant="destructive" @keyup.enter="deleteModel" @click.stop="deleteModel" :disabled="isLoading">
                       <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
                       {{ isLoading ? 'Suppression...' : 'Supprimer' }}
                     </Button>
