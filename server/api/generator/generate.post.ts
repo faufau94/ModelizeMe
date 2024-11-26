@@ -6,17 +6,6 @@ export default defineEventHandler(async (event) => {
 
     try {
 
-        // Étape 1 : Récupérer le modèle dans la base de données à partir de modelId
-        const model = await prisma.model.findUnique({
-            where: { id: parseInt(modelId, 10) },
-            select: { nodes_mld: true, edges_mld: true }
-        });
-
-        if (!model) {
-            throw new Error('Modèle introuvable');
-        }
-
-
         // Créer un objet MLD
         const mld = { nodes: nodes, edges: edges};
 
