@@ -40,7 +40,7 @@
 <script setup>
 import {computed, ref} from 'vue';
 import {Search, Loader2} from 'lucide-vue-next';
-import CardModel from "~/components/ui/card/CardModel.vue";
+import CardModel from "@/components/ui/card/CardModel.vue";
 
 import {Input} from '@/components/ui/input'
 //import Toaster from '@/components/ui/toast/Toaster.vue'
@@ -48,7 +48,7 @@ import {Input} from '@/components/ui/input'
 //import {ToastAction} from '@/components/ui/toast'
 import {useMCDStore} from "@/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
-import CreateModelDialog from "../../components/flow/CreateModelDialog.vue";
+import CreateModelDialog from "@/components/flow/CreateModelDialog.vue";
 
 definePageMeta({
   layout: 'sidebar',

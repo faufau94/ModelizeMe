@@ -16,6 +16,7 @@
         @nodes-change="onChange"
         @edges-change="onChange"
         @edge-update="onEdgeUpdate"
+        
     >
       <MiniMap/>
       <Controls/>
@@ -286,6 +287,7 @@
       >
       </DropzoneBackground>
 
+
       <template #connection-line="{ sourceX, sourceY, targetX, targetY, sourceNode, targetNode }">
         <CustomEdge v-if="sourceNode && targetNode" :source-x="sourceX" :source-y="sourceY" :target-x="targetX" :target-y="targetY" :source-node="sourceNode" :target-node="targetNode"/>
       </template>
@@ -357,6 +359,10 @@ const isRenamingModel = ref(false)
 
 
 const showDialogRenameModel = ref(false)
+
+// Right click menu
+const menu = ref(null);
+const flowWrapper = ref(null);
 
 
 mcdStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))

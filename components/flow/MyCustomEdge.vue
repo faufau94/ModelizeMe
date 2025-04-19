@@ -103,14 +103,19 @@ const edgeParams = ref({
   targetPos: null,
 });
 
+
 // Mise à jour des paramètres de l'arête
 watchEffect(() => {
   if (props.sourceNode && props.targetNode) {
     edgeParams.value = getEdgeParams(props.sourceNode, props.targetNode);
   }
 
-  const edge = mcdStore.flowMCD.findEdge(props.id)
-  edge.animated = props.selected
+  if(props.id) {
+    const edge = mcdStore.flowMCD.findEdge(props.id)
+    console.log('edge', edge);
+    
+    edge.animated = props.selected
+  }
 
 });
 

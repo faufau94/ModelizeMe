@@ -25,6 +25,9 @@ export const useMCDStore = defineStore('flow-mcd', () => {
 
     const foreignObjectHeight = ref(100);
 
+    const isSaving = ref(false);
+    
+
     function getIdNode() {
         return `dndnode_${uuidv4() + '_' + uuidv4()}`
     }
@@ -266,14 +269,15 @@ usesSoftDeletes: false,
         elementsMenu,
         models,
         nodeIdSelected,
-        addNode,
         addNewNode,
-        getIdNode,
-        getIdEdge,
         edgeType,
         edgeTypes,
         foreignObjectHeight,
         edgeIdSelected,
+        isSaving,
+        getIdNode,
+        getIdEdge,
+        addNode,
         addAssociation,
         setFlowInstance,
         createNewNode,

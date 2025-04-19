@@ -198,14 +198,40 @@
           </div>
         </div>
 
+        <div class="flex flex-col w-full md:flex-row justify-between items-center gap-4">
+          <div>
+            <AlertDialog>
+              <AlertDialogTrigger as-child>
+                <Button variant="destructive" class="border-none rounded-sm">
+                  Supprimer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Supprimer cette relation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action est irréversible
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <Button @keyup.enter="removeNodeById" @click="removeNodeById" variant="destructive"
+                          class="border-none rounded-sm">
+                    Supprimer
+                  </Button>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         <div class="flex flex-col  w-full md:flex-row justify-end gap-4 self-end">
           <Button @click="isSubMenuVisible = false" variant="outline">
             Fermer
           </Button>
-          <Button @click="updateNode" :disabled="isLoading">
-            <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
-            {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+          <Button @click="updateNode" :disabled="isSaving">
+            <Loader2 v-if="isSaving" class="w-4 h-4 mr-2 animate-spin"/>
+            {{ isSaving ? 'Enregistrement...' : 'Enregistrer' }}
           </Button>
+        </div>
         </div>
 
 
@@ -564,9 +590,9 @@
             <Button @click="isSubMenuVisible = false" variant="outline">
               Fermer
             </Button>
-            <Button @click="updateEdge" :disabled="isLoading">
-              <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
-              {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+            <Button @click="updateEdge" :disabled="isSaving">
+              <Loader2 v-if="isSaving" class="w-4 h-4 mr-2 animate-spin"/>
+              {{ isSaving ? 'Enregistrement...' : 'Enregistrer' }}
             </Button>
           </div>
         </div>
@@ -633,8 +659,8 @@ const scrollAreaRef = ref(null);
 
 const route = useRoute();
 const mcdStore = useMCDStore();
-const {removeEdge} = mcdStore
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected} = storeToRefs(mcdStore);
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, isSaving} = storeToRefs(mcdStore);
+const {removeEdge, removeNode} = mcdStore
 
 const nodeData = ref(null);
 const edgeData = ref(null);
@@ -645,25 +671,28 @@ watchEffect(() => {
 });
 
 
-const isLoading = ref(false);
 const updateNode = async () => {
-  isLoading.value = true;
+  isSaving.value = true;
   await mcdStore.updateNode(route.params.idModel, nodeData.value.id)
 
   mcdStore?.flowMCD.updateNodeData(nodeData.value.id, (node) => {
     node.data = nodeData.value.data;
   });
-  isLoading.value = false;
+  isSaving.value = false;
 };
 
 const updateEdge = async () => {
-  isLoading.value = true;
+  isSaving.value = true;
   await mcdStore.updateEdge(route.params.idModel, edgeIdSelected.value)
-  isLoading.value = false;
+  isSaving.value = false;
 };
 
 const removeEdgeById = async () => {
   await removeEdge(route.params.idModel, edgeIdSelected.value)
+}
+
+const removeNodeById = async () => {
+  await removeNode(route.params.idModel, nodeIdSelected.value)
 }
 
 const updateEdgeName = (newName) => {
@@ -719,14 +748,9 @@ function onEnd(event) {
 
 const isExpanded = ref(true);
 
-const sidebarClass = computed(() => (isExpanded.value ? "w-56" : "w-16"));
-const subMenuClass = computed(() => (isExpanded.value ? "right-56" : "right-0"));
 const toggleSidebar = () => {
   isExpanded.value = !isExpanded.value;
 };
-
-const submenuDirection = ref("slide-left");
-
 
 const nodeName = computed({
   get() {
@@ -741,11 +765,9 @@ const nodeName = computed({
 
 const nodeTimestamps = computed({
   get() {
-    console.log(nodeData?.value?.data)
     return nodeData?.value?.data?.hasTimestamps;
   },
   set(value) {
-    console.log(value)
     if (nodeData && nodeData.value.data) {
       nodeData.value.data.hasTimestamps = value;
     }

@@ -31,7 +31,7 @@
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form @submit.prevent="onSubmit">
+          <form @submit.prevent="onSubmit" class="py-2">
             <div class="grid gap-4">
               <FormField name="email" v-slot="{ field }">
                 <FormItem>
@@ -68,14 +68,15 @@
                   </Button>
                 </FormControl>
               </FormField>
-
-              <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
-                <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: '/app' })">
-                  Continuer avec {{ provider?.name }}
-                </Button>
-              </div>
             </div>
-          </Form>
+          </form>
+
+          <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full py-2">
+            <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: '/app' })">
+              Continuer avec {{ provider?.name }}
+            </Button>
+          </div>
+
           <div class="mt-4 text-center text-sm">
             Pas encore de compte ?
             <NuxtLink to="/sign-up" class="underline">
