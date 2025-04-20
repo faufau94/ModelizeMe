@@ -15,10 +15,10 @@
           @mouseover="isNodeHovered = false"
           @mouseout="isNodeHovered = true"
           :is-visible="isNodeShown" :position="Position.Top">
-        <Button @click="removeNodeById(props.id)" variant="outline" class=" border-none rounded-sm">
+        <Button @click="removeNode(route.params.idModel, props.id)" variant="outline" class=" border-none rounded-sm">
           <Trash2 class="text-red-500" :size="20"/>
         </Button>
-        <Button @click="duplicateNode()" variant="outline" class=" border-none rounded-sm">
+        <Button @click="duplicateNode(props)" variant="outline" class=" border-none rounded-sm">
           <Copy class="text-gray-600" :size="20"/>
         </Button>
 
@@ -30,7 +30,7 @@
 
         </div>
         <h3 v-if="props?.data?.name !== ''" class="text-lg font-bold text-center text-gray-800">
-          {{ props?.data?.name.toUpperCase() }}
+          {{ props?.data?.name?.toUpperCase() ?? 'Sans nom' }}
         </h3>
         <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
       </div>
@@ -135,7 +135,7 @@
     </div>
     </ContextMenuTrigger>
     <ContextMenuContent>
-        <ContextMenuItem @click="duplicateNode()" class="cursor-pointer">Dupliquer</ContextMenuItem>
+        <ContextMenuItem @click="duplicateNode(props)" class="cursor-pointer">Dupliquer</ContextMenuItem>
         <ContextMenuItem class="cursor-pointer" as-child @click="setNodeTimestamps(!getNodeTimestamps)">
           <div v-if="getNodeTimestamps">
             Désactiver l’horodatage
@@ -153,7 +153,7 @@
           </div>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem @click="removeNodeById(props.id)" class="text-red-500 cursor-pointer">Supprimer</ContextMenuItem>
+        <ContextMenuItem @click="removeNode(route.params.idModel, props.id)" class="text-red-500 cursor-pointer">Supprimer</ContextMenuItem>
     </ContextMenuContent>
   </ContextMenu>
 </template>
@@ -174,11 +174,6 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
-import { get } from '@vueuse/core';
-
-const mcdStore = useMCDStore()
-const {removeNode, createNewNode, addNode} = mcdStore
-const {activeTab, nodeIdSelected, isSaving} = storeToRefs(mcdStore)
 
 const props = defineProps({
   id: {
@@ -199,6 +194,15 @@ const props = defineProps({
   },
 })
 
+
+const mcdStore = useMCDStore()
+const {removeNode, duplicateNode} = mcdStore
+const {activeTab, nodeIdSelected, isSaving} = storeToRefs(mcdStore)
+
+const route = useRoute()
+const isNodeShown = ref(false)
+const isNodeHovered = ref(false)
+
 watch(() => nodeIdSelected.value === props.id, (newVal) => {
   if (newVal) {
     showHandles();
@@ -206,33 +210,6 @@ watch(() => nodeIdSelected.value === props.id, (newVal) => {
     hideHandles();
   }
 });
-
-const route = useRoute()
-
-const isNodeShown = ref(false)
-const isNodeHovered = ref(false)
-
-const removeNodeById = idNode => {
-  removeNode(route.params.idModel, idNode)
-}
-
-const duplicateNode = async () => {
-  let maxOffset = 50
-  // position close to the duplicated node
-  let positionNewNode = {
-    x: props?.position.x + (Math.random() * maxOffset * 2 - maxOffset),
-    y: props?.position.y + (Math.random() * maxOffset * 2 - maxOffset)
-  }
-  let newNode = createNewNode(positionNewNode)
-  let data = {...props.data}
-  newNode = {
-    ...newNode,
-    data: data
-  }
-
-  await addNode(route.params.idModel, newNode)
-
-}
 
 const getNodeTimestamps = computed(() => {
   return props?.data?.hasTimestamps
@@ -260,10 +237,14 @@ const setNodeSoftDeletes = async value => {
 const updateNode = async () => {
   isSaving.value = true;
   await mcdStore.updateNode(route.params.idModel, props?.id)
-  let nodeData = mcdStore?.flowMCD?.findNode(nodeIdSelected.value);
+  console.log("props.data.data", props?.data)
 
   mcdStore?.flowMCD.updateNodeData(props?.id, (node) => {
-    nodeData.data = props?.data?.data;
+    let data = props?.data
+    node.data = {
+      ...node.data,
+      data
+    }
   });
   isSaving.value = false;
 };

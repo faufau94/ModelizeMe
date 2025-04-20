@@ -19,7 +19,6 @@ export const useMCDStore = defineStore('flow-mcd', () => {
 
     const addNewNode = ref(false)
 
-
     const edgeTypes = ref(['smoothstep', 'straight', 'step', 'curve'])
     const edgeType = ref('straight')
 
@@ -118,6 +117,25 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 action: 'updateNode'
             }
         });
+    }
+
+    async function duplicateNode(props) {
+        console.log(props)
+        let maxOffset = 50
+        // position close to the duplicated node
+        let positionNewNode = {
+          x: props?.position.x + (Math.random() * maxOffset * 2 - maxOffset),
+          y: props?.position.y + (Math.random() * maxOffset * 2 - maxOffset)
+        }
+        let newNode = createNewNode(positionNewNode)
+        let data = {...props.data}
+        newNode = {
+          ...newNode,
+          data: data
+        }
+        const route = useRoute()
+        await addNode(route.params.idModel, newNode)
+      
     }
 
     function createNewEdge(params) {
@@ -284,6 +302,7 @@ usesSoftDeletes: false,
         createNewEdge,
         removeNode,
         updateNode,
+        duplicateNode,
         updateEdge,
         removeEdge,
         determineHandles

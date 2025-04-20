@@ -33,21 +33,6 @@
         </div>
       </div>
     </EdgeLabelRenderer>
-
-    <!--
-    <foreignObject :x="center[0] - 230 / 2"
-                   :y="center[1] - foreignObjectHeight / 2"
-                   width="230"
-                   :height="foreignObjectHeight"
-                   class="w-60 rounded-[50px]"
-    >
-      <div v-if="activeTab === 'mcd'">
-        <MyCustomEntityAssociation :data="data" :selected="selected" />
-      </div>
-    </foreignObject>
-    -->
-
-
     <EdgeLabelRenderer>
     <div
         :style="{
@@ -68,13 +53,13 @@
 <script setup lang="ts">
 import { computed, watchEffect, ref, watch} from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, useNode } from "@vue-flow/core";
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, useNode, getSmoothStepPath } from "@vue-flow/core";
 import { storeToRefs } from "pinia";
 import { useMCDStore } from "~/stores/mcd-store.js";
 import { getEdgeParams } from '~/utils/useFloatingEdge.js';
 
 const mcdStore = useMCDStore();
-const { activeTab, foreignObjectHeight, nodeIdSelected,
+const { activeTab, nodeIdSelected,
   isSubMenuVisible, edgeIdSelected} = storeToRefs(mcdStore);
 
 // Props
@@ -92,38 +77,40 @@ const props = defineProps({
   targetNode: Object,
   data: Object,
 });
+console.log('props',props);
 
 // Références pour les paramètres de l'arête
-const edgeParams = ref({
-  sx: 0,
-  sy: 0,
-  tx: 0,
-  ty: 0,
-  sourcePos: null,
-  targetPos: null,
-});
+// const edgeParams = ref({
+//   sx: 0,
+//   sy: 0,
+//   tx: 0,
+//   ty: 0,
+//   sourcePos:null,
+//   targetPos: null,
+// });
+
+const edgeParams = computed(() => (
+  getEdgeParams(
+    props.sourceNode,
+    props.targetNode,
+)));
 
 
 // Mise à jour des paramètres de l'arête
 watchEffect(() => {
-  if (props.sourceNode && props.targetNode) {
-    edgeParams.value = getEdgeParams(props.sourceNode, props.targetNode);
-  }
-
+  console.log('edgeParams', edgeParams.value);
+  
   if(props.id) {
     const edge = mcdStore.flowMCD.findEdge(props.id)
-    console.log('edge', edge);
-    
     edge.animated = props.selected
   }
-
 });
 
 
 // Calcul du chemin de l'arête
 const edgePath = computed(() => {
   const { sx, sy, tx, ty, sourcePos, targetPos } = edgeParams.value;
-  return getBezierPath({
+  return getSmoothStepPath({
     sourceX: sx,
     sourceY: sy,
     targetX: tx,

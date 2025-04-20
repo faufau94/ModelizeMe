@@ -16,7 +16,6 @@
         @nodes-change="onChange"
         @edges-change="onChange"
         @edge-update="onEdgeUpdate"
-        
     >
       <MiniMap/>
       <Controls/>
@@ -119,9 +118,6 @@
         <Separator orientation="vertical" class="h-6"/>
 
         <div>
-<!--          <Button variant="outline" class="border-none">-->
-<!--            Mettre à niveau-->
-<!--          </Button>-->
           <PricingDialog />
         </div>
       </Panel>
@@ -298,7 +294,7 @@
 
 <script setup>
 import {computed, markRaw, onMounted, ref, nextTick} from "vue";
-import CustomEdge from "~/components/flow/MyCustomEdge.vue";
+import CustomEdge from "~/components/flow/CustomEdge.vue";
 import ElementMenu from "~/components/flow/ElementMenu.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
 import DropzoneBackground from "~/components/flow/DropzoneBackground.vue";
@@ -354,15 +350,8 @@ const edgeTypes = {
 };
 
 const model = ref(null)
-
 const isRenamingModel = ref(false)
-
-
 const showDialogRenameModel = ref(false)
-
-// Right click menu
-const menu = ref(null);
-const flowWrapper = ref(null);
 
 
 mcdStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
@@ -513,14 +502,9 @@ watch(activeTab, () => {
   isChangingTab.value = true
   if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
   if (activeTab.value === 'mld') {
-    console.log(mcdStore.flowMCD.getNodes)
-    console.log(mcdStore.flowMCD.getEdges)
-
     const { nodesMLD, edgesMLD } = mldStore.generateMLD(mcdStore.flowMCD.getNodes, mcdStore.flowMCD.getEdges)
     mldStore.flowMLD.setNodes(nodesMLD)
     mldStore.flowMLD.setEdges(edgesMLD)
-    console.log('mldStore.flowMLD.getNodes', mldStore.flowMLD.getNodes)
-    console.log('mldStore.flowMLD.getEdges', mldStore.flowMLD.getEdges)
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};

@@ -1,6 +1,6 @@
 import {computed, ref} from "vue";
 import {defineStore} from "pinia";
-import {getBezierPath, useVueFlow, MarkerType} from "@vue-flow/core";
+import {getBezierPath, useVueFlow, MarkerType, getSmoothStepPath} from "@vue-flow/core";
 import {useMCDStore} from "./mcd-store.js";
 import {v4 as uuidv4} from 'uuid';
 import {useReorganize} from "../composables/useReorganize.js";
@@ -140,7 +140,7 @@ export const useMLDStore = defineStore('flow-mld', () => {
             } else if (sourceCardinality[1] === 'N' && targetCardinality[1] === 'N') {
                 // Handle n:n relationships
                 let centerPosition = computed(() =>
-                    getBezierPath({
+                    getSmoothStepPath({
                         sourceX: edgeCopy.sourceX,
                         sourceY: edgeCopy.sourceY,
                         targetX: edgeCopy.targetX,

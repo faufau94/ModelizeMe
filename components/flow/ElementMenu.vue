@@ -924,8 +924,7 @@ let filteredProperty = computed(() =>
 }
 
 
-<
-style scoped >
+<style scoped>
 .container {
   max-width: 600px;
   margin: auto;
