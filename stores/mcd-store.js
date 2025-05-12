@@ -120,7 +120,6 @@ export const useMCDStore = defineStore('flow-mcd', () => {
     }
 
     async function duplicateNode(props) {
-        console.log(props)
         let maxOffset = 50
         // position close to the duplicated node
         let positionNewNode = {

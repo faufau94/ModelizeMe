@@ -5,7 +5,6 @@ import { defineEventHandler } from "h3";
 export default defineEventHandler(async (event) => {
     // Lire le corps de la requête
     const body = await readBody(event);
-    console.log(body);
 
     // Vérifier que toutes les informations nécessaires sont présentes
     if (!body.modelId || !body.nodes || !body.edges) {

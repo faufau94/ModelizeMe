@@ -29,13 +29,9 @@ export const useMLDStore = defineStore('flow-mld', () => {
         const mcdFlow = useVueFlow('flow-mcd-tmp')
         const mldFlow = useVueFlow('flow-mld-tmp')
 
-        console.log('nodes', nodes);
-        console.log('edges', edges);
-
         mcdFlow.setNodes(nodes);
         mcdFlow.setEdges(edges);
 
-        console.log('mcdFlow', mcdFlow.getNodes.value, mcdFlow.getEdges.value);
 
         // Loop through edges of MCD
         mcdFlow.getEdges.value.forEach(edge => {

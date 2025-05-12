@@ -9,7 +9,6 @@ export default defineEventHandler(async (event) => {
         // Créer un objet MLD
         const mld = { nodes: nodes, edges: edges};
 
-        console.log('Génération du code...');
         // Étape 2 : Appeler l'API Lumen pour la génération du projet
         const response = await $fetch(process.env.URL_BACKEND + '/api/generate-project', {
             method: 'POST',
@@ -21,7 +20,6 @@ export default defineEventHandler(async (event) => {
                 mld
             }
         });
-        console.log(response)
 
         if(response.status === 'success') {
             return {

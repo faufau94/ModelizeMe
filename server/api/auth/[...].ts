@@ -208,7 +208,6 @@ export default NuxtAuthHandler({
     events: {
         async linkAccount(message) {
             // Ici, message contient les informations sur l'utilisateur, le compte lié et le provider
-            console.log('Compte lié:', message);
         },
     },
 })

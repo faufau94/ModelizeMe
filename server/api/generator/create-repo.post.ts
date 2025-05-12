@@ -28,11 +28,6 @@ export default defineEventHandler(async (event) => {
 
         switch (provider) {
             case 'github':
-                console.log('Creating GitHub repository');
-                console.log('token', token);
-                console.log('body', body);
-                console.log('headers', headers);
-
                 /*
                 response = await createRepository('https://api.github.com/user/repos', 'POST', body, {
                     ...headers,
