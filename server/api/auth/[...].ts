@@ -31,6 +31,13 @@ export default NuxtAuthHandler({
                 const user = await prisma.user.findFirst({
                     where: {
                         email: credentials.email,
+                    },
+                    include: {
+                        roles: {
+                            include: {
+                                role: true
+                            }
+                        }
                     }
                 })
                 // Vérifier si l'utilisateur existe et si le mot de passe est correct
@@ -48,6 +55,9 @@ export default NuxtAuthHandler({
                         message: "Mot de passe incorrect."
                     }
                 }
+
+                console.log("User found:", user);
+                
 
                 return user
             }
@@ -182,25 +192,31 @@ export default NuxtAuthHandler({
          */
         /* on session retrival */
         async session({ session, user, token }) {
-            if (user) {
-                session.user = {
-                    ...session.user,
-                    id: user.id,
-                    accounts: user.accounts || [],
-                };
-            } else if (token) {
-                session.user = {
-                    ...session.user,
-                    id: token.id,
-                    accounts: token.accounts || [],
-                };
+            console.log("Session data:", session);
+            console.log("User data:", user);
+            console.log("Token data:", token);
+            
+
+            const source = user || token;
+
+            if (source) {
+            session.user = {
+                ...session.user,
+                id: source.id,
+                accounts: source.accounts || [],
+                role: source.role ?? null,
+            };
             }
+
             return session;
         },
         /* on JWT token creation or mutation */
         async jwt({ token, user, account, profile, isNewUser }) {
+            console.log("user data from token:", user);
+            
             if (user) {
-                token.id = user.id;
+                token.id = user.id
+                token.role = user.roles[0].role.name || []
             }
             return token;
         }

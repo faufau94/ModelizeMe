@@ -33,6 +33,10 @@ export default defineNuxtConfig({
     }
   },
 
+  router: {
+    middleware: ['require-super-admin'],
+  },
+
   dayjs: {
     locales: ['en', 'fr'],
     defaultLocale: 'fr',

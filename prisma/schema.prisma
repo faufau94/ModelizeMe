@@ -1,5 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// =============================
+// Prisma schema: Roles, Permissions, CRUD control (updated many-to-many Role-Permission)
+// =============================
 
 generator client {
   provider = "prisma-client-js"
@@ -11,6 +12,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// =============================
+// USER MODEL & ROLES
+// =============================
 model User {
   id                Int             @id @default(autoincrement())
   email             String          @unique
@@ -20,28 +24,127 @@ model User {
   image             String?
   provider          String?
   providerAccountId String?
-  linkedAccounts    LinkedAccount[] // Relation vers les comptes liés
+  roles             UserRole[]
+  classes           ClassMember[]
   models            Model[]
+  comments          Comment[]
+  sharedAccesses    SharedAccess[]
+  linkedAccounts    LinkedAccount[]
+  ownedClasses      Class[]         @relation("UserOwnedClasses")
+  createdAt         DateTime        @default(now())
 
   @@map("users")
 }
 
-model Model {
-  id        Int       @id @default(autoincrement())
-  reference String?    @default(uuid())
-  name      String
-  nodes     Json      @default("[]")
-  edges     Json      @default("[]")
-  type      ModelType @default(MCD)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Role {
+  id          String            @id @default(uuid())
+  name        String            @unique
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id       String            @id @default(uuid())
+  action   String            @unique
+  roles    RolePermission[]
+}
+
+model UserRole {
+  id     String  @id @default(uuid())
+  user   User    @relation(fields: [userId], references: [id])
+  userId Int
+  role   Role    @relation(fields: [roleId], references: [id])
+  roleId String
+}
+
+model RolePermission {
+  id           String      @id @default(uuid())
+  role         Role        @relation(fields: [roleId], references: [id])
+  roleId       String
+  permission   Permission  @relation(fields: [permissionId], references: [id])
+  permissionId String
+
+  @@unique([roleId, permissionId])
+}
+
+// =============================
+// CLASSROOM SYSTEM
+// =============================
+model Class {
+  id          String         @id @default(uuid())
+  name        String
+  owner       User           @relation("UserOwnedClasses", fields: [ownerId], references: [id])
+  ownerId     Int
+  joinCode    String         @unique
+  members     ClassMember[]
+  models      Model[]
+  createdAt   DateTime       @default(now())
+}
+
+model ClassMember {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
   userId    Int
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
-  Galery    Galery[]
+  class     Class    @relation(fields: [classId], references: [id])
+  classId   String
+}
+
+// =============================
+// MODELS (SCHEMAS)
+// =============================
+model Model {
+  id           Int              @id @default(autoincrement())
+  reference    String?          @default(uuid())
+  name         String
+  nodes        Json             @default("[]")
+  edges        Json             @default("[]")
+  type         ModelType        @default(MCD)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  class        Class?           @relation(fields: [classId], references: [id])
+  classId      String?
+  comments     Comment[]
+  sharedAccess SharedAccess[]
+  Galery       Galery[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @default(now()) @updatedAt
 
   @@map("models")
 }
 
+// =============================
+// SHARING PERMISSIONS (Notion-style)
+// =============================
+model SharedAccess {
+  id         String   @id @default(uuid())
+  model      Model    @relation(fields: [modelId], references: [id])
+  modelId    Int
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  access     AccessType
+}
+
+enum AccessType {
+  READ
+  EDIT
+}
+
+// =============================
+// COMMENTS / ANNOTATIONS
+// =============================
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  model     Model    @relation(fields: [modelId], references: [id])
+  modelId   Int
+  createdAt DateTime @default(now())
+}
+
+// =============================
+// GALLERY SYSTEM
+// =============================
 model Galery {
   id         Int      @id @default(autoincrement())
   model      Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
@@ -68,11 +171,11 @@ model LinkedAccount {
   id           Int      @id @default(autoincrement())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       Int
-  provider     String // e.g., 'github', 'gitlab'
-  providerId   String // Identifiant unique sur le provider
-  accessToken  String // Jeton d'accès pour l'API du provider
-  refreshToken String? // Jeton de rafraîchissement (optionnel)
-  username     String? // Nom d'utilisateur sur le provider
+  provider     String
+  providerId   String
+  accessToken  String
+  refreshToken String?
+  username     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

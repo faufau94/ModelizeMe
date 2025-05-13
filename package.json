@@ -16,7 +16,6 @@
     "@pinia/nuxt": "^0.5.3",
     "@preline/overlay": "^2.3.0",
     "@preline/select": "^2.3.0",
-    "@prisma/client": "^6.7.0",
     "@prisma/nuxt": "^0.0.35",
     "@sidebase/nuxt-auth": "^0.9.4",
     "@vee-validate/nuxt": "^4.13.2",
@@ -59,7 +58,13 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "prisma": "^5.22.0"
+    "@prisma/client": "^6.7.0",
+    "prisma": "^5.22.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

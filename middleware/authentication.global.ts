@@ -1,20 +1,52 @@
-export default defineNuxtRouteMiddleware((to) => {
-    const { status, signIn } = useAuth()
+// /middleware/authentication.global.ts
+import { defineNuxtRouteMiddleware, navigateTo, useAuth } from '#imports'
+import { watch } from 'vue'
 
-    // Return immediately if user is already authenticated
-    if (status.value === 'authenticated' && to.path === '/') {
-        return navigateTo('/app')
-    }
+export default defineNuxtRouteMiddleware(async (to) => {
+  const { status, data } = useAuth()
 
-    // Redirect to sign-in page if user is unauthenticated
-    if(status.value === 'unauthenticated' && to.path.startsWith('/app')) {
-        return navigateTo('/sign-in')
-    }
+  console.log('Auth status:', status.value)
+  console.log('Auth data:', data.value);
+  
 
-    // Redirect to home page if user is unauthenticated
-    else if (status.value === 'unauthenticated' && to.path !== '/sign-in' && to.path !== '/sign-up' && to.path !== '/') {
-        return navigateTo('/sign-in')
-    }
+  // 1) Wait until we know auth status
+  if (status.value === 'loading') {
+    await new Promise<void>(resolve => {
+      const stop = watch(status, () => {
+        if (status.value !== 'loading') {
+          stop()
+          resolve()
+        }
+      })
+    })
+  }
 
-    return
+  
+
+  // 2) Unauthenticated users get sent to /sign-in if they try /app or /admin
+  if (status.value === 'unauthenticated' &&
+      (to.path.startsWith('/app') || to.path.startsWith('/admin'))
+  ) {
+    return navigateTo('/sign-in')
+  }
+
+  const isSuperAdmin = data.value?.user?.role === 'admin'
+  
+
+  // 3) Root landing page → send to proper home
+  if (status.value === 'authenticated' && to.path === '/') {
+    return navigateTo(isSuperAdmin ? '/admin' : '/app')
+  }
+
+  // 4) Admins must live in /admin
+  if (status.value === 'authenticated' && isSuperAdmin && to.path.startsWith('/app')) {
+    return navigateTo('/admin')
+  }
+
+  // 5) Non-admins must not go into /admin
+  if (status.value === 'authenticated' && !isSuperAdmin && to.path.startsWith('/admin')) {
+    return navigateTo('/app')
+  }
+
+  // otherwise, let them through
 })
