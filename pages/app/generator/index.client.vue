@@ -239,15 +239,12 @@ async function onSubmit(values) {
 
   const {nodesMLD, edgesMLD} = mldStore.generateMLD(getMCDModel['nodes'],getMCDModel['edges'])
 
-  console.log('nodesMLD', nodesMLD)
-  console.log({ ...values, nodes: nodesMLD, edges: edgesMLD })
   const response = await $fetch('/api/generator/generate', {
     method: 'POST',
     body: { ...values, nodes: nodesMLD, edges: edgesMLD },
   });
 
   if (response.status === 200) {
-    console.log('Projet généré:', response.projectName);
     await navigateTo({path: `/app/generator/result/${response.projectName}`})
   } else {
     console.error('Erreur:', response.error);

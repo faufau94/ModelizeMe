@@ -1,68 +1,80 @@
 import { Position } from '@vue-flow/core';
 
-/**
- * Computes the intersection point between the center of "intersectionNode" and "targetNode".
- * Vue Flow nodes expose their layout as `position`, `width`, and `height` props.
- */
-function getNodeIntersection(intersectionNode, targetNode) {
-    console.log(intersectionNode.dimensions.width, intersectionNode.dimensions.height);
-    
-  const w = intersectionNode.dimensions.width / 2;
-  const h = intersectionNode.dimensions.height / 2;
-
-  const x2 = intersectionNode.position.x + w;
-  const y2 = intersectionNode.position.y + h;
-
-  const x1 = targetNode.position.x + targetNode.dimensions.width / 2;
-  const y1 = targetNode.position.y + targetNode.dimensions.height / 2;
-
-  // Normalize direction vector against the bounding box
-  const xx1 = (x1 - x2) / (2 * w) - (y1 - y2) / (2 * h);
-  const yy1 = (x1 - x2) / (2 * w) + (y1 - y2) / (2 * h);
-  const a = 1 / (Math.abs(xx1) + Math.abs(yy1));
-  const xx3 = a * xx1;
-  const yy3 = a * yy1;
-  
-
-  return {
-    x: w * (xx3 + yy3) + x2,
-    y: h * (-xx3 + yy3) + y2,
-  };
+// Function to get the center position of a node
+function getNodeCenter(node) {
+    return {
+        x: node.position.x + node.dimensions.width / 2,
+        y: node.position.y + node.dimensions.height / 2,
+    };
 }
 
-/**
- * Determines on which side (left, right, top, bottom) of the node the intersection lies.
- */
-function getEdgePosition(node, intersectionPoint) {
-  const nx = node.position.x;
-  const ny = node.position.y;
-  const { width, height } = node;
-  const px = Math.round(intersectionPoint.x);
-  const py = Math.round(intersectionPoint.y);
+// Function to get handle coordinates based on position
+function getHandleCoordsByPosition(node, handlePosition) {
+    // Access the 'source' handles from handleBounds
+    const handle = node.handleBounds.source.find(
+        (h) => h.position === handlePosition,
+    );
 
-  if (px <= nx + 1) return Position.Left;
-  if (px >= nx + width - 1) return Position.Right;
-  if (py <= ny + 1) return Position.Top;
-  if (py >= ny + height - 1) return Position.Bottom;
-  return Position.Top;
+    if (!handle) {
+        console.error('Handle not found for position:', handlePosition);
+        return [null, null];
+    }
+
+    let offsetX = handle.width / 2;
+    let offsetY = handle.height / 2;
+
+    switch (handlePosition) {
+        case Position.Left:
+            offsetX = 0;
+            break;
+        case Position.Right:
+            offsetX = handle.width;
+            break;
+        case Position.Top:
+            offsetY = 0;
+            break;
+        case Position.Bottom:
+            offsetY = handle.height;
+            break;
+    }
+
+    const x = node.position.x + handle.x + offsetX;
+    const y = node.position.y + handle.y + offsetY;
+
+    return [x, y];
 }
 
-/**
- * Returns all parameters needed to render a custom edge between source and target.
- */
-export function getEdgeParams(sourceNode, targetNode) {
-  const sourcePt = getNodeIntersection(sourceNode, targetNode);
-  const targetPt = getNodeIntersection(targetNode, sourceNode);
+// Function to get parameters for positioning a node relative to another node
+function getParams(nodeA, nodeB) {
+    const centerA = getNodeCenter(nodeA);
+    const centerB = getNodeCenter(nodeB);
 
-  const sourcePos = getEdgePosition(sourceNode, sourcePt);
-  const targetPos = getEdgePosition(targetNode, targetPt);
+    const horizontalDiff = Math.abs(centerA.x - centerB.x);
+    const verticalDiff = Math.abs(centerA.y - centerB.y);
 
-  return {
-    sx: sourcePt.x,
-    sy: sourcePt.y,
-    tx: targetPt.x,
-    ty: targetPt.y,
-    sourcePos,
-    targetPos,
-  };
+    let position;
+
+    if (horizontalDiff > verticalDiff) {
+        position = centerA.x > centerB.x ? Position.Left : Position.Right;
+    } else {
+        position = centerA.y > centerB.y ? Position.Top : Position.Bottom;
+    }
+
+    const [x, y] = getHandleCoordsByPosition(nodeA, position);
+    return [x, y, position];
+}
+
+// Exported function to get edge parameters between source and target nodes
+export function getEdgeParams(source, target) {
+    const [sx, sy, sourcePos] = getParams(source, target);
+    const [tx, ty, targetPos] = getParams(target, source);
+
+    return {
+        sx,
+        sy,
+        tx,
+        ty,
+        sourcePos,
+        targetPos,
+    };
 }

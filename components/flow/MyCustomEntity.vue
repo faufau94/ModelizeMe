@@ -237,7 +237,6 @@ const setNodeSoftDeletes = async value => {
 const updateNode = async () => {
   isSaving.value = true;
   await mcdStore.updateNode(route.params.idModel, props?.id)
-  console.log("props.data.data", props?.data)
 
   mcdStore?.flowMCD.updateNodeData(props?.id, (node) => {
     let data = props?.data

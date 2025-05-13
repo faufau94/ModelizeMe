@@ -16,7 +16,7 @@
     "@pinia/nuxt": "^0.5.3",
     "@preline/overlay": "^2.3.0",
     "@preline/select": "^2.3.0",
-    "@prisma/client": "^6.6.0",
+    "@prisma/client": "^6.7.0",
     "@prisma/nuxt": "^0.0.35",
     "@sidebase/nuxt-auth": "^0.9.4",
     "@vee-validate/nuxt": "^4.13.2",

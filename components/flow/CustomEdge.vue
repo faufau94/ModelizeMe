@@ -77,7 +77,6 @@ const props = defineProps({
   targetNode: Object,
   data: Object,
 });
-console.log('props',props);
 
 // Références pour les paramètres de l'arête
 // const edgeParams = ref({
@@ -98,8 +97,6 @@ const edgeParams = computed(() => (
 
 // Mise à jour des paramètres de l'arête
 watchEffect(() => {
-  console.log('edgeParams', edgeParams.value);
-  
   if(props.id) {
     const edge = mcdStore.flowMCD.findEdge(props.id)
     edge.animated = props.selected
