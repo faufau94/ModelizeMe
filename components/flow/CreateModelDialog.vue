@@ -81,7 +81,6 @@ const onSubmit = form.handleSubmit(async (values) => {
   });
 
   if (res) {
-    console.log(res)
     isLoadingNewModel.value = false;
     showModel.value = false;
     await navigateTo('/app/model/' + res.id.toString());

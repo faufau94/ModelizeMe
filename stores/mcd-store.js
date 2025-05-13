@@ -2,6 +2,7 @@ import {computed, ref} from "vue";
 import {defineStore} from "pinia";
 import {getStraightPath, useVueFlow} from "@vue-flow/core";
 import { v4 as uuidv4 } from 'uuid';
+import {useMLDStore} from "./mld-store.js";
 
 export const useMCDStore = defineStore('flow-mcd', () => {
 
@@ -18,11 +19,13 @@ export const useMCDStore = defineStore('flow-mcd', () => {
 
     const addNewNode = ref(false)
 
-
     const edgeTypes = ref(['smoothstep', 'straight', 'step', 'curve'])
     const edgeType = ref('straight')
 
     const foreignObjectHeight = ref(100);
+
+    const isSaving = ref(false);
+    
 
     function getIdNode() {
         return `dndnode_${uuidv4() + '_' + uuidv4()}`
@@ -47,13 +50,17 @@ export const useMCDStore = defineStore('flow-mcd', () => {
             selected: false,
             data: {
                 name: '',
+                hasTimestamps: true,
+                usesSoftDeletes: false,
                 properties: [
                     {
+                        id: uuidv4(),
                         propertyName: "id",
                         typeName: "Big Integer",
                         isPrimaryKey: true,
                         autoIncrement: true,
                         isForeignKey: false,
+                        isNullable: false,
                     },
                 ]
             }
@@ -112,6 +119,24 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         });
     }
 
+    async function duplicateNode(props) {
+        let maxOffset = 50
+        // position close to the duplicated node
+        let positionNewNode = {
+          x: props?.position.x + (Math.random() * maxOffset * 2 - maxOffset),
+          y: props?.position.y + (Math.random() * maxOffset * 2 - maxOffset)
+        }
+        let newNode = createNewNode(positionNewNode)
+        let data = {...props.data}
+        newNode = {
+          ...newNode,
+          data: data
+        }
+        const route = useRoute()
+        await addNode(route.params.idModel, newNode)
+      
+    }
+
     function createNewEdge(params) {
         let newEdgeId = getIdEdge();
         return {
@@ -129,17 +154,17 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 name: '',
                 sourceCardinality: '',
                 targetCardinality: '',
+                hasTimestamps: true,
+                usesSoftDeletes: false,
                 properties: []
             }
         }
     }
 
     async function updateEdge(idModel, idEdge) {
-        console.log('updateEdge', idModel, idEdge)
-        console.log('flowMCD.value', flowMCD.value.findEdge(idEdge))
         const edge = flowMCD.value.findEdge(idEdge)
-        console.log(edge)
         edge.selected = false
+        edge.animated = false
         await $fetch(`/api/models/update`, {
             method: 'PUT',
             query: { id: idModel },
@@ -149,6 +174,18 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 action: 'updateEdge'
             }
         });
+
+        // const mldStore = useMLDStore()
+        // mldStore.generateMLD()
+        // await $fetch(`/api/models/mld/update`, {
+        //     method: 'PUT',
+        //     query: { id: idModel },
+        //     body: {
+        //         nodes_mld: mldStore.flowMLD.getNodes,
+        //         edges_mld: mldStore.flowMLD.getEdges,
+        //     }
+        // });
+
     }
 
     async function removeEdge(idModel, idEdge) {
@@ -185,6 +222,8 @@ export const useMCDStore = defineStore('flow-mcd', () => {
                 relatedEdge: edge.id,
                 relatedEdgeSource: edge.source,
                 relatedEdgeTarget: edge.target,
+                hasTimestamps: true,
+usesSoftDeletes: false,
                 properties: []
             }
         };
@@ -247,20 +286,22 @@ export const useMCDStore = defineStore('flow-mcd', () => {
         elementsMenu,
         models,
         nodeIdSelected,
-        addNode,
         addNewNode,
-        getIdNode,
-        getIdEdge,
         edgeType,
         edgeTypes,
         foreignObjectHeight,
         edgeIdSelected,
+        isSaving,
+        getIdNode,
+        getIdEdge,
+        addNode,
         addAssociation,
         setFlowInstance,
         createNewNode,
         createNewEdge,
         removeNode,
         updateNode,
+        duplicateNode,
         updateEdge,
         removeEdge,
         determineHandles

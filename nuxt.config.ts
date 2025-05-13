@@ -25,6 +25,11 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       exclude: ['vee-validate']
+    },
+    resolve: {
+      alias: {
+        ".prisma/client/index-browser": "./node_modules/.prisma/client/index-browser.js"
+      }
     }
   },
 
@@ -35,24 +40,25 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-    authSecret: 'oGDu}UC[pMovI1[c\'SLk+94bB3',
-    authOrigin: 'http://localhost:3000',
+    authSecret: process.env.AUTH_SECRET,
+    authOrigin: process.env.NUXT_AUTH_ORIGIN,
+    baseURL: process.env.NUXT_BASE_URL,
 
-    githubClientId: 'Ov23liTzb1cUucHiHKfs',
-    githubClientSecret: 'c46bb3466b34cbe61e364a116672f38b6e7aca23',
+    githubClientId: process.env.GITHUB_CLIENT_ID,
+    githubClientSecret: process.env.GITHUB_CLIENT_SECRET,
 
-    gitlabClientId: '26d187759235f890613b549e601bcf979fcf09a49478252d9984c1a6c4569bd2',
-    gitlabClientSecret: 'gloas-90ea4e907fa6bf2c777419176b3f98b60730cf04100c4b45be25a551f01b71ae',
+    gitlabClientId: process.env.GITLAB_CLIENT_ID,
+    gitlabClientSecret: process.env.GITLAB_CLIENT_SECRET,
 
-    googleClientId: '338068278224-buuu4bfkk6dvglc0h43a9ilkk7jh13k9.apps.googleusercontent.com',
-    googleClientSecret: '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',
+    googleClientId: process.env.GOOGLE_CLIENT_ID,
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
 
   },
   auth: {
     isEnabled: true,
     disableServerSideAuth: false,
-    originEnvKey: 'AUTH_ORIGIN',
-    baseURL: 'http://localhost:3000/api/auth',
+    originEnvKey: process.env.NUXT_AUTH_ORIGIN || '',
+    baseURL: process.env.NUXT_BASE_URL || '',
     provider: {
       type: 'authjs',
       trustHost: false,

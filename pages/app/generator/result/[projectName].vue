@@ -73,7 +73,6 @@ const isProviderLinked = async (userId, provider) => {
 
 
 const createRepoWithProvider = async (provider) => {
-    console.log('session',getSession)
   try {
 
     // Récupérer la session actuelle de l'utilisateur

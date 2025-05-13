@@ -1,73 +1,3 @@
-<script setup lang="ts">
-import {Button} from '~/components/ui/button'
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
-import {Input} from '~/components/ui/input'
-import {Label} from '~/components/ui/label'
-//import { AlertDescription } from '@/components/ui/alert'
-
-/*
-definePageMeta({
-  auth: { authenticatedOnly: false, navigateAuthenticatedTo: '/app/dashboard' }
-})
-
- */
-
-const {signIn, getProviders, status} = useAuth()
-const providers = await getProviders()
-const signUpUserInfo = ref({
-  name: '',
-  firstName: '',
-  email: '',
-  password: ''
-})
-
-const router = useRouter()
-const message = ref({
-  type: '',
-  text: ''
-})
-
-const isLoading = ref(false)
-const signUp = async () => {
-
-  isLoading.value = true
-
-
-  const res = await useFetch('/api/auth/sign-up', {
-    method: 'POST',
-    body: JSON.stringify(signUpUserInfo.value)
-  })
-
-
-  if (res.data.value.status === 200) {
-    message.value = {type: 'success', text: res.data.value.body.message}
-    setTimeout(() => {
-      isLoading.value = false
-    }, 5000)
-      //message.value = {text: "", type: ""}
-
-    const userLogged = await signIn('credentials',{email: signUpUserInfo.value.email, password: signUpUserInfo.value.password, callbackUrl: '/app'})
-
-    if(userLogged) {
-      await router.push({path: "/"})
-    }
-
-  } else {
-    message.value = {type: 'error', text: res.data.value.body.error}
-    isLoading.value = false
-  }
-}
-
-const filteredProviders = computed(() => {
-  return Object.keys(providers)
-      .filter(key => key !== 'credentials')
-      .reduce((result, key) => {
-        result[key] = providers[key]
-        return result
-      }, {})
-})
-</script>
-
 <template>
 
   <div class="min-h-screen flex flex-col">
@@ -101,84 +31,97 @@ const filteredProviders = computed(() => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div class="grid gap-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div class="grid gap-2">
-                <Label for="first-name">Prénom</Label>
-                <Input v-model="signUpUserInfo.firstName" id="first-name" placeholder="Max" required/>
+          <form @submit="signUp">
+            <div class="grid gap-4">
+              <div class="grid grid-cols-2 gap-4">
+                <FormField v-slot="{ componentField }" name="firstName">
+                  <FormItem>
+                    <FormLabel for="first-name">Prénom</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" id="first-name" placeholder="Max" required />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+
+                <FormField v-slot="{ componentField }" name="name">
+                  <FormItem>
+                    <FormLabel for="last-name">Nom</FormLabel>
+                    <FormControl>
+                      <Input v-bind="componentField" id="last-name" placeholder="Robinson" required />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
               </div>
-              <div class="grid gap-2">
-                <Label for="last-name">Nom</Label>
-                <Input v-model="signUpUserInfo.name" id="last-name" placeholder="Robinson" required/>
-              </div>
-            </div>
-            <div class="grid gap-2">
-              <Label for="email">Email</Label>
-              <Input
-                  v-model="signUpUserInfo.email"
-                  id="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  required
-              />
-            </div>
-            <div class="grid gap-2">
-              <Label for="password">Mot de passe</Label>
-              <Input
-                  v-model="signUpUserInfo.password"
-                  id="password" type="password"/>
-            </div>
-            <div v-if="message.type !== ''">
-              <div v-if="message.type === 'error'">
-                <div class="w-full">
-                  <div class="flex justify-between p-4 rounded-md bg-red-50 border border-red-300">
-                    <div class="flex gap-3 sm:items-center">
-                      <div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none"
-                             viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round"
-                                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                      </div>
-                      <p class="text-red-600 sm:text-sm">
-                        {{ message.text }}
-                      </p>
-                    </div>
+
+              <FormField v-slot="{ componentField }" name="email">
+                <FormItem>
+                  <FormLabel for="email">Email</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" id="email" type="email" placeholder="john@example.com" required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField v-slot="{ componentField }" name="password">
+                <FormItem>
+                  <FormLabel for="password">Mot de passe</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" id="password" type="password" required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <FormField v-slot="{ componentField }" name="confirmPassword">
+                <FormItem>
+                  <FormLabel for="confirm-password">Confirmer le mot de passe</FormLabel>
+                  <FormControl>
+                    <Input v-bind="componentField" id="confirm-password" type="password" required />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+
+              <div v-if="message.type !== ''">
+                <div v-if="message.type === 'error'" class="w-full">
+                  <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 border border-red-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-red-600">{{ message.text }}</p>
+                  </div>
+                </div>
+
+                <div v-if="message.type === 'success'" class="w-full">
+                  <div class="flex justify-start p-4 gap-x-2 rounded-md bg-green-50 border border-green-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p class="text-green-600">{{ message.text }}</p>
                   </div>
                 </div>
               </div>
-              <div v-if="message.type === 'success'">
-                <div class="w-full">
-                  <div class="flex justify-between items-center p-4 rounded-md bg-green-50 border border-green-300">
-                    <div class="flex items-start gap-3 w-full">
-                      <div>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </div>
-                      <div class="flex-1 self-center">
-                        <div class="text-green-600">
-                          <p class=" sm:text-sm">
-                            {{ message.text }}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+
+              <FormField name="button-submit">
+                <FormControl class="w-full">
+                  <Button type="submit" :disabled="isLoading">
+                    <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                    {{ isLoading ? "Chargement..." : "S'inscrire" }}
+                  </Button>
+                </FormControl>
+              </FormField>
+
+              <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
+                <Button  class="w-full" variant="outline" @click="signIn(provider?.id, { callbackUrl: '/app' })">
+                  Continuer avec {{ provider?.name }}
+                </Button>
               </div>
             </div>
-            <Button @click="signUp" type="submit" class="w-full" :disabled="isLoading">
-              <div v-if="isLoading" class="animate-spin inline-block size-4 border-[2px] border-current border-t-transparent mx-3  text-white rounded-full" role="status" aria-label="loading">
-                <span class="sr-only">Chargement...</span>
-              </div>
-              S'inscrire
-            </Button>
-            <Button class="w-full" variant="outline" v-for="provider in filteredProviders" :key="provider?.id"
-                    @click="signIn(provider?.id, { callbackUrl: '/app' })">
-              Se connecter avec {{ provider?.name }}
-            </Button>
-          </div>
+          </form>
+
           <div class="mt-4 text-center text-sm">
             Vous avez déjà un compte ?
             <NuxtLink to="/sign-in" class="underline">
@@ -190,3 +133,97 @@ const filteredProviders = computed(() => {
     </div>
   </div>
 </template>
+
+<script setup>
+import {Button} from '~/components/ui/button'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
+import {Input} from '~/components/ui/input'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+
+import {Loader2} from "lucide-vue-next";
+
+import { useForm } from 'vee-validate'
+import {toTypedSchema} from "@vee-validate/zod";
+import * as z from "zod";
+
+const formSchema = toTypedSchema(z.object({
+  name: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
+  firstName: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
+  email: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).email({ message: "Adresse email invalide." }),
+  password: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.'),
+  confirmPassword: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.'),
+}).refine(data => data.password === data.confirmPassword, {
+  message: 'Les mots de passe doivent correspondre.',
+  path: ['confirmPassword'],
+}))
+
+const form = useForm({
+  validationSchema: formSchema,
+})
+
+
+const {signIn, getProviders, status} = useAuth()
+const providers = await getProviders()
+
+const router = useRouter()
+const message = ref({
+  type: '',
+  text: ''
+})
+
+const isLoading = ref(false)
+const signUp = form.handleSubmit(async (values) => {
+  isLoading.value = true
+
+  const res = await useFetch('/api/auth/sign-up', {
+    method: 'POST',
+    body: JSON.stringify(values)
+  })
+
+
+  if (res.data.value.status === 200) {
+    message.value = {type: 'success', text: res.data.value.body.message}
+    setTimeout(() => {
+      isLoading.value = false
+    }, 5000)
+    //message.value = {text: "", type: ""}
+
+    const userLogged = await signIn('credentials',{email: values.email, password: values.password, callbackUrl: '/app'})
+
+    if(userLogged) {
+      await router.push({path: "/"})
+    }
+
+  } else {
+    message.value = {type: 'error', text: res.data.value.body.error}
+    isLoading.value = false
+  }
+})
+
+const filteredProviders = computed(() => {
+  return Object.keys(providers)
+      .filter(key => key !== 'credentials')
+      .reduce((result, key) => {
+        result[key] = providers[key]
+        return result
+      }, {})
+})
+</script>

@@ -62,27 +62,23 @@
               Galerie
             </NuxtLink>
             <NuxtLink
-                href="#"
-                class="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary"
+                class="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:text-primary opacity-50"
             >
               <Bolt class="h-4 w-4" />
-              Paramètre
+              Paramètre (Coming soon...)
             </NuxtLink>
           </nav>
         </div>
         <div class="mt-auto p-4 space-y-3">
           <Card>
             <CardHeader class="p-2 pt-0 md:p-4">
-              <CardTitle class="text-xl">Upgrade to Pro</CardTitle>
+              <CardTitle class="text-xl">Mettre à niveau</CardTitle>
               <CardDescription>
-                Unlock all features and get unlimited access to our support
-                team.
+                Débloquez toutes les fonctionnalités.
               </CardDescription>
             </CardHeader>
             <CardContent class="p-2 pt-0 md:p-4 md:pt-0">
-              <Button size="sm" class="w-full">
-                Upgrade
-              </Button>
+              <PricingDialog />
             </CardContent>
           </Card>
 
@@ -124,14 +120,14 @@
             <Button
                 variant="outline"
                 size="icon"
-                class="shrink-0 md:hidden"
+                class="shrink-0 md:hidden mt-2 border-none"
             >
               <Menu class="h-5 w-5" />
               <span class="sr-only">Menu</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" class="flex flex-col">
-            <nav class="grid gap-2 text-lg font-medium">
+            <nav class="grid gap-2 text-lg font-medium mt-2">
               <NuxtLink
                   href="#"
                   class="flex items-center gap-2 text-lg font-semibold"
@@ -153,7 +149,7 @@
               -->
               <NuxtLink
                   to="/app"
-                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-foreground hover:text-foreground"
+                  class="mx-[-0.65rem] text-[16px] flex items-center gap-4 rounded-xl px-3 py-3 text-foreground hover:text-foreground"
                   :class="[route.path === '/app' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <Ungroup class="h-5 w-5" />
@@ -161,7 +157,7 @@
               </NuxtLink>
               <NuxtLink
                   to="/app/generator"
-                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 hover:text-foreground"
+                  class="mx-[-0.65rem] text-[16px] flex items-center gap-4 rounded-xl px-3 py-3 hover:text-foreground"
                   :class="[route.path === '/app/generator' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <CodeXml class="h-5 w-5" />
@@ -169,7 +165,7 @@
               </NuxtLink>
               <NuxtLink
                   to="/app/team"
-                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
+                  class="mx-[-0.65rem] text-[16px] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
                   :class="[route.path === '/app/team' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <Users class="h-5 w-5" />
@@ -177,7 +173,7 @@
               </NuxtLink>
               <NuxtLink
                   to="/app/galery"
-                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
+                  class="mx-[-0.65rem] text-[16px] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
                   :class="[route.path === '/app/galery' ? 'text-primary bg-muted': 'text-muted-foreground']"
               >
                 <GalleryHorizontalEnd class="h-5 w-5" />
@@ -185,25 +181,22 @@
               </NuxtLink>
               <NuxtLink
                   href="#"
-                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
+                  class="mx-[-0.65rem] text-[16px] flex items-center gap-4 rounded-xl px-3 py-3 text-muted-foreground hover:text-foreground"
               >
                 <Bolt class="h-5 w-5" />
                 Paramètre
               </NuxtLink>
             </nav>
             <div class="mt-auto space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Upgrade to Pro</CardTitle>
+              <Card class="p-3">
+                <CardHeader class="p-2 pt-0 md:p-4">
+                  <CardTitle class="text-xl">Mettre à niveau</CardTitle>
                   <CardDescription>
-                    Unlock all features and get unlimited access to our
-                    support team.
+                    Débloquez toutes les fonctionnalités.
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Button size="sm" class="w-full">
-                    Upgrade
-                  </Button>
+                <CardContent class="p-2 pt-0 md:p-4 md:pt-0">
+                  <PricingDialog />
                 </CardContent>
               </Card>
 
@@ -241,7 +234,18 @@
 
 <script setup>
 import {computed, ref} from "vue";
-import {Bolt, CircleUser, CodeXml, GalleryHorizontalEnd, Gauge, Menu, Search, Ungroup, Users} from 'lucide-vue-next'
+import {
+  Bolt,
+  CircleUser,
+  CodeXml,
+  Crown,
+  GalleryHorizontalEnd,
+  Gauge,
+  Menu,
+  Search,
+  Ungroup,
+  Users
+} from 'lucide-vue-next'
 
 import {Button} from '@/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
@@ -256,6 +260,7 @@ import {
 import {Input} from '@/components/ui/input'
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet'
 
+import PricingDialog from "@/components/PricingDialog.vue";
 
 const route = useRoute()
 

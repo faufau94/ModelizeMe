@@ -52,8 +52,8 @@
 
         <Dialog>
           <DialogTrigger as-child>
-            <Button @click="showDialogRenameModel = true" variant="outline" class=" border-none rounded-sm">
-              {{ model?.name }}
+            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="outline" class=" border-none rounded-sm">
+              {{ model?.name.length > 20 ? model?.name.substring(0, 20) + '...' : model?.name }}
             </Button>
           </DialogTrigger>
           <DialogContent class="sm:max-w-[425px]" v-if="showDialogRenameModel">
@@ -61,20 +61,31 @@
               <DialogTitle>Renommer le nom</DialogTitle>
             </DialogHeader>
 
-            <Input @keyup.enter="renameModel" v-model="model.name" type="text"/>
+            <form @submit="renameModel">
+              <FormField v-slot="{ componentField }" name="name">
+                <FormItem>
+                  <FormLabel>Nom</FormLabel>
+                  <FormControl>
+                    <Input type="text" v-bind="componentField" @keyup.enter="renameModel"/>
+                  </FormControl>
+                  <FormMessage />
+                  <FormControl class="float-right">
+                    <DialogFooter>
 
-            <DialogFooter class="mt-3">
-              <DialogClose as-child>
-                <Button type="button" variant="secondary">
-                  Annuler
-                </Button>
-              </DialogClose>
-              <Button @click="renameModel" :disabled="isRenamingModel">
-                <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
-                {{ isRenamingModel ? 'Ajout...' : 'Ajouter' }}
-              </Button>
-            </DialogFooter>
-
+                    <DialogClose as-child>
+                      <Button type="button" variant="secondary">
+                        Annuler
+                      </Button>
+                    </DialogClose>
+                    <Button type="submit" :disabled="isRenamingModel">
+                      <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
+                      {{ isRenamingModel ? 'Changement...' : 'Renommer' }}
+                    </Button>
+                    </DialogFooter>
+                  </FormControl>
+                </FormItem>
+              </FormField>
+            </form>
           </DialogContent>
         </Dialog>
 
@@ -83,12 +94,10 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button variant="outline" class=" border-none rounded-sm">
-                <Settings2 :size="18"/>
-              </Button>
+              <CreateGaleryTemplate />
             </TooltipTrigger>
             <TooltipContent class="bg-black text-white">
-              <p>Paramètres</p>
+              <p>Créer un modèle de galerie</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -98,9 +107,7 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button variant="outline" class=" border-none rounded-sm">
-                <Download :size="18"/>
-              </Button>
+              <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :modelName="model?.name" />
             </TooltipTrigger>
             <TooltipContent class="bg-black text-white">
               <p>Exporter</p>
@@ -110,10 +117,8 @@
 
         <Separator orientation="vertical" class="h-6"/>
 
-        <div class="px-2">
-          <Button variant="outline" size="xs">
-            Mettre à niveau
-          </Button>
+        <div>
+          <PricingDialog />
         </div>
       </Panel>
 
@@ -158,6 +163,7 @@
             <TooltipTrigger>
               <Button
                   variant="outline"
+                  disabled
                   class="border-none rounded-sm"
               >
                 <Undo2 :size="18"/>
@@ -176,6 +182,7 @@
             <TooltipTrigger>
               <Button
                   variant="outline"
+                  disabled
                   class="border-none rounded-sm"
               >
                 <Redo2 :size="18"/>
@@ -191,6 +198,7 @@
 
 
         <Button
+            disabled
             @click="autoLayout('LR')"
             variant="outline"
             class="border-none rounded-sm"
@@ -202,6 +210,7 @@
 
 
         <Button
+            disabled
             @click="reorganize"
             variant="outline"
             class="border-none rounded-sm"
@@ -274,8 +283,9 @@
       >
       </DropzoneBackground>
 
-      <template #connection-line="{ sourceX, sourceY, targetX, targetY }">
-        <CustomEdge :source-x="sourceX" :source-y="sourceY" :target-x="targetX" :target-y="targetY"/>
+
+      <template #connection-line="{ sourceX, sourceY, targetX, targetY, sourceNode, targetNode }">
+        <CustomEdge v-if="sourceNode && targetNode" :source-x="sourceX" :source-y="sourceY" :target-x="targetX" :target-y="targetY" :source-node="sourceNode" :target-node="targetNode"/>
       </template>
     </VueFlow>
   </div>
@@ -284,7 +294,7 @@
 
 <script setup>
 import {computed, markRaw, onMounted, ref, nextTick} from "vue";
-import CustomEdge from "~/components/flow/MyCustomEdge.vue";
+import CustomEdge from "~/components/flow/CustomEdge.vue";
 import ElementMenu from "~/components/flow/ElementMenu.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
 import DropzoneBackground from "~/components/flow/DropzoneBackground.vue";
@@ -297,8 +307,9 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, Undo2, Redo2, Loader2, Check, Settings2, WandSparkles, Workflow} from "lucide-vue-next";
+import {PanelTop, Download, Undo2, Redo2, Loader2, Check, WandSparkles, Workflow} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
+import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
 
@@ -308,8 +319,16 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip'
-import {useLayout} from "../../../composables/useLayout.js";
-import {useReorganize} from "../../../composables/useReorganize.js";
+import {useLayout} from "@/composables/useLayout.js";
+import {useReorganize} from "@/composables/useReorganize.js";
+import { getLayoutedElements, elkOptions } from '@/utils/useElk.js';
+import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
+
+import {toTypedSchema} from "@vee-validate/zod";
+import * as z from "zod";
+import {useForm} from 'vee-validate'
+import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
+
 
 const route = useRoute()
 
@@ -331,7 +350,6 @@ const edgeTypes = {
 };
 
 const model = ref(null)
-
 const isRenamingModel = ref(false)
 const showDialogRenameModel = ref(false)
 
@@ -357,6 +375,13 @@ onMounted(async () => {
     query: {id: route.params.idModel},
   });
 
+  if(model.value) {
+    setValues({
+      name: model.value.name,
+    });
+  }
+
+
   if (model.value.nodes.length !== 0) {
     mcdStore.flowMCD.addNodes(model.value.nodes)
   }
@@ -364,6 +389,7 @@ onMounted(async () => {
   if (model.value.edges.length !== 0) {
     mcdStore.flowMCD.addEdges(model.value.edges)
   }
+
 
 
   mcdStore.flowMCD.onConnect((params) => {
@@ -384,6 +410,8 @@ onMounted(async () => {
       edgeIdSelected.value = null
       isSubMenuVisible.value = true
       nodeIdSelected.value = e.node.id
+
+
     }
   })
 
@@ -396,7 +424,7 @@ onMounted(async () => {
   })
 
   await nextTick(() => {
-    mcdStore.flowMCD.fitView()
+    mcdStore.flowMCD.fitView({ padding: 0.4 })
   })
 })
 
@@ -422,20 +450,36 @@ const onEdgeUpdate = async ({edge, connection}) => {
 }
 
 
-const renameModel = async () => {
+const formSchema = toTypedSchema(z.object({
+  name: z.string({
+    required_error: "Veuillez remplir le champs.",
+  }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
+}))
+
+
+const { handleSubmit, setValues } = useForm({
+  validationSchema: formSchema,
+  initialValues: {
+    name: ''
+  },
+  validateOnMount: false,
+})
+
+const renameModel = handleSubmit(async (values) => {
   isRenamingModel.value = true
   const res = await $fetch(`/api/models/rename-model?id=${route.params.idModel}`, {
     method: "PUT",
     body: {
-      name: model.value.name
+      name: values.name
     }
   });
 
   if (res) {
+    model.value.name = values.name
     isRenamingModel.value = false
     showDialogRenameModel.value = false
   }
-}
+})
 
 const goBack = async () => {
   isSubMenuVisible.value = false
@@ -455,11 +499,12 @@ const isChangingTab = ref(false)
 const currentFlow = ref(mcdStore.flowMCD)
 
 watch(activeTab, () => {
-  console.log('watch')
   isChangingTab.value = true
   if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
   if (activeTab.value === 'mld') {
-    mldStore.generateMLD()
+    const { nodesMLD, edgesMLD } = mldStore.generateMLD(mcdStore.flowMCD.getNodes, mcdStore.flowMCD.getEdges)
+    mldStore.flowMLD.setNodes(nodesMLD)
+    mldStore.flowMLD.setEdges(edgesMLD)
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};
@@ -478,10 +523,28 @@ const autoLayout = (direction) => {
 
   // Adjust the view to fit the new layout
   nextTick(() => {
-    mcdStore.flowMCD.fitView({ padding: 0.1 })
+    mcdStore.flowMCD.fitView({ padding: 0.4 })
   })
 }
 
+
+const reorganize = () => {
+  const opts = { ...elkOptions };
+  const ns = currentFlow.value.getNodes;
+  const es = currentFlow.value.getEdges;
+
+  getLayoutedElements(ns, es, opts).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
+    mcdStore.flowMCD.setNodes(layoutedNodes);
+    mcdStore.flowMCD.setEdges(layoutedEdges);
+
+    nextTick(() => {
+      mcdStore.flowMCD.fitView({ padding: 0.4 });
+    });
+  });
+};
+
+
+/*
 const reorganize = () => {
   const { reorganizeNodesAndEdges } = useReorganize(currentFlow?.value);
 
@@ -498,5 +561,7 @@ const reorganize = () => {
     mcdStore.flowMCD.fitView({ padding: 0.1 })
   })
 }
+
+ */
 
 </script>

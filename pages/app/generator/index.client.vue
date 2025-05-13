@@ -64,11 +64,11 @@
             <template v-if="stepIndex === 1">
               <div class="w-2/6 mx-auto mt-20 space-y-6">
 
-                <FormField v-slot="{ componentField }" name="model">
+                <FormField v-slot="{ componentField }" name="modelId">
                   <FormItem>
                     <FormLabel>Modèle *</FormLabel>
 
-                    <Select v-model="datas.modelId" v-bind="componentField">
+                    <Select v-bind="componentField">
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selectionner un modèle" />
@@ -86,7 +86,7 @@
                   </FormItem>
                 </FormField>
 
-                <FormField v-model="datas.title" v-slot="{ componentField }" name="name">
+                <FormField v-slot="{ componentField }" name="title">
                 <FormItem>
                   <FormLabel>Nom du projet *</FormLabel>
                   <FormControl>
@@ -96,7 +96,7 @@
                 </FormItem>
               </FormField>
 
-              <FormField v-model="datas.description" v-slot="{ componentField }" name="description">
+              <FormField v-slot="{ componentField }" name="description">
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
@@ -160,7 +160,7 @@ import {Check, CirclePlay, Loader2} from 'lucide-vue-next'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { useToast } from '@/components/ui/toast/use-toast'
-
+import {useMLDStore} from "~/stores/mld-store.js";
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
 
@@ -182,6 +182,7 @@ definePageMeta({
   layout: 'sidebar',
 });
 
+const mldStore = useMLDStore()
 const codeGeneratorStore = useCodeGeneratorStore()
 const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
 
@@ -196,23 +197,15 @@ onMounted(async () => {
 
 onUnmounted(() => {
   models.value = null
-  datas.value = {
-    title: '',
-    description: '',
-    modelId: '',
-    framework: '',
-    database: '',
-    orm: '',
-  }
   stepIndex.value = 1
 })
 
 const formSchema = [
   z.object({
-    model: z.string({
+    modelId: z.string({
       required_error: "Veuillez séléctionner une option",
     }),
-    name: z.string({
+    title: z.string({
       required_error: "Veuillez entrer un nom",
       invalid_type_error: "Le nom doit être une chaine de caractères",
     }).min(3,'Le nom doit être supérieur à 3 caractères'),
@@ -239,13 +232,19 @@ async function onSubmit(values) {
 
   isGenerating.value = true
 
+  const getMCDModel = await $fetch("/api/models/read", {
+    method: "GET",
+    query: {id: values.modelId},
+  });
+
+  const {nodesMLD, edgesMLD} = mldStore.generateMLD(getMCDModel['nodes'],getMCDModel['edges'])
+
   const response = await $fetch('/api/generator/generate', {
     method: 'POST',
-    body: datas.value,
+    body: { ...values, nodes: nodesMLD, edges: edgesMLD },
   });
 
   if (response.status === 200) {
-    console.log('Projet généré:', response.projectName);
     await navigateTo({path: `/app/generator/result/${response.projectName}`})
   } else {
     console.error('Erreur:', response.error);

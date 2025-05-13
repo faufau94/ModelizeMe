@@ -7,16 +7,16 @@
       <div v-if="areModelsLoaded === true && (models === null || models.length === 0)">
         <div class="flex flex-col items-center justify-center h-[80vh]">
           <div class="text-center space-y-4">
-            <h3 class="text-2xl font-bold">Aucun résultat</h3>
+            <h3 class="text-2xl font-bold">Aucun modèles</h3>
             <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
-            <CreateModelDialog />
+            <CreateModelDialog/>
           </div>
         </div>
       </div>
       <div v-else>
         <div class="flex items-center justify-between mb-6">
           <h1 class="text-2xl font-bold">Modèles</h1>
-          <CreateModelDialog />
+          <CreateModelDialog/>
         </div>
         <div class="mb-6">
           <div class="relative w-full max-w-sm items-center">
@@ -40,15 +40,15 @@
 <script setup>
 import {computed, ref} from 'vue';
 import {Search, Loader2} from 'lucide-vue-next';
-import CardModel from "~/components/ui/card/CardModel.vue";
+import CardModel from "@/components/ui/card/CardModel.vue";
 
-import { Input } from '@/components/ui/input'
+import {Input} from '@/components/ui/input'
 //import Toaster from '@/components/ui/toast/Toaster.vue'
 //import {useToast} from '@/components/ui/toast/use-toast'
 //import {ToastAction} from '@/components/ui/toast'
 import {useMCDStore} from "@/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
-import CreateModelDialog from "../../components/flow/CreateModelDialog.vue";
+import CreateModelDialog from "@/components/flow/CreateModelDialog.vue";
 
 definePageMeta({
   layout: 'sidebar',
@@ -72,11 +72,10 @@ onMounted(async () => {
 })
 
 
-
-
 const searchTerm = ref("");
 
 const filteredModels = computed(() => {
+  if (searchTerm.value === "") return models?.value
   return models?.value?.filter((card) =>
       card.name.toLowerCase().includes(searchTerm.value.toLowerCase())
   )

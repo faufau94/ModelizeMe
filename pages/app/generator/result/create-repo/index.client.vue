@@ -95,9 +95,6 @@ const form = useForm({
 const isCreatingRepo = ref(false);
 
 const onSubmit = form.handleSubmit((values) => {
-  console.log('Form submitted!', values);
-  console.log(route.query);
-
   // Create the repository
   isCreatingRepo.value = true;
 

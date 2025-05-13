@@ -2,7 +2,7 @@
   <Card @click="openModel" class="cursor-pointer hover:border-gray-300 hover:shadow-md duration-150 transition">
     <CardHeader class="flex flex-row items-start gap-4 space-y-0">
       <div class="space-y-1 flex-1">
-        <CardTitle class="text-lg">{{ modelName.name }}</CardTitle>
+        <CardTitle class="text-lg">{{ modelName.length > 20 ? modelName.substring(0, 20) + '...' : modelName }}</CardTitle>
       </div>
       <div class="rounded-md text-secondary-foreground">
 
@@ -24,7 +24,7 @@
             <DropdownMenuItem class="cursor-pointer">
               <AlertDialog>
                 <AlertDialogTrigger as-child>
-                  <div @click.stop="showDialogRenameModel = true">
+                  <div @click.stop="showDialogRenameModel = true; setValues({name: modelName})">
                     Renommer
                   </div>
                 </AlertDialogTrigger>
@@ -42,9 +42,14 @@
                         </FormControl>
                         <FormMessage />
                         <FormControl class="float-right">
+                          <DialogClose as-child>
+                            <Button type="button" variant="secondary">
+                              Annuler
+                            </Button>
+                          </DialogClose>
                           <Button type="submit" :disabled="isRenamingModel">
                             <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
-                            {{ isRenamingModel ? 'Changement...' : 'Renommer' }}
+                            {{ isRenamingModel ? 'Renommage...' : 'Renommer' }}
                           </Button>
                         </FormControl>
                       </FormItem>
@@ -69,7 +74,7 @@
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <Button @click.stop="deleteModel" :disabled="isLoading">
+                    <Button variant="destructive" @keyup.enter="deleteModel" @click.stop="deleteModel" :disabled="isLoading">
                       <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
                       {{ isLoading ? 'Suppression...' : 'Supprimer' }}
                     </Button>
@@ -127,6 +132,7 @@ const props = defineProps({
   },
 });
 
+
 const mcdStore = useMCDStore()
 const {models} = storeToRefs(mcdStore)
 
@@ -143,7 +149,6 @@ const showDialogRenameModel = ref(false);
 const isRenamingModel = ref(false);
 const deleteModel = async () => {
   isLoading.value = true;
-  console.log(props.model.id)
 
   const res = await $fetch(`/api/models/delete`, {
     method: 'DELETE',
@@ -171,14 +176,13 @@ const formSchema = toTypedSchema(z.object({
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
 }))
 
+const modelName = ref(props.model.name)
 
-const modelName = ref({
-  name: props.model.name,
-})
-
-const { handleSubmit, values } = useForm({
+const { handleSubmit, setValues } = useForm({
   validationSchema: formSchema,
-  initialValues: modelName.value,
+  initialValues: {
+    name: ''
+  },
   validateOnMount: false,
 })
 
@@ -192,7 +196,10 @@ const renameModel = handleSubmit(async (values) => {
   });
 
   if (res) {
-    modelName.value.name = values.name
+    setValues({
+      name: values.name,
+    });
+    modelName.value = values.name
     isRenamingModel.value = false
     showDialogRenameModel.value = false
   }
