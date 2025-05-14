@@ -56,8 +56,6 @@ export default NuxtAuthHandler({
                     }
                 }
 
-                console.log("User found:", user);
-                
 
                 return user
             }
@@ -192,9 +190,6 @@ export default NuxtAuthHandler({
          */
         /* on session retrival */
         async session({ session, user, token }) {
-            console.log("Session data:", session);
-            console.log("User data:", user);
-            console.log("Token data:", token);
             
 
             const source = user || token;
@@ -212,7 +207,6 @@ export default NuxtAuthHandler({
         },
         /* on JWT token creation or mutation */
         async jwt({ token, user, account, profile, isNewUser }) {
-            console.log("user data from token:", user);
             
             if (user) {
                 token.id = user.id

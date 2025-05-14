@@ -3,11 +3,7 @@ import { defineNuxtRouteMiddleware, navigateTo, useAuth } from '#imports'
 import { watch } from 'vue'
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { status, data } = useAuth()
-
-  console.log('Auth status:', status.value)
-  console.log('Auth data:', data.value);
-  
+  const { status, data } = useAuth()  
 
   // 1) Wait until we know auth status
   if (status.value === 'loading') {

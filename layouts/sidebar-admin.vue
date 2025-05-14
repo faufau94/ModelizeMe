@@ -64,18 +64,6 @@
           </nav>
         </div>
         <div class="mt-auto p-4 space-y-3">
-          <Card>
-            <CardHeader class="p-2 pt-0 md:p-4">
-              <CardTitle class="text-xl">Mettre à niveau</CardTitle>
-              <CardDescription>
-                Débloquez toutes les fonctionnalités.
-              </CardDescription>
-            </CardHeader>
-            <CardContent class="p-2 pt-0 md:p-4 md:pt-0">
-              <PricingDialog />
-            </CardContent>
-          </Card>
-
           <client-only>
 
             <DropdownMenu>
@@ -183,18 +171,6 @@
               </NuxtLink>
             </nav>
             <div class="mt-auto space-y-6">
-              <Card class="p-3">
-                <CardHeader class="p-2 pt-0 md:p-4">
-                  <CardTitle class="text-xl">Mettre à niveau</CardTitle>
-                  <CardDescription>
-                    Débloquez toutes les fonctionnalités.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent class="p-2 pt-0 md:p-4 md:pt-0">
-                  <PricingDialog />
-                </CardContent>
-              </Card>
-
               <client-only>
                 <DropdownMenu>
                   <DropdownMenuTrigger as-child>
