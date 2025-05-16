@@ -190,8 +190,6 @@ export default NuxtAuthHandler({
          */
         /* on session retrival */
         async session({ session, user, token }) {
-            
-
             const source = user || token;
 
             if (source) {

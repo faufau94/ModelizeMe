@@ -65,8 +65,7 @@
         </div>
         <div class="mt-auto p-4 space-y-3">
           <client-only>
-
-            <DropdownMenu>
+            <!-- <DropdownMenu>
               <DropdownMenuTrigger as-child>
                 <Button variant="secondary" size="icon" class="rounded-full">
                   <CircleUser class="h-5 w-5" />
@@ -84,7 +83,9 @@
                   </NuxtLink>
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu> -->
+
+            <UserNav />
           </client-only>
         </div>
       </div>

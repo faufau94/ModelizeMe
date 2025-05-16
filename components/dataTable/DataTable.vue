@@ -5,7 +5,7 @@ import type {
   SortingState,
   VisibilityState,
 } from '@tanstack/vue-table'
-import type { Task } from '@/components/dataTable/data/schema'
+import type { User } from '@/components/dataTable/data/schema'
 
 import { valueUpdater } from '@/lib/utils'
 import {
@@ -31,8 +31,8 @@ import DataTablePagination from './DataTablePagination.vue'
 import DataTableToolbar from './DataTableToolbar.vue'
 
 interface DataTableProps {
-  columns: ColumnDef<Task, any>[]
-  data: Task[]
+  columns: ColumnDef<User, any>[]
+  data: User[]
 }
 const props = defineProps<DataTableProps>()
 
