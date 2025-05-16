@@ -233,6 +233,60 @@
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+
+        <!-- Create Class Dialog -->
+        <Dialog v-model:open="isCreateClassDialogOpen">
+          <DialogContent class="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Créer une classe</DialogTitle>
+              <DialogDescription>
+                Ce lien pourra être partagé avec d'autres utilisateurs.
+              </DialogDescription>
+            </DialogHeader>
+            <div class="flex items-center space-x-2">
+              <div class="grid flex-1 gap-2">
+                <Label for="link" class="sr-only">
+                  Lien
+                </Label>
+                <Input
+                  id="link"
+                  :default-value="classLink.link"
+                  readonly
+                />
+              </div>
+              <Button size="sm" class="px-3" @click="copyLink(classLink.link)">
+                <span class="sr-only">Copy</span>
+                <Copy class="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div v-if="message.type === 'copied'" class="w-full">
+              <div class="flex justify-start p-4 gap-x-2 rounded-md bg-green-50 border border-green-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-green-600">{{ message.text }}</p>
+              </div>
+            </div>
+
+            <DialogFooter class="sm:justify-end">
+              <DialogClose as-child>
+                <div class="flex justify-end gap-2">
+                  <Button @click.stop="sendLink" :disabled="isFormLoading">
+                      <Loader2 v-if="isFormLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                      {{ isFormLoading ? "Chargement..." : "Créer et envoyer le lien" }}
+                    </Button>
+                  <Button type="button" variant="secondary" @click="isCreateClassDialogOpen = false">
+                    Annuler
+                  </Button>                
+                </div>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+
       </div>
     </div>
     <div v-if="isLoading" class="flex justify-center mt-32 items-center">
@@ -247,7 +301,7 @@
 <script setup lang="ts">
 import { getUserColumns } from '~/components/dataTable/user-columns'
 import DataTable from '@/components/dataTable/DataTable.vue'
-import { CirclePlus, Loader2 } from 'lucide-vue-next';
+import { CirclePlus, Loader2, Copy } from 'lucide-vue-next';
 
 import { useQuery } from '@tanstack/vue-query'
 
@@ -264,11 +318,14 @@ definePageMeta({
     layout: 'sidebar-admin',
 });
 
+const route = useRoute()
+
 
 // State management using refs for dialogs
 const isAddDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
+const isCreateClassDialogOpen = ref(false)
 
 const roleStore = useRoleStore()
 watch([isAddDialogOpen, isEditDialogOpen], ([newAddDialog, newEditDialog]) => {
@@ -303,8 +360,52 @@ const editUserDialog = (user: User) => {
   })
 }
 
+const classLink = ref({
+  link: '',
+  user_id: '',
+})
+
+const createClassDialog = (user) => {
+
+  // generate a link for the class
+  const id = Math.random().toString(36).substring(2, 10)
+  const url = new URL(window.location.origin + route.path)
+  url.searchParams.set('class-id', 'class-'+id)
+
+  classLink.value = {
+    link: url.toString(),
+    user_id: user.id,
+  }
+  
+  message.value = { type: '', text: '' }
+  isCreateClassDialogOpen.value = true
+}
+
+const sendLink = async () => {
+  isFormLoading.value = true
+  
+  // Save the link to the database and send it via email by calling the API
+  // const res = await $fetch('/api/admin/users/send-link', {
+  //   method: 'POST',
+  //   body: classLink.value,
+  // })
+
+
+
+  setTimeout(() => {
+    isFormLoading.value = false
+    message.value = { type: 'success', text: 'Lien envoyé avec succès !' }
+    isCreateClassDialogOpen.value = false
+  }, 2000)
+}
+
+const copyLink = (link: string) => {
+  navigator.clipboard.writeText(link)
+  message.value = { type: 'copied', text: 'Lien copié dans le presse-papier !' }
+}
+
 const userStore = useUserStore()
-const columns = getUserColumns({ editUserDialog, confirmDeleteUser })
+const columns = getUserColumns({ editUserDialog, confirmDeleteUser, createClassDialog })
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({

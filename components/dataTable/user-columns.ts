@@ -6,9 +6,10 @@ import { h } from 'vue'
 import DataTableColumnHeader from './DataTableColumnHeader.vue'
 import DataTableRowActions from './DataTableRowActions.vue'
 
-export function getUserColumns({ editUserDialog, confirmDeleteUser }: {
+export function getUserColumns({ editUserDialog, confirmDeleteUser, createClassDialog }: {
   editUserDialog: (user: User) => void
-  confirmDeleteUser: (user: User) => void
+  confirmDeleteUser: (user: User) => void,
+  createClassDialog: (user: User) => void
 }): ColumnDef<User>[] {
 
   return [
@@ -58,6 +59,7 @@ export function getUserColumns({ editUserDialog, confirmDeleteUser }: {
       row,
       actions: [
         { label: 'Éditer', onClick: r => editUserDialog(r.original) },
+        { label: 'Créer une classe', onClick: r => createClassDialog(r.original) },
         { label: 'Supprimer', onClick: r => confirmDeleteUser(r.original), class: 'text-red-500' },
       ]
     })

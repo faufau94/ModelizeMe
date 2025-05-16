@@ -23,12 +23,11 @@ import { Ellipsis } from 'lucide-vue-next'
  interface Action<T> {
   label: string,
   onClick: (row: Row<T>) => void
-  class?: string,
 }
 
 interface DataTableRowActionsProps<T> {
   row: Row<T>
-  actions: Action<T>[]
+  actions: Action<T>[],
 }
 
 const props = defineProps<DataTableRowActionsProps<any>>()
@@ -47,7 +46,7 @@ const props = defineProps<DataTableRowActionsProps<any>>()
 
       <DropdownMenuContent align="end" class="w-40">
         <template v-for="action in props.actions" :key="action.label">
-          <DropdownMenuItem class="cursor-pointer" :class="props.class ?? ''" @click="action.onClick(props.row)">
+          <DropdownMenuItem class="cursor-pointer" :class="action.class ?? ''" @click="action.onClick(props.row)">
             {{ action.label }}
           </DropdownMenuItem>
         </template>
