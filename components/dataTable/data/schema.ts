@@ -15,5 +15,15 @@ export const roleSchema = z.object({
   name: z.string(),
   description: z.string(),
 })
+
+export const classSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  ownerId: z.number(),
+  joinCode: z.string(),
+})
+
+
+export type Class = z.infer<typeof classSchema>
 export type Role = z.infer<typeof roleSchema>
 export type User = z.infer<typeof userSchema>

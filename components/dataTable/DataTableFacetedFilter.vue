@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Column } from '@tanstack/vue-table'
 import type { Component } from 'vue'
-import type { Task } from '@/components/dataTable/data/schema'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,7 +17,7 @@ import { computed } from 'vue'
 import { Check, CirclePlus } from 'lucide-vue-next'
 
 interface DataTableFacetedFilter {
-  column?: Column<Task, any>
+  column?: Column<any, any>
   title?: string
   options: {
     label: string

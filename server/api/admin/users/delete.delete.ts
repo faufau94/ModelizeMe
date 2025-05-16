@@ -3,7 +3,6 @@ import prisma from "~/lib/prisma";
 export default defineEventHandler(async (event) => {
     const query = getQuery(event);
     const id = parseInt(query.id);
-    console.log(`Deleting user with id ${id}`);
     
 
     // remove his role

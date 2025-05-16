@@ -72,7 +72,7 @@ model RolePermission {
 // =============================
 model Class {
   id          String         @id @default(uuid())
-  name        String
+  name        String?
   owner       User           @relation("UserOwnedClasses", fields: [ownerId], references: [id])
   ownerId     Int
   joinCode    String         @unique

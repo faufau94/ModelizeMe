@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Table } from '@tanstack/vue-table'
-import type { Task } from '@/components/dataTable/data/schema'
 import { Button } from '@/components/ui/button'
 
 import { Input } from '@/components/ui/input'
@@ -12,7 +11,7 @@ import DataTableViewOptions from './DataTableViewOptions.vue'
 import { X } from 'lucide-vue-next'
 
 interface DataTableToolbarProps {
-  table: Table<Task>
+  table: Table<any>
 }
 
 const props = defineProps<DataTableToolbarProps>()

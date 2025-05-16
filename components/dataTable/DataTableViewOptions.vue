@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Table } from '@tanstack/vue-table'
-import type { User } from '@/components/dataTable/data/schema'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -15,7 +14,7 @@ import { computed } from 'vue'
 import { Settings2 } from 'lucide-vue-next'
 
 interface DataTableViewOptionsProps {
-  table: Table<User>
+  table: Table<any>
 }
 
 const props = defineProps<DataTableViewOptionsProps>()

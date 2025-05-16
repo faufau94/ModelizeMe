@@ -245,13 +245,13 @@
   </div>
 </template>
 <script setup lang="ts">
-import { getUserColumns } from '@/components/dataTable/columns'
+import { getUserColumns } from '~/components/dataTable/user-columns'
 import DataTable from '@/components/dataTable/DataTable.vue'
 import { CirclePlus, Loader2 } from 'lucide-vue-next';
 
-import { useQueryClient, useQuery, useMutation } from '@tanstack/vue-query'
+import { useQuery } from '@tanstack/vue-query'
 
-import { useUserActions } from '@/composables/admin/useUserActions'
+import { useUserStore } from '@/stores/admin/user-store'
 
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
@@ -285,8 +285,7 @@ const confirmDeleteUser = (user: User) => {
 
 const onDeleteConfirm = async () => {
   if (selectedUser.value) {
-    console.log('Deleting user:', selectedUser.value.id);
-    await deleteUserMutation(selectedUser.value.id)
+    await userStore.deleteUser(selectedUser.value.id)
   }
     isDeleteDialogOpen.value = false
     selectedUser.value = null
@@ -304,7 +303,7 @@ const editUserDialog = (user: User) => {
   })
 }
 
-const { addUserMutation, editUserMutation, deleteUserMutation } = useUserActions()
+const userStore = useUserStore()
 const columns = getUserColumns({ editUserDialog, confirmDeleteUser })
 
 const formSchema = toTypedSchema(z.object({
@@ -343,7 +342,7 @@ await suspense()
 const isFormLoading = ref(false)
 const addUser = form.handleSubmit(async (values) => {
   isFormLoading.value = true
-  const res = await addUserMutation(values)   
+  const res = await userStore.addUser(values)   
 
   // message de succès
   if(res.status === 200) {
@@ -360,11 +359,7 @@ const addUser = form.handleSubmit(async (values) => {
 
 const editUser = form.handleSubmit(async (values) => {
   isFormLoading.value = true
-  console.log('Editing user:', selectedUser?.value);
-  
-  const res = await editUserMutation({user: values, id: selectedUser.value?.id})
-  console.log('res', res);
-  
+  const res = await userStore.editUser(values, selectedUser?.value?.id?.toString() || '')
 
   // message de succès
   if(res.status === 200) {

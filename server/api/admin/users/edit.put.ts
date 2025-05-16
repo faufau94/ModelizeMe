@@ -17,7 +17,6 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 404, statusMessage: "User not found" });
     }
 
-    console.log("body", body);
     
     
     // Update the user with his role

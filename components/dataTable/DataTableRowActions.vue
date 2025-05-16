@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Row } from '@tanstack/vue-table'
-import type { User } from '@/components/dataTable/data/schema'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,

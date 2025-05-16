@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Table } from '@tanstack/vue-table'
-import type { Task } from '@/components/dataTable/data/schema'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -12,7 +11,7 @@ import {
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 
 interface DataTablePaginationProps {
-  table: Table<Task>
+  table: Table<any>
 }
 defineProps<DataTablePaginationProps>()
 </script>
