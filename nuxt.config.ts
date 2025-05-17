@@ -44,6 +44,12 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+
+    public: {
+      baseUrl: process.env.BASE_URL,
+    },
+
+
     authSecret: process.env.AUTH_SECRET,
     authOrigin: process.env.NUXT_AUTH_ORIGIN,
     baseURL: process.env.NUXT_BASE_URL,

@@ -24,6 +24,6 @@ export const classSchema = z.object({
 })
 
 
-export type Class = z.infer<typeof classSchema>
-export type Role = z.infer<typeof roleSchema>
 export type User = z.infer<typeof userSchema>
+export type Role = z.infer<typeof roleSchema>
+export type Class = z.infer<typeof classSchema>

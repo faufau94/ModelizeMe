@@ -6,7 +6,7 @@ export const useClassStore = defineStore('class', () => {
   const queryClient = useQueryClient()
 
   // Mutation pour créer une classe
-  const addClass = useMutation({
+  const addClassMutation = useMutation({
     mutationFn: async (payload: any) => {
       return await $fetch('/api/admin/classes/create', {
         method: 'POST',
@@ -20,7 +20,7 @@ export const useClassStore = defineStore('class', () => {
   })
 
   // Mutation pour éditer une classe
-  const editClass = useMutation({
+  const editClassMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       return await $fetch('/api/admin/classes/edit', {
         method: 'PUT',
@@ -34,8 +34,8 @@ export const useClassStore = defineStore('class', () => {
   })
 
   // Mutation pour supprimer une classe
-  const deleteClass = useMutation({
-    mutationFn: async (id: number) => {
+  const deleteClassMutation = useMutation({
+    mutationFn: async (id: string) => {
       return await $fetch('/api/admin/classes/delete', {
         method: 'DELETE',
         query: { id },
@@ -46,16 +46,20 @@ export const useClassStore = defineStore('class', () => {
     },
   })
 
+  
+
   // Expose des wrappers async pour appeler mutateAsync plus proprement
   return {
-    addClassMutation: async (newClass: any) => {
-      return await addClass.mutateAsync(newClass)
+    addClass: async (newClass: any) => {
+      return await addClassMutation.mutateAsync(newClass)
     },
-    editClassMutation: async (id: number, updatedData: any) => {
-      return await editClass.mutateAsync({ id, data: updatedData })
+    editClass: async (id: number, updatedData: any) => {
+      return await editClassMutation.mutateAsync({ id, data: updatedData })
     },
-    deleteClassMutation: async (id: number) => {
-      return await deleteClass.mutateAsync(id)
+    deleteClass: async (id: string) => {
+      console.log('id', id);
+      
+      return await deleteClassMutation.mutateAsync(id)
     },
   }
 })

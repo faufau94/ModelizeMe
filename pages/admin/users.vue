@@ -251,11 +251,11 @@
                 </Label>
                 <Input
                   id="link"
-                  :default-value="classLink.link"
+                  :default-value="classLink.url"
                   readonly
                 />
               </div>
-              <Button size="sm" class="px-3" @click="copyLink(classLink.link)">
+              <Button size="sm" class="px-3" @click="copyLink(classLink.url)">
                 <span class="sr-only">Copy</span>
                 <Copy class="w-4 h-4" />
               </Button>
@@ -312,6 +312,7 @@ import {toTypedSchema} from "@vee-validate/zod";
 import * as z from "zod";
 import type { User } from '~/components/dataTable/data/schema';
 import { useRoleStore } from '@/stores/admin/role-store';
+import { makeClassLink } from '@/utils/class-link';
 
 
 definePageMeta({
@@ -361,20 +362,22 @@ const editUserDialog = (user: User) => {
 }
 
 const classLink = ref({
-  link: '',
-  user_id: '',
+  url: '',
+  joinCode: '',
+  userId: '',
+  useEmail: '',
 })
 
 const createClassDialog = (user) => {
 
   // generate a link for the class
-  const id = Math.random().toString(36).substring(2, 10)
-  const url = new URL(window.location.origin + route.path)
-  url.searchParams.set('class-id', 'class-'+id)
+  const joinCode = Math.random().toString(36).substring(2, 20)
 
   classLink.value = {
-    link: url.toString(),
-    user_id: user.id,
+    url: makeClassLink(joinCode),
+    joinCode: joinCode,
+    userId: user.id,
+    userEmail: user.email,
   }
   
   message.value = { type: '', text: '' }
@@ -384,19 +387,24 @@ const createClassDialog = (user) => {
 const sendLink = async () => {
   isFormLoading.value = true
   
-  // Save the link to the database and send it via email by calling the API
-  // const res = await $fetch('/api/admin/users/send-link', {
-  //   method: 'POST',
-  //   body: classLink.value,
-  // })
+  // Save the link to the database and send it via email
+  const res = await $fetch('/api/admin/classes/create', {
+    method: 'POST',
+    body: classLink.value,
+  })
 
-
-
-  setTimeout(() => {
+  if (res?.status === 200) {
+    setTimeout(() => {
+      isFormLoading.value = false
+      message.value = { type: 'success', text: res?.body.message }
+      isCreateClassDialogOpen.value = false
+    }, 2000)
+  } else {
+    message.value = { type: 'error', text: res?.body.message }
     isFormLoading.value = false
-    message.value = { type: 'success', text: 'Lien envoyé avec succès !' }
-    isCreateClassDialogOpen.value = false
-  }, 2000)
+  }
+
+  
 }
 
 const copyLink = (link: string) => {

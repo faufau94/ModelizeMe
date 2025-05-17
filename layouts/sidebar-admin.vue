@@ -46,14 +46,6 @@
               Classes
             </NuxtLink>
             <NuxtLink
-                to="/admin/invites"
-                class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
-                :class="[route.path === '/admin/invites' ? 'text-primary bg-muted': 'text-muted-foreground']"
-            >
-              <Send class="h-4 w-4" />
-              Invitations
-            </NuxtLink>
-            <NuxtLink
                 to="/admin/feedback"
                 class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
                 :class="[route.path === '/admin/feedback' ? 'text-primary bg-muted': 'text-muted-foreground']"
@@ -153,14 +145,6 @@
               >
                 <Backpack class="h-5 w-5" />
                 Classes
-              </NuxtLink>
-              <NuxtLink
-                  to="/admin/invites"
-                  class="mx-[-0.65rem] text-[16px] flex items-center gap-4 rounded-xl px-3 py-3 hover:text-foreground"
-                  :class="[route.path === '/admin/invites' ? 'text-primary bg-muted': 'text-muted-foreground']"
-              >
-                <Send class="h-5 w-5" />
-                Invitations
               </NuxtLink>
               <NuxtLink
                   to="/admin/feedback"

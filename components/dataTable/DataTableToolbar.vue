@@ -22,12 +22,12 @@ const isFiltered = computed(() => props.table.getState().columnFilters.length > 
 <template>
   <div class="flex items-center justify-between">
     <div class="flex flex-1 items-center space-x-2">
-      <Input
+      <!-- <Input
         placeholder="Filter users..."
         :model-value="(table.getColumn('email')?.getFilterValue() as string) ?? ''"
         class="h-8 w-[150px] lg:w-[250px]"
         @input="table.getColumn('email')?.setFilterValue($event.target.value)"
-      />
+      /> -->
       <!-- <DataTableFacetedFilter
         v-if="table.getColumn('email')"
         :column="table.getColumn('email')"

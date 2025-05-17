@@ -65,7 +65,6 @@ export const useUserStore = defineStore('user', () => {
   // --- 3) Exposition du store ---
 
   return {
-    // méthodes CRUD
     addUser,
     editUser,
     deleteUser,
