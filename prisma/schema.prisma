@@ -26,6 +26,7 @@ model User {
   providerAccountId String?
   roles             UserRole[]
   classes           ClassMember[]
+  members           TeamMember[]
   models            Model[]
   comments          Comment[]
   sharedAccesses    SharedAccess[]
@@ -68,26 +69,52 @@ model RolePermission {
 }
 
 // =============================
-// CLASSROOM SYSTEM
+// CLASSROOM & TEAM SYSTEM
 // =============================
+
 model Class {
-  id          String         @id @default(uuid())
-  name        String?
-  owner       User           @relation("UserOwnedClasses", fields: [ownerId], references: [id])
+  id          Int     @id @default(autoincrement())
+  name        String
+  joinCode    String        @unique        // code secret pour rejoindre la classe
   ownerId     Int
-  joinCode    String         @unique
-  members     ClassMember[]
-  models      Model[]
-  createdAt   DateTime       @default(now())
+  owner       User          @relation("UserOwnedClasses", fields: [ownerId], references: [id])
+  members     ClassMember[]                  
+  teams       Team[]                         
+  models      Model[]                        
+  createdAt   DateTime      @default(now())
 }
 
 model ClassMember {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id])
+  id        Int     @id @default(autoincrement())
+  classId   Int
+  class     Class   @relation(fields: [classId], references: [id])
   userId    Int
-  class     Class    @relation(fields: [classId], references: [id])
-  classId   String
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([classId, userId])
 }
+
+model Team {
+  id        Int          @id @default(autoincrement())
+  name      String
+  joinCode  String       @unique        
+  classId   Int
+  class     Class        @relation(fields: [classId], references: [id])
+  members   TeamMember[]               
+  models    Model[]               
+  createdAt DateTime     @default(now())
+}
+
+model TeamMember {
+  id        Int     @id @default(autoincrement())
+  teamId    Int
+  team      Team    @relation(fields: [teamId], references: [id])
+  userId    Int
+  user      User    @relation(fields: [userId], references: [id])
+
+  @@unique([teamId, userId])
+}
+
 
 // =============================
 // MODELS (SCHEMAS)
@@ -101,8 +128,10 @@ model Model {
   type         ModelType        @default(MCD)
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       Int
-  class        Class?           @relation(fields: [classId], references: [id])
-  classId      String?
+  classId      Int
+  class        Class            @relation(fields: [classId], references: [id])
+  teamId       Int?
+  team         Team?            @relation(fields: [teamId], references: [id])
   comments     Comment[]
   sharedAccess SharedAccess[]
   Galery       Galery[]

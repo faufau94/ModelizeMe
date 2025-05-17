@@ -1,7 +1,7 @@
 // utils/url.ts
 import { useRuntimeConfig } from '#imports'
 
-export function makeClassLink(slug: string) {
+export function makeClassLink(joinCode: string) {
   const { baseUrl } = useRuntimeConfig().public
-  return `${baseUrl}/app/classes/invite/${slug}`
+  return `${baseUrl}/app/classes/invite?=joinCode${joinCode}`
 }
