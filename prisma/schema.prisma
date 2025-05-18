@@ -76,8 +76,8 @@ model Class {
   id          Int     @id @default(autoincrement())
   name        String
   joinCode    String        @unique        // code secret pour rejoindre la classe
-  ownerId     Int
-  owner       User          @relation("UserOwnedClasses", fields: [ownerId], references: [id])
+  ownerId     Int?
+  owner       User?          @relation("UserOwnedClasses", fields: [ownerId], references: [id], onDelete: SetNull)
   members     ClassMember[]                  
   teams       Team[]                         
   models      Model[]                        

@@ -1,4 +1,6 @@
 <template>
+  
+  <ProjectsSidebar />
   <div class="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
     <div class="hidden border-r bg-muted/40 md:block" :class="sidebarClass">
       <div class="flex h-full max-h-screen flex-col gap-2">
@@ -261,6 +263,7 @@ import {Input} from '@/components/ui/input'
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet'
 
 import PricingDialog from "@/components/PricingDialog.vue";
+import ProjectsSidebar from "@/layouts/projects-sidebar.vue";
 
 const route = useRoute()
 

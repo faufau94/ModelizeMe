@@ -47,7 +47,7 @@ export default defineEventHandler(async event => {
     });
 
     let res = await transporter.sendMail({
-        from: "faudel.hammoudi@outlook.fr", // sender address
+        from: "faudelh94@hotmail.fr", // sender address
         to: userEmail, // list of receivers
         subject: "Nouvelle classe", // Subject line
         text: "Nouvelle classe", // plain text body

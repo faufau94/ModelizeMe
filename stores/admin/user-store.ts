@@ -13,7 +13,7 @@ export const useUserStore = defineStore('user', () => {
       const password = Math.random().toString(36).slice(-8)
       return await $fetch('/api/auth/sign-up', {
         method: 'POST',
-        body: { ...payload, password },
+        body: { ...payload, password , sendPasswordByEmail: true },
       })
     },
     onSuccess: () => {

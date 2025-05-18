@@ -355,6 +355,7 @@
         selectedClass.value = null
         isFormLoading.value = false
         isDeleteDialogOpen.value = false
+        message.value = { type: '', text: '' }
     }, 2000)
   }
   
@@ -394,6 +395,7 @@
       setTimeout(() => {
         isFormLoading.value = false
         isCreateClassDialogOpen.value = false
+        message.value = { type: '', text: '' }
       }, 2000)
     } else {
       message.value = { type: 'error', text: res?.body.message }

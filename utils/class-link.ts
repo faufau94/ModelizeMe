@@ -3,5 +3,5 @@ import { useRuntimeConfig } from '#imports'
 
 export function makeClassLink(joinCode: string) {
   const { baseUrl } = useRuntimeConfig().public
-  return `${baseUrl}/app/classes/invite?=joinCode${joinCode}`
+  return `${baseUrl}/app/welcome?joinCode=${joinCode}`
 }
