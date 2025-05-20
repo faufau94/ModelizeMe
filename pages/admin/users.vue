@@ -235,11 +235,11 @@
         </Dialog>
 
 
-        <!-- Create Class Dialog -->
-        <Dialog v-model:open="isCreateClassDialogOpen">
+        <!-- Create Workspace Dialog -->
+        <Dialog v-model:open="isCreateWorkspaceDialogOpen">
           <DialogContent class="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Créer une classe</DialogTitle>
+              <DialogTitle>Créer un workspace</DialogTitle>
               <DialogDescription>
                 Ce lien pourra être partagé avec d'autres utilisateurs.
               </DialogDescription>
@@ -251,11 +251,11 @@
                 </Label>
                 <Input
                   id="link"
-                  :default-value="classLink.url"
+                  :default-value="workspaceLink.url"
                   readonly
                 />
               </div>
-              <Button size="sm" class="px-3" @click="copyLink(classLink.url)">
+              <Button size="sm" class="px-3" @click="copyLink(workspaceLink.url)">
                 <span class="sr-only">Copy</span>
                 <Copy class="w-4 h-4" />
               </Button>
@@ -277,7 +277,7 @@
                       <Loader2 v-if="isFormLoading" class="w-4 h-4 mr-2 animate-spin"/>
                       {{ isFormLoading ? "Chargement..." : "Créer et envoyer le lien" }}
                     </Button>
-                  <Button type="button" variant="secondary" @click="isCreateClassDialogOpen = false">
+                  <Button type="button" variant="secondary" @click="isCreateWorkspaceDialogOpen = false">
                     Annuler
                   </Button>                
                 </div>
@@ -312,21 +312,19 @@ import {toTypedSchema} from "@vee-validate/zod";
 import * as z from "zod";
 import type { User } from '~/components/dataTable/data/schema';
 import { useRoleStore } from '@/stores/admin/role-store';
-import { makeClassLink } from '@/utils/class-link';
+import { makeWorkspaceLink } from '~/utils/workspace-link';
 
 
 definePageMeta({
     layout: 'sidebar-admin',
 });
 
-const route = useRoute()
-
 
 // State management using refs for dialogs
 const isAddDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
-const isCreateClassDialogOpen = ref(false)
+const isCreateWorkspaceDialogOpen = ref(false)
 
 const roleStore = useRoleStore()
 watch([isAddDialogOpen, isEditDialogOpen], ([newAddDialog, newEditDialog]) => {
@@ -361,43 +359,43 @@ const editUserDialog = (user: User) => {
   })
 }
 
-const classLink = ref({
+const workspaceLink = ref({
   url: '',
-  joinCode: '',
+  inviteCode: '',
   userId: '',
   useEmail: '',
 })
 
-const createClassDialog = (user) => {
+const createWorkspaceDialog = (user) => {
 
-  // generate a link for the class
-  const joinCode = Math.random().toString(36).substring(2, 20)
+  // generate a link for the workspace
+  const inviteCode = Math.random().toString(36).substring(2, 20)
 
-  classLink.value = {
-    url: makeClassLink(joinCode),
-    joinCode: joinCode,
+  workspaceLink.value = {
+    url: makeWorkspaceLink(inviteCode),
+    inviteCode: inviteCode,
     userId: user.id,
     userEmail: user.email,
   }
   
   message.value = { type: '', text: '' }
-  isCreateClassDialogOpen.value = true
+  isCreateWorkspaceDialogOpen.value = true
 }
 
 const sendLink = async () => {
   isFormLoading.value = true
   
   // Save the link to the database and send it via email
-  const res = await $fetch('/api/admin/classes/create', {
+  const res = await $fetch('/api/admin/workspaces/create', {
     method: 'POST',
-    body: classLink.value,
+    body: workspaceLink.value,
   })
 
   if (res?.status === 200) {
     setTimeout(() => {
       isFormLoading.value = false
       message.value = { type: 'success', text: res?.body.message }
-      isCreateClassDialogOpen.value = false
+      isCreateWorkspaceDialogOpen.value = false
     }, 2000)
   } else {
     message.value = { type: 'error', text: res?.body.message }
@@ -413,7 +411,7 @@ const copyLink = (link: string) => {
 }
 
 const userStore = useUserStore()
-const columns = getUserColumns({ editUserDialog, confirmDeleteUser, createClassDialog })
+const columns = getUserColumns({ editUserDialog, confirmDeleteUser, createWorkspaceDialog })
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({

@@ -39,10 +39,10 @@ export function getClassColumns({ confirmDeleteClass, createClassDialog }: {
     },
   },
   {
-    accessorKey: 'joinCode',
+    accessorKey: 'inviteCode',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: "Code d'accès" }),
     cell: ({ row }) => {
-      return h('div', { class: 'flex space-x-2' }, row.getValue('joinCode'))
+      return h('div', { class: 'flex space-x-2' }, row.getValue('inviteCode'))
     },
   },
   {

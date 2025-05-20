@@ -1,5 +1,5 @@
 <template>
-    invite with join code: {{ joinCode }}
+    invite with join code: {{ inviteCode }}
 </template>
 
 <script setup>
@@ -9,6 +9,6 @@ definePageMeta({
 
 const route = useRoute();
 
-const { joinCode } = route.query;
+const { inviteCode } = route.query;
 
 </script>

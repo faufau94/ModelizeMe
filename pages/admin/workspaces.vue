@@ -231,10 +231,10 @@
   
   
           <!-- Create Class Dialog -->
-          <Dialog v-model:open="isCreateClassDialogOpen">
+          <Dialog v-model:open="isCreateWorkspaceDialogOpen">
             <DialogContent class="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Créer une classe</DialogTitle>
+                <DialogTitle>Créer un espace de travail</DialogTitle>
                 <DialogDescription>
                   Ce lien pourra être partagé avec d'autres utilisateurs.
                 </DialogDescription>
@@ -246,11 +246,11 @@
                   </Label>
                   <Input
                     id="link"
-                    :default-value="classLink.url"
+                    :default-value="workspaceLink.url"
                     readonly
                   />
                 </div>
-                <Button size="sm" class="px-3" @click="copyLink(classLink.url)">
+                <Button size="sm" class="px-3" @click="copyLink(workspaceLink.url)">
                   <span class="sr-only">Copy</span>
                   <Copy class="w-4 h-4" />
                 </Button>
@@ -281,7 +281,7 @@
                         <Loader2 v-if="isFormLoading" class="w-4 h-4 mr-2 animate-spin"/>
                         {{ isFormLoading ? "Chargement..." : "Créer et envoyer le lien" }}
                       </Button>
-                    <Button type="button" variant="secondary" @click="isCreateClassDialogOpen = false">
+                    <Button type="button" variant="secondary" @click="isCreateWorkspaceDialogOpen = false">
                       Annuler
                     </Button>                
                   </div>
@@ -316,7 +316,7 @@
   import * as z from "zod";
   import type { Class } from '~/components/dataTable/data/schema';
   import { useRoleStore } from '@/stores/admin/role-store';
-  import { makeClassLink } from '@/utils/class-link';
+  import { makeWorkspaceLink } from '~/utils/workspace-link';
   
   
   definePageMeta({
@@ -328,7 +328,7 @@
   const isAddDialogOpen = ref(false)
   const isEditDialogOpen = ref(false)
   const isDeleteDialogOpen = ref(false)
-  const isCreateClassDialogOpen = ref(false)
+  const isCreateWorkspaceDialogOpen = ref(false)
   
   const classStore = useClassStore()
 
@@ -340,16 +340,16 @@
   })
   
   const selectedClass = ref<Class|null>(null)
-  const confirmDeleteClass = (classObj: Class) => {
+  const confirmDeleteClass = (workspace: Class) => {
     isDeleteDialogOpen.value = true
-    selectedClass.value = classObj
+    selectedClass.value = workspace
   }
   
   const onDeleteConfirm = async () => {
     isFormLoading.value = true
     if (selectedClass.value) {        
       await classStore.deleteClass(selectedClass?.value?.id)
-      message.value = { type: 'success', text: 'Classe supprimée avec succès.' }
+      message.value = { type: 'success', text: 'Workspace supprimé avec succès.' }
     }
     setTimeout(() => {
         selectedClass.value = null
@@ -360,25 +360,25 @@
   }
   
   
-  const classLink = ref({
+  const workspaceLink = ref({
     url: '',
-    joinCode: '',
+    inviteCode: '',
     userId: '',
   })
   
-  const createClassDialog = (classObj: Class) => {
+  const createWorkspaceDialog = (workspace: Class) => {
   
     // generate a link for the class
-    const className = 'class-' + Math.random().toString(36).substring(2, 20)
+    const workspaceName = Math.random().toString(36).substring(2, 20)
   
-    classLink.value = {
-      url: makeClassLink(className),
-      joinCode: className,
-      userId: classObj.id,
+    workspaceLink.value = {
+      url: makeWorkspaceLink(workspaceName),
+      inviteCode: workspaceName,
+      userId: workspace.id,
     }
     
     message.value = { type: '', text: '' }
-    isCreateClassDialogOpen.value = true
+    isCreateWorkspaceDialogOpen.value = true
   }
   
   const sendLink = async () => {
@@ -387,14 +387,14 @@
     // Save the link to the database and send it via email
     const res = await $fetch('/api/admin/classes/create', {
       method: 'POST',
-      body: classLink.value,
+      body: workspaceLink.value,
     })
   
     if (res?.status === 200) {
         message.value = { type: 'success', text: res?.body.message }
       setTimeout(() => {
         isFormLoading.value = false
-        isCreateClassDialogOpen.value = false
+        isCreateWorkspaceDialogOpen.value = false
         message.value = { type: '', text: '' }
       }, 2000)
     } else {
@@ -410,7 +410,7 @@
     message.value = { type: 'copied', text: 'Lien copié dans le presse-papier !' }
   }
   
-  const columns = getClassColumns({ confirmDeleteClass, createClassDialog })
+  const columns = getClassColumns({ confirmDeleteClass, createWorkspaceDialog })
   
   const formSchema = toTypedSchema(z.object({
     name: z.string({
@@ -419,7 +419,7 @@
     owner: z.string({
       required_error: "Veuillez remplir le champs.",
     }),
-    joinCode: z.string({
+    inviteCode: z.string({
       required_error: "Veuillez remplir le champs.",
     }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   }))

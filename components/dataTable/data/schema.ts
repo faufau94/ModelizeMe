@@ -20,7 +20,7 @@ export const classSchema = z.object({
   id: z.string(),
   name: z.string(),
   ownerId: z.number(),
-  joinCode: z.string(),
+  inviteCode: z.string(),
 })
 
 

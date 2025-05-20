@@ -4,33 +4,30 @@ import nodemailer from 'nodemailer';
 export default defineEventHandler(async event => {
 
     const body = await readBody(event);
-    const { joinCode, userId, userEmail, url } = body;
-
-    console.log('userEmail', userEmail);
+    const { inviteCode, userId, userEmail, url } = body;
     
 
-    if (!joinCode || !userId) {
+    if (!inviteCode || !userId) {
         return {
             status: 404,
             body: {
-                message: 'Impossible de créer la classe, veuillez réessayer'
+                message: 'Impossible de créer le workspace, veuillez réessayer'
             }
         }
     }
 
-    const classCreated = await prisma.class.create({
+    const workspaceCreated = await prisma.workspace.create({
         data: {
-            name: joinCode,
-            joinCode: joinCode,
+            name: inviteCode,
             ownerId: userId
         }
     });
 
-    if (!classCreated) {
+    if (!workspaceCreated) {
         return {
             status: 404,
             body: {
-                message: 'Il y a eu une erreur lors de la création de la classe'
+                message: 'Il y a eu une erreur lors de la création du workspace, veuillez réessayer'
             }
         }
     }
@@ -49,8 +46,8 @@ export default defineEventHandler(async event => {
     let res = await transporter.sendMail({
         from: "faudelh94@hotmail.fr", // sender address
         to: userEmail, // list of receivers
-        subject: "Nouvelle classe", // Subject line
-        text: "Nouvelle classe", // plain text body
+        subject: "Nouveau workspace créé", // Subject line
+        text: "Nouveau workspace créé", // plain text body
         connectionTimeout: 30000,   // 30 seconds
         greetingTimeout: 30000,     // 30 seconds
         socketTimeout: 30000,
@@ -64,7 +61,7 @@ export default defineEventHandler(async event => {
     return {
         status: 200,
         body: {
-            message: `Classe "${classCreated}" créée avec succès`,
+            message: `Workspace "${workspaceCreated}" créée avec succès`,
         }
     }
 
