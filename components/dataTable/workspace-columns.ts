@@ -1,15 +1,15 @@
 import type { ColumnDef } from '@tanstack/vue-table'
-import type { Class } from '@/components/dataTable/data/schema'
+import type { Workspace } from '@/components/dataTable/data/schema'
 
 import { Checkbox } from '@/components/ui/checkbox'
 import { h } from 'vue'
 import DataTableColumnHeader from './DataTableColumnHeader.vue'
 import DataTableRowActions from './DataTableRowActions.vue'
 
-export function getClassColumns({ confirmDeleteClass, createClassDialog }: {
-  confirmDeleteClass: (classObj: Class) => void,
-  createClassDialog: (classObj: Class) => void
-}): ColumnDef<Class>[] {
+export function getWorkspaceColumns({ confirmDeleteWorkspace, createWorkspaceDialog }: {
+  confirmDeleteWorkspace: (classObj: Workspace) => void,
+  createWorkspaceDialog: (classObj: Workspace) => void
+}): ColumnDef<Workspace>[] {
 
   return [
   {
@@ -26,14 +26,14 @@ export function getClassColumns({ confirmDeleteClass, createClassDialog }: {
   },
   {
     accessorKey: 'name',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Nom de classe' }),
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Nom' }),
     cell: ({ row }) => h('div', { class: 'w-26' }, row.getValue('name')),
     enableSorting: true,
     enableHiding: true,
   },
   {
     accessorKey: 'ownerId',
-    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Professeur' }),
+    header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Gérant' }),
     cell: ({ row }) => {      
       return h('div', { class: 'flex space-x-2' }, row.original.owner.first_name + ' ' + row.original.owner.name)
     },
@@ -51,7 +51,7 @@ export function getClassColumns({ confirmDeleteClass, createClassDialog }: {
     cell: ({ row }) => h(DataTableRowActions, {
       row,
       actions: [
-        { label: 'Supprimer', onClick: r => confirmDeleteClass(r.original), class: 'text-red-500' },
+        { label: 'Supprimer', onClick: r => confirmDeleteWorkspace(r.original), class: 'text-red-500' },
       ]
     })
   },

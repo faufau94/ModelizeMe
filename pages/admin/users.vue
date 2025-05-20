@@ -228,7 +228,10 @@
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="destructive" @click="onDeleteConfirm">Supprimer</Button>
+              <Button variant="destructive"  @click.stop="onDeleteConfirm" :disabled="isFormLoading">
+                    <Loader2 v-if="isFormLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                    {{ isFormLoading ? "Suppression..." : "Supprimer" }}
+                </Button>
               <Button variant="outline" @click="isDeleteDialogOpen = false">Annuler</Button>
             </DialogFooter>
           </DialogContent>
@@ -342,9 +345,10 @@ const confirmDeleteUser = (user: User) => {
 const onDeleteConfirm = async () => {
   if (selectedUser.value) {
     await userStore.deleteUser(selectedUser.value.id)
+    
   }
-    isDeleteDialogOpen.value = false
-    selectedUser.value = null
+  isDeleteDialogOpen.value = false
+  selectedUser.value = null
 }
 
 const editUserDialog = (user: User) => {
@@ -355,7 +359,7 @@ const editUserDialog = (user: User) => {
     name: user.name,
     first_name: user.first_name,
     email: user.email,
-    role: user.roles[0].role.id,
+    role: user.role.id,
   })
 }
 
@@ -423,7 +427,7 @@ const formSchema = toTypedSchema(z.object({
   email: z.string({
     required_error: "Veuillez remplir le champs.",
   }).email({ message: "Adresse email invalide." }),
-  role: z.string({
+  role: z.number({
     required_error: "Veuillez remplir le champs.",
   })
 }))

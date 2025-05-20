@@ -20,13 +20,7 @@ export default defineEventHandler(async event => {
                 name: name,
                 first_name: first_name,
                 password: hashedPassword,
-                roles: {
-                    create: {
-                        role: {
-                            connect: { id: role }
-                        }
-                    }
-                }
+                roleId: role
             },
         });
 

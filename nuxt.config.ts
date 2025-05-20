@@ -14,7 +14,6 @@ export default defineNuxtConfig({
   modules: [
     "shadcn-nuxt",
     "@nuxtjs/tailwindcss",
-    "@prisma/nuxt",
     "@sidebase/nuxt-auth",
     '@pinia/nuxt',
     "nuxt-lucide-icons",

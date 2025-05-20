@@ -7,6 +7,8 @@ datasource db {
 
 generator client {
   provider      = "prisma-client-js"
+  output        = "generated/prisma"
+  module        = "esm"
   binaryTargets = ["native", "debian-openssl-1.0.x"]
 }
 
@@ -63,8 +65,39 @@ model User {
 
   workspacesOwned Workspace[] @relation("WorkspaceOwner")
 
+  roleId            Int
+  role              Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
   @@map("users")
 }
+
+/// Rôles globaux de la plateforme
+model Role {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique                    
+  description String?
+  users       User[]    
+  permissions RolePermission[]
+}
+
+/// Permissions granulaires
+model Permission {
+  id          Int               @id @default(autoincrement())
+  action      String            @unique                 // ex: "manage_users", "view_reports"
+  description String?
+  roles       RolePermission[]
+}
+
+/// Table pivot Role↔Permission
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
 
 /////////////////////
 // WORKSPACES

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "nuxt build && npx prisma migrate deploy",
-    "dev": "nuxt dev",
+    "dev": "npx prisma generate && nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
@@ -16,7 +16,6 @@
     "@pinia/nuxt": "^0.5.3",
     "@preline/overlay": "^2.3.0",
     "@preline/select": "^2.3.0",
-    "@prisma/nuxt": "^0.0.35",
     "@sidebase/nuxt-auth": "^0.9.4",
     "@tanstack/vue-query": "^5.76.0",
     "@tanstack/vue-table": "^8.21.3",
@@ -42,7 +41,7 @@
     "lucide-vue-next": "^0.501.0",
     "next-auth": "4.21.1",
     "nodemailer": "^6.10.1",
-    "nuxt": "^3.14.159",
+    "nuxt": "^3.17.3",
     "nuxt-lucide-icons": "^1.0.5",
     "pinia": "^2.2.1",
     "postcss": "^8.4.41",
@@ -62,7 +61,7 @@
   },
   "devDependencies": {
     "@prisma/client": "^6.8.2",
-    "prisma": "^5.22.0",
+    "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.4"
   },

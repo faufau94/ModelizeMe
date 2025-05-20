@@ -46,10 +46,11 @@ export function getUserColumns({ editUserDialog, confirmDeleteUser, createWorksp
       return h('div', { class: 'flex space-x-2' }, row.getValue('name'))
     },
   },{
-    accessorKey: 'roles',
+    accessorKey: 'role',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Role' }),
     cell: ({ row }) => {
-      return h('div', { class: 'flex space-x-2' }, row.getValue('roles')[0]?.role?.name)
+      let roleName = row.getValue('role')?.name ?? ''
+      return h('div', { class: 'flex space-x-2' }, roleName)
     },
   },
   {
@@ -59,7 +60,7 @@ export function getUserColumns({ editUserDialog, confirmDeleteUser, createWorksp
       row,
       actions: [
         { label: 'Éditer', onClick: r => editUserDialog(r.original) },
-        { label: 'Créer une classe', onClick: r => createWorkspaceDialog(r.original) },
+        { label: 'Créer un workspace', onClick: r => createWorkspaceDialog(r.original) },
         { label: 'Supprimer', onClick: r => confirmDeleteUser(r.original), class: 'text-red-500' },
       ]
     })

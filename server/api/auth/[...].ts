@@ -33,11 +33,7 @@ export default NuxtAuthHandler({
                         email: credentials.email,
                     },
                     include: {
-                        roles: {
-                            include: {
-                                role: true
-                            }
-                        }
+                        role: true
                     }
                 })
                 // Vérifier si l'utilisateur existe et si le mot de passe est correct
@@ -208,7 +204,7 @@ export default NuxtAuthHandler({
             
             if (user) {
                 token.id = user.id
-                token.role = user.roles[0].role.name || []
+                token.role = user.role.name || []
             }
             return token;
         }

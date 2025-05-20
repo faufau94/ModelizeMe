@@ -5,11 +5,7 @@ export default defineEventHandler(async event => {
     return await prisma.user.findMany(
         {
             include: {
-                roles: {
-                    include: {
-                        role: true
-                    }
-                }
+                role: true,
             }
         }
     )

@@ -1,76 +1,66 @@
-import { PrismaClient } from '@prisma/client'
-import * as bcrypt from 'bcrypt'
+import { PrismaClient } from "~/prisma/generated/prisma/client"
+import * as bcrypt from "bcrypt"
 
 const prisma = new PrismaClient()
 
 async function main() {
-  // 1) Créer / mettre à jour un super-admin par défaut
-  const admin = {
-    name: 'Faudel Admin',
-    defaultEmail: 'faufau@modelizeme.app',
-    defaultPassword: 'faufauPassword123',
-  }
-  const hashedPassword = await bcrypt.hash(admin.defaultPassword, 10)
-
-  await prisma.user.upsert({
-    where: { email: admin.defaultEmail },
-    update: {
-      password: hashedPassword,
-      name: admin.name,
-    },
+  // 1) Upsert des rôles
+  const superRole = await prisma.role.upsert({
+    where: { name: "SUPER_ADMIN" },
+    update: {},
     create: {
-      email: admin.defaultEmail,
-      password: hashedPassword,
-      name: admin.name,
+      name: "SUPER_ADMIN",
+      description: "Accès total à l'administration",
+    },
+  })
+  const userRole = await prisma.role.upsert({
+    where: { name: "USER" },
+    update: {},
+    create: {
+      name: "USER",
+      description: "Utilisateur standard",
     },
   })
 
-  // // 2) Créer un workspace “Default Workspace” si nécessaire
-  // let workspace = await prisma.workspace.findFirst({
-  //   where: {
-  //     ownerId: faufau.id,
-  //     name: 'Default Workspace',
-  //   },
-  // })
-  // if (!workspace) {
-  //   workspace = await prisma.workspace.create({
-  //     data: {
-  //       name: 'Default Workspace',
-  //       owner: { connect: { id: faufau.id } },
-  //     },
-  //   })
-  // }
+  // 2) Création du super-admin "Faudel Admin"
+  const hashedAdmin = await bcrypt.hash("faufauPassword123", 10)
+  const faudel = await prisma.user.upsert({
+    where: { email: "faufau@modelizeme.app" },
+    update: {
+      first_name: "Faudel",
+      name: "Admin",
+      password: hashedAdmin,
+      roleId: superRole.id,         // <-- on set directement le roleId
+    },
+    create: {
+      email: "faufau@modelizeme.app",
+      first_name: "Faudel",
+      name: "Admin",
+      password: hashedAdmin,
+      roleId: superRole.id,
+    },
+  })
 
-  // // 3) Assigner FauFau comme OWNER de ce workspace
-  // await prisma.workspaceMember.upsert({
-  //   where: {
-  //     userId_workspaceId: {
-  //       userId: faufau.id,
-  //       workspaceId: workspace.id,
-  //     },
-  //   },
-  //   update: {
-  //     role: 'OWNER',
-  //     canViewAllTeams: true,
-  //   },
-  //   create: {
-  //     user:      { connect: { id: faufau.id } },
-  //     workspace: { connect: { id: workspace.id } },
-  //     role: 'OWNER',
-  //     canViewAllTeams: true,
-  //   },
-  // })
+  // 3) Création d’un utilisateur normal
+  const hashedUser = await bcrypt.hash("userPassword123", 10)
+  await prisma.user.upsert({
+    where: { email: "normal@modelizeme.app" },
+    update: {
+      first_name: "Normal",
+      name: "User",
+      password: hashedUser,
+      roleId: userRole.id,          // <-- ici aussi on set roleId
+    },
+    create: {
+      email: "normal@modelizeme.app",
+      first_name: "Normal",
+      name: "User",
+      password: hashedUser,
+      roleId: userRole.id,
+    },
+  })
 
-  // // 4) (Optionnel) Créer quelques catégories de galerie par défaut
-  // const defaultCategories = ['Default']
-  // for (const name of defaultCategories) {
-  //   const exists = await prisma.category.findFirst({ where: { name } })
-  //   if (!exists) {
-  //     await prisma.category.create({ data: { name } })
-  //   }
-  // }
-
-  console.log('✅ Seed terminé : user créé.')
+  console.log("✅ Seed terminé : rôles et users créés avec roleId.")
 }
 
 main()
