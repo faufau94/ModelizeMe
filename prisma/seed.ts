@@ -24,7 +24,7 @@ async function main() {
 
   // 2) Création du super-admin "Faudel Admin"
   const hashedAdmin = await bcrypt.hash("faufauPassword123", 10)
-  const faudel = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "faufau@modelizeme.app" },
     update: {
       first_name: "Faudel",

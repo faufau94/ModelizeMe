@@ -1,19 +1,21 @@
 import { defineStore } from 'pinia'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import type { Workspace } from '@/components/dataTable/data/schema'
 
-export const useWorkspaceStore = defineStore('class', () => {
+export const useWorkspaceStore = defineStore('workspace', () => {
   const queryClient = useQueryClient()
+
+  const selectedWorkspaceId = ref<number | null>(null)
 
   // Mutation pour créer une classe
   const addWorkspaceMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: any) => {      
       return await $fetch('/api/admin/workspaces/create', {
         method: 'POST',
         body: payload,
       })
     },
     onSuccess: () => {
-      // Invalide et re-fetch la liste 'workspaces'
       queryClient.invalidateQueries(['workspaces'])
     },
   })
@@ -45,7 +47,33 @@ export const useWorkspaceStore = defineStore('class', () => {
     },
   })
 
-  
+
+  // Mutation pour récupérer la liste des classes
+  const { data: workspaces, isLoading: isLoadingWorkspaces, error, suspense } = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: async () => {
+
+      const res = await $fetch('/api/admin/workspaces/list')
+
+      if (res) {
+        selectedWorkspaceId.value = res[0].id
+        console.log('selectedWorkspaceId.value', selectedWorkspaceId.value);
+        
+        return res
+      }
+    }
+  })
+
+  // Read a workspace by ID and everytime the user change the workspace, it will be updated by listening to the workspaceId in the queryKey
+  const { data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery({
+    queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
+    queryFn: async () => {
+      return await $fetch('/api/admin/workspaces/read', {
+        method: 'GET',
+        query: { id: selectedWorkspaceId.value },
+      })
+    }
+  })
 
   // Expose des wrappers async pour appeler mutateAsync plus proprement
   return {
@@ -56,9 +84,12 @@ export const useWorkspaceStore = defineStore('class', () => {
       return await editWorkspaceMutation.mutateAsync({ id, data: updatedData })
     },
     deleteWorkspace: async (id: string) => {
-      console.log('id', id);
-      
       return await deleteWorkspaceMutation.mutateAsync(id)
     },
+    workspaces,
+    isLoadingWorkspaces,
+    selectedWorkspace,
+    selectedWorkspaceId,
+    isLoadingSelectedWorkspace,
   }
 })

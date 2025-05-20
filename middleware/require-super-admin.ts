@@ -22,7 +22,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   const session = data.value
   const isAdmin = Array.isArray(session?.user?.role)
-    && session.user.role.some((r: any) => r.name === 'admin')
+    && session.user.role === 'SUPER_ADMIN'
 
   // if they’re not an admin, send them back to /app
   if (!isAdmin) {

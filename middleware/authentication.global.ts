@@ -25,8 +25,8 @@ export default defineNuxtRouteMiddleware(async (to) => {
   ) {
     return navigateTo('/sign-in')
   }
-
-  const isSuperAdmin = data.value?.user?.role === 'admin'
+  
+  const isSuperAdmin = data.value?.user?.role === 'SUPER_ADMIN'
   
 
   // 3) Root landing page → send to proper home

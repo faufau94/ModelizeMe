@@ -309,7 +309,7 @@
   
   import { useQuery } from '@tanstack/vue-query'
   
-  import { useWorkspaceStore } from '~/stores/admin/workspaces-store'
+  import { useWorkspaceStore } from '@/stores/admin/workspace-store.ts'
   
   import { useForm } from 'vee-validate'
   import {toTypedSchema} from "@vee-validate/zod";

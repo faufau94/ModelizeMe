@@ -4,10 +4,10 @@ import nodemailer from 'nodemailer';
 export default defineEventHandler(async event => {
 
     const body = await readBody(event);
-    const { inviteCode, userId, userEmail, url } = body;
+    const { inviteCode, userId, userEmail, name } = body;
     
 
-    if (!inviteCode || !userId) {
+    if (!userId) {
         return {
             status: 404,
             body: {
@@ -16,10 +16,14 @@ export default defineEventHandler(async event => {
         }
     }
 
+
     const workspaceCreated = await prisma.workspace.create({
         data: {
-            name: inviteCode,
-            ownerId: userId
+            name: name,
+            owner: {
+                connect: { id: userId }
+            },
+            inviteCode: inviteCode,
         }
     });
 
@@ -53,7 +57,7 @@ export default defineEventHandler(async event => {
         socketTimeout: 30000,
         html: `
         <h1>Bonjour,</h1>
-        <p>Voici le lien: ${url}</p>
+        <p>Voici le lien: </p>
         `
     });
 

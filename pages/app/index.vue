@@ -8,19 +8,17 @@
         <!-- Organization Selector - No Popover -->
         <div class="flex flex-col items-center space-y-3 mt-4">
           <!-- Simple button without dropdown -->
-          <Button variant="ghost" size="icon" class="h-8 w-8 rounded-md bg-secondary">
-            <span class="font-medium text-xs">A</span>
-          </Button>
-          
-          <Button variant="ghost" size="icon" class="h-8 w-8 rounded-md bg-secondary">
-            <span class="font-medium text-xs">B</span>
-          </Button>
+          <template v-for="workspace in workspaces" :key="workspace.id">
+            <Button variant="outline" size="icon" 
+            class="h-8 w-8 rounded-md"
+            :class="selectedWorkspaceId && selectedWorkspaceId === workspace?.id ? 'ring-2 ring-primary ring-offset-2' : ''">
+              <span class="font-medium text-xs"> {{ workspace?.name?.charAt(0).toLocaleUpperCase() }}</span>
+            </Button>
+          </template>
         </div>
         
         <!-- Add Organization Button -->
-        <Button variant="outline" size="icon" class="h-8 w-8 rounded-md border-dashed">
-          <PlusIcon class="h-4 w-4" />
-        </Button>
+        <AddWorkspaceDialog :isOnlyIcon="true"/>
       </div>
     </div>
     
@@ -162,12 +160,12 @@
               <Button variant="ghost" class="w-full justify-start" asChild>
                 <a href="#" class="font-medium text-primary">
                   <PanelTopIcon class="mr-2 h-4 w-4" />
-                  Tableau d'équipe
+                  Modèles
                 </a>
               </Button>
               <Button variant="ghost" class="w-full justify-start">
-                <PanelTopIcon class="mr-2 h-4 w-4" />
-                Tous les modèles
+                <UsersRound class="mr-2 h-4 w-4" />
+                Membres
               </Button>
             </div>
           </div>
@@ -405,12 +403,12 @@
                 <Button variant="ghost" class="w-full justify-start" asChild>
                   <a href="#" class="font-medium text-primary">
                     <PanelTopIcon class="mr-2 h-4 w-4" />
-                    Tableau d'équipe
+                    Modèles
                   </a>
                 </Button>
                 <Button variant="ghost" class="w-full justify-start">
-                  <PanelTopIcon class="mr-2 h-4 w-4" />
-                  Tous les modèles
+                  <UsersRound class="mr-2 h-4 w-4" />
+                  Membres
                 </Button>
               </div>
             </div>
@@ -617,7 +615,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, h, Suspense } from 'vue'
 import { 
   HomeIcon, 
   UsersIcon, 
@@ -638,7 +636,8 @@ import {
   CheckIcon,
   PanelTopIcon,
   Search,
-  Loader2
+  Loader2,
+  UsersRound
 } from 'lucide-vue-next'
 
 // Import shadcn-vue components
@@ -695,6 +694,8 @@ import CardModel from "@/components/ui/card/CardModel.vue"
 import CreateModelDialog from "@/components/flow/CreateModelDialog.vue"
 import { storeToRefs } from "pinia"
 import { useMCDStore } from "@/stores/mcd-store.js"
+import { useWorkspaceStore } from "@/stores/admin/workspace-store.ts"
+import AddWorkspaceDialog from '@/components/workspace/AddWorkspaceDialog.vue'
 
 // Mock data for team switcher
 const groups = [
@@ -722,7 +723,7 @@ const groups = [
   },
 ]
 
-// Team switcher state
+
 const teamSwitcherOpen = ref(false)
 const showNewTeamDialog = ref(false)
 const selectedTeam = ref(groups[1].teams[0])
@@ -749,15 +750,20 @@ const PlusCircledIcon = {
 const mcdStore = useMCDStore()
 const { models } = storeToRefs(mcdStore)
 
+const workspaceStore = useWorkspaceStore()
+const { workspaces, selectedWorkspaceId } = storeToRefs(workspaceStore)
+
 const isLoading = ref(false)
 const areModelsLoaded = ref(false)
 const isLoadingPage = ref(true)
 
+
 onMounted(async () => {
   isLoadingPage.value = false
   isLoading.value = true
+
   try {
-    models.value = await fetch('/api/models/list', {method: 'GET'}).then(res => res.json())
+    //models.value = await fetch('/api/models/list', {method: 'GET'}).then(res => res.json())
   } catch (error) {
     console.error('Error fetching models:', error)
     models.value = []
