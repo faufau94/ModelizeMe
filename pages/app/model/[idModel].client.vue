@@ -61,12 +61,12 @@
               <DialogTitle>Renommer le nom</DialogTitle>
             </DialogHeader>
 
-            <form @submit="renameModel">
+            <form @submit="rnModel">
               <FormField v-slot="{ componentField }" name="name">
                 <FormItem>
                   <FormLabel>Nom</FormLabel>
                   <FormControl>
-                    <Input type="text" v-bind="componentField" @keyup.enter="renameModel"/>
+                    <Input type="text" v-bind="componentField" @keyup.enter="rnModel"/>
                   </FormControl>
                   <FormMessage />
                   <FormControl class="float-right">
@@ -329,6 +329,8 @@ import { z } from "zod/v4";;
 import {useForm} from 'vee-validate'
 import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 
+import { useModel } from '@/composables/api/useModel'
+
 
 const route = useRoute()
 
@@ -467,20 +469,14 @@ const { handleSubmit, setValues } = useForm({
   validateOnMount: false,
 })
 
-const renameModel = handleSubmit(async (values) => {
+const { renameModel } = useModel()
+const rnModel = handleSubmit(async (values) => {
   isRenamingModel.value = true
-  const res = await $fetch(`/api/models/rename-model?id=${route.params.idModel}`, {
-    method: "PUT",
-    body: {
-      name: values.name
-    }
-  });
+  renameModel(model.value.id,{name: values.name})
 
-  if (res) {
-    model.value.name = values.name
-    isRenamingModel.value = false
-    showDialogRenameModel.value = false
-  }
+  model.value.name = values.name
+  isRenamingModel.value = false
+  showDialogRenameModel.value = false
 })
 
 const goBack = async () => {

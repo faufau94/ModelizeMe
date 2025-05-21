@@ -62,11 +62,21 @@ export const useModel = () => {
   // — EDIT —
   const editModelMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) =>
-      await $fetch('/api/models/edit', { method: 'PUT', query: { id }, body: data }),
+      await $fetch('/api/models/update', { method: 'PUT', query: { id }, body: data }),
     onSuccess: () => queryClient.invalidateQueries(['models']),
   })
   const editModel = (id: number, updatedData: any) =>
     editModelMutation.mutateAsync({ id, data: updatedData })
+
+
+  // — RENAME —
+  const renametModelMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) =>
+      await $fetch('/api/models/rename', { method: 'PUT', query: { id }, body: data }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const renameModel = (id: number, updatedData: any) =>
+    renametModelMutation.mutateAsync({ id, data: updatedData })
 
   // — DELETE —
   const deleteModelMutation = useMutation({
@@ -84,6 +94,7 @@ export const useModel = () => {
     // mutations
     addModel,
     editModel,
+    renameModel,
     deleteModel,
 
     // list

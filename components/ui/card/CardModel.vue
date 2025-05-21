@@ -33,12 +33,12 @@
                     <AlertDialogTitle>Renommer le nom</AlertDialogTitle>
                   </AlertDialogHeader>
 
-                  <form @submit="renameModel">
+                  <form @submit="rnModel">
                     <FormField v-slot="{ componentField }" name="name">
                       <FormItem>
                         <FormLabel>Nom</FormLabel>
                         <FormControl>
-                          <Input type="text" v-bind="componentField" @keyup.enter="renameModel"/>
+                          <Input type="text" v-bind="componentField" @keyup.enter="rnModel"/>
                         </FormControl>
                         <FormMessage />
                         <FormControl class="float-right">
@@ -124,6 +124,8 @@ import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";;
 import {useForm} from 'vee-validate'
 
+import { useModel } from '@/composables/api/useModel'
+
 
 const props = defineProps({
   model: {
@@ -188,22 +190,17 @@ const { handleSubmit, setValues } = useForm({
   validateOnMount: false,
 })
 
-const renameModel = handleSubmit(async (values) => {
-  isRenamingModel.value = true
-  const res = await $fetch(`/api/models/rename-model?id=${props.model.id}`, {
-    method: "PUT",
-    body: {
-      name: values.name
-    }
-  });
 
-  if (res) {
-    setValues({
-      name: values.name,
-    });
-    modelName.value = values.name
-    isRenamingModel.value = false
-    showDialogRenameModel.value = false
-  }
+const { renameModel } = useModel()
+const rnModel = handleSubmit(async (values) => {
+  isRenamingModel.value = true
+  renameModel(props.model.id,{name: values.name})
+
+  setValues({
+    name: values.name,
+  });
+  modelName.value = values.name
+  isRenamingModel.value = false
+  showDialogRenameModel.value = false
 })
 </script>
