@@ -385,7 +385,7 @@
     isFormLoading.value = true
     
     // Save the link to the database and send it via email
-    const res = await $fetch('/api/admin/workspaces/create', {
+    const res = await $fetch('/api/workspaces/create', {
       method: 'POST',
       body: workspaceLink.value,
     })
@@ -440,7 +440,7 @@
     text: ''
   })
   
-  const fetchWorkspaces = () => $fetch('/api/admin/workspaces/list')
+  const fetchWorkspaces = () => $fetch('/api/workspaces/list')
   const { data: workspaces, isLoading, error, suspense } = useQuery({
     queryKey: ['workspaces'],
     queryFn: fetchWorkspaces,

@@ -390,7 +390,7 @@ const sendLink = async () => {
   isFormLoading.value = true
   
   // Save the link to the database and send it via email
-  const res = await $fetch('/api/admin/workspaces/create', {
+  const res = await $fetch('/api/workspaces/create', {
     method: 'POST',
     body: workspaceLink.value,
   })

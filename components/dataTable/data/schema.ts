@@ -23,7 +23,23 @@ export const workspaceSchema = z.object({
   inviteCode: z.string(),
 })
 
+export const modelSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  name: z.string(),
+  nodes: z.object({}),
+  edges: z.object({}),
+  description: z.string(),
+  reference: z.string(),
+  authorId: z.number(),
+  locked: z.boolean(),
+  teamId: z.number(),
+  workspaceId: z.number(),
+  inviteCode: z.string(),
+})
+
 
 export type User = z.infer<typeof userSchema>
 export type Role = z.infer<typeof roleSchema>
 export type Workspace = z.infer<typeof workspaceSchema>
+export type Model = z.infer<typeof modelSchema>

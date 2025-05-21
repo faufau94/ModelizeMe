@@ -1,6 +1,6 @@
 // ~/composables/useWorkspace.ts
 import { ref, computed } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData  } from '@tanstack/vue-query'
 import type { Workspace } from '@/components/dataTable/data/schema'
 import { useWorkspaceStore } from '@/stores/api/workspace-store'
 
@@ -14,32 +14,37 @@ export const useWorkspace = () => {
   const {data: workspaces, isLoading: isLoadingWorkspaces, error, suspense } = useQuery<Workspace[]>({
     queryKey: ['workspaces'],
     queryFn: async () => {
-      const res = await $fetch<Workspace[]>('/api/admin/workspaces/list')
+      const headers = useRequestHeaders(['cookie']) as HeadersInit
+      const res = await $fetch<Workspace[]>('/api/workspaces/list', {
+        method: 'GET',
+        headers
+      })
       if (res?.length && selectedWorkspaceId.value === null) {
         selectedWorkspaceId.value = parseInt(res[0].id)
       }
       return res
-    }
+    },
     })
 
     // — READ SELECTED —
     const {data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery<Workspace>({
-    queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
-    queryFn: async ({ queryKey }) => {
-      const [, id] = queryKey
-      return await $fetch<Workspace>('/api/admin/workspaces/read', {
-        method: 'GET',
-        query: { id },
-      })
-    },
-    enabled: computed(() => selectedWorkspaceId.value !== null),
-    placeholderData: (previousData, previousQuery) => previousData,
-   })
+      queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
+      queryFn: async ({ queryKey }) => {
+        const [, id] = queryKey
+        
+        return await $fetch<Workspace>('/api/workspaces/read', {
+          method: 'GET',
+          query: { id },
+        })
+      },
+      staleTime: 0,
+      enabled: computed(() => selectedWorkspaceId.value !== null),
+    })
 
   // — CREATE —
   const addWorkspaceMutation = useMutation({
     mutationFn: async (payload: any) =>
-      $fetch('/api/admin/workspaces/create', { method: 'POST', body: payload }),
+      await $fetch('/api/workspaces/create', { method: 'POST', body: payload }),
     onSuccess: () => queryClient.invalidateQueries(['workspaces']),
   })
   function addWorkspace(newWorkspace: any) {
@@ -49,7 +54,7 @@ export const useWorkspace = () => {
   // — EDIT —
   const editWorkspaceMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) =>
-      $fetch('/api/admin/workspaces/edit', { method: 'PUT', query: { id }, body: data }),
+      await $fetch('/api/workspaces/edit', { method: 'PUT', query: { id }, body: data }),
     onSuccess: () => queryClient.invalidateQueries(['workspaces']),
   })
   const editWorkspace = (id: number, updatedData: any) =>
@@ -58,7 +63,7 @@ export const useWorkspace = () => {
   // — DELETE —
   const deleteWorkspaceMutation = useMutation({
     mutationFn: async (id: string) =>
-      $fetch('/api/admin/workspaces/delete', { method: 'DELETE', query: { id } }),
+      await $fetch('/api/workspaces/delete', { method: 'DELETE', query: { id } }),
     onSuccess: () => queryClient.invalidateQueries(['workspaces']),
   })
   const deleteWorkspace = (id: string) => deleteWorkspaceMutation.mutateAsync(id)

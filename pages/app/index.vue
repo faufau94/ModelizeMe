@@ -312,11 +312,9 @@
       </SheetTrigger>
       <SheetContent side="left" class="w-72 p-0">
         <!-- Logo -->
-        <div class="flex justify-center py-4">
-          <div class="h-10 w-10 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
-            <CodeIcon class="h-6 w-6" />
-          </div>
-        </div>
+      <div class="flex justify-center py-4">
+        <span class="text-xl font-bold ml-2">ModelizeMe</span>
+      </div>
         
         <!-- Team Switcher for Mobile -->
         <div class="px-4 py-2">
@@ -520,23 +518,23 @@
     <!-- Main Content -->
     <div class="flex-1 overflow-auto">
       <header class="h-14 px-6 flex items-center">
-        <h1 class="text-lg font-semibold text-foreground md:ml-0 ml-12">Vue d'ensemble</h1>
+        <!-- <h1 class="text-lg font-semibold text-foreground md:ml-0 ml-12">Vue d'ensemble</h1> -->
         <div class="ml-auto flex items-center space-x-4">
 
           <!-- language switcher -->
           <Select>
-            <SelectTrigger >
-              <SelectIcon asChild>
+            <SelectTrigger class="w-36">
+              <div class="flex items-center justify-center gap-4">
                 <Globe class="h-4 w-4" />
-              </SelectIcon>
-              <SelectValue placeholder="Language" />
+                <SelectValue placeholder="Language" />
+              </div>
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectItem value="english">
+                <SelectItem class="cursor-pointer" value="english">
                   English
                 </SelectItem>
-                <SelectItem value="French">
+                <SelectItem class="cursor-pointer" value="French">
                   French
                 </SelectItem>
               </SelectGroup>
@@ -583,8 +581,9 @@
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                Déconnexion
-                <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
+                <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
+                  Se déconnecter
+                </NuxtLink>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -593,42 +592,7 @@
       
       <!-- New Main Content -->
       <main>
-        <div class="w-full max-w-6xl mx-auto px-4 py-8">
-          <div v-if="isLoadingPage" class="flex justify-center mt-32 items-center">
-            <Loader2 :size="30" class="animate-spin"/>
-          </div>
-          <div v-else>
-            <div v-if="areModelsLoaded === true && (models === null || models.length === 0)">
-              <div class="flex flex-col items-center justify-center h-[80vh]">
-                <div class="text-center space-y-4">
-                  <h3 class="text-2xl font-bold">Aucun modèle</h3>
-                  <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
-                  <CreateModelDialog/>
-                </div>
-              </div>
-            </div>
-            <div v-else>
-              <div class="flex items-center justify-between mb-6">
-                <h1 class="text-2xl font-bold">Modèles</h1>
-                <CreateModelDialog/>
-              </div>
-              <div class="mb-6">
-                <div class="relative w-full max-w-sm items-center">
-                  <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle" class="pl-10"/>
-                  <span class="absolute start-0 inset-y-0 flex items-center justify-center px-2">
-                    <Search class="size-5 text-muted-foreground"/>
-                  </span>
-                </div>
-              </div>
-              <div v-if="isLoading" class="flex justify-center mt-32 items-center">
-                <Loader2 :size="30" class="animate-spin"/>
-              </div>
-              <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <CardModel v-for="(model, index) in filteredModels" :key="index" :model="model"/>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Models :models="models"/>
       </main>
     </div>
   </div>
@@ -659,7 +623,8 @@ import {
   Loader2,
   UsersRound,
   Globe,
-  Plus
+  Plus,
+  BoxSelectIcon
 } from 'lucide-vue-next'
 
 // Import shadcn-vue components
@@ -712,12 +677,11 @@ import {
   CommandSeparator
 } from '@/components/ui/command'
 
-import CardModel from "@/components/ui/card/CardModel.vue"
-import CreateModelDialog from "@/components/flow/CreateModelDialog.vue"
 import { storeToRefs } from "pinia"
 import { useMCDStore } from "@/stores/mcd-store.js"
 import { useWorkspaceStore } from "~/stores/api/workspace-store"
 import { useWorkspace } from "@/composables/api/useWorkspace"
+import { useModel } from "@/composables/api/useModel"
 import AddWorkspaceDialog from '@/components/workspace/AddWorkspaceDialog.vue'
 
 // Mock data for team switcher
@@ -746,20 +710,21 @@ const groups = [
   },
 ]
 
-
+const { signOut } = useAuth()
 const teamSwitcherOpen = ref(false)
 const showNewTeamDialog = ref(false)
 const selectedTeam = ref(groups[1].teams[0])
 
 
 // Model data and state
-const mcdStore = useMCDStore()
-const { models } = storeToRefs(mcdStore)
+//const mcdStore = useMCDStore()
+//const { models } = storeToRefs(mcdStore)
 
-const { workspaces, addWorkspace } = useWorkspace()
 
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspaceId } = storeToRefs(workspaceStore)
+const { workspaces, selectedWorkspace, addWorkspace } = useWorkspace()
+const { models, addModel } = useModel()
 
 const isLoading = ref(false)
 const areModelsLoaded = ref(false)

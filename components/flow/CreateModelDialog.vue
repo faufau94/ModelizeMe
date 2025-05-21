@@ -55,7 +55,11 @@ import {CirclePlus, Loader2} from "lucide-vue-next";
 import {ref} from "vue";
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";;
+import { z } from "zod/v4";
+
+import { useModel } from '@/composables/api/useModel'
+
+import { useWorkspaceStore } from '@/stores/api/workspace-store'
 
 const showModel = ref(false);
 const isLoadingNewModel = ref(false);
@@ -72,20 +76,52 @@ const form = useForm({
   validationSchema: formSchema,
 })
 
+const message = ref({
+  type: '',
+  text: ''
+})
+
+const { addModel } = useModel()
+const workspaceStore = useWorkspaceStore()
+const { selectedWorkspaceId } = storeToRefs(workspaceStore)
+const isFormLoading = ref(false)
+
 const onSubmit = form.handleSubmit(async (values) => {
-  isLoadingNewModel.value = true;
+  try {
+    
+    message.type = ''
+    message.text = ''
+    isFormLoading.value = true
 
-  const res = await $fetch('/api/models/create', {
-    method: 'POST',
-    body: {
-      title: values.title
-    },
-  });
+    console.log("selectedWorkspace.id", selectedWorkspaceId.value);
+    
 
-  if (res) {
-    isLoadingNewModel.value = false;
-    showModel.value = false;
-    await navigateTo('/app/model/' + res.id.toString());
+    const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
+    
+    // Ici, vous feriez normalement un appel API pour créer l'espace de travail
+    console.log('Création de l\'espace de travail:', values)
+    
+    if (res.status === 200) {
+     
+      // Affichage d'une notification de succès
+      message.type = 'success'
+      message.text = 'Espace de travail créé avec succès !'
+      
+      // Réinitialisation du formulaire après un court délai
+      setTimeout(() => {
+        form.resetForm()
+        isCreateWorkspaceDialogOpen.value = false
+        message.type = ''
+        message.text = ''
+      }, 2000)
+  }
+    
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'espace de travail:', error)
+    message.type = 'error'
+    message.text = 'Une erreur est survenue lors de la création de l\'espace de travail.'
+  } finally {
+    isFormLoading.value = false
   }
 
 })
