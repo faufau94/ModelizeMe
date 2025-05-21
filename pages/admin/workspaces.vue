@@ -204,9 +204,9 @@
           <Dialog v-model:open="isDeleteDialogOpen">
             <DialogContent class="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Supprimer la classe</DialogTitle>
+                <DialogTitle>Supprimer le workspace</DialogTitle>
                 <DialogDescription>
-                  Êtes-vous sûr de vouloir supprimer cette classe ? Cette action est irréversible.
+                  Êtes-vous sûr de vouloir supprimer cet workspace ? Cette action est irréversible.
                 </DialogDescription>
               </DialogHeader>
 
@@ -313,7 +313,7 @@
   
   import { useForm } from 'vee-validate'
   import {toTypedSchema} from "@vee-validate/zod";
-  import * as z from "zod";
+  import { z } from "zod/v4";;
   import type { Workspace } from '~/components/dataTable/data/schema';
   import { useRoleStore } from '@/stores/admin/role-store';
   import { makeWorkspaceLink } from '~/utils/workspace-link';
@@ -414,13 +414,19 @@
   
   const formSchema = toTypedSchema(z.object({
     name: z.string({
-      required_error: "Veuillez remplir le champs.",
+      error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
     }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
     owner: z.string({
-      required_error: "Veuillez remplir le champs.",
+      error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
     }),
     inviteCode: z.string({
-      required_error: "Veuillez remplir le champs.",
+      error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
     }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   }))
   

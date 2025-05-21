@@ -19,10 +19,20 @@ export default defineNuxtConfig({
     "nuxt-lucide-icons",
     'dayjs-nuxt',
     '@vee-validate/nuxt',
+    //'@nuxtjs/i18n'
   ],
+
+  i18n: {
+    defaultLocale: 'en',
+    locales: [
+      { code: 'en', name: 'English', file: 'en.json' },
+      { code: 'fr', name: 'Français', file: 'fr.json' }
+    ]
+  },
 
   vite: {
     optimizeDeps: {
+      include: ["zod"],
       exclude: ['vee-validate']
     },
     resolve: {

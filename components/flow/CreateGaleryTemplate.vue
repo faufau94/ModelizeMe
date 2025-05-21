@@ -134,7 +134,9 @@ const categories = ref([])
 
 const formSchema = toTypedSchema(z.object({
   category: z.string({
-    required_error: 'Vous devez créer ou séléctionner une catégorie.',
+    error: (issue) => issue.input === undefined 
+    ? "Vous devez créer ou séléctionner une catégorie." 
+    : "Ceci n'est pas une catégorie valide.", 
   }),
 }))
 

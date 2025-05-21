@@ -131,7 +131,9 @@ const message = reactive({
 // Définition du schéma de validation avec Zod
 const formSchema = toTypedSchema(z.object({
   name: z.string({
-    required_error: "Veuillez remplir le champ.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50, 'Le nom ne doit pas dépasser 50 caractères.'),
   description: z.string().optional(),
 }))

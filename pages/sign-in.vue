@@ -109,14 +109,18 @@ import {Loader2} from "lucide-vue-next";
 
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import * as z from "zod";
+import { z } from "zod/v4";;
 
 const formSchema = toTypedSchema(z.object({
   email: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).email({message: "Adresse email invalide."}),
   password: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.')
 }))
 

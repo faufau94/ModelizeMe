@@ -312,7 +312,7 @@ import { useUserStore } from '@/stores/admin/user-store'
 
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import * as z from "zod";
+import { z } from "zod/v4";;
 import type { User } from '~/components/dataTable/data/schema';
 import { useRoleStore } from '@/stores/admin/role-store';
 import { makeWorkspaceLink } from '~/utils/workspace-link';
@@ -419,16 +419,24 @@ const columns = getUserColumns({ editUserDialog, confirmDeleteUser, createWorksp
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   first_name: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   email: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).email({ message: "Adresse email invalide." }),
   role: z.number({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   })
 }))
 

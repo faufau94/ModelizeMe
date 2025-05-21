@@ -152,23 +152,33 @@ import {Loader2} from "lucide-vue-next";
 
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import * as z from "zod";
+import { z } from "zod/v4";;
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   firstName: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   email: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).email({ message: "Adresse email invalide." }),
   password: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.'),
   confirmPassword: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.'),
 }).refine(data => data.password === data.confirmPassword, {
   message: 'Les mots de passe doivent correspondre.',

@@ -7,7 +7,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   const selectedWorkspaceId = ref<number | null>(null)
 
-  // Mutation pour créer une classe
+  // Mutation pour créer un workspace
   const addWorkspaceMutation = useMutation({
     mutationFn: async (payload: any) => {      
       return await $fetch('/api/admin/workspaces/create', {
@@ -20,7 +20,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     },
   })
 
-  // Mutation pour éditer une classe
+  // Mutation pour éditer un workspace
   const editWorkspaceMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       return await $fetch('/api/admin/workspaces/edit', {
@@ -34,7 +34,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     },
   })
 
-  // Mutation pour supprimer une classe
+  // Mutation pour supprimer un workspace
   const deleteWorkspaceMutation = useMutation({
     mutationFn: async (id: string) => {
       return await $fetch('/api/admin/workspaces/delete', {
@@ -48,7 +48,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   })
 
 
-  // Mutation pour récupérer la liste des classes
+  // Mutation pour récupérer la liste des workspaces
   const { data: workspaces, isLoading: isLoadingWorkspaces, error, suspense } = useQuery({
     queryKey: ['workspaces'],
     queryFn: async () => {

@@ -9,7 +9,7 @@
         <div class="flex flex-col items-center space-y-3 mt-4">
           <!-- Simple button without dropdown -->
           <template v-for="workspace in workspaces" :key="workspace.id">
-            <Button variant="outline" size="icon" 
+            <Button @click="selectedWorkspaceId = workspace.id" variant="outline" size="icon" 
             class="h-8 w-8 rounded-md"
             :class="selectedWorkspaceId && selectedWorkspaceId === workspace?.id ? 'ring-2 ring-primary ring-offset-2' : ''">
               <span class="font-medium text-xs"> {{ workspace?.name?.charAt(0).toLocaleUpperCase() }}</span>
@@ -524,6 +524,28 @@
       <header class="h-14 px-6 flex items-center">
         <h1 class="text-lg font-semibold text-foreground md:ml-0 ml-12">Vue d'ensemble</h1>
         <div class="ml-auto flex items-center space-x-4">
+
+          <!-- language switcher -->
+          <Select>
+            <SelectTrigger >
+              <SelectIcon asChild>
+                <Globe class="h-4 w-4" />
+              </SelectIcon>
+              <SelectValue placeholder="Language" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="english">
+                  English
+                </SelectItem>
+                <SelectItem value="French">
+                  French
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+
+
           <Button variant="ghost" size="icon">
             <BellIcon class="h-5 w-5" />
           </Button>
@@ -637,7 +659,8 @@ import {
   PanelTopIcon,
   Search,
   Loader2,
-  UsersRound
+  UsersRound,
+  Globe
 } from 'lucide-vue-next'
 
 // Import shadcn-vue components
