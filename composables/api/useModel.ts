@@ -80,16 +80,13 @@ export const useModel = () => {
 
   // — DELETE —
   const deleteModelMutation = useMutation({
-    mutationFn: async (id: string) =>
-      await $fetch('/api/models/delete', { method: 'DELETE', query: { id } }),
+    mutationFn: async ({id, body}) =>
+      await $fetch('/api/models/delete', { method: 'DELETE', query: { id }, body: body }),
     onSuccess: () => queryClient.invalidateQueries(['models']),
   })
-  const deleteModel = (id: string) => deleteModelMutation.mutateAsync(id)
+  const deleteModel = (id: string, body: any) => deleteModelMutation.mutateAsync({id, body})
 
   
-
-  
-
   return {
     // mutations
     addModel,

@@ -74,7 +74,7 @@
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <Button variant="destructive" @keyup.enter="deleteModel" @click.stop="deleteModel" :disabled="isLoading">
+                    <Button variant="destructive" @keyup.enter="delModel" @click.stop="delModel" :disabled="isLoading">
                       <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
                       {{ isLoading ? 'Suppression...' : 'Supprimer' }}
                     </Button>
@@ -144,32 +144,31 @@ const openModel = async () => {
   await navigateTo(`/app/model/${props.model.id}`);
 }
 
+const { renameModel, deleteModel } = useModel()
+
 
 const isLoading = ref(false);
 const showDialogDeleteModel = ref(false);
 const showDialogRenameModel = ref(false);
 const isRenamingModel = ref(false);
-const deleteModel = async () => {
+const delModel = async () => {
   isLoading.value = true;
 
-  const res = await $fetch(`/api/models/delete`, {
-    method: 'DELETE',
-    query: {id: props.model.id},
-    body: {
+  
+  deleteModel(props.model.id, {
       type: 'model',
       action: 'removeModel'
-    }
-  });
-  if (res) {
-    // remove model from list
-    models.value = models.value.filter((model) => model.id !== props.model.id);
+    })
 
-    isLoading.value = false;
-    showDialogDeleteModel.value = false;
-    toast({
-      description: 'Le modèle a été supprimé.',
-    });
-  }
+  
+  // remove model from list
+  models.value = models.value.filter((model) => model.id !== props.model.id);
+
+  isLoading.value = false;
+  showDialogDeleteModel.value = false;
+  toast({
+    description: 'Le modèle a été supprimé.',
+  });
 }
 
 const formSchema = toTypedSchema(z.object({
@@ -191,7 +190,6 @@ const { handleSubmit, setValues } = useForm({
 })
 
 
-const { renameModel } = useModel()
 const rnModel = handleSubmit(async (values) => {
   isRenamingModel.value = true
   renameModel(props.model.id,{name: values.name})
