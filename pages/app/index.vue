@@ -26,9 +26,7 @@
     <div class="w-64 border-r border-border bg-card flex flex-col hidden md:flex">
       <!-- Logo -->
       <div class="flex justify-center py-4">
-        <div class="h-10 w-10 rounded-md bg-primary flex items-center justify-center text-primary-foreground">
-          <CodeIcon class="h-6 w-6" />
-        </div>
+        <span class="text-xl font-bold ml-2">ModelizeMe</span>
       </div>
       
       <!-- Team Switcher -->
@@ -94,7 +92,7 @@
                           showNewTeamDialog = true;
                         }"
                       >
-                        <PlusCircledIcon class="mr-2 h-5 w-5" />
+                        <Plus class="mr-2 h-5 w-5" />
                         Créer une équipe
                       </CommandItem>
                     </DialogTrigger>
@@ -383,7 +381,7 @@
                             showNewTeamDialog = true;
                           }"
                         >
-                          <PlusCircledIcon class="mr-2 h-5 w-5" />
+                          <Plus class="mr-2 h-5 w-5" />
                           Créer une équipe
                         </CommandItem>
                       </DialogTrigger>
@@ -546,9 +544,9 @@
           </Select>
 
 
-          <Button variant="ghost" size="icon">
+          <!-- <Button variant="ghost" size="icon">
             <BellIcon class="h-5 w-5" />
-          </Button>
+          </Button> -->
           
           <!-- User Account Dropdown (Updated) -->
           <DropdownMenu>
@@ -637,7 +635,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h, Suspense } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { 
   HomeIcon, 
   UsersIcon, 
@@ -660,7 +658,8 @@ import {
   Search,
   Loader2,
   UsersRound,
-  Globe
+  Globe,
+  Plus
 } from 'lucide-vue-next'
 
 // Import shadcn-vue components
@@ -717,7 +716,8 @@ import CardModel from "@/components/ui/card/CardModel.vue"
 import CreateModelDialog from "@/components/flow/CreateModelDialog.vue"
 import { storeToRefs } from "pinia"
 import { useMCDStore } from "@/stores/mcd-store.js"
-import { useWorkspaceStore } from "@/stores/admin/workspace-store.ts"
+import { useWorkspaceStore } from "~/stores/api/workspace-store"
+import { useWorkspace } from "@/composables/api/useWorkspace"
 import AddWorkspaceDialog from '@/components/workspace/AddWorkspaceDialog.vue'
 
 // Mock data for team switcher
@@ -751,30 +751,15 @@ const teamSwitcherOpen = ref(false)
 const showNewTeamDialog = ref(false)
 const selectedTeam = ref(groups[1].teams[0])
 
-// For PlusCircledIcon
-const PlusCircledIcon = {
-  render() {
-    return h('svg', {
-      xmlns: 'http://www.w3.org/2000/svg',
-      viewBox: '0 0 15 15',
-      fill: 'none',
-      width: '1em',
-      height: '1em'
-    }, [
-      h('path', {
-        d: 'M7.5 0.875C3.83152 0.875 0.875 3.83152 0.875 7.5C0.875 11.1685 3.83152 14.125 7.5 14.125C11.1685 14.125 14.125 11.1685 14.125 7.5C14.125 3.83152 11.1685 0.875 7.5 0.875ZM7.5 1.825C10.6428 1.825 13.175 4.35719 13.175 7.5C13.175 10.6428 10.6428 13.175 7.5 13.175C4.35719 13.175 1.825 10.6428 1.825 7.5C1.825 4.35719 4.35719 1.825 7.5 1.825ZM7.5 4.25C7.22386 4.25 7 4.47386 7 4.75V7H4.75C4.47386 7 4.25 7.22386 4.25 7.5C4.25 7.77614 4.47386 8 4.75 8H7V10.25C7 10.5261 7.22386 10.75 7.5 10.75C7.77614 10.75 8 10.5261 8 10.25V8H10.25C10.5261 8 10.75 7.77614 10.75 7.5C10.75 7.22386 10.5261 7 10.25 7H8V4.75C8 4.47386 7.77614 4.25 7.5 4.25Z',
-        fill: 'currentColor'
-      })
-    ])
-  }
-}
 
 // Model data and state
 const mcdStore = useMCDStore()
 const { models } = storeToRefs(mcdStore)
 
+const { workspaces, addWorkspace } = useWorkspace()
+
 const workspaceStore = useWorkspaceStore()
-const { workspaces, selectedWorkspaceId } = storeToRefs(workspaceStore)
+const { selectedWorkspaceId } = storeToRefs(workspaceStore)
 
 const isLoading = ref(false)
 const areModelsLoaded = ref(false)

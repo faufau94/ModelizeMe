@@ -308,13 +308,13 @@ import { CirclePlus, Loader2, Copy } from 'lucide-vue-next';
 
 import { useQuery } from '@tanstack/vue-query'
 
-import { useUserStore } from '@/stores/admin/user-store'
+import { useUserStore } from '~/stores/api/user-store'
 
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";;
 import type { User } from '~/components/dataTable/data/schema';
-import { useRoleStore } from '@/stores/admin/role-store';
+import { useRoleStore } from '~/stores/api/role-store';
 import { makeWorkspaceLink } from '~/utils/workspace-link';
 
 

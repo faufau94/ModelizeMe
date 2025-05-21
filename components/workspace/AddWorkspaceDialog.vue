@@ -107,9 +107,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Loader2, AlertCircle, CheckCircle, Plus } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
-
-
-import { useWorkspaceStore } from '@/stores/admin/workspace-store.ts'
+import { useWorkspace } from '@/composables/api/useWorkspace'
 
 // Props
 const props = defineProps({
@@ -119,8 +117,7 @@ const props = defineProps({
   }
 })
 
-
-const workspaceStore = useWorkspaceStore()
+const { addWorkspace } = useWorkspace()
 const isCreateWorkspaceDialogOpen = ref(false)
 const isFormLoading = ref(false)
 const message = reactive({
@@ -159,7 +156,7 @@ const onSubmit = handleSubmit(async (values) => {
 
     console.log('Valeurs du formulaire:', {...values, userId: data.value.user.id ?? null});
 
-    const res = await workspaceStore.addWorkspace({...values, userId: data.value.user.id ?? null, userEmail: data.value.user.email ?? null})
+    const res = await addWorkspace({...values, userId: data.value.user.id ?? null, userEmail: data.value.user.email ?? null})
     
     // Ici, vous feriez normalement un appel API pour créer l'espace de travail
     console.log('Création de l\'espace de travail:', values)

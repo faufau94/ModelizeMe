@@ -309,13 +309,13 @@
   
   import { useQuery } from '@tanstack/vue-query'
   
-  import { useWorkspaceStore } from '@/stores/admin/workspace-store.ts'
+  import { useWorkspaceStore } from '~/stores/api/workspace-store'
   
   import { useForm } from 'vee-validate'
   import {toTypedSchema} from "@vee-validate/zod";
   import { z } from "zod/v4";;
   import type { Workspace } from '~/components/dataTable/data/schema';
-  import { useRoleStore } from '@/stores/admin/role-store';
+  import { useRoleStore } from '~/stores/api/role-store';
   import { makeWorkspaceLink } from '~/utils/workspace-link';
   
   
