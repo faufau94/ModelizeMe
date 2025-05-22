@@ -72,7 +72,7 @@
           </form>
 
           <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full py-2">
-            <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: '/app' })">
+            <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: '/app/dashboard' })">
               Continuer avec {{ provider?.name }}
             </Button>
           </div>
@@ -109,16 +109,12 @@ import {Loader2} from "lucide-vue-next";
 
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";;
+import { z } from "zod/v4";
 
 const formSchema = toTypedSchema(z.object({
-  email: z.string({
-    error: (issue) => issue.input === undefined 
-    ? "Veuillez remplir le champs." 
-    : ""
-  }).email({message: "Adresse email invalide."}),
+  email: z.email({message: "Adresse email invalide."}),
   password: z.string({
-    error: (issue) => issue.input === undefined 
+    error: (issue) => issue.input === undefined
     ? "Veuillez remplir le champs." 
     : ""
   }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.')
@@ -134,13 +130,11 @@ const providers = await getProviders()
 const isLoading = ref(false)
 
 const onSubmit = form.handleSubmit(async (values) => {
-  const res = await signIn('credentials', {
+  await signIn('credentials', {
     email: values.email,
     password: values.password,
-    callbackUrl: '/app'
+    callbackUrl: '/app/dashboard'
   })
-
-
 })
 
 const filteredProviders = computed(() => {

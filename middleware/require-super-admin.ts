@@ -26,7 +26,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // if they’re not an admin, send them back to /app
   if (!isAdmin) {
-    return navigateTo('/app')
+    return navigateTo('/app/dashboard')
   }
   // otherwise allow into /admin/**
 })

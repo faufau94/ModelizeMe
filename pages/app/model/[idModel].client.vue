@@ -481,7 +481,7 @@ const rnModel = handleSubmit(async (values) => {
 
 const goBack = async () => {
   isSubMenuVisible.value = false
-  await navigateTo('/app')
+  await navigateTo('/app/dashboard')
 }
 
 // Tabs

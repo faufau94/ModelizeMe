@@ -31,7 +31,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // 3) Root landing page → send to proper home
   if (status.value === 'authenticated' && to.path === '/') {
-    return navigateTo(isSuperAdmin ? '/admin' : '/app')
+    return navigateTo(isSuperAdmin ? '/admin' : '/app/dashboard')
   }
 
   // 4) Admins must live in /admin
@@ -41,7 +41,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // 5) Non-admins must not go into /admin
   if (status.value === 'authenticated' && !isSuperAdmin && to.path.startsWith('/admin')) {
-    return navigateTo('/app')
+    return navigateTo('/app/dashboard')
   }
 
   // otherwise, let them through

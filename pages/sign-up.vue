@@ -115,7 +115,7 @@
               </FormField>
 
               <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
-                <Button  class="w-full" variant="outline" @click="signIn(provider?.id, { callbackUrl: '/app' })">
+                <Button  class="w-full" variant="outline" @click="signIn(provider?.id, { callbackUrl: '/app/dashboard' })">
                   Continuer avec {{ provider?.name }}
                 </Button>
               </div>
@@ -167,11 +167,22 @@ const formSchema = toTypedSchema(z.object({
     ? "Veuillez remplir le champs." 
     : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
-  email: z.string({
-    error: (issue) => issue.input === undefined 
-    ? "Veuillez remplir le champs." 
-    : ""
-  }).email({ message: "Adresse email invalide." }),
+  email: z
+      .string()
+      .nonempty("Veuillez remplir le champ.")
+      .refine(
+        // la fonction doit renvoyer true (valide) ou false (erreur)
+        async (email) => {
+          const res = await $fetch("/api/auth/email-exists", {
+            method: "GET",
+            params: { email },
+          })
+          console.log("res", res.body.exists)
+          // on suppose que GET /api/users?email=… → { exists: boolean }
+          return !res.body.exists
+        },
+        { message: "Cet email est déjà utilisé." }
+      ),
   password: z.string({
     error: (issue) => issue.input === undefined 
     ? "Veuillez remplir le champs." 
@@ -221,7 +232,7 @@ const signUp = form.handleSubmit(async (values) => {
     console.log("now sign in");
     
     
-    await signIn('credentials',{email: values.email, password: values.password, callbackUrl: '/app'})
+    await signIn('credentials',{email: values.email, password: values.password, callbackUrl: '/app/dashboard'})
 
 
   } else {
