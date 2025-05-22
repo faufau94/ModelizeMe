@@ -152,7 +152,9 @@ import {Loader2} from "lucide-vue-next";
 
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";;
+import { z } from "zod/v4";
+import { useUser } from '~/composables/api/useUser';
+
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
@@ -199,31 +201,31 @@ const message = ref({
   text: ''
 })
 
+const { addUser } = useUser()
 const isLoading = ref(false)
 const signUp = form.handleSubmit(async (values) => {
   isLoading.value = true
 
-  const res = await useFetch('/api/auth/sign-up', {
-    method: 'POST',
-    body: JSON.stringify(values)
-  })
+  const res = await addUser(values)
+  console.log("res", res);
+   
 
 
-  if (res.data.value.status === 200) {
-    message.value = {type: 'success', text: res.data.value.body.message}
+  if (res.status === 200) {
+    message.value = {type: 'success', text: res.body.message}
     setTimeout(() => {
       isLoading.value = false
     }, 5000)
-    //message.value = {text: "", type: ""}
+    message.value = {text: "", type: ""}
 
-    const userLogged = await signIn('credentials',{email: values.email, password: values.password, callbackUrl: '/app'})
+    console.log("now sign in");
+    
+    
+    await signIn('credentials',{email: values.email, password: values.password, callbackUrl: '/app'})
 
-    if(userLogged) {
-      await router.push({path: "/"})
-    }
 
   } else {
-    message.value = {type: 'error', text: res.data.value.body.error}
+    message.value = {type: 'error', text: res.body.error}
     isLoading.value = false
   }
 })

@@ -23,7 +23,7 @@
               <DialogTitle>Ajouter un utilisateur</DialogTitle>
               <DialogDescription>Remplir les champs.</DialogDescription>
             </DialogHeader>
-            <form @submit="addUser">
+            <form @submit="addNewUser">
             <div class="grid gap-4">
               <div class="grid grid-cols-2 gap-4">
                 <FormField v-slot="{ componentField }" name="first_name">
@@ -125,7 +125,7 @@
               <DialogTitle>Editer un utilisateur</DialogTitle>
               <DialogDescription>Modifier les champs.</DialogDescription>
             </DialogHeader>
-            <form @submit="editUser">
+            <form @submit="editNewUser">
             <div class="grid gap-4">
               <div class="grid grid-cols-2 gap-4">
                 <FormField v-slot="{ componentField }" name="first_name">
@@ -308,14 +308,13 @@ import { CirclePlus, Loader2, Copy } from 'lucide-vue-next';
 
 import { useQuery } from '@tanstack/vue-query'
 
-import { useUserStore } from '~/stores/api/user-store'
-
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";;
 import type { User } from '~/components/dataTable/data/schema';
 import { useRoleStore } from '~/stores/api/role-store';
 import { makeWorkspaceLink } from '~/utils/workspace-link';
+import { useUser } from '~/composables/api/useUser';
 
 
 definePageMeta({
@@ -414,7 +413,7 @@ const copyLink = (link: string) => {
   message.value = { type: 'copied', text: 'Lien copié dans le presse-papier !' }
 }
 
-const userStore = useUserStore()
+const { addUser, editUser } = useUser()
 const columns = getUserColumns({ editUserDialog, confirmDeleteUser, createWorkspaceDialog })
 
 const formSchema = toTypedSchema(z.object({
@@ -459,9 +458,15 @@ const { data: users, isLoading, error, suspense } = useQuery({
 await suspense()
 
 const isFormLoading = ref(false)
-const addUser = form.handleSubmit(async (values) => {
+const addNewUser = form.handleSubmit(async (values) => {
   isFormLoading.value = true
-  const res = await userStore.addUser(values)   
+
+  values = {
+    ...values,
+    password: Math.random().toString(36).slice(-8),
+    isFromAdmin: true,
+  }
+  const res = await addUser(values)   
 
   // message de succès
   if(res.status === 200) {
@@ -476,9 +481,9 @@ const addUser = form.handleSubmit(async (values) => {
   }, 2000)
 })
 
-const editUser = form.handleSubmit(async (values) => {
+const editNewUser = form.handleSubmit(async (values) => {
   isFormLoading.value = true
-  const res = await userStore.editUser(values, selectedUser?.value?.id?.toString() || '')
+  const res = await editUser(values, selectedUser?.value?.id?.toString() || '')
 
   // message de succès
   if(res.status === 200) {

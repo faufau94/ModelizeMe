@@ -1,15 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 
-export function useUsers() {
+export const useUser = () => {
   const queryClient = useQueryClient()
 
   // 1) Add user
   const addUserMutation = useMutation({
     mutationFn: async (payload: any) => {
-      const password = Math.random().toString(36).slice(-8)
       return await $fetch('/api/auth/sign-up', {
         method: 'POST',
-        body: { ...payload, password, sendPasswordByEmail: true },
+        body: { ...payload },
       })
     },
     onSuccess: () => {

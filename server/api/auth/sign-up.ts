@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import nodemailer from 'nodemailer';
 
 export default defineEventHandler(async event => {
-    const { name, first_name, email, password, role, sendPasswordByEmail } = await readBody(event);
+    const { name, firstName, email, password, isFromAdmin } = await readBody(event);
 
     const existingUser = await prisma.user.findUnique({
         where: {
@@ -12,20 +12,32 @@ export default defineEventHandler(async event => {
     });
 
     if (!existingUser) {
+        console.log('password:', password);
+        
         const hashedPassword = await bcrypt.hash(password, 10);
         // Créer un nouvel utilisateur s'il n'existe pas
-        await prisma.user.create({
+        const user = await prisma.user.create({
             data: {
                 email: email,
                 name: name,
-                first_name: first_name,
+                first_name: firstName,
                 password: hashedPassword,
-                roleId: role
+                role: { connect: { name: "USER" } },
             },
         });
 
-        if(sendPasswordByEmail) {
-            
+        // créer un workspace par défaut
+        const workspace = await prisma.workspace.create({
+            data: {
+                name: "First workspace",
+                owner: {
+                    connect: { id: user.id }
+                },
+            }
+        });
+
+        if(user && workspace) {
+            if(isFromAdmin) {
                 const transporter = nodemailer.createTransport({
                     host: 'in-v3.mailjet.com',
                     port: 587,
@@ -49,14 +61,25 @@ export default defineEventHandler(async event => {
                     <p>Votre mot de passe: ${password}</p>
                     `
                 });
-        }
+            }
 
-        return {
-            status: 200,
-            body: {
-                message: 'Votre compte a été créé avec succès'
+            return {
+                status: 200,
+                body: {
+                    user: user,
+                    message: 'Votre compte a été créé avec succès'
+                }
+            }
+        } else {
+            return {
+                status: 200,
+                body: {
+                    message: 'Il y a eu un problème lors de la création de votre compte'
+                }
             }
         }
+
+        
     }
 
     return {

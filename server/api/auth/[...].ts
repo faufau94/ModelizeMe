@@ -44,15 +44,17 @@ export default NuxtAuthHandler({
                     }
                 }
 
-                const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-                if (!isPasswordValid) {
+                console.log('credentials.password:', credentials.password);
+                console.log('user password:', user.password);
+
+                // Vérifier le mot de passe
+                const credentialhashedPassword = await bcrypt.compare(credentials.password, user.password);
+                if(!credentialhashedPassword) {
                     return {
                         status : "error",
                         message: "Mot de passe incorrect."
                     }
                 }
-
-
                 return user
             }
         }),
@@ -138,12 +140,24 @@ export default NuxtAuthHandler({
                     }
                 }
             } else {
+                
                 // Gestion pour les utilisateurs qui se connectent avec email/password
                 const existingUser = await prisma.user.findUnique({
                     where: { email: credentials.email },
                 });
+                console.log('Utilisateur existant trouvé:', existingUser);
+                console.log('credentials.password:', credentials?.password);
+                console.log('Mot de passe haché:', existingUser?.password);
 
-                if (existingUser && await bcrypt.compare(credentials.password, existingUser.password)) {
+                const isValid = await bcrypt.compare(credentials.password, existingUser.password)
+                if (!isValid) {
+                    // mauvais mot de passe
+                    return null
+                }
+
+            
+                if (existingUser) {
+                    console.log('Mot de passe valide');
                     return existingUser;
                 } else {
                     return null; // Mauvais email ou mot de passe
@@ -153,37 +167,6 @@ export default NuxtAuthHandler({
             // Retourner true pour permettre la connexion
             return true;
         },
-        /*
-        async signIn({ user, account, profile, email, credentials }) {
-            if (account.provider !== 'credentials') {
-                const providerId = account.providerAccountId;
-
-                // Vérifier si l'utilisateur existe déjà
-                const existingUser = await prisma.user.findUnique({
-                    where: {
-                        email: user.email,
-                    },
-                });
-
-                if (!existingUser) {
-                    // Créer un nouvel utilisateur s'il n'existe pas
-                    await prisma.user.create({
-                        data: {
-                            email: user.email,
-                            name: user.name,
-                            first_name: user?.name,
-                            image: user.picture || user.avatar_url,
-                            provider: account.provider,
-                            providerAccountId: providerId,
-                        },
-                    });
-                }
-            }
-
-            // Retourner true pour permettre la connexion
-            return true;
-        },
-         */
         /* on session retrival */
         async session({ session, user, token }) {
             const source = user || token;
@@ -201,6 +184,8 @@ export default NuxtAuthHandler({
         },
         /* on JWT token creation or mutation */
         async jwt({ token, user, account, profile, isNewUser }) {
+
+            console.log('JWT Callback:', { token, user, account, profile, isNewUser });
             
             if (user) {
                 token.id = user.id

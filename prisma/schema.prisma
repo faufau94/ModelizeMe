@@ -43,7 +43,7 @@ enum AnnotationTargetType {
 model User {
   id                Int      @id @default(autoincrement())
   email             String   @unique
-  password          String?
+  password          String?  @db.VarChar(512)
   first_name        String?
   name              String?
   image             String?
@@ -65,25 +65,25 @@ model User {
 
   workspacesOwned Workspace[] @relation("WorkspaceOwner")
 
-  roleId            Int
-  role              Role     @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
   @@map("users")
 }
 
 /// Rôles globaux de la plateforme
 model Role {
-  id          Int           @id @default(autoincrement())
-  name        String        @unique                    
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
   description String?
-  users       User[]    
+  users       User[]
   permissions RolePermission[]
 }
 
 /// Permissions granulaires
 model Permission {
-  id          Int               @id @default(autoincrement())
-  action      String            @unique                 // ex: "manage_users", "view_reports"
+  id          Int              @id @default(autoincrement())
+  action      String           @unique // ex: "manage_users", "view_reports"
   description String?
   roles       RolePermission[]
 }
@@ -97,7 +97,6 @@ model RolePermission {
 
   @@id([roleId, permissionId])
 }
-
 
 /////////////////////
 // WORKSPACES
