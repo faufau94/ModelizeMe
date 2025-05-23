@@ -1,13 +1,13 @@
 // ~/composables/useWorkspace.ts
-import { ref, computed } from 'vue'
-import { useQuery, useMutation, useQueryClient, keepPreviousData  } from '@tanstack/vue-query'
+import { computed } from 'vue'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import type { Workspace } from '@/components/dataTable/data/schema'
-import { useWorkspaceStore } from '@/stores/api/workspace-store'
 
 export const useWorkspace = () => {
-  const workspaceStore = useWorkspaceStore()
-  const { selectedWorkspaceId } = storeToRefs(workspaceStore)
+  const route = useRoute()
+  const selectedWorkspaceId = computed(() => route.params.workspaceId || null)
   const queryClient = useQueryClient()
+  const { data, refresh } = useAuth()
 
 
   // — LIST —
@@ -19,27 +19,27 @@ export const useWorkspace = () => {
         method: 'GET',
         headers
       })
-      if (res?.length && selectedWorkspaceId.value === null) {
-        selectedWorkspaceId.value = parseInt(res[0].id)
-      }
       return res
     },
     })
 
-    // — READ SELECTED —
-    const {data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery<Workspace>({
-      queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
-      queryFn: async ({ queryKey }) => {
-        const [, id] = queryKey
-        
-        return await $fetch<Workspace>('/api/workspaces/read', {
-          method: 'GET',
-          query: { id },
-        })
-      },
-      staleTime: 0,
-      enabled: computed(() => selectedWorkspaceId.value !== null),
-    })
+  // — READ SELECTED —
+  const {data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery<Workspace>({
+    queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
+    queryFn: async ({ queryKey }) => {
+
+      const workspaceId = route.params.workspaceId
+
+      const headers = useRequestHeaders(['cookie']) as HeadersInit      
+      return await $fetch<Workspace>('/api/workspaces/read', {
+        method: 'GET',
+        query: { workspaceId },
+        headers
+      })
+    },
+    staleTime: 0,
+    enabled: computed(() => selectedWorkspaceId.value !== null),
+  })
 
   // — CREATE —
   const addWorkspaceMutation = useMutation({
@@ -68,15 +68,40 @@ export const useWorkspace = () => {
   })
   const deleteWorkspace = (id: string) => deleteWorkspaceMutation.mutateAsync(id)
 
-  
+
+  // — SELECTED WORKSPACE —
+  const goToDashboard = () => {
+    const lastActiveWorkspaceId = data.value?.user?.lastActiveWorkspaceId
+    return `/app/workspace/${lastActiveWorkspaceId}/dashboard`
+  }
+
+  // — SWITCH WORKSPACE —
+  async function switchWorkspace(workspaceId: string) {
+    if (workspaceId === selectedWorkspaceId.value) return
+
+    // 1) update lastActiveWorkspaceId en base
+    await $fetch('/api/workspaces/last-active-workspace', {
+      method: 'PUT',
+      query: { workspaceId },
+    })
+
+    // 2) rafraîchir la session Auth.js pour récupérer le nouveau lastActiveWorkspaceId
+    await refresh()
+
+    // 3) naviguer vers la nouvelle route
+    await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
+  }
 
   
-
   return {
     // mutations
     addWorkspace,
     editWorkspace,
     deleteWorkspace,
+    switchWorkspace,
+
+    // when the user is authenticated, we can use the lastActiveWorkspaceId
+    goToDashboard,
 
     // list
     workspaces,

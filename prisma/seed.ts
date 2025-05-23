@@ -43,7 +43,7 @@ async function main() {
 
   // 3) Création d’un utilisateur normal
   const hashedUser = await bcrypt.hash("userPassword123", 10)
-  await prisma.user.upsert({
+  const normalUser = await prisma.user.upsert({
     where: { email: "normal@modelizeme.app" },
     update: {
       first_name: "Normal",
@@ -57,6 +57,24 @@ async function main() {
       name: "User",
       password: hashedUser,
       roleId: userRole.id,
+    },
+  })
+
+  // 4) Création d’un workspace pour l'utilisateur normal
+  const workspace = await prisma.workspace.create({
+      data: {
+          name: "First workspace",
+          owner: {
+              connect: { id: normalUser.id }
+          },
+      }
+  });
+
+  // add lastActiveWorkspaceId to user
+  await prisma.user.update({
+    where: { id: normalUser.id },
+    data: {
+      lastActiveWorkspaceId: workspace.id
     },
   })
 

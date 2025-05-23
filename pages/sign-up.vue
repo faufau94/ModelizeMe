@@ -115,7 +115,7 @@
               </FormField>
 
               <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
-                <Button  class="w-full" variant="outline" @click="signIn(provider?.id, { callbackUrl: '/app/dashboard' })">
+                <Button  class="w-full" variant="outline" @click="signIn(provider?.id, { callbackUrl: goToDashboard() })">
                   Continuer avec {{ provider?.name }}
                 </Button>
               </div>
@@ -154,7 +154,10 @@ import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
 import { useUser } from '~/composables/api/useUser';
+import { useWorkspace } from '~/composables/api/useWorkspace';
 
+
+const {goToDashboard} = useWorkspace()
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
@@ -177,7 +180,6 @@ const formSchema = toTypedSchema(z.object({
             method: "GET",
             params: { email },
           })
-          console.log("res", res.body.exists)
           // on suppose que GET /api/users?email=… → { exists: boolean }
           return !res.body.exists
         },
@@ -218,10 +220,6 @@ const signUp = form.handleSubmit(async (values) => {
   isLoading.value = true
 
   const res = await addUser(values)
-  console.log("res", res);
-   
-
-
   if (res.status === 200) {
     message.value = {type: 'success', text: res.body.message}
     setTimeout(() => {
@@ -229,10 +227,8 @@ const signUp = form.handleSubmit(async (values) => {
     }, 5000)
     message.value = {text: "", type: ""}
 
-    console.log("now sign in");
     
-    
-    await signIn('credentials',{email: values.email, password: values.password, callbackUrl: '/app/dashboard'})
+    await signIn('credentials',{email: values.email, password: values.password, callbackUrl: goToDashboard()})
 
 
   } else {

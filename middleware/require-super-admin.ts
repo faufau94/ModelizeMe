@@ -1,8 +1,11 @@
 // /middleware/require-super-admin.global.ts
 import { defineNuxtRouteMiddleware, navigateTo, useAuth } from '#imports'
 import { watch } from 'vue'
+import { useWorkspace } from '~/composables/api/useWorkspace'
 
 export default defineNuxtRouteMiddleware(async (to) => {
+  const { goToDashboard } = useWorkspace()
+  
   // only run on /admin routes
   if (!to.path.startsWith('/admin')) {
     return
@@ -26,7 +29,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // if they’re not an admin, send them back to /app
   if (!isAdmin) {
-    return navigateTo('/app/dashboard')
+    return navigateTo(goToDashboard())
   }
   // otherwise allow into /admin/**
 })

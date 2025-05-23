@@ -1,9 +1,12 @@
 // /middleware/authentication.global.ts
 import { defineNuxtRouteMiddleware, navigateTo, useAuth } from '#imports'
 import { watch } from 'vue'
+import { useWorkspace } from '~/composables/api/useWorkspace'
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { status, data } = useAuth()  
+  const { status, data } = useAuth()
+  const { goToDashboard } = useWorkspace()
+  
 
   // 1) Wait until we know auth status
   if (status.value === 'loading') {
@@ -26,11 +29,11 @@ export default defineNuxtRouteMiddleware(async (to) => {
     return navigateTo('/sign-in')
   }
 
-  // 2.5) Authenticated users get sent to /app/dashboard if they try /sign-in or /sign-up
+  // 2.5) Authenticated users get sent to the dashboard if they try /sign-in or /sign-up
   if (status.value === 'authenticated' &&
       (to.path === '/sign-in' || to.path === '/sign-up')
   ) {
-    return navigateTo('/app/dashboard')
+    return navigateTo(goToDashboard())
   }
   
   const isSuperAdmin = data.value?.user?.role === 'SUPER_ADMIN'
@@ -38,7 +41,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // 3) Root landing page → send to proper home
   if (status.value === 'authenticated' && to.path === '/') {
-    return navigateTo(isSuperAdmin ? '/admin' : '/app/dashboard')
+    return navigateTo(isSuperAdmin ? '/admin' : goToDashboard())
   }
 
   // 4) Admins must live in /admin
@@ -48,7 +51,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // 5) Non-admins must not go into /admin
   if (status.value === 'authenticated' && !isSuperAdmin && to.path.startsWith('/admin')) {
-    return navigateTo('/app/dashboard')
+    return navigateTo(goToDashboard())
   }
 
   // otherwise, let them through

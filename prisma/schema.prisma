@@ -55,6 +55,10 @@ model User {
   workspaceMemberships WorkspaceMember[] // workspaces où il a un rôle
   teamMemberships      TeamMember[] // équipes dont il est membre
 
+  lastActiveWorkspaceId String?
+  lastActiveWorkspace   Workspace? @relation("LastActive", fields: [lastActiveWorkspaceId], references: [id])
+
+
   // --- MODELS & GALERIES ---
   dataModels     Model[] // modèles qu’il a créés
   linkedAccounts LinkedAccount[] // connexions externes
@@ -103,9 +107,9 @@ model RolePermission {
 /////////////////////
 
 model Workspace {
-  id         Int      @id @default(autoincrement())
+  id         String   @id @default(nanoid())
   name       String
-  inviteCode String   @unique @default(cuid())
+  inviteCode String   @unique @default(nanoid(16))
   createdAt  DateTime @default(now())
 
   ownerId Int
@@ -114,12 +118,14 @@ model Workspace {
   members    WorkspaceMember[] // OWNER, ADMIN, MEMBER
   teams      Team[] // équipes dans le workspace
   dataModels Model[] // modèles créés au scope du workspace
+
+  lastActiveUsers User[] @relation("LastActive")
 }
 
 model WorkspaceMember {
   id              Int           @id @default(autoincrement())
   userId          Int
-  workspaceId     Int
+  workspaceId     String
   role            WorkspaceRole @default(MEMBER)
   canViewAllTeams Boolean       @default(false)
 
@@ -139,7 +145,7 @@ model Team {
   inviteCode String   @unique @default(cuid())
   createdAt  DateTime @default(now())
 
-  workspaceId Int
+  workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   members    TeamMember[]
@@ -175,7 +181,7 @@ model Model {
   updatedAt   DateTime  @updatedAt
 
   // Scope : workspace + (optionnellement) team
-  workspaceId Int
+  workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   teamId      Int?
   team        Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)

@@ -93,9 +93,6 @@ const onSubmit = form.handleSubmit(async (values) => {
     message.text = ''
     isFormLoading.value = true
 
-    console.log("selectedWorkspace.id", selectedWorkspaceId.value);
-    
-
     const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
     
     // Ici, vous feriez normalement un appel API pour créer l'espace de travail

@@ -44,8 +44,6 @@ export default NuxtAuthHandler({
                     }
                 }
 
-                console.log('credentials.password:', credentials.password);
-                console.log('user password:', user.password);
 
                 // Vérifier le mot de passe
                 const credentialhashedPassword = await bcrypt.compare(credentials.password, user.password);
@@ -145,9 +143,6 @@ export default NuxtAuthHandler({
                 const existingUser = await prisma.user.findUnique({
                     where: { email: credentials.email },
                 });
-                console.log('Utilisateur existant trouvé:', existingUser);
-                console.log('credentials.password:', credentials?.password);
-                console.log('Mot de passe haché:', existingUser?.password);
 
                 const isValid = await bcrypt.compare(credentials.password, existingUser.password)
                 if (!isValid) {
@@ -172,12 +167,14 @@ export default NuxtAuthHandler({
             const source = user || token;
 
             if (source) {
-            session.user = {
-                ...session.user,
-                id: source.id,
-                accounts: source.accounts || [],
-                role: source.role ?? null,
-            };
+                session.user = {
+                    ...session.user,
+                    id: source.id,
+                    accounts: source.accounts || [],
+                    role: source.role ?? null,
+                    lastActiveWorkspaceId: source.lastActiveWorkspaceId || null,
+                };
+
             }
 
             return session;
@@ -185,11 +182,10 @@ export default NuxtAuthHandler({
         /* on JWT token creation or mutation */
         async jwt({ token, user, account, profile, isNewUser }) {
 
-            console.log('JWT Callback:', { token, user, account, profile, isNewUser });
-            
             if (user) {
                 token.id = user.id
                 token.role = user.role.name || []
+                token.lastActiveWorkspaceId = user.lastActiveWorkspaceId
             }
             return token;
         }

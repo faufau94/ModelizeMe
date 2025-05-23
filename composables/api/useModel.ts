@@ -16,7 +16,6 @@ export const useModel = () => {
   const {data: models, isLoading: isLoadingModels, isFetched: isModelsFetched, error, suspense } = useQuery<Model[]>({
     queryKey: computed(() => ['models', selectedWorkspaceId.value]),
     queryFn: async () => {
-      console.log('new request for models', selectedWorkspaceId.value);
       
       const headers = useRequestHeaders(['cookie']) as HeadersInit
       const res = await $fetch<Model[]>('/api/models/list', {
@@ -33,8 +32,6 @@ export const useModel = () => {
     const {data: selectedModel, isLoading: isLoadingSelectedModel } = useQuery<Model>({
     queryKey: computed(() => ['model', selectedModelId.value]),
     queryFn: async ({ queryKey }) => {
-      console.log('selectedModelId', selectedModelId.value);
-      
       const [, id] = queryKey
       return await $fetch<Model>('/api/models/read', {
         method: 'GET',

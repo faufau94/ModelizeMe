@@ -72,7 +72,7 @@
           </form>
 
           <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full py-2">
-            <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: '/app/dashboard' })">
+            <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: goToDashboard() })">
               Continuer avec {{ provider?.name }}
             </Button>
           </div>
@@ -110,8 +110,10 @@ import {Loader2} from "lucide-vue-next";
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
+import { useWorkspace } from '~/composables/api/useWorkspace';
 
 
+const {goToDashboard} = useWorkspace()
 
 const formSchema = toTypedSchema(z.object({
   email: z.email({message: "Adresse email invalide."}),
@@ -135,7 +137,7 @@ const onSubmit = form.handleSubmit(async (values) => {
   await signIn('credentials', {
     email: values.email,
     password: values.password,
-    callbackUrl: '/app/dashboard'
+    callbackUrl: goToDashboard()
   })
 })
 

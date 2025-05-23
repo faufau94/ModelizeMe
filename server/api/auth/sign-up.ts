@@ -12,8 +12,6 @@ export default defineEventHandler(async event => {
     });
 
     if (!existingUser) {
-        console.log('password:', password);
-        
         const hashedPassword = await bcrypt.hash(password, 10);
         // Créer un nouvel utilisateur s'il n'existe pas
         const user = await prisma.user.create({
@@ -35,6 +33,14 @@ export default defineEventHandler(async event => {
                 },
             }
         });
+
+        // add lastActiveWorkspaceId to user
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                lastActiveWorkspaceId: workspace.id
+            },
+        })
 
         if(user && workspace) {
             if(isFromAdmin) {

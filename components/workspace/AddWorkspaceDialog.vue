@@ -154,12 +154,8 @@ const onSubmit = handleSubmit(async (values) => {
     message.text = ''
     isFormLoading.value = true
 
-    console.log('Valeurs du formulaire:', {...values, userId: data.value.user.id ?? null});
 
     const res = await addWorkspace({...values, userId: data.value.user.id ?? null, userEmail: data.value.user.email ?? null})
-    
-    // Ici, vous feriez normalement un appel API pour créer l'espace de travail
-    console.log('Création de l\'espace de travail:', values)
     
     if (res.status === 200) {
      

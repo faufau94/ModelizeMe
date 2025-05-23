@@ -27,6 +27,14 @@ export default defineEventHandler(async event => {
         }
     });
 
+    // add lastActiveWorkspaceId to user
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            lastActiveWorkspaceId: workspaceCreated.id
+        },
+    })
+
     if (!workspaceCreated) {
         return {
             status: 404,
