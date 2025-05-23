@@ -2,12 +2,12 @@ import { ref, computed } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import type { Model } from '@/components/dataTable/data/schema'
 import { useModelStore } from '@/stores/api/model-store'
-import { useWorkspaceStore } from '@/stores/api/workspace-store'
+import { useWorkspace } from '@/composables/api/useWorkspace'
 
 export const useModel = () => {
   const modelStore = useModelStore()
-  const workspaceStore = useWorkspaceStore()
-  const { selectedWorkspaceId } = storeToRefs(workspaceStore)
+  const workspace = useWorkspace()
+  const { selectedWorkspaceId } = workspace
   const { selectedModelId } = storeToRefs(modelStore)
   const queryClient = useQueryClient()
 
@@ -48,7 +48,7 @@ export const useModel = () => {
     mutationFn: async (payload: any) =>
       await $fetch('/api/models/create', { 
         method: 'POST', 
-        body: payload 
+        body: {...payload, selectedWorkspaceId: selectedWorkspaceId.value}
       }),
     onSuccess: () => queryClient.invalidateQueries(['models']),
   })

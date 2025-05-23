@@ -24,8 +24,12 @@
 <script setup>
 import { useWorkspace } from '@/composables/api/useWorkspace';
 
+const { refresh } = useAuth()
+
 // Composables
 const { workspaces, switchWorkspace } = useWorkspace()
+
+await refresh()
 
 const switchWorkspaceUrl = async (workspaceId) => {
   await switchWorkspace(workspaceId)

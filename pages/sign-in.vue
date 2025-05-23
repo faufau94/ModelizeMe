@@ -137,7 +137,6 @@ const onSubmit = form.handleSubmit(async (values) => {
   await signIn('credentials', {
     email: values.email,
     password: values.password,
-    callbackUrl: goToDashboard()
   })
 })
 

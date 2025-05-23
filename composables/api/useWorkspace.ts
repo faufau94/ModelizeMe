@@ -71,6 +71,7 @@ export const useWorkspace = () => {
 
   // — SELECTED WORKSPACE —
   const goToDashboard = () => {
+    console.log('goToDashboard')
     const lastActiveWorkspaceId = data.value?.user?.lastActiveWorkspaceId
     return `/app/workspace/${lastActiveWorkspaceId}/dashboard`
   }

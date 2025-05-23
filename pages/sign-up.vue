@@ -228,7 +228,7 @@ const signUp = form.handleSubmit(async (values) => {
     message.value = {text: "", type: ""}
 
     
-    await signIn('credentials',{email: values.email, password: values.password, callbackUrl: goToDashboard()})
+    await signIn('credentials',{email: values.email, password: values.password})
 
 
   } else {

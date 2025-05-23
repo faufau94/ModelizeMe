@@ -78,11 +78,15 @@ export default defineNuxtConfig({
     disableServerSideAuth: false,
     originEnvKey: process.env.NUXT_AUTH_ORIGIN || '',
     baseURL: process.env.NUXT_BASE_URL || '',
+    sessionRefresh: {
+      enablePeriodically: true,
+      enableOnWindowFocus: true,
+    },
     provider: {
       type: 'authjs',
       trustHost: false,
       defaultProvider: 'google',
-      addDefaultCallbackUrl: true
+      addDefaultCallbackUrl: true,
     },
   },
 

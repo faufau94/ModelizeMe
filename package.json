@@ -16,7 +16,7 @@
     "@pinia/nuxt": "^0.5.3",
     "@preline/overlay": "^2.3.0",
     "@preline/select": "^2.3.0",
-    "@sidebase/nuxt-auth": "^0.9.4",
+    "@sidebase/nuxt-auth": "^0.10.0",
     "@tanstack/vue-query": "^5.76.0",
     "@tanstack/vue-table": "^8.21.3",
     "@vee-validate/nuxt": "^4.13.2",
