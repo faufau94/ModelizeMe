@@ -333,6 +333,7 @@ import { useModel } from '@/composables/api/useModel'
 
 
 const route = useRoute()
+const router = useRouter()
 
 const mcdStore = useMCDStore()
 const mldStore = useMLDStore()
@@ -481,7 +482,7 @@ const rnModel = handleSubmit(async (values) => {
 
 const goBack = async () => {
   isSubMenuVisible.value = false
-  await navigateTo('/app/dashboard')
+  router.back()
 }
 
 // Tabs

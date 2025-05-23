@@ -111,6 +111,8 @@ import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
 
+
+
 const formSchema = toTypedSchema(z.object({
   email: z.email({message: "Adresse email invalide."}),
   password: z.string({

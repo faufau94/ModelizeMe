@@ -25,6 +25,13 @@ export default defineNuxtRouteMiddleware(async (to) => {
   ) {
     return navigateTo('/sign-in')
   }
+
+  // 2.5) Authenticated users get sent to /app/dashboard if they try /sign-in or /sign-up
+  if (status.value === 'authenticated' &&
+      (to.path === '/sign-in' || to.path === '/sign-up')
+  ) {
+    return navigateTo('/app/dashboard')
+  }
   
   const isSuperAdmin = data.value?.user?.role === 'SUPER_ADMIN'
   

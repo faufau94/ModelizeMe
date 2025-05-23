@@ -83,7 +83,7 @@ export const useWorkspace = () => {
     isLoadingWorkspaces,
 
     // selected
-    selectedWorkspaceId: selectedWorkspaceId.value,
+    selectedWorkspaceId,
     selectedWorkspace,
     isLoadingSelectedWorkspace,
   }

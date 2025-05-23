@@ -21,16 +21,7 @@
         </div>
         <div class="flex-1">
           <nav class="grid items-start px-2 text-sm font-medium lg:px-4">
-            <!--
-            <NuxtLink
-                to="/app/dashboard"
-                class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
-                :class="[route.path === '/app/dashboard' ? 'text-primary bg-muted': 'text-muted-foreground']"
-            >
-              <Gauge class="h-4 w-4" />
-              Tableau de bord
-            </NuxtLink>
-            -->
+            
             <NuxtLink
                 to="/app"
                 class="flex items-center gap-3 rounded-lg px-3 py-3 transition-all hover:text-primary"
@@ -139,16 +130,7 @@
                 -->
                 <span class="sr-only">ModelizMe</span>
               </NuxtLink>
-              <!--
-              <NuxtLink
-                  to="/app/dashboard"
-                  class="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-3 hover:text-foreground"
-                  :class="[route.path === '/app/dashboard' ? 'text-primary bg-muted': 'text-muted-foreground']"
-              >
-                <Gauge class="h-5 w-5" />
-                Tableau de bord
-              </NuxtLink>
-              -->
+              
               <NuxtLink
                   to="/app"
                   class="mx-[-0.65rem] text-[16px] flex items-center gap-4 rounded-xl px-3 py-3 text-foreground hover:text-foreground"
