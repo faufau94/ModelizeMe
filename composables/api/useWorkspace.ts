@@ -12,11 +12,9 @@ export const useWorkspace = () => {
   const selectedWorkspaceId = computed<string|null>(() => {
     // si l’URL fournit workspaceId, on l’utilise
     if (route.params.workspaceId !== 'undefined') {
-      console.log('Using workspaceId from route:', route.params.workspaceId)
       return String(route.params.workspaceId)
     }
 
-    console.log('Using lastActiveWorkspaceId from session:', data.value?.user?.lastActiveWorkspaceId)
     // sinon, on tombe sur la valeur stockée en session
     return data.value?.user?.lastActiveWorkspaceId ?? null
   })

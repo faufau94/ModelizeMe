@@ -4,8 +4,6 @@ export function useWorkspaceNavigation() {
   // — SELECTED WORKSPACE —
   const goToDashboard = () => {
     const lastActiveWorkspaceId = data.value?.user?.lastActiveWorkspaceId
-
-    console.log('lastActiveWorkspaceId', lastActiveWorkspaceId)
     return `/app/workspace/${lastActiveWorkspaceId}/dashboard`
   }
 

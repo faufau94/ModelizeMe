@@ -169,7 +169,6 @@ export default NuxtAuthHandler({
                 select: { lastActiveWorkspaceId: true }
             })
 
-            console.log('lastActiveWorkspaceId', dbUser?.lastActiveWorkspaceId)
 
             if (source) {
                 session.user = {
