@@ -1,11 +1,11 @@
 // /middleware/authentication.global.ts
 import { defineNuxtRouteMiddleware, navigateTo, useAuth } from '#imports'
 import { watch } from 'vue'
-import { useWorkspace } from '~/composables/api/useWorkspace'
+import { useWorkspaceNavigation } from '~/composables/api/useWorkspaceNavigation'
 
 export default defineNuxtRouteMiddleware(async (to) => {
-  const { status, data, refresh } = useAuth()
-  const { goToDashboard } = useWorkspace()
+  const { status, data } = useAuth()
+  const { goToDashboard } = useWorkspaceNavigation()
   
 
   // 1) Wait until we know auth status
@@ -31,7 +31,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   // 2) Unauthenticated users get sent to /sign-in if they try /app or /admin
   if (isNotAuth &&
-      (to.path.startsWith('/app') || to.path.startsWith('/admin') || to.path === '/')
+      (to.path.startsWith('/app') || to.path.startsWith('/admin'))
   ) {
     return navigateTo('/sign-in')
   }

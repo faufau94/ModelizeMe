@@ -704,9 +704,4 @@ const teamSwitcherOpen = ref(false)
 const showNewTeamDialog = ref(false)
 const selectedTeam = ref(groups[1].teams[0])
 
-
-const workspaceStore = useWorkspaceStore()
-const { selectedWorkspaceId } = storeToRefs(workspaceStore)
-const { workspaces, selectedWorkspace, addWorkspace } = useWorkspace()
-
 </script>

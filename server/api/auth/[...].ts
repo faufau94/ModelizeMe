@@ -166,13 +166,20 @@ export default NuxtAuthHandler({
         async session({ session, user, token }) {
             const source = user || token;
 
+            const dbUser = await prisma.user.findUnique({
+                where: { id: source.id as number },
+                select: { lastActiveWorkspaceId: true }
+            })
+
+            console.log('lastActiveWorkspaceId', dbUser?.lastActiveWorkspaceId)
+
             if (source) {
                 session.user = {
                     ...session.user,
                     id: source.id,
                     accounts: source.accounts || [],
                     role: source.role ?? null,
-                    lastActiveWorkspaceId: source.lastActiveWorkspaceId || null,
+                    lastActiveWorkspaceId: dbUser?.lastActiveWorkspaceId || null,
                 };
 
             }

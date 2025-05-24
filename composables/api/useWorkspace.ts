@@ -5,10 +5,22 @@ import type { Workspace } from '@/components/dataTable/data/schema'
 
 export const useWorkspace = () => {
   const route = useRoute()
-  const selectedWorkspaceId = computed(() => route.params.workspaceId || null)
+  const { data } = useAuth()
+  const { refresh } = useAuth()
   const queryClient = useQueryClient()
-  const { data, refresh } = useAuth()
 
+  const selectedWorkspaceId = computed<string|null>(() => {
+    // si l’URL fournit workspaceId, on l’utilise
+    if (route.params.workspaceId !== 'undefined') {
+      console.log('Using workspaceId from route:', route.params.workspaceId)
+      return String(route.params.workspaceId)
+    }
+
+    console.log('Using lastActiveWorkspaceId from session:', data.value?.user?.lastActiveWorkspaceId)
+    // sinon, on tombe sur la valeur stockée en session
+    return data.value?.user?.lastActiveWorkspaceId ?? null
+  })
+  
 
   // — LIST —
   const {data: workspaces, isLoading: isLoadingWorkspaces, error, suspense } = useQuery<Workspace[]>({
@@ -68,14 +80,6 @@ export const useWorkspace = () => {
   })
   const deleteWorkspace = (id: string) => deleteWorkspaceMutation.mutateAsync(id)
 
-
-  // — SELECTED WORKSPACE —
-  const goToDashboard = () => {
-    console.log('goToDashboard')
-    const lastActiveWorkspaceId = data.value?.user?.lastActiveWorkspaceId
-    return `/app/workspace/${lastActiveWorkspaceId}/dashboard`
-  }
-
   // — SWITCH WORKSPACE —
   async function switchWorkspace(workspaceId: string) {
     if (workspaceId === selectedWorkspaceId.value) return
@@ -100,9 +104,6 @@ export const useWorkspace = () => {
     editWorkspace,
     deleteWorkspace,
     switchWorkspace,
-
-    // when the user is authenticated, we can use the lastActiveWorkspaceId
-    goToDashboard,
 
     // list
     workspaces,

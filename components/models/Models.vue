@@ -51,9 +51,6 @@ import {storeToRefs} from "pinia";
 import CreateModelDialog from "@/components/flow/CreateModelDialog.vue";
 import { useModel } from "@/composables/api/useModel"
 
-definePageMeta({
-  layout: 'sidebar',
-});
 
 const { models, isLoadingModels, isModelsFetched } = useModel()
 

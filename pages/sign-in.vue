@@ -72,7 +72,7 @@
           </form>
 
           <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full py-2">
-            <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: goToDashboard() })">
+            <Button class="w-full" variant="outline" @click="signInProvider(provider.id)">
               Continuer avec {{ provider?.name }}
             </Button>
           </div>
@@ -110,10 +110,10 @@ import {Loader2} from "lucide-vue-next";
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
-import { useWorkspace } from '~/composables/api/useWorkspace';
+import { useWorkspaceNavigation } from '~/composables/api/useWorkspaceNavigation';
 
 
-const {goToDashboard} = useWorkspace()
+const {goToDashboard} = useWorkspaceNavigation()
 
 const formSchema = toTypedSchema(z.object({
   email: z.email({message: "Adresse email invalide."}),
@@ -134,11 +134,41 @@ const providers = await getProviders()
 const isLoading = ref(false)
 
 const onSubmit = form.handleSubmit(async (values) => {
-  await signIn('credentials', {
+   const res = await signIn('credentials', {
     email: values.email,
     password: values.password,
   })
+
+
+  if (res?.error) {
+    console.error("Erreur de connexion:", res.error)
+    // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
+  } else {
+    // Redirection réussie
+      await refresh()
+
+      return navigateTo(goToDashboard())
+  }
 })
+
+const signInProvider = async (providerId) => {
+  isLoading.value = true
+  try {
+    const res = await signIn(providerId)
+    if (res?.error) {
+      console.error("Erreur de connexion avec le provider:", res.error)
+      // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
+    } else {
+      // Redirection réussie
+      await refresh()
+      return navigateTo(goToDashboard())
+    }
+  } catch (error) {
+    console.error("Erreur lors de la connexion avec le provider:", error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredProviders = computed(() => {
   return Object.keys(providers)

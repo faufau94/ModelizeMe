@@ -115,7 +115,7 @@
               </FormField>
 
               <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
-                <Button  class="w-full" variant="outline" @click="signIn(provider?.id, { callbackUrl: goToDashboard() })">
+                <Button  class="w-full" variant="outline" @click="signInProvider(provider.id)">
                   Continuer avec {{ provider?.name }}
                 </Button>
               </div>
@@ -154,10 +154,10 @@ import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
 import { useUser } from '~/composables/api/useUser';
-import { useWorkspace } from '~/composables/api/useWorkspace';
+import { useWorkspaceNavigation } from '~/composables/api/useWorkspaceNavigation';
 
 
-const {goToDashboard} = useWorkspace()
+const {goToDashboard} = useWorkspaceNavigation()
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
@@ -221,14 +221,24 @@ const signUp = form.handleSubmit(async (values) => {
 
   const res = await addUser(values)
   if (res.status === 200) {
-    message.value = {type: 'success', text: res.body.message}
+    message.value = {type: 'success', text: res?.body?.message}
     setTimeout(() => {
       isLoading.value = false
     }, 5000)
     message.value = {text: "", type: ""}
 
     
-    await signIn('credentials',{email: values.email, password: values.password})
+    const res = await signIn('credentials',{email: values.email, password: values.password})
+
+    if (res?.error) {
+    console.error("Erreur de connexion:", res.error)
+      // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
+    } else {
+      // Redirection réussie
+        await refresh()
+
+        return navigateTo(goToDashboard())
+    }
 
 
   } else {
@@ -236,6 +246,25 @@ const signUp = form.handleSubmit(async (values) => {
     isLoading.value = false
   }
 })
+
+const signInProvider = async (providerId) => {
+  isLoading.value = true
+  try {
+    const res = await signIn(providerId)
+    if (res?.error) {
+      console.error("Erreur de connexion avec le provider:", res.error)
+      // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
+    } else {
+      // Redirection réussie
+      await refresh()
+      return navigateTo(goToDashboard())
+    }
+  } catch (error) {
+    console.error("Erreur lors de la connexion avec le provider:", error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredProviders = computed(() => {
   return Object.keys(providers)

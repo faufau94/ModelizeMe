@@ -1,6 +1,6 @@
 <template>
     <div class="w-16 border-r border-border bg-card flex flex-col items-center hidden md:flex">
-      <div class="flex flex-col items-center space-y-4">
+      <div v-if="!isLoadingWorkspaces" class="flex flex-col items-center space-y-4">
         <!-- Organization Logo -->
         
         <!-- Organization Selector - No Popover -->
@@ -14,9 +14,6 @@
             </Button>
           </template>
         </div>
-        
-        <!-- Add Organization Button -->
-        <AddWorkspaceDialog :isOnlyIcon="true"/>
       </div>
     </div>
 </template>
@@ -24,12 +21,8 @@
 <script setup>
 import { useWorkspace } from '@/composables/api/useWorkspace';
 
-const { refresh } = useAuth()
-
 // Composables
-const { workspaces, switchWorkspace } = useWorkspace()
-
-await refresh()
+const { workspaces, isLoadingWorkspaces, switchWorkspace } = useWorkspace()
 
 const switchWorkspaceUrl = async (workspaceId) => {
   await switchWorkspace(workspaceId)
