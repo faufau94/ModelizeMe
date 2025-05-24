@@ -171,7 +171,9 @@ const formSchema = toTypedSchema(z.object({
     : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   email: z
-      .string()
+      .string({error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""})
       .nonempty("Veuillez remplir le champ.")
       .refine(
         // la fonction doit renvoyer true (valide) ou false (erreur)
@@ -205,10 +207,9 @@ const form = useForm({
 })
 
 
-const {signIn, getProviders, status} = useAuth()
+const {signIn, getProviders, refresh} = useAuth()
 const providers = await getProviders()
 
-const router = useRouter()
 const message = ref({
   type: '',
   text: ''
@@ -219,21 +220,30 @@ const isLoading = ref(false)
 const signUp = form.handleSubmit(async (values) => {
   isLoading.value = true
 
-  const res = await addUser(values)
-  if (res.status === 200) {
-    message.value = {type: 'success', text: res?.body?.message}
+  const result = await addUser(values)
+
+  console.log("Response from addUser:", result)
+
+
+  if (result.status === 200) {
+    message.value.type = 'success'
+    message.value.message =  result.body.message
     setTimeout(() => {
       isLoading.value = false
     }, 5000)
     message.value = {text: "", type: ""}
 
     
-    const res = await signIn('credentials',{email: values.email, password: values.password})
+    const res = await signIn('credentials', {
+      email: values.email,
+      password: values.password,
+      redirect: false,
+    })
 
     if (res?.error) {
-    console.error("Erreur de connexion:", res.error)
-      // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
-    } else {
+      message.value.type = 'error'
+      message.value.text = res.error
+  } else {
       // Redirection réussie
         await refresh()
 
@@ -242,7 +252,7 @@ const signUp = form.handleSubmit(async (values) => {
 
 
   } else {
-    message.value = {type: 'error', text: res.body.error}
+    message.value = {type: 'error', text: result.body.error}
     isLoading.value = false
   }
 })

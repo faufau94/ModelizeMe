@@ -78,7 +78,7 @@ export default defineEventHandler(async event => {
             }
         } else {
             return {
-                status: 200,
+                status: 400,
                 body: {
                     message: 'Il y a eu un problème lors de la création de votre compte'
                 }
