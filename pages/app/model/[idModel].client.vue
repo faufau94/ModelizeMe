@@ -66,7 +66,7 @@
                 <FormItem>
                   <FormLabel>Nom</FormLabel>
                   <FormControl>
-                    <Input type="text" v-bind="componentField" @keyup.enter="rnModel"/>
+                    <Input type="text" v-bind="componentField" />
                   </FormControl>
                   <FormMessage />
                   <FormControl class="float-right">

@@ -215,7 +215,7 @@
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <Button @keyup.enter="removeNodeById" @click="removeNodeById" variant="destructive"
+                  <Button @click="removeNodeById" variant="destructive"
                           class="border-none rounded-sm">
                     Supprimer
                   </Button>
@@ -578,7 +578,7 @@
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <Button @keyup.enter="removeEdgeById" @click="removeEdgeById" variant="destructive"
+                  <Button @click="removeEdgeById" variant="destructive"
                           class="border-none rounded-sm">
                     Supprimer
                   </Button>

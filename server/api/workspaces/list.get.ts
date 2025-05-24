@@ -1,19 +1,36 @@
-import prisma from "~/lib/prisma";
-import { getServerSession } from "#auth";
+// server/api/workspaces/list.get.ts
+import prisma from "~/lib/prisma"
+import { getServerSession } from "#auth"
+import { createError, defineEventHandler } from "h3"
 
-export default defineEventHandler(async event => {  
-    
-    // get workspaces from prisma with the associated user through the ownerId
-    // but only the workspace of the user with the id in session
-    const session = await getServerSession(event);
-    
-    return await prisma.workspace.findMany({
-        where: {
-            ownerId: session?.user?.id,
-        },
-        include: {
-            owner: true,
+export default defineEventHandler(async (event) => {
+  // 1) Récupère l’ID utilisateur depuis la session
+  const session = await getServerSession(event)
+  const userId  = session?.user?.id
+  if (!userId) {
+    throw createError({ statusCode: 401, statusMessage: "Non authentifié" })
+  }
+
+  // 2) Récupère les workspaces où il est owner OR membre
+  const workspaces = await prisma.workspace.findMany({
+    where: {
+      OR: [
+        { ownerId: userId },
+        { members: { some: { userId } } }
+      ]
+    },
+    include: {
+      owner: true,               // toujours inclure l’owner
+      members: {
+        where: { userId },       // ne garder que votre ligne de membership
+        select: {
+          role: true,
+          canViewAllTeams: true
         }
-    });
-});
+      }
+    },
+    orderBy: { name: "asc" }
+  })
 
+  return workspaces
+})

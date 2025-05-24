@@ -512,7 +512,26 @@
         <!-- <h1 class="text-lg font-semibold text-foreground md:ml-0 ml-12">Vue d'ensemble</h1> -->
         <div class="ml-auto flex items-center space-x-4">
 
-          <!-- language switcher -->
+            <Button
+            @click="copyLink"
+            variant="outline"
+            size="sm"
+            class="hidden md:flex items-center gap-2 transition-colors"
+            :disabled="copiedWorkspaceLink"
+            aria-live="polite"
+            >
+            <template v-if="copiedWorkspaceLink">
+              <CheckIcon class="w-4 h-4 text-primary" />
+              <span>Lien copié !</span>
+            </template>
+            <template v-else>
+              <Share2 class="w-4 h-4" />
+              <span>Partager le lien</span>
+            </template>
+
+            </Button>
+
+
           <Select>
             <SelectTrigger class="w-36">
               <div class="flex items-center justify-center gap-4">
@@ -622,7 +641,9 @@ import {
   UsersRound,
   Globe,
   Plus,
-  BoxSelectIcon
+  BoxSelectIcon,
+  PlusCircle,
+  Share2
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
@@ -671,6 +692,7 @@ import {
   CommandList,
   CommandSeparator
 } from '@/components/ui/command'
+import { set } from 'zod/v4';
 
 
 // Mock data for team switcher
@@ -703,5 +725,20 @@ const { signOut } = useAuth()
 const teamSwitcherOpen = ref(false)
 const showNewTeamDialog = ref(false)
 const selectedTeam = ref(groups[1].teams[0])
+const copiedWorkspaceLink = ref(false)
+
+const { copyWorkspaceLink } = useWorkspace()
+
+const copyLink = async () => {
+  try {
+    await copyWorkspaceLink()
+    copiedWorkspaceLink.value = true
+    setTimeout(() => {
+      copiedWorkspaceLink.value = false
+    }, 2000)
+  } catch (error) {
+    
+  }
+}
 
 </script>

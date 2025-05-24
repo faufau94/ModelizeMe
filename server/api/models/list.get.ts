@@ -23,7 +23,6 @@ export default defineEventHandler(async event => {
             if (onlyTemplates) {
                 models = await prisma.model.findMany({
                     where: {
-                        authorId: session.user.id,
                         workspaceId: selectedWorkspaceId,
                         // Galery: {
                         //     some: {},
@@ -40,7 +39,6 @@ export default defineEventHandler(async event => {
             } else {
                 models = await prisma.model.findMany({
                     where: {
-                        authorId: session.user.id,
                         workspaceId: selectedWorkspaceId,
                     },
                 });

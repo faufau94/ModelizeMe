@@ -91,8 +91,39 @@ export const useWorkspace = () => {
     // 2) rafraîchir la session Auth.js pour récupérer le nouveau lastActiveWorkspaceId
     await refresh()
 
+    // 3) mettre à jour le cache model
+    queryClient.invalidateQueries(['models', selectedWorkspaceId.value])
+
     // 3) naviguer vers la nouvelle route
     await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
+  }
+
+  // — JOIN WORKSPACE —
+  const joinWorkspace = async (workspaceId: string, inviteCode: string) => {
+    const headers = useRequestHeaders(['cookie']) as HeadersInit
+    await $fetch('/api/workspaces/join', {
+      method: 'POST',
+      query: { workspaceId, inviteCode },
+      headers,
+    })
+    // Rafraîchir la liste des workspaces après avoir rejoint un workspace
+    await queryClient.invalidateQueries(['workspaces'])
+    // Mettre à jour le workspace sélectionné
+    await switchWorkspace(workspaceId)
+
+    await refresh()
+
+    await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
+  }
+
+  // — COPY WORKSPACE LINK —
+  const copyWorkspaceLink = async () => {
+    console.log('Copying workspace link...')
+    console.log('Selected workspace:', selectedWorkspace.value)
+    const link = `${useRuntimeConfig().public.baseUrl}/app/workspace/${selectedWorkspace.value.id}/join/${selectedWorkspace.value.inviteCode}`
+    console.log('Workspace link:', link)
+    await navigator.clipboard.writeText(link)
+    // useToast().success('Workspace link copied to clipboard!')
   }
 
   
@@ -102,6 +133,8 @@ export const useWorkspace = () => {
     editWorkspace,
     deleteWorkspace,
     switchWorkspace,
+    joinWorkspace,
+    copyWorkspaceLink,
 
     // list
     workspaces,

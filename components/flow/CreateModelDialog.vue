@@ -19,12 +19,29 @@
           <FormItem>
             <FormLabel>Nom</FormLabel>
             <FormControl>
-              <Input type="text" v-bind="componentField" @keyup.enter="onSubmit"/>
+              <Input type="text" v-bind="componentField"/>
             </FormControl>
             <FormDescription>
               Il pourra toujours être modifié plus tard.
             </FormDescription>
+            
             <FormMessage />
+
+            <div v-if="message.type !== ''">
+              <div v-if="message.type === 'error'" class="w-full">
+                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 border border-red-300">
+                  <AlertCircle class="h-6 w-6 text-red-500" />
+                  <p class="text-red-600">{{ message.text }}</p>
+                </div>
+              </div>
+
+              <div v-if="message.type === 'success'" class="w-full">
+                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-green-50 border border-green-300">
+                  <CheckCircle class="h-6 w-6 text-green-500" />
+                  <p class="text-green-600">{{ message.text }}</p>
+                </div>
+              </div>
+            </div>
             <FormControl class="float-right">
               <Button type="submit" :disabled="isLoadingNewModel">
                 <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
@@ -51,7 +68,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {CirclePlus, Loader2} from "lucide-vue-next";
+import {AlertCircle, CheckCircle, CirclePlus, Loader2} from "lucide-vue-next";
 import {ref} from "vue";
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
@@ -61,8 +78,6 @@ import { useModel } from '@/composables/api/useModel'
 
 import { useWorkspaceStore } from '@/stores/api/workspace-store'
 
-const showModel = ref(false);
-const isLoadingNewModel = ref(false);
 
 const formSchema = toTypedSchema(z.object({
   title: z.string({
@@ -84,14 +99,16 @@ const message = ref({
 const { addModel } = useModel()
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspaceId } = storeToRefs(workspaceStore)
-const isFormLoading = ref(false)
+
+const showModel = ref(false);
+const isLoadingNewModel = ref(false);
 
 const onSubmit = form.handleSubmit(async (values) => {
   try {
     
     message.type = ''
     message.text = ''
-    isFormLoading.value = true
+    isLoadingNewModel.value = true
 
     const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
     
@@ -118,7 +135,7 @@ const onSubmit = form.handleSubmit(async (values) => {
     message.type = 'error'
     message.text = 'Une erreur est survenue lors de la création de l\'espace de travail.'
   } finally {
-    isFormLoading.value = false
+    isLoadingNewModel.value = false
   }
 
 })

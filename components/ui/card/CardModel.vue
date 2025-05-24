@@ -38,7 +38,7 @@
                       <FormItem>
                         <FormLabel>Nom</FormLabel>
                         <FormControl>
-                          <Input type="text" v-bind="componentField" @keyup.enter="rnModel"/>
+                          <Input type="text" v-bind="componentField"/>
                         </FormControl>
                         <FormMessage />
                         <FormControl class="float-right">
@@ -74,7 +74,7 @@
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <Button variant="destructive" @keyup.enter="delModel" @click.stop="delModel" :disabled="isLoading">
+                    <Button variant="destructive" @click.stop="delModel" :disabled="isLoading">
                       <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
                       {{ isLoading ? 'Suppression...' : 'Supprimer' }}
                     </Button>
