@@ -28,6 +28,10 @@ export default NuxtAuthHandler({
                 // e.g. return { id: 1, name: 'J Smith', email: 'jsmith@example.com' }
                 // You can also use the `req` object to obtain additional parameters
                 // (i.e., the request IP address)
+
+                if (!credentials || !credentials.email || !credentials.password) {
+                    throw new Error("Veuillez entrer votre email et mot de passe."); // Return null if credentials are not provided
+                }
                 const user = await prisma.user.findFirst({
                     where: {
                         email: credentials.email,
@@ -38,20 +42,14 @@ export default NuxtAuthHandler({
                 })
                 // Vérifier si l'utilisateur existe et si le mot de passe est correct
                 if (!user) {
-                    return {
-                        status : "error",
-                        message: "Cet email n'existe pas."
-                    }
+                    throw new Error("L'email est incorrect. Réessayez."); // Return null if user not found
                 }
 
 
                 // Vérifier le mot de passe
                 const credentialhashedPassword = await bcrypt.compare(credentials.password, user.password);
                 if(!credentialhashedPassword) {
-                    return {
-                        status : "error",
-                        message: "Mot de passe incorrect."
-                    }
+                    throw new Error("Le mot de passe est incorrect. Réessayez."); // Return null if password is incorrect
                 }
                 return user
             }

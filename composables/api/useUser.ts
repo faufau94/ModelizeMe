@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 
 export const useUser = () => {
-  const queryClient = useQueryClient()
 
   // 1) Add user
   const addUserMutation = useMutation({
@@ -12,6 +11,8 @@ export const useUser = () => {
       })
     },
     onSuccess: () => {
+      const queryClient = useQueryClient()
+
       queryClient.invalidateQueries(['users'])
     },
   })
@@ -26,6 +27,8 @@ export const useUser = () => {
       })
     },
     onSuccess: () => {
+      const queryClient = useQueryClient()
+
       queryClient.invalidateQueries(['users'])
     },
   })
@@ -39,6 +42,8 @@ export const useUser = () => {
       })
     },
     onSuccess: () => {
+      const queryClient = useQueryClient()
+
       queryClient.invalidateQueries(['users'])
     },
   })

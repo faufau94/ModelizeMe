@@ -60,6 +60,13 @@
                 </FormItem>
               </FormField>
 
+              <div v-if="message && message.type === 'error'" class="w-full">
+                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 border border-red-300">
+                  <AlertCircle class="h-6 w-6 text-red-500" />
+                  <p class="text-red-600">{{ message.text }}</p>
+                </div>
+              </div>
+
               <FormField name="submit-button">
                 <FormControl class="w-full">
                   <Button type="submit" :disabled="isLoading">
@@ -105,7 +112,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 
-import {Loader2} from "lucide-vue-next";
+import {AlertCircle, Loader2} from "lucide-vue-next";
 
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
@@ -128,7 +135,12 @@ const form = useForm({
   validationSchema: formSchema,
 })
 
-const {signIn, getProviders} = useAuth()
+const message = ref({
+  type: '',
+  text: ''
+})
+
+const {signIn, getProviders, refresh} = useAuth()
 const providers = await getProviders()
 
 const isLoading = ref(false)
@@ -137,12 +149,13 @@ const onSubmit = form.handleSubmit(async (values) => {
    const res = await signIn('credentials', {
     email: values.email,
     password: values.password,
+    redirect: false,
   })
 
 
   if (res?.error) {
-    console.error("Erreur de connexion:", res.error)
-    // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
+    message.value.type = 'error'
+    message.value.text = res.error
   } else {
     // Redirection réussie
       await refresh()
