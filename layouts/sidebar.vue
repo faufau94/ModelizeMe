@@ -146,13 +146,11 @@
         <nav class="py-3">
           <div class="px-3 mb-2">
             <div class="space-y-1">
-              <Button variant="ghost" class="w-full justify-start" asChild>
-                <a href="#" class="font-medium text-primary">
+              <Button @click="goToModelsPage" :variant="route.path.split('/').pop() === 'dashboard' ? 'secondary' : 'ghost'" class="w-full justify-start">
                   <PanelTopIcon class="mr-2 h-4 w-4" />
                   Modèles
-                </a>
               </Button>
-              <Button variant="ghost" class="w-full justify-start">
+              <Button @click="goToMembersPage" :variant="route.path.split('/').pop() === 'members' ? 'secondary' : 'ghost'" class="w-full justify-start">
                 <UsersRound class="mr-2 h-4 w-4" />
                 Membres
               </Button>
@@ -526,7 +524,7 @@
             </template>
             <template v-else>
               <Share2 class="w-4 h-4" />
-              <span>Partager le lien</span>
+              <span>Partager l'espace de travail</span>
             </template>
 
             </Button>
@@ -692,7 +690,9 @@ import {
   CommandList,
   CommandSeparator
 } from '@/components/ui/command'
-import { set } from 'zod/v4';
+
+const route = useRoute()
+
 
 
 // Mock data for team switcher
@@ -727,7 +727,7 @@ const showNewTeamDialog = ref(false)
 const selectedTeam = ref(groups[1].teams[0])
 const copiedWorkspaceLink = ref(false)
 
-const { copyWorkspaceLink } = useWorkspace()
+const { copyWorkspaceLink, goToThisWorkspaceUrl } = useWorkspace()
 
 const copyLink = async () => {
   try {
@@ -739,6 +739,16 @@ const copyLink = async () => {
   } catch (error) {
     
   }
+}
+
+const goToMembersPage = async () => {
+  const url = goToThisWorkspaceUrl('members')
+  await navigateTo(url)
+}
+
+const goToModelsPage = async () => {
+  const url = goToThisWorkspaceUrl('dashboard')
+  await navigateTo(url)
 }
 
 </script>

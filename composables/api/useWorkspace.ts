@@ -18,6 +18,11 @@ export const useWorkspace = () => {
     // sinon, on tombe sur la valeur stockée en session
     return data.value?.user?.lastActiveWorkspaceId ?? null
   })
+
+  const workspaceShareLink = computed(() => {
+    if (!selectedWorkspaceId.value) return ''
+    return `${useRuntimeConfig().public.baseUrl}/app/workspace/${selectedWorkspaceId.value}/join/${selectedWorkspace.value?.inviteCode}`
+  })
   
 
   // — LIST —
@@ -116,14 +121,19 @@ export const useWorkspace = () => {
     await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
   }
 
+  // - Get the workspace url -
+  // const getWorkspaceShareLink = () => {
+  //   return `${useRuntimeConfig().public.baseUrl}/app/workspace/${selectedWorkspace.value.id}/join/${selectedWorkspace.value.inviteCode}`
+  // }
+
   // — COPY WORKSPACE LINK —
   const copyWorkspaceLink = async () => {
-    console.log('Copying workspace link...')
-    console.log('Selected workspace:', selectedWorkspace.value)
-    const link = `${useRuntimeConfig().public.baseUrl}/app/workspace/${selectedWorkspace.value.id}/join/${selectedWorkspace.value.inviteCode}`
-    console.log('Workspace link:', link)
-    await navigator.clipboard.writeText(link)
-    // useToast().success('Workspace link copied to clipboard!')
+    await navigator.clipboard.writeText(workspaceShareLink.value)
+  }
+
+  // — Go to Workspace URL —
+  const goToThisWorkspaceUrl = (addToUrl: string) => {
+    return `/app/workspace/${selectedWorkspaceId.value}/${addToUrl}`
   }
 
   
@@ -135,14 +145,13 @@ export const useWorkspace = () => {
     switchWorkspace,
     joinWorkspace,
     copyWorkspaceLink,
+    goToThisWorkspaceUrl,
 
-    // list
     workspaces,
     isLoadingWorkspaces,
-
-    // selected
     selectedWorkspaceId,
     selectedWorkspace,
     isLoadingSelectedWorkspace,
+    workspaceShareLink,
   }
 }
