@@ -14,16 +14,25 @@ export default defineNuxtConfig({
   modules: [
     "shadcn-nuxt",
     "@nuxtjs/tailwindcss",
-    "@prisma/nuxt",
     "@sidebase/nuxt-auth",
     '@pinia/nuxt',
     "nuxt-lucide-icons",
     'dayjs-nuxt',
     '@vee-validate/nuxt',
+    //'@nuxtjs/i18n'
   ],
+
+  i18n: {
+    defaultLocale: 'en',
+    locales: [
+      { code: 'en', name: 'English', file: 'en.json' },
+      { code: 'fr', name: 'Français', file: 'fr.json' }
+    ]
+  },
 
   vite: {
     optimizeDeps: {
+      include: ["zod"],
       exclude: ['vee-validate']
     },
     resolve: {
@@ -33,6 +42,10 @@ export default defineNuxtConfig({
     }
   },
 
+  router: {
+    middleware: ['require-super-admin'],
+  },
+
   dayjs: {
     locales: ['en', 'fr'],
     defaultLocale: 'fr',
@@ -40,6 +53,12 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+
+    public: {
+      baseUrl: process.env.BASE_URL,
+    },
+
+
     authSecret: process.env.AUTH_SECRET,
     authOrigin: process.env.NUXT_AUTH_ORIGIN,
     baseURL: process.env.NUXT_BASE_URL,
@@ -59,11 +78,15 @@ export default defineNuxtConfig({
     disableServerSideAuth: false,
     originEnvKey: process.env.NUXT_AUTH_ORIGIN || '',
     baseURL: process.env.NUXT_BASE_URL || '',
+    sessionRefresh: {
+      enablePeriodically: true,
+      enableOnWindowFocus: true,
+    },
     provider: {
       type: 'authjs',
       trustHost: false,
       defaultProvider: 'google',
-      addDefaultCallbackUrl: true
+      addDefaultCallbackUrl: true,
     },
   },
 

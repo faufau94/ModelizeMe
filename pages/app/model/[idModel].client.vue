@@ -61,12 +61,12 @@
               <DialogTitle>Renommer le nom</DialogTitle>
             </DialogHeader>
 
-            <form @submit="renameModel">
+            <form @submit="rnModel">
               <FormField v-slot="{ componentField }" name="name">
                 <FormItem>
                   <FormLabel>Nom</FormLabel>
                   <FormControl>
-                    <Input type="text" v-bind="componentField" @keyup.enter="renameModel"/>
+                    <Input type="text" v-bind="componentField" @keyup.enter="rnModel"/>
                   </FormControl>
                   <FormMessage />
                   <FormControl class="float-right">
@@ -325,12 +325,15 @@ import { getLayoutedElements, elkOptions } from '@/utils/useElk.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
-import * as z from "zod";
+import { z } from "zod/v4";;
 import {useForm} from 'vee-validate'
 import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 
+import { useModel } from '@/composables/api/useModel'
+
 
 const route = useRoute()
+const router = useRouter()
 
 const mcdStore = useMCDStore()
 const mldStore = useMLDStore()
@@ -452,7 +455,9 @@ const onEdgeUpdate = async ({edge, connection}) => {
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
 }))
 
@@ -465,25 +470,19 @@ const { handleSubmit, setValues } = useForm({
   validateOnMount: false,
 })
 
-const renameModel = handleSubmit(async (values) => {
+const { renameModel } = useModel()
+const rnModel = handleSubmit(async (values) => {
   isRenamingModel.value = true
-  const res = await $fetch(`/api/models/rename-model?id=${route.params.idModel}`, {
-    method: "PUT",
-    body: {
-      name: values.name
-    }
-  });
+  renameModel(model.value.id,{name: values.name})
 
-  if (res) {
-    model.value.name = values.name
-    isRenamingModel.value = false
-    showDialogRenameModel.value = false
-  }
+  model.value.name = values.name
+  isRenamingModel.value = false
+  showDialogRenameModel.value = false
 })
 
 const goBack = async () => {
   isSubMenuVisible.value = false
-  await navigateTo('/app')
+  router.back()
 }
 
 // Tabs

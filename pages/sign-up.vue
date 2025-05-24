@@ -115,7 +115,7 @@
               </FormField>
 
               <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
-                <Button  class="w-full" variant="outline" @click="signIn(provider?.id, { callbackUrl: '/app' })">
+                <Button  class="w-full" variant="outline" @click="signInProvider(provider.id)">
                   Continuer avec {{ provider?.name }}
                 </Button>
               </div>
@@ -152,23 +152,50 @@ import {Loader2} from "lucide-vue-next";
 
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import * as z from "zod";
+import { z } from "zod/v4";
+import { useUser } from '~/composables/api/useUser';
+import { useWorkspaceNavigation } from '~/composables/api/useWorkspaceNavigation';
+
+
+const {goToDashboard} = useWorkspaceNavigation()
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   firstName: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
-  email: z.string({
-    required_error: "Veuillez remplir le champs.",
-  }).email({ message: "Adresse email invalide." }),
+  email: z
+      .string({error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""})
+      .nonempty("Veuillez remplir le champ.")
+      .refine(
+        // la fonction doit renvoyer true (valide) ou false (erreur)
+        async (email) => {
+          const res = await $fetch("/api/auth/email-exists", {
+            method: "GET",
+            params: { email },
+          })
+          // on suppose que GET /api/users?email=… → { exists: boolean }
+          return !res.body.exists
+        },
+        { message: "Cet email est déjà utilisé." }
+      ),
   password: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.'),
   confirmPassword: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.'),
 }).refine(data => data.password === data.confirmPassword, {
   message: 'Les mots de passe doivent correspondre.',
@@ -180,43 +207,74 @@ const form = useForm({
 })
 
 
-const {signIn, getProviders, status} = useAuth()
+const {signIn, getProviders, refresh} = useAuth()
 const providers = await getProviders()
 
-const router = useRouter()
 const message = ref({
   type: '',
   text: ''
 })
 
+const { addUser } = useUser()
 const isLoading = ref(false)
 const signUp = form.handleSubmit(async (values) => {
   isLoading.value = true
 
-  const res = await useFetch('/api/auth/sign-up', {
-    method: 'POST',
-    body: JSON.stringify(values)
-  })
+  const result = await addUser(values)
+
+  console.log("Response from addUser:", result)
 
 
-  if (res.data.value.status === 200) {
-    message.value = {type: 'success', text: res.data.value.body.message}
+  if (result.status === 200) {
+    message.value.type = 'success'
+    message.value.message =  result.body.message
     setTimeout(() => {
       isLoading.value = false
     }, 5000)
-    //message.value = {text: "", type: ""}
+    message.value = {text: "", type: ""}
 
-    const userLogged = await signIn('credentials',{email: values.email, password: values.password, callbackUrl: '/app'})
+    
+    const res = await signIn('credentials', {
+      email: values.email,
+      password: values.password,
+      redirect: false,
+    })
 
-    if(userLogged) {
-      await router.push({path: "/"})
+    if (res?.error) {
+      message.value.type = 'error'
+      message.value.text = res.error
+  } else {
+      // Redirection réussie
+        await refresh()
+
+        return navigateTo(goToDashboard())
     }
 
+
   } else {
-    message.value = {type: 'error', text: res.data.value.body.error}
+    message.value = {type: 'error', text: result.body.error}
     isLoading.value = false
   }
 })
+
+const signInProvider = async (providerId) => {
+  isLoading.value = true
+  try {
+    const res = await signIn(providerId)
+    if (res?.error) {
+      console.error("Erreur de connexion avec le provider:", res.error)
+      // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
+    } else {
+      // Redirection réussie
+      await refresh()
+      return navigateTo(goToDashboard())
+    }
+  } catch (error) {
+    console.error("Erreur lors de la connexion avec le provider:", error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredProviders = computed(() => {
   return Object.keys(providers)

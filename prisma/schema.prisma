@@ -1,55 +1,215 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.0.x"]
-}
+// schema.prisma
 
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
+generator client {
+  provider      = "prisma-client-js"
+  output        = "generated/prisma"
+  module        = "esm"
+  binaryTargets = ["native", "debian-openssl-1.0.x"]
+}
+
+/////////////////////
+// ENUMS
+/////////////////////
+
+/// Rôle d’un user dans un workspace
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+/// Type de diagramme (existant)
+enum ModelType {
+  MCD
+  MLD
+  MPD
+}
+
+/// Sur quoi porte l’annotation
+enum AnnotationTargetType {
+  TABLE
+  RELATION
+}
+
+/////////////////////
+// USER & AUTH
+/////////////////////
+
 model User {
-  id                Int             @id @default(autoincrement())
-  email             String          @unique
-  password          String?
+  id                Int      @id @default(autoincrement())
+  email             String   @unique
+  password          String?  @db.VarChar(512)
   first_name        String?
   name              String?
   image             String?
   provider          String?
   providerAccountId String?
-  linkedAccounts    LinkedAccount[] // Relation vers les comptes liés
-  models            Model[]
+  createdAt         DateTime @default(now())
+
+  // --- WORKSPACE & TEAMS ---
+  workspaceMemberships WorkspaceMember[] // workspaces où il a un rôle
+  teamMemberships      TeamMember[] // équipes dont il est membre
+
+  lastActiveWorkspaceId String?
+  lastActiveWorkspace   Workspace? @relation("LastActive", fields: [lastActiveWorkspaceId], references: [id])
+
+
+  // --- MODELS & GALERIES ---
+  dataModels     Model[] // modèles qu’il a créés
+  linkedAccounts LinkedAccount[] // connexions externes
+  galleryEntries Galery[] // galeries associées à ses modèles
+
+  // --- ANNOTATIONS ---
+  annotations Annotation[] // commentaires/annotations qu’il a postés
+
+  workspacesOwned Workspace[] @relation("WorkspaceOwner")
+
+  roleId Int
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
   @@map("users")
 }
 
-model Model {
-  id        Int       @id @default(autoincrement())
-  reference String?    @default(uuid())
-  name      String
-  nodes     Json      @default("[]")
-  edges     Json      @default("[]")
-  type      ModelType @default(MCD)
+/// Rôles globaux de la plateforme
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  users       User[]
+  permissions RolePermission[]
+}
+
+/// Permissions granulaires
+model Permission {
+  id          Int              @id @default(autoincrement())
+  action      String           @unique // ex: "manage_users", "view_reports"
+  description String?
+  roles       RolePermission[]
+}
+
+/// Table pivot Role↔Permission
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+/////////////////////
+// WORKSPACES
+/////////////////////
+
+model Workspace {
+  id         String   @id @default(nanoid())
+  name       String
+  inviteCode String   @unique @default(nanoid(16))
+  createdAt  DateTime @default(now())
+
+  ownerId Int
+  owner   User @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  members    WorkspaceMember[] // OWNER, ADMIN, MEMBER
+  teams      Team[] // équipes dans le workspace
+  dataModels Model[] // modèles créés au scope du workspace
+
+  lastActiveUsers User[] @relation("LastActive")
+}
+
+model WorkspaceMember {
+  id              Int           @id @default(autoincrement())
+  userId          Int
+  workspaceId     String
+  role            WorkspaceRole @default(MEMBER)
+  canViewAllTeams Boolean       @default(false)
+
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
-  Galery    Galery[]
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+/////////////////////
+// TEAMS
+/////////////////////
+
+model Team {
+  id         Int      @id @default(autoincrement())
+  name       String
+  inviteCode String   @unique @default(cuid())
+  createdAt  DateTime @default(now())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  members    TeamMember[]
+  dataModels Model[] // modèles propres à cette équipe
+}
+
+model TeamMember {
+  id            Int     @id @default(autoincrement())
+  userId        Int
+  teamId        Int
+  canViewOthers Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+}
+
+/////////////////////
+// MODELS (DIAGRAMMES)
+/////////////////////
+
+model Model {
+  id          Int       @id @default(autoincrement())
+  reference   String    @default(uuid())
+  name        String
+  description String?
+  locked      Boolean   @default(false)
+  nodes       Json      @default("[]")
+  edges       Json      @default("[]")
+  type        ModelType @default(MCD)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Scope : workspace + (optionnellement) team
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  teamId      Int?
+  team        Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  // Auteur
+  authorId Int?
+  author   User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  // Relations existantes
+  Galery      Galery[]
+  // Nouvelles annotations
+  annotations Annotation[]
 
   @@map("models")
 }
 
 model Galery {
   id         Int      @id @default(autoincrement())
-  model      Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
   modelId    Int
-  category   Category @relation(fields: [categoryId], references: [id])
+  model      Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
   categoryId Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("galeries")
 }
@@ -58,7 +218,7 @@ model Category {
   id        Int      @id @default(autoincrement())
   name      String
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
   Galery    Galery[]
 
   @@map("categories")
@@ -66,13 +226,13 @@ model Category {
 
 model LinkedAccount {
   id           Int      @id @default(autoincrement())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       Int
-  provider     String // e.g., 'github', 'gitlab'
-  providerId   String // Identifiant unique sur le provider
-  accessToken  String // Jeton d'accès pour l'API du provider
-  refreshToken String? // Jeton de rafraîchissement (optionnel)
-  username     String? // Nom d'utilisateur sur le provider
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider     String
+  providerId   String
+  accessToken  String
+  refreshToken String?
+  username     String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -80,8 +240,24 @@ model LinkedAccount {
   @@map("linked_accounts")
 }
 
-enum ModelType {
-  MCD
-  MLD
-  MPD
+/////////////////////
+// ANNOTATIONS
+/////////////////////
+
+model Annotation {
+  id         Int                  @id @default(autoincrement())
+  content    String
+  targetType AnnotationTargetType
+  targetId   String // identifiant logique de la table ou relation annotée
+
+  modelId Int
+  model   Model @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  authorId Int?
+  author   User? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("annotations")
 }

@@ -1,15 +1,15 @@
 <template>
   <div class="w-full max-w-6xl mx-auto px-4 py-8">
-    <div v-if="isLoadingPage" class="flex justify-center mt-32 items-center">
+    <div v-if="isLoadingModels" class="flex justify-center mt-32 items-center">
       <Loader2 :size="30" class="animate-spin"/>
     </div>
     <div v-else>
-      <div v-if="areModelsLoaded === true && (models === null || models.length === 0)">
+      <div v-if="isModelsFetched && (models === null || models.length === 0)">
         <div class="flex flex-col items-center justify-center h-[80vh]">
           <div class="text-center space-y-4">
-            <h3 class="text-2xl font-bold">Aucun modèles</h3>
+            <h3 class="text-2xl font-bold">Aucun modèle</h3>
             <p class="text-muted-foreground">Vous n'avez encore pas créé de modèles.</p>
-            <CreateModelDialog/>
+             <CreateModelDialog/>
           </div>
         </div>
       </div>
@@ -26,11 +26,11 @@
     </span>
           </div>
         </div>
-        <div v-if="isLoading" class="flex justify-center mt-32 items-center">
+        <div v-if="isLoadingModels" class="flex justify-center mt-32 items-center">
           <Loader2 :size="30" class="animate-spin"/>
         </div>
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <CardModel v-for="(model, index) in filteredModels" :key="index" :model="model"/>
+          <CardModel v-for="model in filteredModels" :key="model.id" :model="model"/>
         </div>
       </div>
     </div>
@@ -49,28 +49,12 @@ import {Input} from '@/components/ui/input'
 import {useMCDStore} from "@/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
 import CreateModelDialog from "@/components/flow/CreateModelDialog.vue";
+import { useModel } from "@/composables/api/useModel"
 
-definePageMeta({
-  layout: 'sidebar',
-});
 
-const mcdStore = useMCDStore()
-const {models} = storeToRefs(mcdStore)
+const { models, isLoadingModels, isModelsFetched } = useModel()
 
 //const {toast} = useToast()
-
-const isLoading = ref(false);
-const areModelsLoaded = ref(false)
-const isLoadingPage = ref(true);
-
-onMounted(async () => {
-  isLoadingPage.value = false;
-  isLoading.value = true;
-  models.value = await $fetch('/api/models/list', {method: 'GET'});
-  isLoading.value = false
-  areModelsLoaded.value = true
-})
-
 
 const searchTerm = ref("");
 

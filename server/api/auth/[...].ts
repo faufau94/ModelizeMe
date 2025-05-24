@@ -28,27 +28,29 @@ export default NuxtAuthHandler({
                 // e.g. return { id: 1, name: 'J Smith', email: 'jsmith@example.com' }
                 // You can also use the `req` object to obtain additional parameters
                 // (i.e., the request IP address)
+
+                if (!credentials || !credentials.email || !credentials.password) {
+                    throw new Error("Veuillez entrer votre email et mot de passe."); // Return null if credentials are not provided
+                }
                 const user = await prisma.user.findFirst({
                     where: {
                         email: credentials.email,
+                    },
+                    include: {
+                        role: true
                     }
                 })
                 // Vérifier si l'utilisateur existe et si le mot de passe est correct
                 if (!user) {
-                    return {
-                        status : "error",
-                        message: "Cet email n'existe pas."
-                    }
+                    throw new Error("L'email est incorrect. Réessayez."); // Return null if user not found
                 }
 
-                const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
-                if (!isPasswordValid) {
-                    return {
-                        status : "error",
-                        message: "Mot de passe incorrect."
-                    }
-                }
 
+                // Vérifier le mot de passe
+                const credentialhashedPassword = await bcrypt.compare(credentials.password, user.password);
+                if(!credentialhashedPassword) {
+                    throw new Error("Le mot de passe est incorrect. Réessayez."); // Return null if password is incorrect
+                }
                 return user
             }
         }),
@@ -134,12 +136,21 @@ export default NuxtAuthHandler({
                     }
                 }
             } else {
+                
                 // Gestion pour les utilisateurs qui se connectent avec email/password
                 const existingUser = await prisma.user.findUnique({
                     where: { email: credentials.email },
                 });
 
-                if (existingUser && await bcrypt.compare(credentials.password, existingUser.password)) {
+                const isValid = await bcrypt.compare(credentials.password, existingUser.password)
+                if (!isValid) {
+                    // mauvais mot de passe
+                    return null
+                }
+
+            
+                if (existingUser) {
+                    console.log('Mot de passe valide');
                     return existingUser;
                 } else {
                     return null; // Mauvais email ou mot de passe
@@ -149,58 +160,37 @@ export default NuxtAuthHandler({
             // Retourner true pour permettre la connexion
             return true;
         },
-        /*
-        async signIn({ user, account, profile, email, credentials }) {
-            if (account.provider !== 'credentials') {
-                const providerId = account.providerAccountId;
-
-                // Vérifier si l'utilisateur existe déjà
-                const existingUser = await prisma.user.findUnique({
-                    where: {
-                        email: user.email,
-                    },
-                });
-
-                if (!existingUser) {
-                    // Créer un nouvel utilisateur s'il n'existe pas
-                    await prisma.user.create({
-                        data: {
-                            email: user.email,
-                            name: user.name,
-                            first_name: user?.name,
-                            image: user.picture || user.avatar_url,
-                            provider: account.provider,
-                            providerAccountId: providerId,
-                        },
-                    });
-                }
-            }
-
-            // Retourner true pour permettre la connexion
-            return true;
-        },
-         */
         /* on session retrival */
         async session({ session, user, token }) {
-            if (user) {
+            const source = user || token;
+
+            const dbUser = await prisma.user.findUnique({
+                where: { id: source.id as number },
+                select: { lastActiveWorkspaceId: true }
+            })
+
+            console.log('lastActiveWorkspaceId', dbUser?.lastActiveWorkspaceId)
+
+            if (source) {
                 session.user = {
                     ...session.user,
-                    id: user.id,
-                    accounts: user.accounts || [],
+                    id: source.id,
+                    accounts: source.accounts || [],
+                    role: source.role ?? null,
+                    lastActiveWorkspaceId: dbUser?.lastActiveWorkspaceId || null,
                 };
-            } else if (token) {
-                session.user = {
-                    ...session.user,
-                    id: token.id,
-                    accounts: token.accounts || [],
-                };
+
             }
+
             return session;
         },
         /* on JWT token creation or mutation */
         async jwt({ token, user, account, profile, isNewUser }) {
+
             if (user) {
-                token.id = user.id;
+                token.id = user.id
+                token.role = user.role.name || []
+                token.lastActiveWorkspaceId = user.lastActiveWorkspaceId
             }
             return token;
         }

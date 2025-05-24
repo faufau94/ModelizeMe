@@ -4,6 +4,6 @@
 
 <script setup>
 definePageMeta({
-  layout: 'sidebar',
+  layout: 'sidebar-admin',
 });
 </script>

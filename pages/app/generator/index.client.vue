@@ -203,27 +203,36 @@ onUnmounted(() => {
 const formSchema = [
   z.object({
     modelId: z.string({
-      required_error: "Veuillez séléctionner une option",
+        error: (issue) => issue.input === undefined 
+      ? "Veuillez séléctionner une option." 
+      : ""
     }),
     title: z.string({
-      required_error: "Veuillez entrer un nom",
-      invalid_type_error: "Le nom doit être une chaine de caractères",
+      error: (issue) => issue.input === undefined 
+      ? "Veuillez entrer un nom." 
+      : "Le nom doit être une chaine de caractères"
     }).min(3,'Le nom doit être supérieur à 3 caractères'),
   }),
 
   z.object({
     framework: z.string({
-      required_error: "Veuillez séléctionner une option",
+      error: (issue) => issue.input === undefined 
+      ? "Veuillez séléctionner une option." 
+      : ""
     }),
   }),
   z.object({
     orm: z.string({
-      required_error: "Veuillez séléctionner une option",
+      error: (issue) => issue.input === undefined 
+      ? "Veuillez séléctionner une option." 
+      : ""
     }),
   }),
   z.object({
     database: z.string({
-      required_error: "Veuillez séléctionner une option",
+      error: (issue) => issue.input === undefined 
+      ? "Veuillez séléctionner une option." 
+      : ""
     }),
   }),
 ]
