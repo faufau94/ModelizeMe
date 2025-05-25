@@ -14,12 +14,15 @@ export default defineEventHandler(async event => {
             }
         };
     }
-
+    console.log('Joining workspace with invite code:', inviteCode, 'and workspace ID:', workspaceId);
     const workspace = await prisma.workspace.findUnique({
         where: {
-            id: workspaceId
+            id: workspaceId,
+            inviteCode: inviteCode,
         }
     });
+
+    console.log('Found workspace:', workspace);
 
     if (!workspace) {
         console.error('Workspace not found');

@@ -106,11 +106,19 @@ export const useWorkspace = () => {
   // — JOIN WORKSPACE —
   const joinWorkspace = async (workspaceId: string, inviteCode: string) => {
     const headers = useRequestHeaders(['cookie']) as HeadersInit
-    await $fetch('/api/workspaces/join', {
+    const res = await $fetch('/api/workspaces/join', {
       method: 'POST',
       query: { workspaceId, inviteCode },
       headers,
     })
+
+    if (res.status !== 200) {
+      return {
+        status: 404,
+        body: { message: 'Workspace not found or invalid invite code' },
+      }
+    }
+
     // Rafraîchir la liste des workspaces après avoir rejoint un workspace
     await queryClient.invalidateQueries(['workspaces'])
     // Mettre à jour le workspace sélectionné
