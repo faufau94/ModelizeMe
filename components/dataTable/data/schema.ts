@@ -40,9 +40,9 @@ export const modelSchema = z.object({
 
 export const memberSchema = z.object({
   id: z.string(),
-  userId: z.string(),
+  userId: z.number(),
   workspaceId: z.string(),
-  roleId: z.string(),
+  roleId: z.number(),
   canViewAllTeams: z.boolean(),
 })
 

@@ -16,15 +16,31 @@ export default defineEventHandler(async event => {
   }
 
   try {
+
+    // Retrieve owner of the workspace
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: String(workspaceId) },
+      include: { owner: true }
+    })
+    
     // Retrieve members of the workspace
     const members = await prisma.workspaceMember.findMany({
       where: { workspaceId: String(workspaceId) },
-      include: {
-        user: { select: { id: true, email: true, first_name: true, name: true, image: true } }
-      }
+      include: { user: true }
     })
+    
+    const allMembers = [
+      {
+        userId: workspace?.ownerId,
+        workspaceId: workspace?.id,
+        role: 'OWNER',
+        canViewAllTeams: true,
+        user: workspace?.owner
+      },
+      ...members
+    ]
 
-    return members
+    return allMembers
   } catch (error) {
     return { status: 500, body: { message: 'Error fetching members' } }
   }

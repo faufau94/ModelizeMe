@@ -1,5 +1,6 @@
 <template>
   <div class="min-h-screen bg-background p-4 md:p-8">
+    <Toaster/>
     <div class="mx-auto max-w-4xl bg-card rounded-xl shadow-sm">
       <!-- Header -->
       <div class="border-b p-6" v-if="data?.user?.id === selectedWorkspace?.ownerId">
@@ -8,7 +9,7 @@
       <div v-else class="">
         <h1 class="text-2xl font-semibold text-foreground">Team Members</h1>
       </div>
-
+      
       <!-- Share Link Section -->
       <div v-if="data?.user?.id === selectedWorkspace?.ownerId" class="border-b p-6">
         <h2 class="text-lg font-medium text-foreground mb-4">Share Link</h2>
@@ -32,9 +33,9 @@
       </div>
 
       <!-- Members List Section -->
-      <div class="p-6">
+      <div v-if="!isLoadingMembers" class="p-6">
         <h2 v-if="data?.user?.id === selectedWorkspace?.ownerId" class="text-lg font-medium text-foreground mb-4">Team Members</h2>
-        
+
         <Table>
           <TableHeader>
             <TableRow>
@@ -44,7 +45,7 @@
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="(member, index) in members" :key="member.id">
+            <TableRow v-for="(member, index) in members" :key="member.user.id">
               <TableCell>
                 <div class="flex items-center">
                   <Avatar>
@@ -57,10 +58,8 @@
                 </div>
               </TableCell>
               <TableCell>
-                <Badge v-if="index === 0" variant="secondary" class="bg-amber-100 text-amber-800 hover:bg-amber-100">
-                  Owner
-                </Badge>
-                <DropdownMenu v-else>
+                <template v-if="data?.user?.id === selectedWorkspace?.ownerId && member.role !== 'OWNER'">
+                  <DropdownMenu>
                   <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="w-[110px] justify-between">
                       {{ member.role }}
@@ -79,28 +78,44 @@
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </template>
+
+                <template v-else>
+                  <template v-if="member.role === 'OWNER'">
+                    <Badge variant="secondary" class="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                      Owner
+                    </Badge>
+                  </template>
+                  <template v-else>
+                    <Badge variant="secondary" class="bg-gray-100 text-gray-800">
+                      {{ member.role }}
+                    </Badge>
+                  </template>
+                </template>
+                
               </TableCell>
               <TableCell class="text-right">
                 <Button
-                  v-if="index !== 0"
-                  @click="confirmRemoveMember(member.id)"
+                  v-if="data?.user?.id === selectedWorkspace?.ownerId && member.role !== 'OWNER'"
+                  @click="confirmRemoveMember(member.userId)"
                   variant="ghost"
                   class="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
                   Remove
                 </Button>
+
               </TableCell>
             </TableRow>
           </TableBody>
         </Table>
         
         <!-- Add Member Button -->
-        <div class="mt-4">
+        <!-- <div class="mt-4">
           <Button @click="showAddMemberDialog = true">
             <PlusIcon class="w-4 h-4 mr-2" />
             Add Member
           </Button>
-        </div>
+        </div> -->
       </div>
     </div>
     
@@ -185,6 +200,7 @@ import {
   DialogFooter, DialogTitle, DialogDescription
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import {useToast} from '@/components/ui/toast/use-toast'
 
 
 const { data } = useAuth()
@@ -192,7 +208,7 @@ const { data } = useAuth()
 const { workspaceShareLink, selectedWorkspace, regenerateWorkspaceInviteCode } = useWorkspace()
 
 // Use Member composable
-const { members, createMember, updateMember, deleteMember } = useMember()
+const { members, isLoadingMembers, addMember, updateMember, deleteMember } = useMember()
 
 // Local state
 const copied = ref(false)
@@ -201,7 +217,7 @@ const newMemberEmail = ref('')
 const memberToRemove = ref<number|null>(null)
 
 // Available roles
-const availableRoles = ['ADMIN', 'MEMBER']
+const availableRoles = ['Owner', 'Member']
 
 // Copy share link to clipboard
 const copyShareLink = () => {
@@ -225,7 +241,7 @@ const changeMemberRole = async (memberId: number, newRole: string) => {
 // Add new member (invite via API)
 const addNewMember = async () => {
   if (!newMemberEmail.value) return
-  await createMember({ email: newMemberEmail.value })
+  await addMember({ email: newMemberEmail.value })
   showAddMemberDialog.value = false
   newMemberEmail.value = ''
 }
@@ -235,11 +251,15 @@ const confirmRemoveMember = (id: number) => {
   memberToRemove.value = id
 }
 
+const { toast } = useToast()
 // Remove member
 const removeMember = async (id: number|null) => {
   if (id) {
-    await deleteMember(id.toString())
+    const res = await deleteMember(id.toString())
     memberToRemove.value = null
+    toast({
+      title: res.body.message
+    })
   }
 }
 </script>

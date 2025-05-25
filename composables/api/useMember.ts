@@ -46,14 +46,14 @@ export function useMember() {
 //   })
 
   // — CREATE MEMBER —
-  const createMemberMutation = useMutation({
+  const addMemberMutation = useMutation({
     mutationFn: async (payload: any) =>
-      await $fetch('/api/members/create', { method: 'POST', body: payload }),
+      await $fetch('/api/members/add', { method: 'POST', body: payload }),
     onSuccess: () => {
       queryClient.invalidateQueries(['workspaceMembers', selectedWorkspaceId.value])
     }
   })
-  const createMember = (member: any) => createMemberMutation.mutateAsync(member)
+  const addMember = (member: any) => addMemberMutation.mutateAsync(member)
 
   // — UPDATE MEMBER —
   const updateMemberMutation = useMutation({
@@ -72,7 +72,7 @@ export function useMember() {
   // — DELETE MEMBER —
   const deleteMemberMutation = useMutation({
     mutationFn: async (id: string) =>
-      await $fetch('/api/members/delete', { method: 'DELETE', query: { id } }),
+      await $fetch('/api/members/delete', { method: 'DELETE', query: { userId: id, workspaceId: selectedWorkspaceId.value } }),
     onSuccess: () => {
       queryClient.invalidateQueries(['workspaceMembers', selectedWorkspaceId.value])
     }
@@ -86,7 +86,7 @@ export function useMember() {
     listError,
 
     // mutations
-    createMember,
+    addMember,
     updateMember,
     deleteMember
   }
