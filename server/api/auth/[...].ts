@@ -51,6 +51,7 @@ export default NuxtAuthHandler({
                 if(!credentialhashedPassword) {
                     throw new Error("Le mot de passe est incorrect. Réessayez."); // Return null if password is incorrect
                 }
+
                 return user
             }
         }),
@@ -90,7 +91,7 @@ export default NuxtAuthHandler({
                         data: {
                             email: user.email,
                             name: user.name,
-                            first_name: user?.name,
+                            first_name: user?.first_name,
                             image: user.picture || user.avatar_url,
                             linkedAccounts: {
                                 create: {
@@ -142,6 +143,7 @@ export default NuxtAuthHandler({
                     where: { email: credentials.email },
                 });
 
+
                 const isValid = await bcrypt.compare(credentials.password, existingUser.password)
                 if (!isValid) {
                     // mauvais mot de passe
@@ -150,14 +152,12 @@ export default NuxtAuthHandler({
 
             
                 if (existingUser) {
-                    console.log('Mot de passe valide');
                     return existingUser;
                 } else {
                     return null; // Mauvais email ou mot de passe
                 }
             }
 
-            // Retourner true pour permettre la connexion
             return true;
         },
         /* on session retrival */
@@ -177,6 +177,7 @@ export default NuxtAuthHandler({
                     accounts: source.accounts || [],
                     role: source.role ?? null,
                     lastActiveWorkspaceId: dbUser?.lastActiveWorkspaceId || null,
+                    first_name: source.first_name || null,
                 };
 
             }
@@ -190,6 +191,7 @@ export default NuxtAuthHandler({
                 token.id = user.id
                 token.role = user.role.name || []
                 token.lastActiveWorkspaceId = user.lastActiveWorkspaceId
+                token.first_name = user.first_name || null
             }
             return token;
         }

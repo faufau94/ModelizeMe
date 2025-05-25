@@ -21,7 +21,7 @@
       </div>
       
       <!-- Team Switcher -->
-      <div class="px-4 py-2">
+      <!-- <div class="px-4 py-2">
         <Dialog v-model:open="showNewTeamDialog">
           <Popover v-model:open="teamSwitcherOpen">
             <PopoverTrigger asChild>
@@ -139,7 +139,7 @@
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+      </div> -->
       
       <!-- Navigation Menu -->
       <ScrollArea class="flex-1">
@@ -553,22 +553,25 @@
           <!-- <Button variant="ghost" size="icon">
             <BellIcon class="h-5 w-5" />
           </Button> -->
-          
+
           <!-- User Account Dropdown (Updated) -->
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" class="relative h-8 w-8 rounded-full">
                 <Avatar class="h-8 w-8">
-                  <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
-                  <AvatarFallback>SC</AvatarFallback>
+                  {{ data?.user?.first_name?.charAt(0).toUpperCase() + data?.user?.name?.charAt(0).toUpperCase()  }}
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-56" align="end">
               <DropdownMenuLabel class="font-normal">
                 <div class="flex flex-col space-y-1">
-                  <p class="text-sm font-medium leading-none">shadcn</p>
-                  <p class="text-xs leading-none text-muted-foreground">m@example.com</p>
+                  <p class="text-sm font-medium leading-none">
+                    {{ data?.user?.first_name + ' ' + data?.user?.name  }}
+                  </p>
+                  <p class="text-xs leading-none text-muted-foreground">
+                    {{ data?.user?.email  }}
+                  </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -692,6 +695,7 @@ import {
 } from '@/components/ui/command'
 
 const route = useRoute()
+const { data } = useAuth()
 
 
 

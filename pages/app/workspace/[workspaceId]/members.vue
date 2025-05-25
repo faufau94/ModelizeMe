@@ -2,12 +2,15 @@
   <div class="min-h-screen bg-background p-4 md:p-8">
     <div class="mx-auto max-w-4xl bg-card rounded-xl shadow-sm">
       <!-- Header -->
-      <div class="border-b p-6">
+      <div class="border-b p-6" v-if="data?.user?.id === selectedWorkspace?.ownerId">
         <h1 class="text-2xl font-semibold text-foreground">Project Settings</h1>
+      </div>
+      <div v-else class="">
+        <h1 class="text-2xl font-semibold text-foreground">Team Members</h1>
       </div>
 
       <!-- Share Link Section -->
-      <div class="border-b p-6">
+      <div v-if="data?.user?.id === selectedWorkspace?.ownerId" class="border-b p-6">
         <h2 class="text-lg font-medium text-foreground mb-4">Share Link</h2>
         <div class="flex flex-col sm:flex-row gap-3">
           <Input
@@ -28,9 +31,9 @@
         </div>
       </div>
 
-      <!-- Users List Section -->
+      <!-- Members List Section -->
       <div class="p-6">
-        <h2 class="text-lg font-medium text-foreground mb-4">Team Members</h2>
+        <h2 v-if="data?.user?.id === selectedWorkspace?.ownerId" class="text-lg font-medium text-foreground mb-4">Team Members</h2>
         
         <Table>
           <TableHeader>
@@ -41,30 +44,26 @@
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow v-for="(user, index) in users" :key="user.id">
+            <TableRow v-for="(member, index) in members" :key="member.id">
               <TableCell>
                 <div class="flex items-center">
                   <Avatar>
-                    <AvatarImage :src="user.avatar" :alt="user.name" />
-                    <AvatarFallback>{{ getInitials(user.name) }}</AvatarFallback>
+                    {{ member?.user?.name?.charAt(0).toUpperCase() }}
                   </Avatar>
                   <div class="ml-4">
-                    <div class="font-medium">{{ user.name }}</div>
-                    <div class="text-sm text-muted-foreground">{{ user.email }}</div>
+                    <div class="font-medium">{{ member?.user?.first_name }} {{ member?.user?.name }}</div>
+                    <div class="text-sm text-muted-foreground">{{ member?.user?.email }}</div>
                   </div>
                 </div>
               </TableCell>
               <TableCell>
-                <!-- Owner (first user) - no dropdown -->
                 <Badge v-if="index === 0" variant="secondary" class="bg-amber-100 text-amber-800 hover:bg-amber-100">
                   Owner
                 </Badge>
-                
-                <!-- Other users - dropdown -->
                 <DropdownMenu v-else>
                   <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="w-[110px] justify-between">
-                      {{ user.role }}
+                      {{ member.role }}
                       <ChevronDownIcon class="ml-2 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -74,7 +73,7 @@
                     <DropdownMenuItem 
                       v-for="role in availableRoles" 
                       :key="role"
-                      @click="changeUserRole(user.id, role)"
+                      @click="changeMemberRole(member.id, role)"
                     >
                       {{ role }}
                     </DropdownMenuItem>
@@ -84,7 +83,7 @@
               <TableCell class="text-right">
                 <Button
                   v-if="index !== 0"
-                  @click="confirmRemoveUser(user)"
+                  @click="confirmRemoveMember(member.id)"
                   variant="ghost"
                   class="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
@@ -137,21 +136,21 @@
     </Dialog>
 
     <!-- Confirm Remove Dialog -->
-    <Dialog :open="!!userToRemove" @update:open="userToRemove = $event ? userToRemove : null">
+    <Dialog :open="!!memberToRemove" @update:open="memberToRemove = $event ? memberToRemove : null">
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Remove Team Member</DialogTitle>
           <DialogDescription>
-            Are you sure you want to remove {{ userToRemove?.name }} from the team?
+            Are you sure you want to remove this member?
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" @click="userToRemove = null">
+          <Button variant="outline" @click="memberToRemove = null">
             Cancel
           </Button>
           <Button 
             variant="destructive" 
-            @click="removeUser(userToRemove?.id)"
+            @click="removeMember(memberToRemove)"
           >
             Remove
           </Button>
@@ -161,143 +160,86 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 
 definePageMeta({
   layout: 'sidebar',
-});
-import { ref } from 'vue';
-import { CopyIcon, CheckIcon, RefreshCwIcon, ChevronDownIcon, PlusIcon } from 'lucide-vue-next';
+})
+import { ref } from 'vue'
+import { useWorkspace } from '@/composables/api/useWorkspace'
+import { useMember } from '@/composables/api/useMember'
 
-// Import shadcn-vue components with correct paths
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+// UI components and icons
+import { CopyIcon, CheckIcon, RefreshCwIcon, ChevronDownIcon, PlusIcon } from 'lucide-vue-next'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { 
-  DropdownMenu, 
-  DropdownMenuTrigger, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator 
-} from '@/components/ui/dropdown-menu';
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu'
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogFooter, 
-  DialogTitle, 
-  DialogDescription 
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useWorkspace } from '@/composables/api/useWorkspace';
+  Dialog, DialogContent, DialogHeader,
+  DialogFooter, DialogTitle, DialogDescription
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 
 
-const { workspaceShareLink } = useWorkspace();
-// Share link state
-const copied = ref(false);
+const { data } = useAuth()
+// Extract workspace share link
+const { workspaceShareLink, selectedWorkspace, regenerateWorkspaceInviteCode } = useWorkspace()
 
-// Users state
-const users = ref([
-  {
-    id: 1,
-    name: 'Alex Johnson',
-    email: 'alex@example.com',
-    role: 'Owner',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg'
-  },
-  {
-    id: 2,
-    name: 'Sarah Williams',
-    email: 'sarah@example.com',
-    role: 'Admin',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg'
-  },
-  {
-    id: 3,
-    name: 'Michael Brown',
-    email: 'michael@example.com',
-    role: 'Member',
-    avatar: 'https://randomuser.me/api/portraits/men/46.jpg'
-  },
-  {
-    id: 4,
-    name: 'Emily Davis',
-    email: 'emily@example.com',
-    role: 'Member',
-    avatar: 'https://randomuser.me/api/portraits/women/67.jpg'
-  }
-]);
+// Use Member composable
+const { members, createMember, updateMember, deleteMember } = useMember()
+
+// Local state
+const copied = ref(false)
+const showAddMemberDialog = ref(false)
+const newMemberEmail = ref('')
+const memberToRemove = ref<number|null>(null)
 
 // Available roles
-const availableRoles = ['Admin', 'Member'];
-
-// Dialog states
-const showAddMemberDialog = ref(false);
-const newMemberEmail = ref('');
-const userToRemove = ref(null);
+const availableRoles = ['ADMIN', 'MEMBER']
 
 // Copy share link to clipboard
 const copyShareLink = () => {
-  navigator.clipboard.writeText(workspaceShareLink.value);
-  copied.value = true;
-  setTimeout(() => {
-    copied.value = false;
-  }, 2000);
-};
+  navigator.clipboard.writeText(workspaceShareLink.value)
+  copied.value = true
+  setTimeout(() => { copied.value = false }, 2000)
+}
 
-// Generate a new share link
-const regenerateShareLink = () => {
-  // In a real app, you would call an API to generate a new link
-//   const randomString = Math.random().toString(36).substring(2, 15);
-//   shareLink.value = `https://app.example.com/invite/team/${randomString}`;
-};
+// Regenerate share link (API call placeholder)
+const regenerateShareLink = async () => {
+  await regenerateWorkspaceInviteCode()
+  copied.value = false  
+}
 
-// Get user initials for avatar fallback
-const getInitials = (name) => {
-  return name
-    .split(' ')
-    .map(part => part.charAt(0))
-    .join('')
-    .toUpperCase();
-};
 
-// Change user role
-const changeUserRole = (userId, newRole) => {
-  const userIndex = users.value.findIndex(user => user.id === userId);
-  if (userIndex !== -1) {
-    users.value[userIndex].role = newRole;
+// Change member role
+const changeMemberRole = async (memberId: number, newRole: string) => {
+  await updateMember(memberId.toString(), { role: newRole })
+}
+
+// Add new member (invite via API)
+const addNewMember = async () => {
+  if (!newMemberEmail.value) return
+  await createMember({ email: newMemberEmail.value })
+  showAddMemberDialog.value = false
+  newMemberEmail.value = ''
+}
+
+// Confirm remove member
+const confirmRemoveMember = (id: number) => {
+  memberToRemove.value = id
+}
+
+// Remove member
+const removeMember = async (id: number|null) => {
+  if (id) {
+    await deleteMember(id.toString())
+    memberToRemove.value = null
   }
-};
-
-// Confirm user removal
-const confirmRemoveUser = (user) => {
-  userToRemove.value = user;
-};
-
-// Remove user
-const removeUser = (userId) => {
-  if (!userId) return;
-  users.value = users.value.filter(user => user.id !== userId);
-  userToRemove.value = null;
-};
-
-// Add new member
-const addNewMember = () => {
-  if (newMemberEmail.value) {
-    // In a real app, you would send an invitation via API
-    const newId = Math.max(...users.value.map(u => u.id)) + 1;
-    users.value.push({
-      id: newId,
-      name: newMemberEmail.value.split('@')[0], // Simple name from email
-      email: newMemberEmail.value,
-      role: 'Member',
-      avatar: `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'men' : 'women'}/${Math.floor(Math.random() * 99)}.jpg`
-    });
-    newMemberEmail.value = '';
-    showAddMemberDialog.value = false;
-  }
-};
+}
 </script>

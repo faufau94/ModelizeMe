@@ -38,8 +38,17 @@ export const modelSchema = z.object({
   inviteCode: z.string(),
 })
 
+export const memberSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  workspaceId: z.string(),
+  roleId: z.string(),
+  canViewAllTeams: z.boolean(),
+})
+
 
 export type User = z.infer<typeof userSchema>
 export type Role = z.infer<typeof roleSchema>
 export type Workspace = z.infer<typeof workspaceSchema>
 export type Model = z.infer<typeof modelSchema>
+export type Member = z.infer<typeof memberSchema>

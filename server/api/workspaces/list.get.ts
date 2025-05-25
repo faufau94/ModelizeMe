@@ -1,7 +1,6 @@
 // server/api/workspaces/list.get.ts
 import prisma from "~/lib/prisma"
 import { getServerSession } from "#auth"
-import { createError, defineEventHandler } from "h3"
 
 export default defineEventHandler(async (event) => {
   // 1) Récupère l’ID utilisateur depuis la session

@@ -121,10 +121,18 @@ export const useWorkspace = () => {
     await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
   }
 
-  // - Get the workspace url -
-  // const getWorkspaceShareLink = () => {
-  //   return `${useRuntimeConfig().public.baseUrl}/app/workspace/${selectedWorkspace.value.id}/join/${selectedWorkspace.value.inviteCode}`
-  // }
+  // — REGENERATE WORKSPACE INVITE CODE —
+  const regenerateWorkspaceInviteCode = async () => {
+    const headers = useRequestHeaders(['cookie']) as HeadersInit
+    await $fetch<string>('/api/workspaces/regenerate-invite-code', {
+      method: 'PUT',
+      query: { workspaceId: selectedWorkspaceId.value },
+      headers,
+    })
+
+    await queryClient.invalidateQueries(['workspace', selectedWorkspaceId.value])
+  }
+    
 
   // — COPY WORKSPACE LINK —
   const copyWorkspaceLink = async () => {
@@ -146,6 +154,7 @@ export const useWorkspace = () => {
     joinWorkspace,
     copyWorkspaceLink,
     goToThisWorkspaceUrl,
+    regenerateWorkspaceInviteCode,
 
     workspaces,
     isLoadingWorkspaces,
