@@ -78,6 +78,23 @@ async function main() {
     },
   })
 
+  // 5) Création d'un membre de workspace pour l'utilisateur normal
+
+  const workspaceRoles = [
+    { name: "OWNER", description: "Owner member role" },
+    { name: "ADMIN", description: "Admin member role" },
+    { name: "MEMBER", description: "Standard member role" },
+  ];
+
+  for (const role of workspaceRoles) {
+    await prisma.workspaceRole.upsert({
+      where: { name: role.name },
+      update: {},
+      create: role,
+    });
+  }
+
+
   console.log("✅ Seed terminé : rôles et users créés avec roleId.")
 }
 

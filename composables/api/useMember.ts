@@ -88,6 +88,6 @@ export function useMember() {
     // mutations
     addMember,
     updateMember,
-    deleteMember
+    deleteMember,
   }
 }

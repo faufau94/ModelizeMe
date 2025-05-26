@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { Loader2 } from 'lucide-vue-next'
+import { AlertCircle, Loader2 } from 'lucide-vue-next'
 import { ref } from 'vue'
 import { useWorkspace } from '~/composables/api/useWorkspace'
 
@@ -60,24 +60,15 @@ const message = ref({
 const joinNewWorkspace = async () => {
   isJoining.value = true
   
-  try {
-    const res = await joinWorkspace(workspaceId, inviteCode)
+  const res = await joinWorkspace(workspaceId, inviteCode)
 
-    if (res.status !== 200) {
-      message.value = {
-        type: 'error',
-        text: res.body.message
-      }
-    }
-    
-    
-  } catch (error) {
+  if (res.status !== 200) {
     message.value = {
-        type: 'error',
-        text: 'Échec de la connexion à l\'espace de travail'
-      }
-  } finally {
-    isJoining.value = false
+      type: 'error',
+      text: res.body.message
+    }
   }
+  isJoining.value = false
+    
 }
 </script>

@@ -16,18 +16,13 @@ export default defineEventHandler(async event => {
   }
 
   try {
+    console.log('Updating user with id:', id, 'and data:', data)
     // Update user fields
-    const updated = await prisma.user.update({
+    const updated = await prisma.workspaceMember.update({
       where: { id: Number(id) },
-      data: {
-        email: data.email,
-        first_name: data.first_name,
-        name: data.name,
-        image: data.image,
-        roleId: data.roleId ? Number(data.roleId) : undefined
-      },
-      select: { id: true, email: true }
+      data: data
     })
+
     return { status: 200, body: { updated, message: `User "${updated.email}" updated successfully` } }
   } catch (error) {
     return { status: 500, body: { message: 'Error updating user' } }

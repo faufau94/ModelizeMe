@@ -1,7 +1,7 @@
 // ~/composables/useWorkspace.ts
 import { computed } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
-import type { Workspace } from '@/components/dataTable/data/schema'
+import type { Workspace, WorkspaceRole } from '@/components/dataTable/data/schema'
 
 export const useWorkspace = () => {
   const route = useRoute()
@@ -25,7 +25,7 @@ export const useWorkspace = () => {
   })
   
 
-  // — LIST —
+  // — LIST WORKSPACES —
   const {data: workspaces, isLoading: isLoadingWorkspaces, error, suspense } = useQuery<Workspace[]>({
     queryKey: ['workspaces'],
     queryFn: async () => {
@@ -38,7 +38,7 @@ export const useWorkspace = () => {
     },
     })
 
-  // — READ SELECTED —
+  // — READ SELECTED WORKSPACE —
   const {data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery<Workspace>({
     queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
     queryFn: async ({ queryKey }) => {
@@ -56,7 +56,7 @@ export const useWorkspace = () => {
     enabled: computed(() => selectedWorkspaceId.value !== null),
   })
 
-  // — CREATE —
+  // — CREATE WORKSPACE —
   const addWorkspaceMutation = useMutation({
     mutationFn: async (payload: any) =>
       await $fetch('/api/workspaces/create', { method: 'POST', body: payload }),
@@ -66,7 +66,7 @@ export const useWorkspace = () => {
     return addWorkspaceMutation.mutateAsync(newWorkspace)
   } 
 
-  // — EDIT —
+  // — EDIT WORKSPACE —
   const editWorkspaceMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) =>
       await $fetch('/api/workspaces/edit', { method: 'PUT', query: { id }, body: data }),
@@ -75,7 +75,7 @@ export const useWorkspace = () => {
   const editWorkspace = (id: number, updatedData: any) =>
     editWorkspaceMutation.mutateAsync({ id, data: updatedData })
 
-  // — DELETE —
+  // — DELETE WORKSPACE —
   const deleteWorkspaceMutation = useMutation({
     mutationFn: async (id: string) =>
       await $fetch('/api/workspaces/delete', { method: 'DELETE', query: { id } }),
@@ -140,6 +140,19 @@ export const useWorkspace = () => {
 
     await queryClient.invalidateQueries(['workspace', selectedWorkspaceId.value])
   }
+
+  // — GET WORKSPACE ROLE —
+  const {data: workspaceRoles, isLoading: isLoadingWorkspaceRoles } = useQuery<WorkspaceRole[]>({
+    queryKey: ['workspaceRoles'],
+    queryFn: async () => {
+      const headers = useRequestHeaders(['cookie']) as HeadersInit
+      const res = await $fetch<Workspace[]>('/api/workspaces/list-roles', {
+        method: 'GET',
+        headers
+      })
+      return res
+    },
+    })
     
 
   // — COPY WORKSPACE LINK —
@@ -165,10 +178,13 @@ export const useWorkspace = () => {
     regenerateWorkspaceInviteCode,
 
     workspaces,
+    workspaceRoles,
+    workspaceShareLink,
+
+    isLoadingWorkspaceRoles,
     isLoadingWorkspaces,
     selectedWorkspaceId,
     selectedWorkspace,
     isLoadingSelectedWorkspace,
-    workspaceShareLink,
   }
 }

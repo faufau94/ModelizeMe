@@ -1,5 +1,6 @@
 <template>
   <div class="min-h-screen bg-background p-4 md:p-8">
+
     <Toaster/>
     <div class="mx-auto max-w-4xl bg-card rounded-xl shadow-sm">
       <!-- Header -->
@@ -35,13 +36,12 @@
       <!-- Members List Section -->
       <div v-if="!isLoadingMembers" class="p-6">
         <h2 v-if="data?.user?.id === selectedWorkspace?.ownerId" class="text-lg font-medium text-foreground mb-4">Team Members</h2>
-
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead class="text-right">Actions</TableHead>
+              <TableHead v-if="data?.user?.id === selectedWorkspace?.ownerId" class="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -58,11 +58,11 @@
                 </div>
               </TableCell>
               <TableCell>
-                <template v-if="data?.user?.id === selectedWorkspace?.ownerId && member.role !== 'OWNER'">
+                <template v-if="data?.user?.id === selectedWorkspace?.ownerId && member?.role?.name !== 'OWNER' && !isLoadingWorkspaceRoles">
                   <DropdownMenu>
                   <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="w-[110px] justify-between">
-                      {{ member.role }}
+                      {{ member?.role?.name }}
                       <ChevronDownIcon class="ml-2 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -70,25 +70,25 @@
                     <DropdownMenuLabel>Change Role</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
-                      v-for="role in availableRoles" 
-                      :key="role"
-                      @click="changeMemberRole(member.id, role)"
+                      v-for="role in workspaceRoles.filter(r => r.name !== 'OWNER')" 
+                      :key="role.id"
+                      @click="changeMemberRole(member.id, role.id)"
                     >
-                      {{ role }}
+                      {{ role?.name ? role.name.charAt(0).toUpperCase() + role.name.slice(1).toLowerCase() : '' }}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 </template>
 
                 <template v-else>
-                  <template v-if="member.role === 'OWNER'">
+                  <template v-if="member?.role?.name === 'OWNER'">
                     <Badge variant="secondary" class="bg-amber-100 text-amber-800 hover:bg-amber-100">
                       Owner
                     </Badge>
                   </template>
                   <template v-else>
                     <Badge variant="secondary" class="bg-gray-100 text-gray-800">
-                      {{ member.role }}
+                      {{ member?.role?.name }}
                     </Badge>
                   </template>
                 </template>
@@ -96,7 +96,7 @@
               </TableCell>
               <TableCell class="text-right">
                 <Button
-                  v-if="data?.user?.id === selectedWorkspace?.ownerId && member.role !== 'OWNER'"
+                  v-if="data?.user?.id === selectedWorkspace?.ownerId && member?.role?.name !== 'OWNER'"
                   @click="confirmRemoveMember(member.userId)"
                   variant="ghost"
                   class="text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -205,7 +205,7 @@ import {useToast} from '@/components/ui/toast/use-toast'
 
 const { data } = useAuth()
 // Extract workspace share link
-const { workspaceShareLink, selectedWorkspace, regenerateWorkspaceInviteCode } = useWorkspace()
+const { workspaceShareLink, selectedWorkspace, workspaceRoles, isLoadingWorkspaceRoles, regenerateWorkspaceInviteCode } = useWorkspace()
 
 // Use Member composable
 const { members, isLoadingMembers, addMember, updateMember, deleteMember } = useMember()
@@ -231,11 +231,28 @@ const regenerateShareLink = async () => {
   await regenerateWorkspaceInviteCode()
   copied.value = false  
 }
+const { toast } = useToast()
 
 
 // Change member role
-const changeMemberRole = async (memberId: number, newRole: string) => {
-  await updateMember(memberId.toString(), { role: newRole })
+const changeMemberRole = async (memberId: number, newRoleId: number) => {
+  const res = await updateMember(memberId.toString(), { roleId: newRoleId })
+
+
+  if (res.status === 200) {
+    // Optionally show a success message
+    toast({
+      title: 'Role updated successfully',
+      description: `Member's role has been changed to ${res.body.role.name}.`
+    })
+  } else {
+    // Handle error case
+    toast({
+      title: 'Error updating role',
+      description: res.body.message || 'An error occurred while updating the member role.',
+      variant: 'destructive'
+    })
+  }
 }
 
 // Add new member (invite via API)
@@ -251,7 +268,6 @@ const confirmRemoveMember = (id: number) => {
   memberToRemove.value = id
 }
 
-const { toast } = useToast()
 // Remove member
 const removeMember = async (id: number|null) => {
   if (id) {

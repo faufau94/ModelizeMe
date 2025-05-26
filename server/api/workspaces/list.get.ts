@@ -19,12 +19,16 @@ export default defineEventHandler(async (event) => {
       ]
     },
     include: {
-      owner: true,               // toujours inclure l’owner
+      owner: true,
       members: {
-        where: { userId },       // ne garder que votre ligne de membership
+        where: { userId },
         select: {
-          role: true,
-          canViewAllTeams: true
+          canViewAllTeams: true,
+          role: {
+            select: {
+              name: true
+            }
+          }
         }
       }
     },

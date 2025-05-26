@@ -16,13 +16,6 @@ generator client {
 // ENUMS
 /////////////////////
 
-/// Rôle d’un user dans un workspace
-enum WorkspaceRole {
-  OWNER
-  ADMIN
-  MEMBER
-}
-
 /// Type de diagramme (existant)
 enum ModelType {
   MCD
@@ -126,13 +119,21 @@ model WorkspaceMember {
   id              Int           @id @default(autoincrement())
   userId          Int
   workspaceId     String
-  role            WorkspaceRole @default(MEMBER)
+  roleId          Int           @default(3) // MEMBER
+  role            WorkspaceRole @relation(fields: [roleId], references: [id], onDelete: Restrict)
   canViewAllTeams Boolean       @default(false)
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   @@unique([userId, workspaceId], name: "userId_workspaceId")
+}
+
+model WorkspaceRole {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique
+  description String?
+  workspaceMembers       WorkspaceMember[]
 }
 
 /////////////////////
