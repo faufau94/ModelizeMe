@@ -50,7 +50,6 @@ import {Download, Loader2, Github, Gitlab} from 'lucide-vue-next'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Button} from '~/components/ui/button'
 import {useToast} from '@/components/ui/toast/use-toast'
-import {Toaster} from '@/components/ui/toast'
 import {Separator} from '@/components/ui/separator'
 
 definePageMeta({

@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
         }
       }
     },
-    orderBy: { name: "asc" }
+    orderBy: { createdAt: "asc" }
   })
 
   return workspaces

@@ -6,9 +6,6 @@
       </div>
       <div class="rounded-md text-secondary-foreground">
 
-        <Toaster/>
-
-
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
             <Button @click.stop="" variant="secondary" class="px-2 shadow-none bg-white">
@@ -109,7 +106,6 @@
 import {ref} from 'vue';
 import {Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
 import {useToast} from '@/components/ui/toast/use-toast'
-import {Toaster} from '@/components/ui/toast'
 import {
   AlertDialog, AlertDialogCancel,
   AlertDialogContent,

@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen bg-background p-4 md:p-8">
 
-    <Toaster/>
     <div class="mx-auto max-w-4xl bg-card rounded-xl shadow-sm">
       <!-- Header -->
       <div class="border-b p-6" v-if="data?.user?.id === selectedWorkspace?.ownerId">

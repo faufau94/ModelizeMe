@@ -154,6 +154,10 @@
                 <UsersRound class="mr-2 h-4 w-4" />
                 Membres
               </Button>
+              <Button v-if="data?.user?.id === selectedWorkspace?.ownerId" @click="goToSettingsPage" :variant="route.path.split('/').pop() === 'settings' ? 'secondary' : 'ghost'" class="w-full justify-start">
+                <Settings2 class="mr-2 h-4 w-4" />
+                Paramètes
+              </Button>
             </div>
           </div>
           
@@ -306,7 +310,7 @@
       </div>
         
         <!-- Team Switcher for Mobile -->
-        <div class="px-4 py-2">
+        <!-- <div class="px-4 py-2">
           <Dialog v-model:open="showNewTeamDialog">
             <Popover v-model:open="teamSwitcherOpen">
               <PopoverTrigger asChild>
@@ -378,23 +382,25 @@
               </PopoverContent>
             </Popover>
           </Dialog>
-        </div>
+        </div> -->
         
         <!-- Mobile Navigation Menu -->
         <ScrollArea class="h-[calc(100vh-8.5rem)]">
           <nav class="py-3">
             <div class="px-3 mb-2">
               <div class="space-y-1">
-                <Button variant="ghost" class="w-full justify-start" asChild>
-                  <a href="#" class="font-medium text-primary">
-                    <PanelTopIcon class="mr-2 h-4 w-4" />
-                    Modèles
-                  </a>
-                </Button>
-                <Button variant="ghost" class="w-full justify-start">
-                  <UsersRound class="mr-2 h-4 w-4" />
-                  Membres
-                </Button>
+              <Button @click="goToModelsPage" :variant="route.path.split('/').pop() === 'dashboard' ? 'secondary' : 'ghost'" class="w-full justify-start">
+                  <PanelTopIcon class="mr-2 h-4 w-4" />
+                  Modèles
+              </Button>
+              <Button @click="goToMembersPage" :variant="route.path.split('/').pop() === 'members' ? 'secondary' : 'ghost'" class="w-full justify-start">
+                <UsersRound class="mr-2 h-4 w-4" />
+                Membres
+              </Button>
+              <Button v-if="data?.user?.id === selectedWorkspace?.ownerId" @click="goToSettingsPage" :variant="route.path.split('/').pop() === 'settings' ? 'secondary' : 'ghost'" class="w-full justify-start">
+                <Settings2 class="mr-2 h-4 w-4" />
+                Paramètes
+              </Button>
               </div>
             </div>
             
@@ -644,7 +650,8 @@ import {
   Plus,
   BoxSelectIcon,
   PlusCircle,
-  Share2
+  Share2,
+  Settings2,
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'
@@ -700,38 +707,38 @@ const { data } = useAuth()
 
 
 // Mock data for team switcher
-const groups = [
-  {
-    label: 'Compte Personnel',
-    teams: [
-      {
-        label: 'Alicia Koch',
-        value: 'personal',
-      },
-    ],
-  },
-  {
-    label: 'Équipes',
-    teams: [
-      {
-        label: 'Acme Inc.',
-        value: 'acme-inc',
-      },
-      {
-        label: 'Monsters Inc.',
-        value: 'monsters',
-      },
-    ],
-  },
-]
+// const groups = [
+//   {
+//     label: 'Compte Personnel',
+//     teams: [
+//       {
+//         label: 'Alicia Koch',
+//         value: 'personal',
+//       },
+//     ],
+//   },
+//   {
+//     label: 'Équipes',
+//     teams: [
+//       {
+//         label: 'Acme Inc.',
+//         value: 'acme-inc',
+//       },
+//       {
+//         label: 'Monsters Inc.',
+//         value: 'monsters',
+//       },
+//     ],
+//   },
+// ]
 
 const { signOut } = useAuth()
-const teamSwitcherOpen = ref(false)
-const showNewTeamDialog = ref(false)
-const selectedTeam = ref(groups[1].teams[0])
+// const teamSwitcherOpen = ref(false)
+// const showNewTeamDialog = ref(false)
+// const selectedTeam = ref(groups[1].teams[0])
 const copiedWorkspaceLink = ref(false)
 
-const { copyWorkspaceLink, goToThisWorkspaceUrl } = useWorkspace()
+const { selectedWorkspace, copyWorkspaceLink, goToThisWorkspaceUrl } = useWorkspace()
 
 const copyLink = async () => {
   try {
@@ -752,6 +759,11 @@ const goToMembersPage = async () => {
 
 const goToModelsPage = async () => {
   const url = goToThisWorkspaceUrl('dashboard')
+  await navigateTo(url)
+}
+
+const goToSettingsPage = async () => {
+  const url = goToThisWorkspaceUrl('settings')
   await navigateTo(url)
 }
 

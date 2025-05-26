@@ -43,7 +43,6 @@ import {Search, Loader2} from 'lucide-vue-next';
 import CardModel from "@/components/ui/card/CardModel.vue";
 
 import {Input} from '@/components/ui/input'
-//import Toaster from '@/components/ui/toast/Toaster.vue'
 //import {useToast} from '@/components/ui/toast/use-toast'
 //import {ToastAction} from '@/components/ui/toast'
 import {useMCDStore} from "@/stores/mcd-store.js";

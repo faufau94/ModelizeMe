@@ -124,7 +124,6 @@ import {
 } from '@/components/ui/dialog'
 import {Input} from '@/components/ui/input'
 import {useToast} from '@/components/ui/toast/use-toast'
-import {Toaster} from '@/components/ui/toast'
 import {toTypedSchema} from '@vee-validate/zod'
 import {Check, ChevronsUpDown, GalleryHorizontalEnd, Loader2} from 'lucide-vue-next'
 import {useForm} from 'vee-validate'
