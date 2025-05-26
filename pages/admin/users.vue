@@ -23,7 +23,7 @@
               <DialogTitle>Ajouter un utilisateur</DialogTitle>
               <DialogDescription>Remplir les champs.</DialogDescription>
             </DialogHeader>
-            <form @submit="addUser">
+            <form @submit="addNewUser">
             <div class="grid gap-4">
               <div class="grid grid-cols-2 gap-4">
                 <FormField v-slot="{ componentField }" name="first_name">
@@ -125,7 +125,7 @@
               <DialogTitle>Editer un utilisateur</DialogTitle>
               <DialogDescription>Modifier les champs.</DialogDescription>
             </DialogHeader>
-            <form @submit="editUser">
+            <form @submit="editNewUser">
             <div class="grid gap-4">
               <div class="grid grid-cols-2 gap-4">
                 <FormField v-slot="{ componentField }" name="first_name">
@@ -228,18 +228,21 @@
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="destructive" @click="onDeleteConfirm">Supprimer</Button>
+              <Button variant="destructive"  @click.stop="onDeleteConfirm" :disabled="isFormLoading">
+                    <Loader2 v-if="isFormLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                    {{ isFormLoading ? "Suppression..." : "Supprimer" }}
+                </Button>
               <Button variant="outline" @click="isDeleteDialogOpen = false">Annuler</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
 
-        <!-- Create Class Dialog -->
-        <Dialog v-model:open="isCreateClassDialogOpen">
+        <!-- Create Workspace Dialog -->
+        <Dialog v-model:open="isCreateWorkspaceDialogOpen">
           <DialogContent class="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Créer une classe</DialogTitle>
+              <DialogTitle>Créer un workspace</DialogTitle>
               <DialogDescription>
                 Ce lien pourra être partagé avec d'autres utilisateurs.
               </DialogDescription>
@@ -251,11 +254,11 @@
                 </Label>
                 <Input
                   id="link"
-                  :default-value="classLink.url"
+                  :default-value="workspaceLink.url"
                   readonly
                 />
               </div>
-              <Button size="sm" class="px-3" @click="copyLink(classLink.url)">
+              <Button size="sm" class="px-3" @click="copyLink(workspaceLink.url)">
                 <span class="sr-only">Copy</span>
                 <Copy class="w-4 h-4" />
               </Button>
@@ -277,7 +280,7 @@
                       <Loader2 v-if="isFormLoading" class="w-4 h-4 mr-2 animate-spin"/>
                       {{ isFormLoading ? "Chargement..." : "Créer et envoyer le lien" }}
                     </Button>
-                  <Button type="button" variant="secondary" @click="isCreateClassDialogOpen = false">
+                  <Button type="button" variant="secondary" @click="isCreateWorkspaceDialogOpen = false">
                     Annuler
                   </Button>                
                 </div>
@@ -305,28 +308,25 @@ import { CirclePlus, Loader2, Copy } from 'lucide-vue-next';
 
 import { useQuery } from '@tanstack/vue-query'
 
-import { useUserStore } from '@/stores/admin/user-store'
-
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import * as z from "zod";
+import { z } from "zod/v4";;
 import type { User } from '~/components/dataTable/data/schema';
-import { useRoleStore } from '@/stores/admin/role-store';
-import { makeClassLink } from '@/utils/class-link';
+import { useRoleStore } from '~/stores/api/role-store';
+import { makeWorkspaceLink } from '~/utils/workspace-link';
+import { useUser } from '~/composables/api/useUser';
 
 
 definePageMeta({
     layout: 'sidebar-admin',
 });
 
-const route = useRoute()
-
 
 // State management using refs for dialogs
 const isAddDialogOpen = ref(false)
 const isEditDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
-const isCreateClassDialogOpen = ref(false)
+const isCreateWorkspaceDialogOpen = ref(false)
 
 const roleStore = useRoleStore()
 watch([isAddDialogOpen, isEditDialogOpen], ([newAddDialog, newEditDialog]) => {
@@ -344,9 +344,10 @@ const confirmDeleteUser = (user: User) => {
 const onDeleteConfirm = async () => {
   if (selectedUser.value) {
     await userStore.deleteUser(selectedUser.value.id)
+    
   }
-    isDeleteDialogOpen.value = false
-    selectedUser.value = null
+  isDeleteDialogOpen.value = false
+  selectedUser.value = null
 }
 
 const editUserDialog = (user: User) => {
@@ -357,47 +358,47 @@ const editUserDialog = (user: User) => {
     name: user.name,
     first_name: user.first_name,
     email: user.email,
-    role: user.roles[0].role.id,
+    role: user.role.id,
   })
 }
 
-const classLink = ref({
+const workspaceLink = ref({
   url: '',
-  joinCode: '',
+  inviteCode: '',
   userId: '',
   useEmail: '',
 })
 
-const createClassDialog = (user) => {
+const createWorkspaceDialog = (user) => {
 
-  // generate a link for the class
-  const joinCode = Math.random().toString(36).substring(2, 20)
+  // generate a link for the workspace
+  const inviteCode = Math.random().toString(36).substring(2, 20)
 
-  classLink.value = {
-    url: makeClassLink(joinCode),
-    joinCode: joinCode,
+  workspaceLink.value = {
+    url: makeWorkspaceLink(inviteCode),
+    inviteCode: inviteCode,
     userId: user.id,
     userEmail: user.email,
   }
   
   message.value = { type: '', text: '' }
-  isCreateClassDialogOpen.value = true
+  isCreateWorkspaceDialogOpen.value = true
 }
 
 const sendLink = async () => {
   isFormLoading.value = true
   
   // Save the link to the database and send it via email
-  const res = await $fetch('/api/admin/classes/create', {
+  const res = await $fetch('/api/workspaces/create', {
     method: 'POST',
-    body: classLink.value,
+    body: workspaceLink.value,
   })
 
   if (res?.status === 200) {
     setTimeout(() => {
       isFormLoading.value = false
       message.value = { type: 'success', text: res?.body.message }
-      isCreateClassDialogOpen.value = false
+      isCreateWorkspaceDialogOpen.value = false
     }, 2000)
   } else {
     message.value = { type: 'error', text: res?.body.message }
@@ -412,21 +413,29 @@ const copyLink = (link: string) => {
   message.value = { type: 'copied', text: 'Lien copié dans le presse-papier !' }
 }
 
-const userStore = useUserStore()
-const columns = getUserColumns({ editUserDialog, confirmDeleteUser, createClassDialog })
+const { addUser, editUser } = useUser()
+const columns = getUserColumns({ editUserDialog, confirmDeleteUser, createWorkspaceDialog })
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   first_name: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   email: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).email({ message: "Adresse email invalide." }),
-  role: z.string({
-    required_error: "Veuillez remplir le champs.",
+  role: z.number({
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   })
 }))
 
@@ -449,9 +458,15 @@ const { data: users, isLoading, error, suspense } = useQuery({
 await suspense()
 
 const isFormLoading = ref(false)
-const addUser = form.handleSubmit(async (values) => {
+const addNewUser = form.handleSubmit(async (values) => {
   isFormLoading.value = true
-  const res = await userStore.addUser(values)   
+
+  values = {
+    ...values,
+    password: Math.random().toString(36).slice(-8),
+    isFromAdmin: true,
+  }
+  const res = await addUser(values)   
 
   // message de succès
   if(res.status === 200) {
@@ -466,9 +481,9 @@ const addUser = form.handleSubmit(async (values) => {
   }, 2000)
 })
 
-const editUser = form.handleSubmit(async (values) => {
+const editNewUser = form.handleSubmit(async (values) => {
   isFormLoading.value = true
-  const res = await userStore.editUser(values, selectedUser?.value?.id?.toString() || '')
+  const res = await editUser(values, selectedUser?.value?.id?.toString() || '')
 
   // message de succès
   if(res.status === 200) {

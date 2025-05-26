@@ -9,20 +9,6 @@ const {data, signOut} = useAuth()
   <div class="flex flex-col min-h-[100dvh]">
     <header class="px-4 lg:px-6 h-14 flex items-center justify-between">
       <NuxtLink class="flex items-center" to="/">
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            class="h-6 w-6"
-        >
-          <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
-        </svg>
         <span class="text-xl font-bold ml-2">ModelizeMe</span>
       </NuxtLink>
       <div v-if="!data" class="flex gap-4">

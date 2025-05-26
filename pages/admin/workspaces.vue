@@ -3,27 +3,27 @@
       <div class="flex items-center justify-between space-y-2">
         <div>
           <h2 class="text-2xl font-bold tracking-tight">
-            Classes
+            Workspaces
           </h2>
           <p class="text-muted-foreground">
-            Liste des classes de l'application.
+            Liste des workspaces de l'application.
           </p>
         </div>
         <div class="flex items-center space-x-2">
   
           <Button @click="isAddDialogOpen = true">
             <CirclePlus :size="20" class="mr-2"/>
-            Ajouter une classe
+            Ajouter un workspace
           </Button>
           
-          <!-- Add Class Dialog -->
+          <!-- Add Workspace Dialog -->
           <Dialog  v-model:open="isAddDialogOpen">
             <DialogContent class="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Ajouter un utilisateur</DialogTitle>
+                <DialogTitle>Ajouter un workspace</DialogTitle>
                 <DialogDescription>Remplir les champs.</DialogDescription>
               </DialogHeader>
-              <form @submit="addClass">
+              <form @submit="addWorkspace">
               <div class="grid gap-4">
                 <div class="grid grid-cols-2 gap-4">
                   <FormField v-slot="{ componentField }" name="first_name">
@@ -116,7 +116,7 @@
                 <DialogTitle>Editer un utilisateur</DialogTitle>
                 <DialogDescription>Modifier les champs.</DialogDescription>
               </DialogHeader>
-              <form @submit="editClass">
+              <form @submit="editWorkspace">
               <div class="grid gap-4">
                 <div class="grid grid-cols-2 gap-4">
                   <FormField v-slot="{ componentField }" name="first_name">
@@ -204,9 +204,9 @@
           <Dialog v-model:open="isDeleteDialogOpen">
             <DialogContent class="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Supprimer la classe</DialogTitle>
+                <DialogTitle>Supprimer le workspace</DialogTitle>
                 <DialogDescription>
-                  Êtes-vous sûr de vouloir supprimer cette classe ? Cette action est irréversible.
+                  Êtes-vous sûr de vouloir supprimer cet workspace ? Cette action est irréversible.
                 </DialogDescription>
               </DialogHeader>
 
@@ -230,11 +230,11 @@
           </Dialog>
   
   
-          <!-- Create Class Dialog -->
-          <Dialog v-model:open="isCreateClassDialogOpen">
+          <!-- Create Workspace Dialog -->
+          <Dialog v-model:open="isCreateWorkspaceDialogOpen">
             <DialogContent class="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Créer une classe</DialogTitle>
+                <DialogTitle>Créer un espace de travail</DialogTitle>
                 <DialogDescription>
                   Ce lien pourra être partagé avec d'autres utilisateurs.
                 </DialogDescription>
@@ -246,11 +246,11 @@
                   </Label>
                   <Input
                     id="link"
-                    :default-value="classLink.url"
+                    :default-value="workspaceLink.url"
                     readonly
                   />
                 </div>
-                <Button size="sm" class="px-3" @click="copyLink(classLink.url)">
+                <Button size="sm" class="px-3" @click="copyLink(workspaceLink.url)">
                   <span class="sr-only">Copy</span>
                   <Copy class="w-4 h-4" />
                 </Button>
@@ -281,7 +281,7 @@
                         <Loader2 v-if="isFormLoading" class="w-4 h-4 mr-2 animate-spin"/>
                         {{ isFormLoading ? "Chargement..." : "Créer et envoyer le lien" }}
                       </Button>
-                    <Button type="button" variant="secondary" @click="isCreateClassDialogOpen = false">
+                    <Button type="button" variant="secondary" @click="isCreateWorkspaceDialogOpen = false">
                       Annuler
                     </Button>                
                   </div>
@@ -298,25 +298,25 @@
           </div>
           <div v-else>
   
-            <DataTable :data="classes" :columns="columns" />
+            <DataTable :data="workspaces" :columns="columns" />
           </div>
     </div>
   </template>
   <script setup lang="ts">
-  import { getClassColumns } from '~/components/dataTable/class-columns'
+  import { getWorkspaceColumns } from '~/components/dataTable/workspace-columns'
   import DataTable from '@/components/dataTable/DataTable.vue'
   import { CirclePlus, Loader2, Copy } from 'lucide-vue-next';
   
   import { useQuery } from '@tanstack/vue-query'
   
-  import { useClassStore } from '@/stores/admin/class-store'
+  import { useWorkspaceStore } from '~/stores/api/workspace-store'
   
   import { useForm } from 'vee-validate'
   import {toTypedSchema} from "@vee-validate/zod";
-  import * as z from "zod";
-  import type { Class } from '~/components/dataTable/data/schema';
-  import { useRoleStore } from '@/stores/admin/role-store';
-  import { makeClassLink } from '@/utils/class-link';
+  import { z } from "zod/v4";;
+  import type { Workspace } from '~/components/dataTable/data/schema';
+  import { useRoleStore } from '~/stores/api/role-store';
+  import { makeWorkspaceLink } from '~/utils/workspace-link';
   
   
   definePageMeta({
@@ -328,9 +328,9 @@
   const isAddDialogOpen = ref(false)
   const isEditDialogOpen = ref(false)
   const isDeleteDialogOpen = ref(false)
-  const isCreateClassDialogOpen = ref(false)
+  const isCreateWorkspaceDialogOpen = ref(false)
   
-  const classStore = useClassStore()
+  const workspaceStore = useWorkspaceStore()
 
   const roleStore = useRoleStore()
   watch([isAddDialogOpen, isEditDialogOpen], ([newAddDialog, newEditDialog]) => {
@@ -339,61 +339,63 @@
     }
   })
   
-  const selectedClass = ref<Class|null>(null)
-  const confirmDeleteClass = (classObj: Class) => {
+  const selectedWorkspace = ref<Workspace|null>(null)
+  const confirmDeleteWorkspace = (workspace: Workspace) => {
     isDeleteDialogOpen.value = true
-    selectedClass.value = classObj
+    selectedWorkspace.value = workspace
   }
   
   const onDeleteConfirm = async () => {
     isFormLoading.value = true
-    if (selectedClass.value) {        
-      await classStore.deleteClass(selectedClass?.value?.id)
-      message.value = { type: 'success', text: 'Classe supprimée avec succès.' }
+    if (selectedWorkspace.value) {        
+      await workspaceStore.deleteWorkspace(selectedWorkspace?.value?.id)
+      message.value = { type: 'success', text: 'Workspace supprimé avec succès.' }
     }
     setTimeout(() => {
-        selectedClass.value = null
+        selectedWorkspace.value = null
         isFormLoading.value = false
         isDeleteDialogOpen.value = false
+        message.value = { type: '', text: '' }
     }, 2000)
   }
   
   
-  const classLink = ref({
+  const workspaceLink = ref({
     url: '',
-    joinCode: '',
+    inviteCode: '',
     userId: '',
   })
   
-  const createClassDialog = (classObj: Class) => {
+  const createWorkspaceDialog = (workspace: Workspace) => {
   
     // generate a link for the class
-    const className = 'class-' + Math.random().toString(36).substring(2, 20)
+    const workspaceName = Math.random().toString(36).substring(2, 20)
   
-    classLink.value = {
-      url: makeClassLink(className),
-      joinCode: className,
-      userId: classObj.id,
+    workspaceLink.value = {
+      url: makeWorkspaceLink(workspaceName),
+      inviteCode: workspaceName,
+      userId: workspace.id,
     }
     
     message.value = { type: '', text: '' }
-    isCreateClassDialogOpen.value = true
+    isCreateWorkspaceDialogOpen.value = true
   }
   
   const sendLink = async () => {
     isFormLoading.value = true
     
     // Save the link to the database and send it via email
-    const res = await $fetch('/api/admin/classes/create', {
+    const res = await $fetch('/api/workspaces/create', {
       method: 'POST',
-      body: classLink.value,
+      body: workspaceLink.value,
     })
   
     if (res?.status === 200) {
         message.value = { type: 'success', text: res?.body.message }
       setTimeout(() => {
         isFormLoading.value = false
-        isCreateClassDialogOpen.value = false
+        isCreateWorkspaceDialogOpen.value = false
+        message.value = { type: '', text: '' }
       }, 2000)
     } else {
       message.value = { type: 'error', text: res?.body.message }
@@ -408,17 +410,23 @@
     message.value = { type: 'copied', text: 'Lien copié dans le presse-papier !' }
   }
   
-  const columns = getClassColumns({ confirmDeleteClass, createClassDialog })
+  const columns = getWorkspaceColumns({ confirmDeleteWorkspace, createWorkspaceDialog })
   
   const formSchema = toTypedSchema(z.object({
     name: z.string({
-      required_error: "Veuillez remplir le champs.",
+      error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
     }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
     owner: z.string({
-      required_error: "Veuillez remplir le champs.",
+      error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
     }),
-    joinCode: z.string({
-      required_error: "Veuillez remplir le champs.",
+    inviteCode: z.string({
+      error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
     }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
   }))
   
@@ -432,18 +440,18 @@
     text: ''
   })
   
-  const fetchClasses = () => $fetch('/api/admin/classes/list')
-  const { data: classes, isLoading, error, suspense } = useQuery({
-    queryKey: ['classes'],
-    queryFn: fetchClasses,
+  const fetchWorkspaces = () => $fetch('/api/workspaces/list')
+  const { data: workspaces, isLoading, error, suspense } = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: fetchWorkspaces,
   })
   
   await suspense()
   
   const isFormLoading = ref(false)
-  const addClass = form.handleSubmit(async (values) => {
+  const addWorkspace = form.handleSubmit(async (values) => {
     isFormLoading.value = true
-    const res = await classStore.addClass(values)   
+    const res = await workspaceStore.addWorkspace(values)   
   
     // message de succès
     if(res.status === 200) {
@@ -458,9 +466,9 @@
     }, 2000)
   })
   
-  const editClass = form.handleSubmit(async (values) => {
+  const editWorkspace = form.handleSubmit(async (values) => {
     isFormLoading.value = true
-    const res = await classStore.editClass(values, selectedClass?.value?.id?.toString() || '')
+    const res = await workspaceStore.editWorkspace(values, selectedWorkspace?.value?.id?.toString() || '')
   
     // message de succès
     if(res.status === 200) {

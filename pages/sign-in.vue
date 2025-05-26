@@ -60,6 +60,13 @@
                 </FormItem>
               </FormField>
 
+              <div v-if="message && message.type === 'error'" class="w-full">
+                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 border border-red-300">
+                  <AlertCircle class="h-6 w-6 text-red-500" />
+                  <p class="text-red-600">{{ message.text }}</p>
+                </div>
+              </div>
+
               <FormField name="submit-button">
                 <FormControl class="w-full">
                   <Button type="submit" :disabled="isLoading">
@@ -72,7 +79,7 @@
           </form>
 
           <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full py-2">
-            <Button class="w-full" variant="outline" @click="async () => await signIn(provider?.id, { callbackUrl: '/app' })">
+            <Button class="w-full" variant="outline" @click="signInProvider(provider.id)">
               Continuer avec {{ provider?.name }}
             </Button>
           </div>
@@ -105,18 +112,22 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 
-import {Loader2} from "lucide-vue-next";
+import {AlertCircle, Loader2} from "lucide-vue-next";
 
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import * as z from "zod";
+import { z } from "zod/v4";
+import { useWorkspaceNavigation } from '~/composables/api/useWorkspaceNavigation';
+
+
+const {goToDashboard} = useWorkspaceNavigation()
 
 const formSchema = toTypedSchema(z.object({
-  email: z.string({
-    required_error: "Veuillez remplir le champs.",
-  }).email({message: "Adresse email invalide."}),
+  email: z.email({message: "Adresse email invalide."}),
   password: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(6, 'Le mot de passe doit être supérieur à 6 caractères.')
 }))
 
@@ -124,20 +135,53 @@ const form = useForm({
   validationSchema: formSchema,
 })
 
-const {signIn, getProviders} = useAuth()
+const message = ref({
+  type: '',
+  text: ''
+})
+
+const {signIn, getProviders, refresh} = useAuth()
 const providers = await getProviders()
 
 const isLoading = ref(false)
 
 const onSubmit = form.handleSubmit(async (values) => {
-  const res = await signIn('credentials', {
+   const res = await signIn('credentials', {
     email: values.email,
     password: values.password,
-    callbackUrl: '/app'
+    redirect: false,
   })
 
 
+  if (res?.error) {
+    message.value.type = 'error'
+    message.value.text = res.error
+  } else {
+    // Redirection réussie
+      await refresh()
+
+      return navigateTo(goToDashboard())
+  }
 })
+
+const signInProvider = async (providerId) => {
+  isLoading.value = true
+  try {
+    const res = await signIn(providerId)
+    if (res?.error) {
+      console.error("Erreur de connexion avec le provider:", res.error)
+      // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
+    } else {
+      // Redirection réussie
+      await refresh()
+      return navigateTo(goToDashboard())
+    }
+  } catch (error) {
+    console.error("Erreur lors de la connexion avec le provider:", error)
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const filteredProviders = computed(() => {
   return Object.keys(providers)

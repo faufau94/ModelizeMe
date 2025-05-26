@@ -4,33 +4,42 @@ import nodemailer from 'nodemailer';
 export default defineEventHandler(async event => {
 
     const body = await readBody(event);
-    const { joinCode, userId, userEmail, url } = body;
-
-    console.log('userEmail', userEmail);
+    const { inviteCode, userId, userEmail, name } = body;
     
 
-    if (!joinCode || !userId) {
+    if (!userId) {
         return {
             status: 404,
             body: {
-                message: 'Impossible de créer la classe, veuillez réessayer'
+                message: 'Impossible de créer le workspace, veuillez réessayer'
             }
         }
     }
 
-    const classCreated = await prisma.class.create({
+
+    const workspaceCreated = await prisma.workspace.create({
         data: {
-            name: joinCode,
-            joinCode: joinCode,
-            ownerId: userId
+            name: name,
+            owner: {
+                connect: { id: userId }
+            },
+            inviteCode: inviteCode,
         }
     });
 
-    if (!classCreated) {
+    // add lastActiveWorkspaceId to user
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            lastActiveWorkspaceId: workspaceCreated.id
+        },
+    })
+
+    if (!workspaceCreated) {
         return {
             status: 404,
             body: {
-                message: 'Il y a eu une erreur lors de la création de la classe'
+                message: 'Il y a eu une erreur lors de la création du workspace, veuillez réessayer'
             }
         }
     }
@@ -47,16 +56,16 @@ export default defineEventHandler(async event => {
     });
 
     let res = await transporter.sendMail({
-        from: "faudel.hammoudi@outlook.fr", // sender address
+        from: "faudelh94@hotmail.fr", // sender address
         to: userEmail, // list of receivers
-        subject: "Nouvelle classe", // Subject line
-        text: "Nouvelle classe", // plain text body
+        subject: "Nouveau workspace créé", // Subject line
+        text: "Nouveau workspace créé", // plain text body
         connectionTimeout: 30000,   // 30 seconds
         greetingTimeout: 30000,     // 30 seconds
         socketTimeout: 30000,
         html: `
         <h1>Bonjour,</h1>
-        <p>Voici le lien: ${url}</p>
+        <p>Voici le lien: </p>
         `
     });
 
@@ -64,7 +73,7 @@ export default defineEventHandler(async event => {
     return {
         status: 200,
         body: {
-            message: `Classe "${classCreated}" créée avec succès`,
+            message: `Workspace "${workspaceCreated}" créée avec succès`,
         }
     }
 

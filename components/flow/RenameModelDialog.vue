@@ -19,7 +19,7 @@
           <FormItem>
             <FormLabel>Nom</FormLabel>
             <FormControl>
-              <Input type="text" v-bind="componentField" @keyup.enter="onSubmit"/>
+              <Input type="text" v-bind="componentField"/>
             </FormControl>
             <FormDescription>
               Il pourra toujours être modifié plus tard.
@@ -55,14 +55,16 @@ import {CirclePlus, Loader2} from "lucide-vue-next";
 import {ref} from "vue";
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import * as z from "zod";
+import { z } from "zod/v4";;
 
 const showModel = ref(false);
 const isLoadingNewModel = ref(false);
 
 const formSchema = toTypedSchema(z.object({
   title: z.string({
-    required_error: "Veuillez remplir le champs.",
+    error: (issue) => issue.input === undefined 
+    ? "Veuillez remplir le champs." 
+    : ""
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
 }))
 

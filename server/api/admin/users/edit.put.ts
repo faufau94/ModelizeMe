@@ -24,17 +24,10 @@ export default defineEventHandler(async (event) => {
         where: { id },
         data: {
             ...userInfo,
-            roles: {
-                // 1) remove every UserRole for this user
-                deleteMany: {},
-                // 2) add a new UserRole connecting to your Role
-                create: {
-                    role: { connect: { id: role } }
-                }
-            },
+            roleId: role,
         },
         include: {
-            roles: true,
+            role: true,
         },
     });
     

@@ -6,10 +6,10 @@ import { h } from 'vue'
 import DataTableColumnHeader from './DataTableColumnHeader.vue'
 import DataTableRowActions from './DataTableRowActions.vue'
 
-export function getUserColumns({ editUserDialog, confirmDeleteUser, createClassDialog }: {
+export function getUserColumns({ editUserDialog, confirmDeleteUser, createWorkspaceDialog }: {
   editUserDialog: (user: User) => void
   confirmDeleteUser: (user: User) => void,
-  createClassDialog: (user: User) => void
+  createWorkspaceDialog: (user: User) => void
 }): ColumnDef<User>[] {
 
   return [
@@ -46,10 +46,11 @@ export function getUserColumns({ editUserDialog, confirmDeleteUser, createClassD
       return h('div', { class: 'flex space-x-2' }, row.getValue('name'))
     },
   },{
-    accessorKey: 'roles',
+    accessorKey: 'role',
     header: ({ column }) => h(DataTableColumnHeader, { column, title: 'Role' }),
     cell: ({ row }) => {
-      return h('div', { class: 'flex space-x-2' }, row.getValue('roles')[0]?.role?.name)
+      let roleName = row.getValue('role')?.name ?? ''
+      return h('div', { class: 'flex space-x-2' }, roleName)
     },
   },
   {
@@ -59,7 +60,7 @@ export function getUserColumns({ editUserDialog, confirmDeleteUser, createClassD
       row,
       actions: [
         { label: 'Éditer', onClick: r => editUserDialog(r.original) },
-        { label: 'Créer une classe', onClick: r => createClassDialog(r.original) },
+        { label: 'Créer un workspace', onClick: r => createWorkspaceDialog(r.original) },
         { label: 'Supprimer', onClick: r => confirmDeleteUser(r.original), class: 'text-red-500' },
       ]
     })

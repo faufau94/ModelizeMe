@@ -3,32 +3,14 @@ import { getServerSession } from "#auth";
 import {H3Error} from "h3";
 
 export default defineEventHandler(async event => {
+    const { selectedWorkspaceId } = getQuery(event);
+    const session = await getServerSession(event);
     try {
-        const session = await getServerSession(event);
 
         if (!session?.user?.email) {
             throw createError({
                 statusCode: 401,
                 message: "Unauthorized: User not authenticated"
-            });
-        }
-
-        const getCurrentUser = await prisma.user.findUnique({
-            where: {
-                email: session.user.email,
-            }
-        }).catch(error => {
-            console.error('Error finding user:', error);
-            throw createError({
-                statusCode: 500,
-                message: "Database error while finding user"
-            });
-        });
-
-        if (!getCurrentUser) {
-            throw createError({
-                statusCode: 404,
-                message: "User not found"
             });
         }
 
@@ -41,23 +23,23 @@ export default defineEventHandler(async event => {
             if (onlyTemplates) {
                 models = await prisma.model.findMany({
                     where: {
-                        userId: getCurrentUser.id,
-                        Galery: {
-                            some: {},
-                        },
+                        workspaceId: selectedWorkspaceId,
+                        // Galery: {
+                        //     some: {},
+                        // },
                     },
-                    include: {
-                        Galery: {
-                            include: {
-                                category: true,
-                            },
-                        },
-                    },
+                    // include: {
+                    //     Galery: {
+                    //         include: {
+                    //             category: true,
+                    //         },
+                    //     },
+                    // },
                 });
             } else {
                 models = await prisma.model.findMany({
                     where: {
-                        userId: getCurrentUser.id,
+                        workspaceId: selectedWorkspaceId,
                     },
                 });
             }
