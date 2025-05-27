@@ -29,7 +29,7 @@
         >
           <!-- Le vrai <form> natif -->
           <form
-            id="dialogForm"
+            id="dialogWorkspaceForm"
             class="grid gap-4 py-4"
             @submit="handleSubmit($event, onSubmit)"
           >
@@ -57,14 +57,12 @@
                 <FormMessage />
               </FormItem>
             </FormField>
-
-            <!-- Vos messages d’erreur / succès… -->
           </form>
 
           <DialogFooter class="flex justify-end gap-2">
             <Button
               type="submit"
-              form="dialogForm"
+              form="dialogWorkspaceForm"
               :disabled="isFormLoading"
             >
               <Loader2 v-if="isFormLoading" class="w-4 h-4 mr-2 animate-spin" />
@@ -105,22 +103,15 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Loader2, Plus, AlertCircle, CheckCircle } from 'lucide-vue-next'
-import { useToast } from '@/components/ui/toast/use-toast'
+import { Loader2, Plus } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
 
 defineProps({ isOnlyIcon: Boolean })
-const { addWorkspace } = useWorkspace()
+const { addWorkspace, switchWorkspace } = useWorkspace()
 const isCreateWorkspaceDialogOpen = ref(false)
 const isFormLoading = ref(false)
 const { data } = useAuth()
 
-const { toast } = useToast()
-
-// const message = ref({ type: '', text: '' })
-// const setMessage = (type: string, text: string) => {
-//   message.value.type = type
-//   message.value.text = text
-// }
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({ message: 'Champs requis' }).min(2, 'Le nom doit contenir au moins 2 caractères').max(50),
@@ -138,25 +129,15 @@ const onSubmit = async (values) => {
   isFormLoading.value = true
   const res = await addWorkspace({...values, userId: data.value.user.id ?? null, userEmail: data.value.user.email ?? null})
   
-  
   resetForm()
   isCreateWorkspaceDialogOpen.value = false
   isFormLoading.value = false
 
-  console.log('Response from addWorkspace:', res)
-
   if (res.status === 200) {
-    toast({
-        title: 'Succès',
-        message: res.body.message,
-        variant: 'default',
-    });
+    toast.success(res.body.message)
+    await switchWorkspace(res.body.workspaceId)
   } else {
-    toast({
-        title: 'Erreur',
-        message: res.body.message,
-        variant: 'destructive',
-    });
+    toast.error(res.body.message);
   }
 }
 </script>

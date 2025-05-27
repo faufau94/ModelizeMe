@@ -2,7 +2,7 @@
   <Card @click="openModel" class="cursor-pointer hover:border-gray-300 hover:shadow-md duration-150 transition">
     <CardHeader class="flex flex-row items-start gap-4 space-y-0">
       <div class="space-y-1 flex-1">
-        <CardTitle class="text-lg">{{ modelName.length > 20 ? modelName.substring(0, 20) + '...' : modelName }}</CardTitle>
+        <CardTitle class="text-lg">{{ props.model.name.length > 20 ? props.model.name.substring(0, 20) + '...' : props.model.name }}</CardTitle>
       </div>
       <div class="rounded-md text-secondary-foreground">
 
@@ -19,18 +19,21 @@
           >
 
             <DropdownMenuItem class="cursor-pointer">
-              <AlertDialog>
+              <AlertDialog v-model:open="showDialogRenameModel">
                 <AlertDialogTrigger as-child>
-                  <div @click.stop="showDialogRenameModel = true; setValues({name: modelName})">
+                  <div @click.stop="showDialogRenameModel = true">
                     Renommer
                   </div>
                 </AlertDialogTrigger>
-                <AlertDialogContent v-if="showDialogRenameModel">
+                <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Renommer le nom</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    </AlertDialogDescription>
                   </AlertDialogHeader>
 
-                  <form @submit="rnModel">
+                  <Form v-slot="{ handleSubmit }" :initial-values="{ name: props.model.name }" :validation-schema="formSchema" as="">
+                    <form @submit="handleSubmit($event, rnModel)">
                     <FormField v-slot="{ componentField }" name="name">
                       <FormItem>
                         <FormLabel>Nom</FormLabel>
@@ -39,19 +42,18 @@
                         </FormControl>
                         <FormMessage />
                         <FormControl class="float-right">
-                          <DialogClose as-child>
-                            <Button type="button" variant="secondary">
-                              Annuler
-                            </Button>
-                          </DialogClose>
                           <Button type="submit" :disabled="isRenamingModel">
                             <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
                             {{ isRenamingModel ? 'Renommage...' : 'Renommer' }}
                           </Button>
+                            <Button type="button" variant="secondary" @click.stop="showDialogRenameModel = false">
+                              Annuler
+                            </Button>
                         </FormControl>
                       </FormItem>
                     </FormField>
                   </form>
+                  </Form>
                 </AlertDialogContent>
               </AlertDialog>
             </DropdownMenuItem>
@@ -105,7 +107,6 @@
 <script setup lang="ts">
 import {ref} from 'vue';
 import {Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
-import {useToast} from '@/components/ui/toast/use-toast'
 import {
   AlertDialog, AlertDialogCancel,
   AlertDialogContent,
@@ -117,9 +118,9 @@ import {
 import {useMCDStore} from "@/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";;
+import { z } from "zod";
 import {useForm} from 'vee-validate'
-
+import { toast } from 'vue-sonner'
 import { useModel } from '@/composables/api/useModel'
 
 
@@ -130,11 +131,6 @@ const props = defineProps({
   },
 });
 
-
-const mcdStore = useMCDStore()
-const {models} = storeToRefs(mcdStore)
-
-const {toast} = useToast()
 
 const openModel = async () => {
   await navigateTo(`/app/model/${props.model.id}`);
@@ -157,27 +153,19 @@ const delModel = async () => {
     })
 
   
-  // remove model from list
-  models.value = models.value.filter((model) => model.id !== props.model.id);
-
   isLoading.value = false;
   showDialogDeleteModel.value = false;
-  toast({
-    description: 'Le modèle a été supprimé.',
-  });
+  toast.success('Le modèle a été supprimé.');
 }
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
-    error: (issue) => issue.input === undefined 
-    ? "Veuillez remplir le champs." 
-    : ""
+    message: "Veuillez remplir le champs."
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
 }))
 
-const modelName = ref(props.model.name)
 
-const { handleSubmit, setValues } = useForm({
+const { setValues } = useForm({
   validationSchema: formSchema,
   initialValues: {
     name: ''
@@ -186,15 +174,18 @@ const { handleSubmit, setValues } = useForm({
 })
 
 
-const rnModel = handleSubmit(async (values) => {
+
+const rnModel = async (values) => {
   isRenamingModel.value = true
   renameModel(props.model.id,{name: values.name})
 
   setValues({
     name: values.name,
   });
-  modelName.value = values.name
+
   isRenamingModel.value = false
   showDialogRenameModel.value = false
-})
+
+  toast.success('Le modèle a été renommé avec succès.');
+}
 </script>

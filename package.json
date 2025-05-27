@@ -56,6 +56,7 @@
     "typescript": "^5.5.4",
     "uuid": "^11.0.2",
     "vue": "latest",
+    "vue-sonner": "^2.0.0",
     "vuedraggable": "^4.1.0",
     "zod": "^3.25.17"
   },

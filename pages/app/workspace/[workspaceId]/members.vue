@@ -199,7 +199,7 @@ import {
   DialogFooter, DialogTitle, DialogDescription
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import {useToast} from '@/components/ui/toast/use-toast'
+import { toast } from 'vue-sonner'
 
 
 const { data } = useAuth()
@@ -230,7 +230,6 @@ const regenerateShareLink = async () => {
   await regenerateWorkspaceInviteCode()
   copied.value = false  
 }
-const { toast } = useToast()
 
 
 // Change member role
@@ -240,17 +239,10 @@ const changeMemberRole = async (memberId: number, newRoleId: number) => {
 
   if (res.status === 200) {
     // Optionally show a success message
-    toast({
-      title: 'Role updated successfully',
-      description: `Member's role has been changed to ${res.body.role.name}.`
-    })
+    toast.success(`Member's role has been changed to ${res.body.role.name}.`)
   } else {
     // Handle error case
-    toast({
-      title: 'Error updating role',
-      description: res.body.message || 'An error occurred while updating the member role.',
-      variant: 'destructive'
-    })
+    toast.error(res.body.message)
   }
 }
 
@@ -272,9 +264,7 @@ const removeMember = async (id: number|null) => {
   if (id) {
     const res = await deleteMember(id.toString())
     memberToRemove.value = null
-    toast({
-      title: res.body.message
-    })
+    toast.success(res.body.message)
   }
 }
 </script>

@@ -43,8 +43,6 @@ import {Search, Loader2} from 'lucide-vue-next';
 import CardModel from "@/components/ui/card/CardModel.vue";
 
 import {Input} from '@/components/ui/input'
-//import {useToast} from '@/components/ui/toast/use-toast'
-//import {ToastAction} from '@/components/ui/toast'
 import {useMCDStore} from "@/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
 import CreateModelDialog from "@/components/flow/CreateModelDialog.vue";
@@ -53,7 +51,6 @@ import { useModel } from "@/composables/api/useModel"
 
 const { models, isLoadingModels, isModelsFetched } = useModel()
 
-//const {toast} = useToast()
 
 const searchTerm = ref("");
 

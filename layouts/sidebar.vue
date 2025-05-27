@@ -165,9 +165,7 @@
           <div class="px-3 mb-2 mt-6">
             <div class="flex items-center justify-between px-3">
               <h3 class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Équipes</h3>
-              <Button variant="ghost" size="icon" class="h-6 w-6">
-                <PlusIcon class="h-4 w-4" />
-              </Button>
+              <CreateTeamDialog />
             </div>
             
             <div class="mt-2 space-y-1">
@@ -619,6 +617,8 @@ import { useWorkspaceStore } from '@/stores/api/workspace-store';
 import { storeToRefs } from "pinia"
 import WorkspacesSidebar from '@/components/WorkspacesSidebar.vue'
 import AddWorkspaceDialog from '@/components/workspace/AddWorkspaceDialog.vue'
+import CreateTeamDialog from '@/components/teams/CreateTeamDialog.vue';
+
 
 import { 
   HomeIcon, 

@@ -7,7 +7,7 @@ export default defineEventHandler(async event => {
 
     const session = await getServerSession(event);
 
-    const newModel = await prisma.model.create({
+    const newModelCreated = await prisma.model.create({
         data: {
             name: title,
             author: {
@@ -19,5 +19,19 @@ export default defineEventHandler(async event => {
         },
     })
 
-    return newModel
+    if (!newModelCreated) {
+        return {
+            status: 404,
+            body: {
+                message: 'Il y a eu une erreur lors de la création du modèle, veuillez réessayer.'
+            }
+        }
+    }
+
+    return {
+        status: 200,
+        body: {
+            message: 'Modèle créé avec succès.',
+        }
+    }
 });
