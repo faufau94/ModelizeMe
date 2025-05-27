@@ -31,7 +31,12 @@
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form @submit="signUp">
+          <Form
+              as="form"
+              :validation-schema="formSchema"
+              @submit="signUp"
+              v-slot="{ errors }"
+            >
             <div class="grid gap-4">
               <div class="grid grid-cols-2 gap-4">
                 <FormField v-slot="{ componentField }" name="firstName">
@@ -105,14 +110,10 @@
                 </div>
               </div>
 
-              <FormField name="button-submit">
-                <FormControl class="w-full">
-                  <Button type="submit" :disabled="isLoading">
-                    <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
-                    {{ isLoading ? "Chargement..." : "S'inscrire" }}
-                  </Button>
-                </FormControl>
-              </FormField>
+              <Button type="submit" :disabled="isLoading">
+                <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                {{ isLoading ? "Chargement..." : "S'inscrire" }}
+              </Button>
 
               <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
                 <Button  class="w-full" variant="outline" @click="signInProvider(provider.id)">
@@ -120,7 +121,7 @@
                 </Button>
               </div>
             </div>
-          </form>
+          </Form>
 
           <div class="mt-4 text-center text-sm">
             Vous avez déjà un compte ?
@@ -217,23 +218,13 @@ const message = ref({
 
 const { addUser } = useUser()
 const isLoading = ref(false)
-const signUp = form.handleSubmit(async (values) => {
+const signUp = async (values) => {
   isLoading.value = true
 
   const result = await addUser(values)
 
-  console.log("Response from addUser:", result)
-
-
   if (result.status === 200) {
-    message.value.type = 'success'
-    message.value.message =  result.body.message
-    setTimeout(() => {
-      isLoading.value = false
-    }, 5000)
-    message.value = {text: "", type: ""}
 
-    
     const res = await signIn('credentials', {
       email: values.email,
       password: values.password,
@@ -241,21 +232,21 @@ const signUp = form.handleSubmit(async (values) => {
     })
 
     if (res?.error) {
-      message.value.type = 'error'
-      message.value.text = res.error
-  } else {
-      // Redirection réussie
+        message.value.type = 'error'
+        message.value.text = res.error
+        isLoading.value = false
+    } else {
         await refresh()
-
-        return navigateTo(goToDashboard())
-    }
+        await  navigateTo(goToDashboard())
+        isLoading.value = false
+      }
 
 
   } else {
     message.value = {type: 'error', text: result.body.error}
     isLoading.value = false
   }
-})
+}
 
 const signInProvider = async (providerId) => {
   isLoading.value = true

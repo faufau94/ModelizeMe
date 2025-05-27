@@ -31,7 +31,13 @@
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form @submit.prevent="onSubmit" class="py-2">
+
+          <Form
+              as="form"
+              :validation-schema="formSchema"
+              @submit="onSubmit"
+              v-slot="{ errors }"
+            >
             <div class="grid gap-4">
               <FormField name="email" v-slot="{ field }">
                 <FormItem>
@@ -67,16 +73,12 @@
                 </div>
               </div>
 
-              <FormField name="submit-button">
-                <FormControl class="w-full">
-                  <Button type="submit" :disabled="isLoading">
-                    <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
-                    {{ isLoading ? "Chargement..." : "Se connecter" }}
-                  </Button>
-                </FormControl>
-              </FormField>
+              <Button type="submit" :disabled="isLoading">
+                <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                {{ isLoading ? "Chargement..." : "Se connecter" }}
+              </Button>
             </div>
-          </form>
+          </Form>
 
           <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full py-2">
             <Button class="w-full" variant="outline" @click="signInProvider(provider.id)">
@@ -145,24 +147,25 @@ const providers = await getProviders()
 
 const isLoading = ref(false)
 
-const onSubmit = form.handleSubmit(async (values) => {
-   const res = await signIn('credentials', {
+const onSubmit = async (values) => {
+  isLoading.value = true
+  const res = await signIn('credentials', {
     email: values.email,
     password: values.password,
     redirect: false,
   })
 
-
   if (res?.error) {
     message.value.type = 'error'
     message.value.text = res.error
-  } else {
-    // Redirection réussie
-      await refresh()
+    isLoading.value = false
 
-      return navigateTo(goToDashboard())
+  } else {
+    await refresh()
+    await navigateTo(goToDashboard())
+    isLoading.value = false
   }
-})
+}
 
 const signInProvider = async (providerId) => {
   isLoading.value = true

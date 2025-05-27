@@ -4,6 +4,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
 
+  plugins: [
+    '~/plugins/vue-query.ts'
+  ],
+
   postcss: {
     plugins: {
       tailwindcss: {},
