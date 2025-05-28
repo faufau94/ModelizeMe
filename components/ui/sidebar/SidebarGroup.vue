@@ -2,13 +2,16 @@
 import type { HTMLAttributes } from 'vue'
 import { cn } from '@/lib/utils'
 
-interface SkeletonProps {
+const props = defineProps<{
   class?: HTMLAttributes['class']
-}
-
-const props = defineProps<SkeletonProps>()
+}>()
 </script>
 
 <template>
-  <div :class="cn('animate-pulse rounded-md bg-primary/10', props.class)" />
+  <div
+    data-sidebar="group"
+    :class="cn('relative flex w-full min-w-0 flex-col p-2', props.class)"
+  >
+    <slot />
+  </div>
 </template>

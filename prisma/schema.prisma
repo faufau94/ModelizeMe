@@ -141,16 +141,18 @@ model WorkspaceRole {
 /////////////////////
 
 model Team {
-  id         Int      @id @default(autoincrement())
-  name       String
-  inviteCode String   @unique @default(cuid())
-  createdAt  DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  name         String
+  description  String?     
+  maxMembers   Int     @default(10)
+  inviteCode   String   @unique @default(cuid())
+  createdAt    DateTime @default(now())
 
   workspaceId String
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
   members    TeamMember[]
-  dataModels Model[] // modèles propres à cette équipe
+  dataModels Model[]
 }
 
 model TeamMember {

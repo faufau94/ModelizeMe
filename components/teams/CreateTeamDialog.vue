@@ -1,26 +1,26 @@
 <template>
   <Dialog v-model:open="isOpen">
     <DialogTrigger as-child>
-      <Button variant="ghost" size="icon" class="gap-2 h-6 w-6">
+      <div class="cursor-pointer hover:bg-gray-50">
         <PlusIcon class="h-4 w-4" />
-      </Button>
+      </div>
     </DialogTrigger>
     <DialogContent class="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Create New Team</DialogTitle>
         <DialogDescription>
-          Create a new team and manage member assignments. Each user can only be in one team at a time.
+          Create a new team and manage member assignments. Users can be in multiple teams.
         </DialogDescription>
       </DialogHeader>
       
-      <form @submit.prevent="onSubmit" class="space-y-6">
+      <form @submit="onSubmit" class="space-y-6">
         <!-- Team Basic Info -->
         <div class="space-y-4">
           <div class="space-y-2">
             <Label for="name">Team Name *</Label>
             <Input
               id="name"
-              v-model="formData.name"
+              v-model="name"
               placeholder="Enter team name"
               :class="{ 'border-red-500': errors.name }"
             />
@@ -31,16 +31,17 @@
             <Label for="description">Description</Label>
             <Textarea
               id="description"
-              v-model="formData.description"
+              v-model="description"
               placeholder="Brief description of the team's purpose"
               rows="3"
             />
+            <p v-if="errors.description" class="text-sm text-red-500">{{ errors.description }}</p>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-2">
               <Label for="color">Team Color</Label>
-              <Select v-model="formData.color">
+              <Select v-model="color">
                 <SelectTrigger>
                   <SelectValue placeholder="Select color" />
                 </SelectTrigger>
@@ -77,18 +78,19 @@
                   </SelectItem>
                 </SelectContent>
               </Select>
+              <p v-if="errors.color" class="text-sm text-red-500">{{ errors.color }}</p>
             </div>
-
             <div class="space-y-2">
               <Label for="maxMembers">Max Members</Label>
               <Input
                 id="maxMembers"
-                v-model.number="formData.maxMembers"
+                v-model.number="maxMembers"
                 type="number"
                 min="1"
                 max="50"
                 placeholder="10"
               />
+              <p v-if="errors.maxMembers" class="text-sm text-red-500">{{ errors.maxMembers }}</p>
             </div>
           </div>
         </div>
@@ -97,63 +99,95 @@
 
         <!-- User Management Section -->
         <div class="space-y-4">
-          <div class="flex items-center justify-between">
+          <div class="space-y-3">
             <h3 class="text-lg font-medium">Team Members</h3>
-            <div class="flex items-center space-x-2">
-              <Checkbox
-                id="autoDispatch"
-                v-model:checked="formData.autoDispatch"
-              />
-              <Label for="autoDispatch" class="text-sm">Auto-dispatch unassigned users</Label>
+            <div class="space-y-3">
+              <div class="flex items-center space-x-2">
+                <input
+                  id="manual"
+                  type="radio"
+                  value="manual"
+                  v-model="dispatchMode"
+                  class="h-4 w-4 text-blue-600"
+                />
+                <Label for="manual" class="text-sm">Manual selection</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <input
+                  id="unassigned"
+                  type="radio"
+                  value="unassigned"
+                  v-model="dispatchMode"
+                  class="h-4 w-4 text-blue-600"
+                />
+                <Label for="unassigned" class="text-sm">Auto-dispatch unassigned users only</Label>
+              </div>
+              <div class="flex items-center space-x-2">
+                <input
+                  id="all"
+                  type="radio"
+                  value="all"
+                  v-model="dispatchMode"
+                  class="h-4 w-4 text-blue-600"
+                />
+                <Label for="all" class="text-sm">Auto-dispatch all workspace users</Label>
+              </div>
             </div>
+            <p v-if="errors.dispatchMode" class="text-sm text-red-500">{{ errors.dispatchMode }}</p>
           </div>
 
-          <div v-if="!formData.autoDispatch" class="space-y-4">
+          
+          <div v-if="dispatchMode === 'manual'" class="space-y-4">
             <!-- Manual User Selection -->
             <div class="space-y-2">
               <Label>Select Members</Label>
               <div class="border rounded-lg p-3 max-h-48 overflow-y-auto">
-                <div v-if="availableUsers.length === 0" class="text-sm text-gray-500 text-center py-4">
-                  No unassigned users available
+                <div v-if="getMembersList.length === 0" class="text-sm text-gray-500 text-center py-4">
+                  No users available
                 </div>
                 <div v-else class="space-y-2">
                   <div
-                    v-for="user in availableUsers"
-                    :key="user.id"
+                    v-for="member in getMembersList"
+                    :key="member.id"
                     class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
                   >
                     <Checkbox
-                      :id="`user-${user.id}`"
-                      :checked="formData.selectedUsers.includes(user.id)"
-                      @update:checked="toggleUser(user.id)"
+                      :id="`member-${member.id}`"
+                      :checked="selectedUsers.includes(member.id)"
+                      @update:checked="toggleUser(member.id)"
                     />
                     <Avatar class="h-8 w-8">
-                      <AvatarImage :src="user.avatar" :alt="user.name" />
-                      <AvatarFallback>{{ user.name.charAt(0).toUpperCase() }}</AvatarFallback>
+                      {{ member.name.charAt(0).toUpperCase() }}
                     </Avatar>
                     <div class="flex-1">
-                      <p class="text-sm font-medium">{{ user.name }}</p>
-                      <p class="text-xs text-gray-500">{{ user.email }}</p>
+                      <p class="text-sm font-medium">{{ member.first_name }} {{ member.name }}</p>
+                      <p class="text-xs text-gray-500">{{ member.email }}</p>
                     </div>
-                    <Badge v-if="user.role" variant="secondary" class="text-xs">
-                      {{ user.role }}
-                    </Badge>
+                    <div class="flex items-center gap-2">
+                      <Badge v-if="member.teamName" variant="outline" class="text-xs text-orange-600 border-orange-200">
+                        {{ member.teamName }}
+                      </Badge>
+                      <Badge v-else variant="outline" class="text-xs text-green-600 border-green-200">
+                        Unassigned
+                      </Badge>
+                    </div>
                   </div>
                 </div>
               </div>
+              <p v-if="errors.selectedUsers" class="text-sm text-red-500">{{ errors.selectedUsers }}</p>
             </div>
 
             <!-- Selected Users Preview -->
-            <div v-if="formData.selectedUsers.length > 0" class="space-y-2">
-              <Label>Selected Members ({{ formData.selectedUsers.length }})</Label>
+            <div v-if="selectedUsers.length > 0" class="space-y-2">
+              <Label>Selected Members ({{ selectedUsers.length }})</Label>
               <div class="flex flex-wrap gap-2">
                 <Badge
-                  v-for="userId in formData.selectedUsers"
+                  v-for="userId in selectedUsers"
                   :key="userId"
                   variant="outline"
                   class="gap-1"
                 >
-                  {{ getUserById(userId)?.name }}
+                  {{ getUserById(userId)?.user?.name }}
                   <button
                     type="button"
                     @click="removeUser(userId)"
@@ -166,14 +200,27 @@
             </div>
           </div>
 
-          <div v-else class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div v-else-if="dispatchMode === 'unassigned'" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="flex items-start gap-3">
               <InfoIcon class="h-5 w-5 text-blue-500 mt-0.5" />
               <div>
-                <h4 class="text-sm font-medium text-blue-900">Auto-dispatch Mode</h4>
+                <h4 class="text-sm font-medium text-blue-900">Auto-dispatch Unassigned Users</h4>
                 <p class="text-sm text-blue-700 mt-1">
                   All unassigned users ({{ availableUsers.length }}) will be automatically added to this team.
-                  Users already in other teams will remain in their current teams.
+                  Users already in other teams will remain in their current teams only.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="dispatchMode === 'all'" class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div class="flex items-start gap-3">
+              <InfoIcon class="h-5 w-5 text-green-500 mt-0.5" />
+              <div>
+                <h4 class="text-sm font-medium text-green-900">Auto-dispatch All Users</h4>
+                <p class="text-sm text-green-700 mt-1">
+                  All workspace users ({{ workspaceUsers.length }}) will be added to this team.
+                  Users can be members of multiple teams simultaneously.
                 </p>
               </div>
             </div>
@@ -182,32 +229,9 @@
 
         <Separator />
 
-        <!-- Team Settings -->
-        <div class="space-y-4">
-          <h3 class="text-lg font-medium">Team Settings</h3>
-          
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex items-center space-x-2">
-              <Checkbox
-                id="allowModelSharing"
-                v-model:checked="formData.allowModelSharing"
-              />
-              <Label for="allowModelSharing" class="text-sm">Allow model sharing</Label>
-            </div>
-            
-            <div class="flex items-center space-x-2">
-              <Checkbox
-                id="requireApproval"
-                v-model:checked="formData.requireApproval"
-              />
-              <Label for="requireApproval" class="text-sm">Require approval for changes</Label>
-            </div>
-          </div>
-        </div>
-
         <!-- Form Actions -->
         <DialogFooter class="gap-2">
-          <Button type="button" variant="outline" @click="isOpen = false">
+          <Button type="button" variant="outline" @click="resetFormAndClose">
             Cancel
           </Button>
           <Button type="submit" :disabled="isSubmitting">
@@ -221,7 +245,9 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, computed } from 'vue'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
 import {
   Dialog,
@@ -253,17 +279,31 @@ import {
   InfoIcon,
   LoaderIcon
 } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
+
+import { useTeam } from '@/composables/api/useTeam';
+import { useMember } from '@/composables/api/useMember'
 
 // Zod schema for form validation
 const teamSchema = z.object({
   name: z.string().min(2, 'Team name must be at least 2 characters').max(50, 'Team name must be less than 50 characters'),
   description: z.string().optional(),
-  color: z.string().optional(),
-  maxMembers: z.number().min(1).max(50).optional(),
-  selectedUsers: z.array(z.string()),
-  autoDispatch: z.boolean(),
-  allowModelSharing: z.boolean(),
-  requireApproval: z.boolean(),
+  color: z.string().default('blue'),
+  maxMembers: z.number().min(1, 'Must have at least 1 member').max(50, 'Cannot exceed 50 members').default(10),
+  selectedUsers: z.array(z.string()).default([]),
+  dispatchMode: z.enum(['manual', 'unassigned', 'all']).default('manual'),
+})
+
+const getMembersList = computed(() => {
+  const memberListWithoutOwners = members.value.filter(member => member.role.name !== 'OWNER')
+  return memberListWithoutOwners.map(member => ({
+    id: member.user.id,
+    name: member.user.name,
+    first_name: member.user.first_name,
+    email: member.user.email,
+    teamId: 1 || null,
+    teamName: 'test' || null
+  }))
 })
 
 // Mock data for workspace users
@@ -273,144 +313,137 @@ const workspaceUsers = ref([
     name: 'Alice Johnson',
     email: 'alice@company.com',
     avatar: '/placeholder.svg?height=32&width=32',
-    role: 'Designer',
-    teamId: null
+    teamId: null,
+    teamName: null
   },
   {
     id: '2',
     name: 'Bob Smith',
     email: 'bob@company.com',
     avatar: '/placeholder.svg?height=32&width=32',
-    role: 'Developer',
-    teamId: 'team-1' // Already in a team
+    teamId: 'team-1',
+    teamName: 'Frontend Team'
   },
   {
     id: '3',
     name: 'Carol Davis',
     email: 'carol@company.com',
     avatar: '/placeholder.svg?height=32&width=32',
-    role: 'Analyst',
-    teamId: null
+    teamId: null,
+    teamName: null
   },
   {
     id: '4',
     name: 'David Wilson',
     email: 'david@company.com',
     avatar: '/placeholder.svg?height=32&width=32',
-    role: 'Manager',
-    teamId: null
+    teamId: 'team-2',
+    teamName: 'Backend Team'
   },
   {
     id: '5',
     name: 'Eva Brown',
     email: 'eva@company.com',
     avatar: '/placeholder.svg?height=32&width=32',
-    role: 'Developer',
-    teamId: null
+    teamId: null,
+    teamName: null
   }
 ])
 
 // Component state
 const isOpen = ref(false)
 const isSubmitting = ref(false)
-const errors = ref({})
 
-// Form data
-const formData = reactive({
-  name: '',
-  description: '',
-  color: 'blue',
-  maxMembers: 10,
-  selectedUsers: [],
-  autoDispatch: false,
-  allowModelSharing: true,
-  requireApproval: false,
+const { members } = useMember()
+const { teams, createTeam } = useTeam()
+
+// vee-validate form setup
+const { defineField, handleSubmit, errors, resetForm, values } = useForm({
+  validationSchema: toTypedSchema(teamSchema),
+  initialValues: {
+    name: '',
+    description: '',
+    color: 'blue',
+    maxMembers: 10,
+    selectedUsers: [],
+    dispatchMode: 'manual'
+  }
 })
+
+// Define form fields
+const [name] = defineField('name')
+const [description] = defineField('description')
+const [color] = defineField('color')
+const [maxMembers] = defineField('maxMembers')
+const [selectedUsers] = defineField('selectedUsers')
+const [dispatchMode] = defineField('dispatchMode')
 
 // Computed properties
 const availableUsers = computed(() => {
-  return workspaceUsers.value.filter(user => !user.teamId)
+  return members.value.filter(member => !member.user.teamId)
 })
 
 // Helper functions
 const getUserById = (userId) => {
-  return workspaceUsers.value.find(user => user.id === userId)
+  return members.value.find(member => member.user.id === userId) || null
 }
 
 const toggleUser = (userId) => {
-  const index = formData.selectedUsers.indexOf(userId)
+  const currentUsers = selectedUsers.value || []
+  const index = currentUsers.indexOf(userId)
   if (index > -1) {
-    formData.selectedUsers.splice(index, 1)
+    selectedUsers.value = currentUsers.filter(id => id !== userId)
   } else {
-    formData.selectedUsers.push(userId)
+    selectedUsers.value = [...currentUsers, userId]
   }
 }
 
 const removeUser = (userId) => {
-  const index = formData.selectedUsers.indexOf(userId)
-  if (index > -1) {
-    formData.selectedUsers.splice(index, 1)
-  }
+  const currentUsers = selectedUsers.value || []
+  selectedUsers.value = currentUsers.filter(id => id !== userId)
 }
 
-const validateForm = () => {
-  try {
-    teamSchema.parse(formData)
-    errors.value = {}
-    return true
-  } catch (error) {
-    errors.value = {}
-    error.errors.forEach(err => {
-      errors.value[err.path[0]] = err.message
-    })
-    return false
-  }
+const resetFormAndClose = () => {
+  resetForm()
+  isOpen.value = false
 }
 
-const onSubmit = async () => {
-  if (!validateForm()) {
-    return
-  }
-
+// Form submission with vee-validate
+const onSubmit = handleSubmit(async (formValues) => {
   isSubmitting.value = true
 
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    createTeam(formValues)
 
-    const teamData = {
-      ...formData,
-      id: `team-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      members: formData.autoDispatch 
-        ? availableUsers.value.map(user => user.id)
-        : formData.selectedUsers
-    }
+    // let members = []
+    // if (formValues.dispatchMode === 'manual') {
+    //   members = formValues.selectedUsers
+    // } else if (formValues.dispatchMode === 'unassigned') {
+    //   members = availableUsers.value.map(user => user.id)
+    // } else if (formValues.dispatchMode === 'all') {
+    //   members = workspaceUsers.value.map(user => user.id)
+    // }
 
-    console.log('Creating team:', teamData)
+    // const teamData = {
+    //   ...formValues,
+    //   id: `team-${Date.now()}`,
+    //   createdAt: new Date().toISOString(),
+    //   members
+    // }
+
+    // console.log('Creating team:', teamData)
 
     // Reset form and close dialog
-    Object.assign(formData, {
-      name: '',
-      description: '',
-      color: 'blue',
-      maxMembers: 10,
-      selectedUsers: [],
-      autoDispatch: false,
-      allowModelSharing: true,
-      requireApproval: false,
-    })
-    
+    resetForm()
     isOpen.value = false
     
-    // Show success message (you can replace with your notification system)
-    alert(`Team "${teamData.name}" created successfully with ${teamData.members.length} members!`)
+    toast.success(`Team created successfully!`)
     
   } catch (error) {
     console.error('Error creating team:', error)
-    alert('Failed to create team. Please try again.')
+    toast.error('Failed to create team. Please try again.')
   } finally {
     isSubmitting.value = false
   }
-}
+})
 </script>

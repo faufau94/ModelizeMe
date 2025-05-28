@@ -53,9 +53,26 @@ export const memberSchema = z.object({
 })
 
 
+export const teamSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  createdAt: z.string(),
+  workspaceId: z.string(),
+  inviteCode: z.string(),
+})
+
+export const teamMemberSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  teamId: z.string(),
+  canViewOthers: z.boolean(),
+})
+
 export type User = z.infer<typeof userSchema>
 export type Role = z.infer<typeof roleSchema>
 export type Workspace = z.infer<typeof workspaceSchema>
 export type Model = z.infer<typeof modelSchema>
 export type Member = z.infer<typeof memberSchema>
 export type WorkspaceRole = z.infer<typeof workspaceRoleSchema>
+export type Team = z.infer<typeof teamSchema>
+export type TeamMember = z.infer<typeof teamMemberSchema>

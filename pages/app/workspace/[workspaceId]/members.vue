@@ -4,7 +4,7 @@
     <div class="mx-auto max-w-4xl bg-card rounded-xl shadow-sm">
       <!-- Header -->
       <div class="border-b p-6" v-if="data?.user?.id === selectedWorkspace?.ownerId">
-        <h1 class="text-2xl font-semibold text-foreground">Project Settings</h1>
+        <h1 class="text-2xl font-semibold text-foreground">Members of {{ selectedWorkspace?.name }}</h1>
       </div>
       <div v-else class="">
         <h1 class="text-2xl font-semibold text-foreground">Team Members</h1>
@@ -61,7 +61,7 @@
                   <DropdownMenu>
                   <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="w-[110px] justify-between">
-                      {{ member?.role?.name }}
+                        {{ member?.role?.name ? member.role.name.charAt(0).toUpperCase() + member.role.name.slice(1).toLowerCase() : '' }}
                       <ChevronDownIcon class="ml-2 h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
