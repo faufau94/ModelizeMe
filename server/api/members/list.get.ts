@@ -26,15 +26,23 @@ export default defineEventHandler(async event => {
     // Retrieve members of the workspace
     const members = await prisma.workspaceMember.findMany({
       where: { workspaceId: String(workspaceId) },
-      include: { 
-        user: true,
-        role: {
-          select: {
-            name: true
+      include: {
+        user: {
+          include: {
+            teamMemberships: {
+              where: { team: { workspaceId: String(workspaceId) } },
+              include: {
+                team: true
+              }
+            }
           }
+        },
+        role: {
+          select: { name: true }
         }
       }
     })
+
     
     const allMembers = [
       {

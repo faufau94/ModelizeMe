@@ -27,7 +27,7 @@
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Renommer le nom</AlertDialogTitle>
+                    <AlertDialogTitle>Renommer le modèle</AlertDialogTitle>
                     <AlertDialogDescription>
                     </AlertDialogDescription>
                   </AlertDialogHeader>

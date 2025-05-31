@@ -157,7 +157,7 @@
                       @update:checked="toggleUser(member.id)"
                     />
                     <Avatar class="h-8 w-8">
-                      {{ member.name.charAt(0).toUpperCase() }}
+                      {{ member.first_name.charAt(0).toUpperCase() }}
                     </Avatar>
                     <div class="flex-1">
                       <p class="text-sm font-medium">{{ member.first_name }} {{ member.name }}</p>
@@ -219,7 +219,7 @@
               <div>
                 <h4 class="text-sm font-medium text-green-900">Auto-dispatch All Users</h4>
                 <p class="text-sm text-green-700 mt-1">
-                  All workspace users ({{ workspaceUsers.length }}) will be added to this team.
+                  All workspace users will be added to this team.
                   Users can be members of multiple teams simultaneously.
                 </p>
               </div>
@@ -290,7 +290,7 @@ const teamSchema = z.object({
   description: z.string().optional(),
   color: z.string().default('blue'),
   maxMembers: z.number().min(1, 'Must have at least 1 member').max(50, 'Cannot exceed 50 members').default(10),
-  selectedUsers: z.array(z.string()).default([]),
+  selectedUsers: z.array(z.number()).default([]),
   dispatchMode: z.enum(['manual', 'unassigned', 'all']).default('manual'),
 })
 
@@ -301,61 +301,17 @@ const getMembersList = computed(() => {
     name: member.user.name,
     first_name: member.user.first_name,
     email: member.user.email,
-    teamId: 1 || null,
-    teamName: 'test' || null
+    teamId: member.user.teamMemberships.length ?? null,
+    teamName: member.user.teamMemberships.length === 1 ? member.user.teamMemberships[0].team?.name : (member.user.teamMemberships.length > 0 ? '+'+member.user.teamMemberships.length + ' teams' : null),
   }))
 })
-
-// Mock data for workspace users
-const workspaceUsers = ref([
-  {
-    id: '1',
-    name: 'Alice Johnson',
-    email: 'alice@company.com',
-    avatar: '/placeholder.svg?height=32&width=32',
-    teamId: null,
-    teamName: null
-  },
-  {
-    id: '2',
-    name: 'Bob Smith',
-    email: 'bob@company.com',
-    avatar: '/placeholder.svg?height=32&width=32',
-    teamId: 'team-1',
-    teamName: 'Frontend Team'
-  },
-  {
-    id: '3',
-    name: 'Carol Davis',
-    email: 'carol@company.com',
-    avatar: '/placeholder.svg?height=32&width=32',
-    teamId: null,
-    teamName: null
-  },
-  {
-    id: '4',
-    name: 'David Wilson',
-    email: 'david@company.com',
-    avatar: '/placeholder.svg?height=32&width=32',
-    teamId: 'team-2',
-    teamName: 'Backend Team'
-  },
-  {
-    id: '5',
-    name: 'Eva Brown',
-    email: 'eva@company.com',
-    avatar: '/placeholder.svg?height=32&width=32',
-    teamId: null,
-    teamName: null
-  }
-])
 
 // Component state
 const isOpen = ref(false)
 const isSubmitting = ref(false)
 
 const { members } = useMember()
-const { teams, createTeam } = useTeam()
+const { createTeam } = useTeam()
 
 // vee-validate form setup
 const { defineField, handleSubmit, errors, resetForm, values } = useForm({
@@ -390,12 +346,12 @@ const getUserById = (userId) => {
 
 const toggleUser = (userId) => {
   const currentUsers = selectedUsers.value || []
-  const index = currentUsers.indexOf(userId)
-  if (index > -1) {
+  if (currentUsers.includes(userId)) {
     selectedUsers.value = currentUsers.filter(id => id !== userId)
   } else {
     selectedUsers.value = [...currentUsers, userId]
   }
+
 }
 
 const removeUser = (userId) => {

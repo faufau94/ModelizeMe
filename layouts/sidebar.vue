@@ -82,15 +82,73 @@
                         </SidebarMenuAction>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <PencilIcon class="mr-2 h-4 w-4" />
-                          <span>Renommer</span>
-                        </DropdownMenuItem>
+                                    <DropdownMenuItem class="cursor-pointer">
+              <AlertDialog v-model:open="showDialogRenameTeam">
+                <AlertDialogTrigger as-child>
+                  <div @click.stop="showDialogRenameTeam = true">
+                    Renommer
+                  </div>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Renommer l'équipe</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                    <Form 
+                    v-slot="{ handleSubmit, values }" 
+                    :initial-values="{ name: team.name }" 
+                    :validation-schema="formSchema"
+                    >
+                    <form @submit="handleSubmit($event, (formValues) => rnTeam({ ...formValues, teamId: team.id }))">
+                    <FormField v-slot="{ componentField }" name="name">
+                      <FormItem>
+                        <FormLabel>Nom</FormLabel>
+                        <FormControl>
+                          <Input type="text" v-bind="componentField"/>
+                        </FormControl>
+                        <FormMessage />
+                        <FormControl class="float-right">
+                          <Button type="submit" :disabled="isRenamingTeam">
+                            <Loader2 v-if="isRenamingTeam" class="w-4 h-4 mr-2 animate-spin"/>
+                            {{ isRenamingTeam ? 'Renommage...' : 'Renommer' }}
+                          </Button>
+                            <Button type="button" variant="secondary" @click.stop="showDialogRenameTeam = false">
+                              Annuler
+                            </Button>
+                        </FormControl>
+                      </FormItem>
+                    </FormField>
+                  </form>
+                  </Form>
+                </AlertDialogContent>
+              </AlertDialog>
+            </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem @click="removeTeam(team.id)" class="text-destructive focus:text-destructive">
-                          <TrashIcon class="mr-2 h-4 w-4" />
-                          <span>Supprimer</span>
-                        </DropdownMenuItem>
+                          <DropdownMenuItem class="cursor-pointer">
+                            <AlertDialog>
+                              <AlertDialogTrigger as-child>
+                                <div @click.stop="showDialogDeleteTeam = true" class="text-red-500">
+                                  Supprimer
+                                </div>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent v-if="showDialogDeleteTeam">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Voulez-vous supprimer ce modèle ?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Cette action est irréversible et supprimera définitement ce modèle.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                  <Button variant="destructive" @click.stop="removeTeam(team.id)" :disabled="isDeletingTeam">
+                                    <Loader2 v-if="isDeletingTeam" class="w-4 h-4 mr-2 animate-spin"/>
+                                    {{ isDeletingTeam ? 'Suppression...' : 'Supprimer' }}
+                                  </Button>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </SidebarMenuItem>
@@ -407,6 +465,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { toast } from 'vue-sonner';
+import { z } from "zod/v4";
 
 const route = useRoute()
 const { data } = useAuth()
@@ -417,7 +476,7 @@ const { signOut } = useAuth()
 const copiedWorkspaceLink = ref(false)
 
 const { selectedWorkspace, copyWorkspaceLink, goToThisWorkspaceUrl } = useWorkspace()
-const { teams } = useTeam()
+const { teams, renameTeam } = useTeam()
 
 const copyLink = async () => {
   try {
@@ -446,6 +505,8 @@ const goToSettingsPage = async () => {
   await navigateTo(url)
 }
 
+const showDialogDeleteTeam = ref(false)
+const isDeletingTeam = ref(false)
 const removeTeam = async (teamId: Number) => {
   try {
     await deleteTeam(teamId)
@@ -456,4 +517,34 @@ const removeTeam = async (teamId: Number) => {
   }
 }
 
+
+const formSchema = toTypedSchema(z.object({
+  name: z.string({
+    error: (issue) => issue.input === undefined
+      ? "Veuillez remplir le champs."
+      : ""
+  }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
+}))
+
+
+const form = useForm({
+  validationSchema: formSchema,
+  initialValues: {
+    name: ''
+  },
+  validateOnMount: false,
+})
+
+
+const isRenamingTeam = ref(false)
+const showDialogRenameTeam = ref(false)
+const rnTeam = async (values) => {
+  isRenamingTeam.value = true
+  renameTeam(values.teamId,{name: values.name})
+
+  isRenamingTeam.value = false
+  showDialogRenameTeam.value = false
+
+  toast.success('Le modèle a été renommé avec succès.');
+}
 </script>

@@ -101,6 +101,16 @@ export function useTeam() {
   const assignMembers = (teamId: string, assignments: TeamMember[]) =>
     assignMembersMutation.mutateAsync({ teamId, assignments })
 
+
+  // — RENAME THE TEAM —
+  const renametTeamMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) =>
+      await $fetch('/api/teams/rename', { method: 'PUT', query: { id }, body: data }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const renameTeam = (id: number, updatedData: any) =>
+    renametTeamMutation.mutateAsync({ id, data: updatedData })
+
   return {
     // state & queries
     teams,
@@ -116,6 +126,7 @@ export function useTeam() {
     updateTeam,
     deleteTeam,
     assignMembers,
+    renameTeam,
 
     // pour debug ou usage avancé
     _mutations: {
