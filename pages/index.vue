@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import UiMeteors from '@/components/UiMeteors.client.vue'
 //import UiRetroGrid from '@/components/RetroGrid.vue'
-
-const {data, signOut} = useAuth()
+import { signOut } from "~/lib/auth-client";
+import { useSession } from "~/lib/auth-client";
+const { data } = await useSession(useFetch);
 </script>
 
 <template>

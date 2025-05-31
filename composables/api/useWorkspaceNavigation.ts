@@ -1,15 +1,19 @@
-export function useWorkspaceNavigation() {
-  const { data } = useAuth()
+// import { useSession } from "~/lib/auth-client"
 
-  // — SELECTED WORKSPACE —
-  const goToDashboard = () => {
-    const lastActiveWorkspaceId = data.value?.user?.lastActiveWorkspaceId
-    return `/app/workspace/${lastActiveWorkspaceId}/dashboard`
-  }
+// export async function useWorkspaceNavigation() {
 
-  return { 
-    
-    // when the user is authenticated, we can use the lastActiveWorkspaceId
-    goToDashboard,
-   }
-}
+//   // — SELECTED WORKSPACE —
+//   const goToDashboard = async () => {
+//     const { data: session } = await useSession(useFetch)
+//     console.log(session)
+//     if (session?.value?.activeOrganizationId) {
+//       return `/app/workspace/${session?.value?.activeOrganizationId}/dashboard`
+//     }
+//     return '/' // fallback if no active organization
+//   }
+
+//   return { 
+//     // when the user is authenticated, we can use the lastActiveWorkspaceId
+//     goToDashboard,
+//   }
+// }

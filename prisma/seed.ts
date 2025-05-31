@@ -10,6 +10,7 @@ async function main() {
     }
   });
   
+  
   const regularUser = await auth.api.createUser({
     body: {
       name: "User test",
@@ -29,7 +30,7 @@ async function main() {
       }
     }
   });
-
+  
 }
 
 main()

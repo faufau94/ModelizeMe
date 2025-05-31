@@ -1,11 +1,13 @@
 import prisma from "~/lib/prisma";
-import {getServerSession} from "#auth";
+import { auth } from "~/lib/auth";
 
 export default defineEventHandler(async event => {
 
     const { title, selectedWorkspaceId } = await readBody(event);
 
-    const session = await getServerSession(event);
+    const session = await auth.api.getSession({
+        headers: event.headers,
+    })
 
     const newModelCreated = await prisma.model.create({
         data: {

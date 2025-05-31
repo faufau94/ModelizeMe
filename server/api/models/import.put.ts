@@ -1,5 +1,4 @@
 import prisma from "~/lib/prisma";
-import { getServerSession } from "#auth";
 import { defineEventHandler } from "h3";
 
 export default defineEventHandler(async (event) => {

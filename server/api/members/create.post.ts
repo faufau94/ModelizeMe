@@ -1,10 +1,12 @@
-import { getServerSession } from '#auth'
 import prisma from '~/lib/prisma'
 import { hash } from 'bcrypt'
+import { auth } from '~/lib/auth'
 
 export default defineEventHandler(async event => {
   // Validate session
-  const session = await getServerSession(event)
+  const session = await auth.api.getSession({
+    headers: event.headers,
+  })
   if (!session?.user?.id) {
     return { status: 401, body: { message: 'Unauthorized' } }
   }

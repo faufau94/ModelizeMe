@@ -1,15 +1,18 @@
 import { authClient } from "@/lib/auth-client";
-import { useWorkspaceNavigation } from '@/composables/api/useWorkspaceNavigation'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-	const { data: session } = await authClient.useSession(useFetch);
-  const { goToDashboard } = useWorkspaceNavigation()
 
-	if (!session.value) {
-		if (to.path === goToDashboard()) {
-			return navigateTo("/");
-		}
-	}
+	// if (session.value) {
+	// 	if (to.path === '/dashboard') {
+	// 		return navigateTo(goToDashboard())
+	// 	}
+	// }
+
+	// if (!session.value) {
+	// 	if (to.path === "/dashboard") {
+	// 		return navigateTo("/");
+	// 	}
+	// }
 });
 
 

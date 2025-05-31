@@ -1,10 +1,11 @@
 import prisma from "~/lib/prisma";
-import { getServerSession } from "#auth";
-import {H3Error} from "h3";
+import { auth } from "~/lib/auth";
 
 export default defineEventHandler(async event => {
     const { selectedWorkspaceId } = getQuery(event);
-    const session = await getServerSession(event);
+    const session = await auth.api.getSession({
+        headers: event.headers,
+    })
     try {
 
         if (!session?.user?.email) {

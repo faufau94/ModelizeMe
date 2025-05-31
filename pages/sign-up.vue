@@ -115,11 +115,11 @@
                 {{ isLoading ? "Chargement..." : "S'inscrire" }}
               </Button>
 
-              <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
+              <!-- <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
                 <Button  class="w-full" variant="outline" @click="signInProvider(provider.id)">
                   Continuer avec {{ provider?.name }}
                 </Button>
-              </div>
+              </div> -->
             </div>
           </Form>
 
@@ -154,11 +154,7 @@ import {Loader2} from "lucide-vue-next";
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
-import { useUser } from '~/composables/api/useUser';
-import { useWorkspaceNavigation } from '~/composables/api/useWorkspaceNavigation';
 
-
-const {goToDashboard} = useWorkspaceNavigation()
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
@@ -208,44 +204,31 @@ const form = useForm({
 })
 
 
-const {signIn, getProviders, refresh} = useAuth()
-const providers = await getProviders()
+// const {signIn, getProviders, refresh} = useAuth()
+// const providers = await getProviders()
 
 const message = ref({
   type: '',
   text: ''
 })
 
-const { addUser } = useUser()
 const isLoading = ref(false)
 const signUp = async (values) => {
   isLoading.value = true
 
-  const result = await addUser(values)
-
-  if (result.status === 200) {
-
-    const res = await signIn('credentials', {
-      email: values.email,
-      password: values.password,
-      redirect: false,
-    })
-
-    if (res?.error) {
-        message.value.type = 'error'
-        message.value.text = res.error
+  await signUp.email({
+		email: user.email,
+		password: user.password,
+		name: `${user.firstName} ${user.lastName}`,
+		callbackURL: "/dashbord",
+		fetchOptions: {
+			onError(context) {
+				message.value.type = 'error'
+        message.value.text = context.error.message
         isLoading.value = false
-    } else {
-        await refresh()
-        await  navigateTo(goToDashboard())
-        isLoading.value = false
-      }
-
-
-  } else {
-    message.value = {type: 'error', text: result.body.error}
-    isLoading.value = false
-  }
+			},
+		},
+	});
 }
 
 const signInProvider = async (providerId) => {
@@ -267,12 +250,12 @@ const signInProvider = async (providerId) => {
   }
 }
 
-const filteredProviders = computed(() => {
-  return Object.keys(providers)
-      .filter(key => key !== 'credentials')
-      .reduce((result, key) => {
-        result[key] = providers[key]
-        return result
-      }, {})
-})
+// const filteredProviders = computed(() => {
+//   return Object.keys(providers)
+//       .filter(key => key !== 'credentials')
+//       .reduce((result, key) => {
+//         result[key] = providers[key]
+//         return result
+//       }, {})
+// })
 </script>

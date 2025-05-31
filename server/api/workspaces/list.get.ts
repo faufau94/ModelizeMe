@@ -1,10 +1,12 @@
 // server/api/workspaces/list.get.ts
 import prisma from "~/lib/prisma"
-import { getServerSession } from "#auth"
+import { auth } from "~/lib/auth"
 
 export default defineEventHandler(async (event) => {
   // 1) Récupère l’ID utilisateur depuis la session
-  const session = await getServerSession(event)
+  const session = await auth.api.getSession({
+    headers: event.headers,
+  })
   const userId  = session?.user?.id
   if (!userId) {
     throw createError({ statusCode: 401, statusMessage: "Non authentifié" })

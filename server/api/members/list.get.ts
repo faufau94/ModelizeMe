@@ -1,9 +1,11 @@
-import { getServerSession } from '#auth'
+import { auth } from '~/lib/auth'
 import prisma from "~/lib/prisma"
 
 export default defineEventHandler(async event => {
   // Fetch current user session
-  const session = await getServerSession(event)
+  const session = await auth.api.getSession({
+    headers: event.headers,
+  })
   const userId = session?.user?.id
   if (!userId) {
     return { status: 401, body: { message: 'Unauthorized' } }
