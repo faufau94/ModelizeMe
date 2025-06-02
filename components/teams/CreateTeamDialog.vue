@@ -283,6 +283,10 @@ import { toast } from 'vue-sonner'
 
 import { useTeam } from '@/composables/api/useTeam';
 import { useMember } from '@/composables/api/useMember'
+import { useWorkspace } from '~/composables/api/useWorkspace'
+
+const { selectedWorkspace } = useWorkspace()
+
 
 // Zod schema for form validation
 const teamSchema = z.object({
@@ -295,7 +299,9 @@ const teamSchema = z.object({
 })
 
 const getMembersList = computed(() => {
-  const memberListWithoutOwners = members.value.filter(member => member.role.name !== 'OWNER')
+  console.log('selectedWorkspace', selectedWorkspace.value)
+
+  const memberListWithoutOwners = selectedWorkspace?.value?.members?.filter(member => member.role !== 'owner')
   return memberListWithoutOwners.map(member => ({
     id: member.user.id,
     name: member.user.name,
@@ -310,7 +316,6 @@ const getMembersList = computed(() => {
 const isOpen = ref(false)
 const isSubmitting = ref(false)
 
-const { members } = useMember()
 const { createTeam } = useTeam()
 
 // vee-validate form setup
@@ -336,12 +341,12 @@ const [dispatchMode] = defineField('dispatchMode')
 
 // Computed properties
 const availableUsers = computed(() => {
-  return members.value.filter(member => !member.user.teamId)
+  return selectedWorkspace.value?.members?.filter(member => !member.user.teamId)
 })
 
 // Helper functions
 const getUserById = (userId) => {
-  return members.value.find(member => member.user.id === userId) || null
+  return selectedWorkspace.value?.members?.find(member => member.user.id === userId) || null
 }
 
 const toggleUser = (userId) => {

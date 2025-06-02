@@ -12,7 +12,7 @@
         <AddWorkspaceDialog :isOnlyIcon="true"/>
       </div>
     </div>
-    
+
     <!-- Navigation Sidebar -->
     <div class="w-64 border-r border-border bg-card flex flex-col hidden md:flex">
       <!-- Logo -->
@@ -46,7 +46,7 @@
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem v-if="data?.user?.id === selectedWorkspace?.ownerId">
+              <SidebarMenuItem >
                 <SidebarMenuButton 
                   @click="goToSettingsPage" 
                   :isActive="route.path.split('/').pop() === 'settings'"
@@ -70,7 +70,7 @@
 
               <SidebarGroupContent>
                 <SidebarMenu>
-                  <SidebarMenuItem v-for="team in teams" :key="team.id">
+                  <SidebarMenuItem v-for="team in selectedWorkspace?.teams" :key="team.id">
                     <SidebarMenuButton asChild>
                       <a href="#">{{ team.name }}</a>
                     </SidebarMenuButton>
@@ -345,7 +345,7 @@
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" class="relative h-8 w-8 rounded-full">
                 <Avatar class="h-8 w-8">
-                  {{ data?.user?.first_name?.charAt(0).toUpperCase() + data?.user?.name?.charAt(0).toUpperCase()  }}
+                  {{ data?.user?.name?.charAt(0).toUpperCase()  }}
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
@@ -353,7 +353,7 @@
               <DropdownMenuLabel class="font-normal">
                 <div class="flex flex-col space-y-1">
                   <p class="text-sm font-medium leading-none">
-                    {{ data?.user?.first_name + ' ' + data?.user?.name  }}
+                    {{ data?.user?.name  }}
                   </p>
                   <p class="text-xs leading-none text-muted-foreground">
                     {{ data?.user?.email  }}
@@ -374,7 +374,7 @@
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
+                <NuxtLink class="cursor-pointer" @click.prevent="signOut">
                   Se déconnecter
                 </NuxtLink>
               </DropdownMenuItem>
@@ -466,17 +466,15 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'vue-sonner';
 import { z } from "zod/v4";
+import { useSession, authClient } from '~/lib/auth-client';
 
 const route = useRoute()
-const { data } = useAuth()
+const { data } = await useSession(useFetch);
 
-const { deleteTeam } = useTeam()
-
-const { signOut } = useAuth()
 const copiedWorkspaceLink = ref(false)
 
 const { selectedWorkspace, copyWorkspaceLink, goToThisWorkspaceUrl } = useWorkspace()
-const { teams, renameTeam } = useTeam()
+ const { renameTeam, deleteTeam } = useTeam()
 
 const copyLink = async () => {
   try {
@@ -540,11 +538,22 @@ const isRenamingTeam = ref(false)
 const showDialogRenameTeam = ref(false)
 const rnTeam = async (values) => {
   isRenamingTeam.value = true
-  renameTeam(values.teamId,{name: values.name})
+  renameTeam(values.teamId,values.name)
 
   isRenamingTeam.value = false
   showDialogRenameTeam.value = false
 
   toast.success('Le modèle a été renommé avec succès.');
+}
+
+
+const signOut = async () => {
+  await authClient.signOut({
+    fetchOptions: {
+      onSuccess: async () => {
+        await navigateTo('/')
+      },
+    },
+  })
 }
 </script>

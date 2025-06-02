@@ -56,10 +56,6 @@ export default defineEventHandler(async event => {
 
     } catch (error) {
         console.error('Global error:', error);
-        throw error instanceof H3Error ? error : createError({
-            statusCode: 500,
-            message: "Internal server error",
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        
     }
 });

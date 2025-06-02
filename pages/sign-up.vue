@@ -34,7 +34,7 @@
           <Form
               as="form"
               :validation-schema="formSchema"
-              @submit="signUp"
+              @submit="onSubmit"
               v-slot="{ errors }"
             >
             <div class="grid gap-4">
@@ -155,6 +155,8 @@ import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
 
+import { signUp, authClient } from "~/lib/auth-client.js";
+
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
@@ -172,18 +174,19 @@ const formSchema = toTypedSchema(z.object({
     ? "Veuillez remplir le champs." 
     : ""})
       .nonempty("Veuillez remplir le champ.")
-      .refine(
-        // la fonction doit renvoyer true (valide) ou false (erreur)
-        async (email) => {
-          const res = await $fetch("/api/auth/email-exists", {
-            method: "GET",
-            params: { email },
-          })
-          // on suppose que GET /api/users?email=… → { exists: boolean }
-          return !res.body.exists
-        },
-        { message: "Cet email est déjà utilisé." }
-      ),
+      // .refine(
+      //   // la fonction doit renvoyer true (valide) ou false (erreur)
+      //   async (email) => {
+      //     const res = await $fetch("/api/auth/email-exists", {
+      //       method: "GET",
+      //       params: { email },
+      //     })
+      //     // on suppose que GET /api/users?email=… → { exists: boolean }
+      //     return !res.body.exists
+      //   },
+      //   { message: "Cet email est déjà utilisé." }
+      // )
+      ,
   password: z.string({
     error: (issue) => issue.input === undefined 
     ? "Veuillez remplir le champs." 
@@ -213,23 +216,35 @@ const message = ref({
 })
 
 const isLoading = ref(false)
-const signUp = async (values) => {
-  isLoading.value = true
+const onSubmit = async (values) => {
+  isLoading.value = true;
+  
+  const res = await signUp.email({
+    email: values.email,
+    password: values.password,
+    name: values.name,
+  });
+  
+  if (res.error) {
+    message.value.type = 'error';
+    message.value.text = res.error.message || "";
+    isLoading.value = false;
+  } else {
+    // Wait for session to load
+    const { data: session } = await authClient.getSession()
 
-  await signUp.email({
-		email: user.email,
-		password: user.password,
-		name: `${user.firstName} ${user.lastName}`,
-		callbackURL: "/dashbord",
-		fetchOptions: {
-			onError(context) {
-				message.value.type = 'error'
-        message.value.text = context.error.message
-        isLoading.value = false
-			},
-		},
-	});
-}
+    console.log(session)
+
+    // Redirect to dynamic URL
+    const orgId = session?.session?.activeOrganizationId
+    console.log(orgId)
+    if (orgId) {
+      const url = getDashboardUrl(orgId)
+      console.log(url)
+      await navigateTo(url)
+    }
+  }
+};
 
 const signInProvider = async (providerId) => {
   isLoading.value = true

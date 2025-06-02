@@ -61,8 +61,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-import { signOut } from "~/lib/auth-client";
-import { useSession } from "~/lib/auth-client";
+import { signOut, useSession } from '~/lib/auth-client';
 const { data } = await useSession(useFetch);
 
 </script>

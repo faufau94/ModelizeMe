@@ -80,11 +80,14 @@
             </div>
           </Form>
 
-          <!-- <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full py-2">
-            <Button class="w-full" variant="outline" @click="signInProvider(provider.id)">
-              Continuer avec {{ provider?.name }}
-            </Button>
-          </div> -->
+          <div class="my-4">
+            <div v-for="provider in socialProviders" :key="provider.id" class="w-full py-2">
+              <Button class="w-full" variant="outline" :disabled="isLoading" @click="signInProvider(provider.id)">
+                <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                Continuer avec {{ provider.name }}
+              </Button>
+            </div>
+          </div>
 
           <div class="mt-4 text-center text-sm">
             Pas encore de compte ?
@@ -121,6 +124,7 @@ import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
 
 import { signIn, authClient } from "~/lib/auth-client.js";
+import { getDashboardUrl } from '~/utils/routes'
 
 const formSchema = toTypedSchema(z.object({
   email: z.email({message: "Adresse email invalide."}),
@@ -140,61 +144,67 @@ const message = ref({
   text: ''
 })
 
-// const {signIn, getProviders, refresh} = useAuth()
-// const providers = await getProviders()
-
 const isLoading = ref(false)
+
+const socialProviders = [
+  { id: 'google', name: 'Google' },
+  { id: 'github', name: 'GitHub' },
+  { id: 'gitlab', name: 'GitLab' },
+]
 
 const onSubmit = async (values) => {
   isLoading.value = true
 
-
   const result = await signIn.email(
-		{
-			email: values.email,
-			password: values.password,
-		},
-		{
-			onError(context) {
+    {
+      email: values.email,
+      password: values.password,
+    },
+    {
+      onError(context) {
         console.log(context)
-				message.value.type = 'error'
+        message.value.type = 'error'
         message.value.text = context.error.message
         isLoading.value = false
-			},
-		},
-	)
+      },
+    },
+  )
 
-  // Attendre que la session se charge
+  if (result.error) {
+    message.value.type = 'error'
+    message.value.text = result.error.message
+    isLoading.value = false
+  }
+
+  // Wait for session to load
   const { data: session } = await authClient.getSession()
-  console.log(session)
 
-  // Puis rediriger vers l'URL dynamique
+  // Redirect to dynamic URL
   const orgId = session?.session?.activeOrganizationId
   if (orgId) {
-    const url = `/app/workspace/${orgId}/dashboard`
-    console.log(url)
+    const url = getDashboardUrl(orgId)
     await navigateTo(url)
   }
 }
 
-// const signInProvider = async (providerId) => {
-//   isLoading.value = true
-//   try {
-//     const res = await signIn(providerId)
-//     if (res?.error) {
-//       console.error("Erreur de connexion avec le provider:", res.error)
-//       // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
-//     } else {
-//       // Redirection réussie
-//       await refresh()
-//       return navigateTo(goToDashboard())
-//     }
-//   } catch (error) {
-//     console.error("Erreur lors de la connexion avec le provider:", error)
-//   } finally {
-//     isLoading.value = false
-//   }
-// }
+const signInProvider = async (providerId) => {
+  isLoading.value = true;
+  try {
+    await authClient.signIn.social({
+      provider: providerId,
+      callbackURL: "/dashboard", // or your dynamic URL
+      errorCallbackURL: "/error",
+      newUserCallbackURL: "/welcome",
+      // disableRedirect: true, // if you want to handle the redirect yourself
+    });
+    // If disableRedirect is true, handle the redirect here
+  } catch (error) {
+    message.value.type = 'error';
+    message.value.text = error.message || 'Erreur lors de la connexion avec le provider.';
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 // const filteredProviders = computed(() => {
 //   return Object.keys(providers)

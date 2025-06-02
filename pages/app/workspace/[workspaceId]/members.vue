@@ -2,16 +2,18 @@
   <div class="min-h-screen bg-background p-4 md:p-8">
 
     <div class="mx-auto max-w-4xl bg-card rounded-xl shadow-sm">
+
       <!-- Header -->
-      <div class="border-b p-6" v-if="data?.user?.id === selectedWorkspace?.ownerId">
+      <div class="border-b p-6" v-if="getIsOwner">
         <h1 class="text-2xl font-semibold text-foreground">Members of {{ selectedWorkspace?.name }}</h1>
       </div>
-      <div v-else class="">
+      <div v-else>
         <h1 class="text-2xl font-semibold text-foreground">Team Members</h1>
       </div>
+
       
       <!-- Share Link Section -->
-      <div v-if="data?.user?.id === selectedWorkspace?.ownerId" class="border-b p-6">
+      <div v-if="getIsOwner" class="border-b p-6">
         <h2 class="text-lg font-medium text-foreground mb-4">Share Link</h2>
         <div class="flex flex-col sm:flex-row gap-3">
           <Input
@@ -34,16 +36,16 @@
 
       <!-- Members List Section -->
       <div v-if="!isLoadingMembers" class="p-6">
-        <h2 v-if="data?.user?.id === selectedWorkspace?.ownerId" class="text-lg font-medium text-foreground mb-4">Team Members</h2>
+        <h2 v-if="getIsOwner" class="text-lg font-medium text-foreground mb-4">Team Members</h2>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead v-if="data?.user?.id === selectedWorkspace?.ownerId" class="text-right">Actions</TableHead>
+              <TableHead v-if="getIsOwner" class="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
+          <TableBody v-if="members?.length > 0">
             <TableRow v-for="(member, index) in members" :key="member.user.id">
               <TableCell>
                 <div class="flex items-center">
@@ -57,7 +59,7 @@
                 </div>
               </TableCell>
               <TableCell>
-                <template v-if="data?.user?.id === selectedWorkspace?.ownerId && member?.role?.name !== 'OWNER' && !isLoadingWorkspaceRoles">
+                <template v-if="getIsOwner && member?.role?.name !== 'OWNER' && !isLoadingWorkspaceRoles">
                   <DropdownMenu>
                   <DropdownMenuTrigger as-child>
                     <Button variant="outline" class="w-[110px] justify-between">
@@ -95,7 +97,7 @@
               </TableCell>
               <TableCell class="text-right">
                 <Button
-                  v-if="data?.user?.id === selectedWorkspace?.ownerId && member?.role?.name !== 'OWNER'"
+                  v-if="getIsOwner && member?.role?.name !== 'OWNER'"
                   @click="confirmRemoveMember(member.userId)"
                   variant="ghost"
                   class="text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -103,6 +105,14 @@
                   Remove
                 </Button>
 
+              </TableCell>
+            </TableRow>
+          </TableBody>
+
+          <TableBody v-else>
+            <TableRow>
+              <TableCell colspan="3" class="text-center">
+                No members found
               </TableCell>
             </TableRow>
           </TableBody>
@@ -176,6 +186,9 @@
 
 <script setup lang="ts">
 
+// Replace useAuth with useSession from better-auth
+import { useSession } from '~/lib/auth-client'
+
 definePageMeta({
   layout: 'sidebar',
 })
@@ -200,11 +213,16 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { toast } from 'vue-sonner'
+import { authClient } from '~/lib/auth-client'
 
+// Use better-auth's useSession
+const { data: session } = await useSession(useFetch)
 
-const { data } = useAuth()
+// Get active member
+// const activeMember = await authClient.organization.getActiveMember()
+
 // Extract workspace share link
-const { workspaceShareLink, selectedWorkspace, workspaceRoles, isLoadingWorkspaceRoles, regenerateWorkspaceInviteCode } = useWorkspace()
+const { workspaceShareLink, selectedWorkspace, workspaceRoles, isLoadingWorkspaceRoles, getIsOwner, regenerateWorkspaceInviteCode } = useWorkspace()
 
 // Use Member composable
 const { members, isLoadingMembers, addMember, updateMember, deleteMember } = useMember()
@@ -235,14 +253,10 @@ const regenerateShareLink = async () => {
 // Change member role
 const changeMemberRole = async (memberId: number, newRoleId: number) => {
   const res = await updateMember(memberId.toString(), { roleId: newRoleId })
-
-
-  if (res.status === 200) {
-    // Optionally show a success message
+  if (res.status === 200 && res.body?.role) {
     toast.success(`Member's role has been changed to ${res.body.role.name}.`)
   } else {
-    // Handle error case
-    toast.error(res.body.message)
+    toast.error(res.body?.message || 'Error updating member role')
   }
 }
 
@@ -264,7 +278,9 @@ const removeMember = async (id: number|null) => {
   if (id) {
     const res = await deleteMember(id.toString())
     memberToRemove.value = null
-    toast.success(res.body.message)
+    toast.success(res.body?.message || 'Member removed')
   }
 }
+
+
 </script>

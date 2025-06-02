@@ -1,9 +1,8 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "~/prisma/generated/prisma/client";
+import { PrismaClient } from "../prisma/generated/prisma/client";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
-// import { useRuntimeConfig } from "#imports";
 
 const prisma = new PrismaClient();
 export const auth = betterAuth({
@@ -12,7 +11,7 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {  
         enabled: true,
-        autoSignIn: false,
+        autoSignIn: true,
         async sendResetPassword(url, user) {
 			console.log("Reset password url:", url);
 		},
@@ -33,7 +32,21 @@ export const auth = betterAuth({
     // },
     plugins: [
         admin(),
-        organization()
+        organization({
+          teams: {
+            enabled: true,
+            allowRemovingAllTeams: true
+          },
+
+          organizationCreation: {
+            afterCreate: async ({ organization }) => {
+              // Supprimer la team auto-créée
+              await prisma.team.deleteMany({
+                where: { organizationId: organization.id },
+              })
+            },
+          },
+        })
     ],
     databaseHooks: {
         user: {

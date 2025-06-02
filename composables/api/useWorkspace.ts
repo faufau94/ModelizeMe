@@ -1,22 +1,25 @@
 // ~/composables/useWorkspace.ts
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import type { Workspace, WorkspaceRole } from '@/components/dataTable/data/schema'
+import { useSession } from '~/lib/auth-client'
+import { authClient } from '~/lib/auth-client'
 
 export const useWorkspace = () => {
   const route = useRoute()
-  const { data } = useAuth()
-  const { refresh } = useAuth()
+  const session = useSession()
   const queryClient = useQueryClient()
+  const activeOrganizationId = computed(() => session.value?.data?.session?.activeOrganizationId)
+
 
   const selectedWorkspaceId = computed<string|null>(() => {
-    // si l’URL fournit workspaceId, on l’utilise
+    // si l'URL fournit workspaceId, on l'utilise
     if (route.params.workspaceId !== 'undefined') {
       return String(route.params.workspaceId)
     }
 
     // sinon, on tombe sur la valeur stockée en session
-    return data.value?.user?.lastActiveWorkspaceId ?? null
+    return activeOrganizationId.value ?? null
   })
 
   const workspaceShareLink = computed(() => {
@@ -25,92 +28,91 @@ export const useWorkspace = () => {
   })
   
 
-  // — LIST WORKSPACES —
-  const {data: workspaces, isLoading: isLoadingWorkspaces, error, suspense } = useQuery<Workspace[]>({
+  // LIST WORKSPACES (Organizations)
+  const { data: workspaces, isLoading: isLoadingWorkspaces } = useQuery({
     queryKey: ['workspaces'],
     queryFn: async () => {
-      const headers = useRequestHeaders(['cookie']) as HeadersInit
-      const res = await $fetch<Workspace[]>('/api/workspaces/list', {
-        method: 'GET',
-        headers
-      })
-      return res
+      const organizations = await authClient.organization.list()
+      //Optionally, set the active org if not set
+      if (!activeOrganizationId.value && res?.data?.length) {
+        activeOrganizationId.value = res.data[0].id
+      }
+      return organizations.data
     },
-    })
+  })
 
-  // — READ SELECTED WORKSPACE —
+  // READ SELECTED WORKSPACE
   const {data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery<Workspace>({
     queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
     queryFn: async ({ queryKey }) => {
 
       const workspaceId = route.params.workspaceId
 
-      const headers = useRequestHeaders(['cookie']) as HeadersInit      
-      return await $fetch<Workspace>('/api/workspaces/read', {
-        method: 'GET',
-        query: { workspaceId },
-        headers
+      const organization = await authClient.organization.getFullOrganization({
+        query: { organizationId: workspaceId }
       })
+
+      console.log('workspaceId', workspaceId)
+      console.log('organization', organization.data)
+      return organization.data
     },
     staleTime: 0,
     enabled: computed(() => selectedWorkspaceId.value !== null),
   })
 
-  // — CREATE WORKSPACE —
+  // CREATE WORKSPACE (Organization)
   const addWorkspaceMutation = useMutation({
-    mutationFn: async (payload: any) =>
-      await $fetch('/api/workspaces/create', { method: 'POST', body: payload }),
-    onSuccess: () => queryClient.invalidateQueries(['workspaces']),
+    mutationFn: async (payload) => {
+      return await authClient.organization.create({ ...payload })
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
   })
-  function addWorkspace(newWorkspace: any) {
-    return addWorkspaceMutation.mutateAsync(newWorkspace)
-  } 
+  const addWorkspace = (newWorkspace) => addWorkspaceMutation.mutateAsync(newWorkspace)
 
-  // — EDIT WORKSPACE —
-  const editWorkspaceMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) =>
-      await $fetch('/api/workspaces/edit', { method: 'PUT', query: { id }, body: data }),
-    onSuccess: () => queryClient.invalidateQueries(['workspaces']),
+  // UPDATE WORKSPACE (Organization)
+  const updateWorkspaceMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      return await authClient.organization.update({ organizationId: id, data: {
+        ...data,
+        metadata: {
+          description: data.description
+        }
+      } })
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
   })
-  const editWorkspace = (id: number, updatedData: any) =>
-    editWorkspaceMutation.mutateAsync({ id, data: updatedData })
+  const updateWorkspace = (id, updatedData) => updateWorkspaceMutation.mutateAsync({ id, data: updatedData })
 
-  // — DELETE WORKSPACE —
+  // DELETE WORKSPACE (Organization)
   const deleteWorkspaceMutation = useMutation({
-    mutationFn: async (id: string) =>
-      await $fetch('/api/workspaces/delete', { method: 'DELETE', query: { id } }),
-    onSuccess: () => queryClient.invalidateQueries(['workspaces']),
+    mutationFn: async (id) => {
+      return await authClient.organization.delete({ organizationId: id })
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
   })
-  const deleteWorkspace = (id: string) => deleteWorkspaceMutation.mutateAsync(id)
+  const deleteWorkspace = (id) => deleteWorkspaceMutation.mutateAsync(id)
 
-  // — SWITCH WORKSPACE —
-  async function switchWorkspace(workspaceId: string) {
-    if (workspaceId === selectedWorkspaceId.value) return
-
-    // 1) update lastActiveWorkspaceId en base
-    await $fetch('/api/workspaces/last-active-workspace', {
-      method: 'PUT',
-      query: { workspaceId },
-    })
-
-    // 2) rafraîchir la session Auth.js pour récupérer le nouveau lastActiveWorkspaceId
-    await refresh()
-
-    // 3) mettre à jour le cache model
-    queryClient.invalidateQueries(['models', selectedWorkspaceId.value])
-
-    // 3) naviguer vers la nouvelle route
-    await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
+  // SWITCH WORKSPACE (Set Active Organization)
+  const switchWorkspace = async (organizationId) => {
+    await authClient.organization.setActive({ organizationId: organizationId })
+    await queryClient.invalidateQueries({ queryKey: ['workspaces'] })
+    await navigateTo(`/app/workspace/${organizationId}/dashboard`)
   }
 
-  // — JOIN WORKSPACE —
+  // GET WORKSPACE ROLES (Organization Roles)
+  const { data: workspaceRoles, isLoading: isLoadingWorkspaceRoles } = useQuery({
+    queryKey: ['workspaceRoles', activeOrganizationId],
+    queryFn: async () => {
+      if (!activeOrganizationId.value) return []
+      const res = await authClient.organization.getRoles({ id: activeOrganizationId.value })
+      return res.data
+    },
+    enabled: computed(() => !!activeOrganizationId.value),
+  })
+
+  // JOIN WORKSPACE
   const joinWorkspace = async (workspaceId: string, inviteCode: string) => {
-    const headers = useRequestHeaders(['cookie']) as HeadersInit
-    const res = await $fetch('/api/workspaces/join', {
-      method: 'POST',
-      query: { workspaceId, inviteCode },
-      headers,
-    })
+    const res = await authClient.organization.join({ workspaceId, inviteCode })
 
     if (res.status !== 200) {
       return {
@@ -124,67 +126,58 @@ export const useWorkspace = () => {
     // Mettre à jour le workspace sélectionné
     await switchWorkspace(workspaceId)
 
-    await refresh()
-
     await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
   }
 
-  // — REGENERATE WORKSPACE INVITE CODE —
+  // REGENERATE WORKSPACE INVITE CODE
   const regenerateWorkspaceInviteCode = async () => {
-    const headers = useRequestHeaders(['cookie']) as HeadersInit
-    await $fetch<string>('/api/workspaces/regenerate-invite-code', {
-      method: 'PUT',
-      query: { workspaceId: selectedWorkspaceId.value },
-      headers,
-    })
+    const res = await authClient.organization.regenerateInviteCode({ workspaceId: selectedWorkspaceId.value })
 
     await queryClient.invalidateQueries(['workspace', selectedWorkspaceId.value])
   }
 
-  // — GET WORKSPACE ROLE —
-  const {data: workspaceRoles, isLoading: isLoadingWorkspaceRoles } = useQuery<WorkspaceRole[]>({
-    queryKey: ['workspaceRoles'],
-    queryFn: async () => {
-      const headers = useRequestHeaders(['cookie']) as HeadersInit
-      const res = await $fetch<Workspace[]>('/api/workspaces/list-roles', {
-        method: 'GET',
-        headers
-      })
-      return res
-    },
-    })
-    
-
-  // — COPY WORKSPACE LINK —
+  // COPY WORKSPACE LINK
   const copyWorkspaceLink = async () => {
     await navigator.clipboard.writeText(workspaceShareLink.value)
   }
 
-  // — Go to Workspace URL —
+  // Go to Workspace URL
   const goToThisWorkspaceUrl = (addToUrl: string) => {
     return `/app/workspace/${selectedWorkspaceId.value}/${addToUrl}`
   }
 
-  
+  // Add activeMember as a reactive query
+  const { data: activeMember, isLoading: isLoadingActiveMember } = useQuery({
+    queryKey: ['activeMember'],
+    queryFn: async () => {
+      return await authClient.organization.getActiveMember().then(res => res.data)
+    }
+  })
+
+  // Fix getIsOwner to use the resolved value
+  const getIsOwner = computed(() => {
+    return session?.value?.data?.user?.id === activeMember?.value?.user?.id && activeMember?.value?.role === 'owner'
+  })
+
   return {
-    // mutations
+    workspaces,
+    isLoadingWorkspaces,
     addWorkspace,
-    editWorkspace,
+    updateWorkspace,
     deleteWorkspace,
     switchWorkspace,
+    workspaceRoles,
+    isLoadingWorkspaceRoles,
+    activeOrganizationId,
     joinWorkspace,
     copyWorkspaceLink,
     goToThisWorkspaceUrl,
     regenerateWorkspaceInviteCode,
-
-    workspaces,
-    workspaceRoles,
-    workspaceShareLink,
-
-    isLoadingWorkspaceRoles,
-    isLoadingWorkspaces,
     selectedWorkspaceId,
     selectedWorkspace,
     isLoadingSelectedWorkspace,
+    getIsOwner,
+    activeMember,
+    isLoadingActiveMember,
   }
 }

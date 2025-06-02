@@ -1,9 +1,15 @@
 import { createAuthClient } from "better-auth/vue"
 import { adminClient } from "better-auth/client/plugins"
+import { organizationClient } from "better-auth/client/plugins"
 
 export const authClient = createAuthClient({
     plugins: [
-        adminClient()
+        adminClient(),
+		organizationClient({
+            teams: {
+                enabled: true
+            }
+        })
     ]
 })
 

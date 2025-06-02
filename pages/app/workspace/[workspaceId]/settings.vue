@@ -6,40 +6,55 @@
         <!-- Main Content -->
         <div class="lg:col-span-3 space-y-6">
           <!-- General Settings -->
+
           <div class="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>General Information</CardTitle>
-                <CardDescription>
-                  Update your workspace name and description.
-                </CardDescription>
-              </CardHeader>
-              <CardContent class="space-y-4">
-                <div class="space-y-2">
-                  <Label for="workspace-name">Workspace Name</Label>
-                  <Input
-                    id="workspace-name"
-                    v-model="workspace.name"
-                    placeholder="Enter workspace name"
-                  />
-                </div>
-                <div class="space-y-2">
-                  <Label for="workspace-description">Description</Label>
-                  <Textarea
-                    id="workspace-description"
-                    v-model="workspace.description"
-                    placeholder="Describe your workspace"
-                    rows="3"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button @click="saveGeneral" :disabled="isSaving">
-                  <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
-                  Save Changes
-                </Button>
-              </CardFooter>
-            </Card>
+            <Form v-slot="{ handleSubmit }" :initial-values="initialValues" :validation-schema="formSchema" as="">
+              <form @submit="handleSubmit($event, onSubmit)">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>General Information</CardTitle>
+                    <CardDescription>
+                      Update your workspace name and description.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent class="space-y-4">
+                    <FormField v-slot="{ componentField }" name="name">
+                      <FormItem>
+                        <FormLabel for="workspace-name">Workspace Name</FormLabel>
+                        <FormControl>
+                          <Input
+                            id="workspace-name"
+                            v-bind="componentField"
+                            placeholder="Enter workspace name"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                    <FormField v-slot="{ componentField }" name="description">
+                      <FormItem>
+                        <FormLabel for="workspace-description">Description</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            id="workspace-description"
+                            v-bind="componentField"
+                            placeholder="Describe your workspace"
+                            rows="3"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    </FormField>
+                  </CardContent>
+                  <CardFooter>
+                    <Button type="submit" :disabled="isSaving">
+                      <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
+                      Save Changes
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </form>
+            </Form>
 
             <!-- <Card>
               <CardHeader>
@@ -69,7 +84,7 @@
           </div>
 
           <!-- Permissions Section -->
-          <div class="space-y-6">
+          <!-- <div class="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Access Control</CardTitle>
@@ -114,7 +129,7 @@
                 <Button @click="savePermissions">Save Permissions</Button>
               </CardFooter>
             </Card>
-          </div>
+          </div> -->
 
           <!-- Danger Zone -->
           <div class="space-y-6">
@@ -154,13 +169,13 @@
                           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                           <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete the
-                            "{{ workspace.name }}" workspace and remove all associated data.
+                            "{{ selectedWorkspace.name }}" workspace and remove all associated data.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
-                            @click="deleteWorkspace"
+                            @click="removeWorkspace"
                             class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                           >
                             Delete Workspace
@@ -232,6 +247,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { useWorkspace } from '~/composables/api/useWorkspace'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import { z } from 'zod'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { toast } from 'vue-sonner'
 
 // Navigation sections
 const sections = [
@@ -247,11 +276,14 @@ const isSaving = ref(false)
 const inviteEmail = ref('')
 const inviteRole = ref('viewer')
 
-const workspace = reactive({
-  name: 'My Database Project',
-  description: 'A comprehensive database modeling workspace for our team',
-  avatar: ''
-})
+
+const { selectedWorkspace, selectedWorkspaceId, updateWorkspace, deleteWorkspace, workspaces } = useWorkspace()
+
+// const workspace = ref({
+//   name: selectedWorkspace.value?.name,
+//   description: selectedWorkspace.value?.metadata?.description ? JSON.parse(selectedWorkspace.value?.metadata)?.description : '',
+//   avatar: selectedWorkspace.value?.avatar
+// })
 
 const permissions = reactive({
   publicAccess: false,
@@ -259,37 +291,36 @@ const permissions = reactive({
   modelCreation: true
 })
 
-const members = ref([
-  {
-    id: 1,
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'admin',
-    avatar: ''
+const formSchema = toTypedSchema(z.object({
+  name: z.string({
+    required_error: "Workspace name is required",
+  }).min(2, 'Workspace name must be at least 2 characters').max(50, 'Workspace name must be less than 50 characters'),
+  description: z.string().optional(),
+}))
+
+const { initialValues } = useForm({
+  validationSchema: formSchema,
+  initialValues: {
+    name: selectedWorkspace.value?.name,
+    description: selectedWorkspace.value?.metadata ? JSON.parse(selectedWorkspace.value?.metadata)?.description : '',
   },
-  {
-    id: 2,
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'editor',
-    avatar: ''
-  },
-  {
-    id: 3,
-    name: 'Bob Johnson',
-    email: 'bob@example.com',
-    role: 'viewer',
-    avatar: ''
-  }
-])
+})
 
 // Methods
-const saveGeneral = async () => {
+const onSubmit = async (values) => {
   isSaving.value = true
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000))
-  isSaving.value = false
-  console.log('General settings saved:', workspace)
+  try {
+    await updateWorkspace(selectedWorkspace.value?.id, {
+      name: values.name,
+      description: values.description
+    })
+    toast.success('Workspace settings updated successfully')
+  } catch (error) {
+    console.error('Error saving workspace:', error)
+    toast.error('Failed to update workspace settings')
+  } finally {
+    isSaving.value = false
+  }
 }
 
 const savePermissions = () => {
@@ -304,9 +335,18 @@ const inviteMember = () => {
   }
 }
 
-const deleteWorkspace = () => {
-  console.log('Deleting workspace:', workspace.name)
-  // Handle workspace deletion
+const removeWorkspace = async () => {
+  const res = await deleteWorkspace(selectedWorkspaceId?.value)
+  console.log('res', res)
+
+  if (res.error) {
+    toast.error('Failed to delete workspace')
+  } else {
+    toast.success('Workspace deleted successfully')
+    // redirect to the latest workspace by using the created at date
+    const latestWorkspace = workspaces.value.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0]
+    await navigateTo(`/app/workspace/${latestWorkspace.id}/dashboard`)
+  }
 }
 </script>
 

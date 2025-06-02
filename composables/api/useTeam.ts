@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useWorkspace } from '@/composables/api/useWorkspace'
 import type { Team, TeamMember } from '@/components/dataTable/data/schema'
+import { authClient } from '~/lib/auth-client'
 
 export function useTeam() {
   const { selectedWorkspaceId } = useWorkspace()
@@ -15,36 +16,34 @@ export function useTeam() {
 
   const queryClient = useQueryClient()
 
-  // — LIST —
-  const {
-    data: teams,
-    isLoading: isLoadingTeams,
-    isFetched: isTeamsFetched,
-  } = useQuery<Team[]>({
-    queryKey: computed(() => ['teams', selectedWorkspaceId.value]),
-    queryFn: async () => {
-      const headers = useRequestHeaders(['cookie']) as HeadersInit
-      return await $fetch<Team[]>('/api/teams/list', {
-        method: 'GET',
-        headers,
-        query: { workspaceId: selectedWorkspaceId.value }
-      })
-    },
-    enabled: computed(() => !!selectedWorkspaceId.value),
-  })
+  // // — LIST —
+  // const {
+  //   data: teams,
+  //   isLoading: isLoadingTeams,
+  //   isFetched: isTeamsFetched,
+  // } = useQuery<Team[]>({
+  //   queryKey: computed(() => ['teams', selectedWorkspaceId.value as string | undefined]),
+  //   queryFn: async () => {
+  //     if (!selectedWorkspaceId.value) return []
+  //     return await authClient.organization.listTeams({
+  //       query: { organizationId: selectedWorkspaceId.value as string | undefined }
+  //     }).then((res: any) => res.data)
+  //   },
+  //   enabled: computed(() => !!selectedWorkspaceId.value),
+  // })
 
   // — READ SELECTED —
   const {
     data: selectedTeam,
     isLoading: isLoadingSelectedTeam,
   } = useQuery<Team>({
-    queryKey: computed(() => ['team', selectedTeamId.value]),
+    queryKey: computed(() => ['team', selectedTeamId.value as string | undefined]),
     queryFn: async ({ queryKey }) => {
       const [, id] = queryKey
-      return await $fetch<Team>('/api/teams/read', {
-        method: 'GET',
-        query: { id }
-      })
+      if (!id) return undefined
+      // fallback: list all teams and find by id
+      const allTeams = await authClient.organization.listTeams({ query: { organizationId: selectedWorkspaceId.value as string | undefined } }).then((res: any) => res.data)
+      return allTeams.find((t: any) => t.id === id)
     },
     enabled: computed(() => !!selectedTeamId.value),
     placeholderData: (prev) => prev ?? undefined,
@@ -52,38 +51,43 @@ export function useTeam() {
 
   // — CREATE —
   const createTeamMutation = useMutation({
-    mutationFn: async (payload: Partial<Team>) =>
-      await $fetch<Team>('/api/teams/create', {
-        method: 'POST',
-        body: { ...payload, workspaceId: selectedWorkspaceId.value }
-      }),
-    onSuccess: () => queryClient.invalidateQueries(['teams']),
+    mutationFn: async (payload: Partial<Team>) => {
+      const name = payload.name as string
+      if (!name) throw new Error('Team name is required')
+      return await authClient.organization.createTeam({
+        name,
+        organizationId: selectedWorkspaceId.value as string | undefined
+      }).then((res: any) => res.data)
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] }),
   })
   const createTeam = (data: Partial<Team>) => createTeamMutation.mutateAsync(data)
 
   // — UPDATE —
   const updateTeamMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Team> }) =>
-      await $fetch<Team>('/api/teams/update', {
-        method: 'PUT',
-        query: { id },
-        body: data
-      }),
-    onSuccess: () => queryClient.invalidateQueries(['teams']),
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Team> }) => {
+      const updateData: { name?: string } = {}
+      if (data.name) updateData.name = data.name
+      return await authClient.organization.updateTeam({
+        teamId: id,
+        data: updateData
+      }).then((res: any) => res.data)
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] }),
   })
   const updateTeam = (id: string, data: Partial<Team>) =>
     updateTeamMutation.mutateAsync({ id, data })
 
   // — DELETE —
   const deleteTeamMutation = useMutation({
-    mutationFn: async (id: Number) =>
-      await $fetch('/api/teams/delete', {
-        method: 'DELETE',
-        query: { id }
+    mutationFn: async (id: string) =>
+      await authClient.organization.removeTeam({
+        teamId: id,
+        organizationId: selectedWorkspaceId.value as string | undefined
       }),
-    onSuccess: () => queryClient.invalidateQueries(['teams']),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] }),
   })
-  const deleteTeam = (id: Number) => deleteTeamMutation.mutateAsync(id)
+  const deleteTeam = (id: string) => deleteTeamMutation.mutateAsync(id)
 
   // — ASSIGN MEMBERS —
   const assignMembersMutation = useMutation({
@@ -94,28 +98,30 @@ export function useTeam() {
         body: { assignments }
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['team', selectedTeamId.value])
-      queryClient.invalidateQueries(['teams', selectedWorkspaceId.value])
+      queryClient.invalidateQueries({ queryKey: ['team', selectedTeamId.value as string | undefined] })
+      queryClient.invalidateQueries({ queryKey: ['teams', selectedWorkspaceId.value as string | undefined] })
     },
   })
   const assignMembers = (teamId: string, assignments: TeamMember[]) =>
     assignMembersMutation.mutateAsync({ teamId, assignments })
 
-
   // — RENAME THE TEAM —
-  const renametTeamMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: any }) =>
-      await $fetch('/api/teams/rename', { method: 'PUT', query: { id }, body: data }),
-    onSuccess: () => queryClient.invalidateQueries(['models']),
+  const renameTeamMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) =>
+      await authClient.organization.updateTeam({
+        teamId: id,
+        data: { name }
+      }).then((res: any) => res.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] }),
   })
-  const renameTeam = (id: number, updatedData: any) =>
-    renametTeamMutation.mutateAsync({ id, data: updatedData })
+  const renameTeam = (id: string, name: string) =>
+    renameTeamMutation.mutateAsync({ id, name })
 
   return {
     // state & queries
-    teams,
-    isLoadingTeams,
-    isTeamsFetched,
+    // teams,
+    // isLoadingTeams,
+    // isTeamsFetched,
 
     selectedTeamId,
     selectedTeam,

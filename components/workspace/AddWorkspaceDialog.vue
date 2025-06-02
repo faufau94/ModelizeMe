@@ -105,13 +105,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Loader2, Plus } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
+import { useSession } from '~/lib/auth-client'
 
 defineProps({ isOnlyIcon: Boolean })
 const { addWorkspace, switchWorkspace } = useWorkspace()
 const isCreateWorkspaceDialogOpen = ref(false)
 const isFormLoading = ref(false)
-const { data } = useAuth()
-
+const { data } = await useSession(useFetch)
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({ message: 'Champs requis' }).min(2, 'Le nom doit contenir au moins 2 caractères').max(50),
@@ -123,21 +123,34 @@ const { resetForm } = useForm({
   initialValues: { name: '', description: '' },
 })
 
-
+const slugify = (str) => str
+  .toLowerCase()
+  .replace(/ /g, '-')
+  .replace(/[^\w-]+/g, '');
 
 const onSubmit = async (values) => {
   isFormLoading.value = true
-  const res = await addWorkspace({...values, userId: data.value.user.id ?? null, userEmail: data.value.user.email ?? null})
+  const res = await addWorkspace({
+    name: values.name,
+    slug: slugify(values.name),
+    metadata: {
+      description: values.description,
+    },
+  })
   
   resetForm()
   isCreateWorkspaceDialogOpen.value = false
   isFormLoading.value = false
 
-  if (res.status === 200) {
-    toast.success(res.body.message)
-    await switchWorkspace(res.body.workspaceId)
+  console.log('res',res)
+
+  if(res.error) {
+    toast.error(res.error.statusText)
   } else {
-    toast.error(res.body.message);
+
+    toast.success(`Espace de travail "${values.name}" créé avec succès`)
+    await switchWorkspace(res.data.id)
   }
+
 }
 </script>
