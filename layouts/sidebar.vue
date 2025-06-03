@@ -302,21 +302,13 @@
         <div class="ml-auto flex items-center space-x-4">
 
             <Button
-            @click="copyLink"
             variant="outline"
             size="sm"
             class="hidden md:flex items-center gap-2 transition-colors"
-            :disabled="copiedWorkspaceLink"
             aria-live="polite"
             >
-            <template v-if="copiedWorkspaceLink">
-              <CheckIcon class="w-4 h-4 text-primary" />
-              <span>Lien copié !</span>
-            </template>
-            <template v-else>
-              <Share2 class="w-4 h-4" />
-              <span>Partager l'espace de travail</span>
-            </template>
+              <Plus class="w-4 h-4" />
+              <span>Inviter des membres</span>
 
             </Button>
 

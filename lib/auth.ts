@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { PrismaClient } from "../prisma/generated/prisma/client";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
+import { sendOrganizationInvitation } from "@/lib/send-invitation";
 
 const prisma = new PrismaClient();
 export const auth = betterAuth({
@@ -46,6 +47,21 @@ export const auth = betterAuth({
               })
             },
           },
+
+          async sendInvitationEmail(data) {
+            const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+            const inviteLink = `${baseUrl}/app/workspace/join/${data.id}`;
+            console.log("Send invitation to:", data.email, "with link:", inviteLink);
+            await sendOrganizationInvitation({
+              email: data.email,
+              invitedByUsername: data.inviter.user.name,
+              invitedByEmail: data.inviter.user.email,
+              teamName: data.organization.name,
+              inviteLink
+            });
+          },
+
+          
         })
     ],
     databaseHooks: {

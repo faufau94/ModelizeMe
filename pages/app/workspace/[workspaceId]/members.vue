@@ -4,16 +4,22 @@
     <div class="mx-auto max-w-4xl bg-card rounded-xl shadow-sm">
 
       <!-- Header -->
-      <div class="border-b p-6" v-if="getIsOwner">
-        <h1 class="text-2xl font-semibold text-foreground">Members of {{ selectedWorkspace?.name }}</h1>
-      </div>
-      <div v-else>
-        <h1 class="text-2xl font-semibold text-foreground">Team Members</h1>
+      <div class="flex justify-between items-center p-6">
+        <div>
+          <h1 class="text-2xl font-semibold text-foreground">Members of {{ selectedWorkspace?.name }}</h1>
+        </div>
+        <!-- Add Member Button -->
+        <div class="mt-4">
+          <Button @click="showAddMemberDialog = true">
+            <PlusIcon class="w-4 h-4 mr-2" />
+            Add Member
+          </Button>
+        </div>
       </div>
 
       
       <!-- Share Link Section -->
-      <div v-if="getIsOwner" class="border-b p-6">
+      <!-- <div v-if="getIsOwner" class="border-b p-6">
         <h2 class="text-lg font-medium text-foreground mb-4">Share Link</h2>
         <div class="flex flex-col sm:flex-row gap-3">
           <Input
@@ -32,11 +38,10 @@
             Regenerate
           </Button>
         </div>
-      </div>
+      </div> -->
 
       <!-- Members List Section -->
-      <div v-if="!isLoadingMembers" class="p-6">
-        <h2 v-if="getIsOwner" class="text-lg font-medium text-foreground mb-4">Team Members</h2>
+      <div v-if="!isLoadingMembers" class="px-6">
         <Table>
           <TableHeader>
             <TableRow>
@@ -118,13 +123,7 @@
           </TableBody>
         </Table>
         
-        <!-- Add Member Button -->
-        <!-- <div class="mt-4">
-          <Button @click="showAddMemberDialog = true">
-            <PlusIcon class="w-4 h-4 mr-2" />
-            Add Member
-          </Button>
-        </div> -->
+        
       </div>
     </div>
     

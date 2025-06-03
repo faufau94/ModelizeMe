@@ -162,7 +162,6 @@ const onSubmit = async (values) => {
     },
     {
       onError(context) {
-        console.log(context)
         message.value.type = 'error'
         message.value.text = context.error.message
         isLoading.value = false

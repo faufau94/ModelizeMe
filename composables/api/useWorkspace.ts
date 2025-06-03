@@ -34,9 +34,9 @@ export const useWorkspace = () => {
     queryFn: async () => {
       const organizations = await authClient.organization.list()
       //Optionally, set the active org if not set
-      if (!activeOrganizationId.value && res?.data?.length) {
-        activeOrganizationId.value = res.data[0].id
-      }
+      // if (!activeOrganizationId.value && res?.data?.length) {
+      //   activeOrganizationId.value = res.data[0].id
+      // }
       return organizations.data
     },
   })
@@ -52,8 +52,6 @@ export const useWorkspace = () => {
         query: { organizationId: workspaceId }
       })
 
-      console.log('workspaceId', workspaceId)
-      console.log('organization', organization.data)
       return organization.data
     },
     staleTime: 0,

@@ -39,7 +39,7 @@
     "elkjs": "^0.9.3",
     "html-to-image": "^1.11.11",
     "lucide-vue-next": "^0.501.0",
-    "nodemailer": "^6.10.1",
+    "nodemailer": "^7.0.3",
     "nuxt": "^3.17.3",
     "nuxt-lucide-icons": "^1.0.5",
     "pinia": "^3.0.2",
@@ -62,6 +62,7 @@
   "devDependencies": {
     "@prisma/client": "^6.8.2",
     "@types/bcrypt": "^5.0.2",
+    "@types/nodemailer": "^6.4.17",
     "prisma": "^6.8.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.4"

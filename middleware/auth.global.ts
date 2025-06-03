@@ -2,17 +2,12 @@ import { authClient } from "@/lib/auth-client";
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
 
-	// if (session.value) {
-	// 	if (to.path === '/dashboard') {
-	// 		return navigateTo(goToDashboard())
-	// 	}
-	// }
-
-	// if (!session.value) {
-	// 	if (to.path === "/dashboard") {
-	// 		return navigateTo("/");
-	// 	}
-	// }
+	const { data: session } = await authClient.useSession(useFetch); 
+	if (!session.value) {
+		if (to.path === "/dashboard") {
+			return navigateTo("/");
+		}
+	}
 });
 
 
