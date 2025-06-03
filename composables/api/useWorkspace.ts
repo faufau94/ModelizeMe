@@ -123,8 +123,6 @@ export const useWorkspace = () => {
     await queryClient.invalidateQueries(['workspaces'])
     // Mettre à jour le workspace sélectionné
     await switchWorkspace(workspaceId)
-
-    await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
   }
 
   // REGENERATE WORKSPACE INVITE CODE

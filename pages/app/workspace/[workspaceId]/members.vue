@@ -41,7 +41,7 @@
       </div> -->
 
       <!-- Members List Section -->
-      <div v-if="!isLoadingMembers" class="px-6">
+      <div v-if="!isLoadingSelectedWorkspace" class="px-6">
         <Table>
           <TableHeader>
             <TableRow>
@@ -50,8 +50,8 @@
               <TableHead v-if="getIsOwner" class="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody v-if="members?.length > 0">
-            <TableRow v-for="(member, index) in members" :key="member.user.id">
+          <TableBody v-if="selectedWorkspace?.members?.length > 0">
+            <TableRow v-for="(member, index) in selectedWorkspace?.members" :key="member.user.id">
               <TableCell>
                 <div class="flex items-center">
                   <Avatar>
@@ -64,23 +64,29 @@
                 </div>
               </TableCell>
               <TableCell>
-                <template v-if="getIsOwner && member?.role?.name !== 'OWNER' && !isLoadingWorkspaceRoles">
+                
+                <template v-if="getIsOwner && !isLoadingWorkspaceRoles">
                   <DropdownMenu>
                   <DropdownMenuTrigger as-child>
-                    <Button variant="outline" class="w-[110px] justify-between">
-                        {{ member?.role?.name ? member.role.name.charAt(0).toUpperCase() + member.role.name.slice(1).toLowerCase() : '' }}
+                    <Button v-if="member?.role !== 'owner'" variant="outline" class="w-[110px] justify-between">
+                        {{ member?.role ? member.role.charAt(0).toUpperCase() + member.role.slice(1).toLowerCase() : '' }}
                       <ChevronDownIcon class="ml-2 h-4 w-4" />
                     </Button>
+                    <div v-else>
+                      <Badge variant="secondary" class="bg-amber-100 text-amber-800 hover:bg-amber-100">
+                        Owner
+                      </Badge>
+                    </div>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuLabel>Change Role</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
-                      v-for="role in workspaceRoles.filter(r => r.name !== 'OWNER')" 
-                      :key="role.id"
-                      @click="changeMemberRole(member.id, role.id)"
+                      v-for="(role, index) in availableRoles" 
+                      :key="index"
+                      @click="changeMemberRole(member.id, role)"
                     >
-                      {{ role?.name ? role.name.charAt(0).toUpperCase() + role.name.slice(1).toLowerCase() : '' }}
+                      {{ role ? role.charAt(0).toUpperCase() + role.slice(1).toLowerCase() : '' }}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -102,8 +108,8 @@
               </TableCell>
               <TableCell class="text-right">
                 <Button
-                  v-if="getIsOwner && member?.role?.name !== 'OWNER'"
-                  @click="confirmRemoveMember(member.userId)"
+                  v-if="getIsOwner && member?.role !== 'owner'"
+                  @click="confirmRemoveMember(member.id)"
                   variant="ghost"
                   class="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
@@ -173,7 +179,7 @@
           </Button>
           <Button 
             variant="destructive" 
-            @click="removeMember(memberToRemove)"
+            @click="removeMember()"
           >
             Remove
           </Button>
@@ -221,10 +227,10 @@ const { data: session } = await useSession(useFetch)
 // const activeMember = await authClient.organization.getActiveMember()
 
 // Extract workspace share link
-const { workspaceShareLink, selectedWorkspace, workspaceRoles, isLoadingWorkspaceRoles, getIsOwner, regenerateWorkspaceInviteCode } = useWorkspace()
+const { selectedWorkspace, isLoadingWorkspaceRoles, getIsOwner, isLoadingSelectedWorkspace } = useWorkspace()
 
 // Use Member composable
-const { members, isLoadingMembers, addMember, updateMember, deleteMember } = useMember()
+const { addMember, updateMember, deleteMember } = useMember()
 
 // Local state
 const copied = ref(false)
@@ -233,29 +239,16 @@ const newMemberEmail = ref('')
 const memberToRemove = ref<number|null>(null)
 
 // Available roles
-const availableRoles = ['Owner', 'Member']
-
-// Copy share link to clipboard
-const copyShareLink = () => {
-  navigator.clipboard.writeText(workspaceShareLink.value)
-  copied.value = true
-  setTimeout(() => { copied.value = false }, 2000)
-}
-
-// Regenerate share link (API call placeholder)
-const regenerateShareLink = async () => {
-  await regenerateWorkspaceInviteCode()
-  copied.value = false  
-}
+const availableRoles = ['Admin', 'Member']
 
 
 // Change member role
-const changeMemberRole = async (memberId: number, newRoleId: number) => {
-  const res = await updateMember(memberId.toString(), { roleId: newRoleId })
-  if (res.status === 200 && res.body?.role) {
-    toast.success(`Member's role has been changed to ${res.body.role.name}.`)
+const changeMemberRole = async (memberId: number, newRole: string) => {
+  const res = await updateMember(memberId.toString(), { role: newRole.toLowerCase() })
+  if (res.error) {
+    toast.error(res.data?.message || 'Error updating member role')
   } else {
-    toast.error(res.body?.message || 'Error updating member role')
+    toast.success(`Member's role has been changed to ${res.data.role}.`)
   }
 }
 
@@ -273,13 +266,18 @@ const confirmRemoveMember = (id: number) => {
 }
 
 // Remove member
-const removeMember = async (id: number|null) => {
-  if (id) {
-    const res = await deleteMember(id.toString())
+const removeMember = async () => {
+  if (memberToRemove.value) {
+    console.log('memberToRemove', memberToRemove.value)
+    const res = await deleteMember(memberToRemove.value.toString())
+    console.log('res', res)
     memberToRemove.value = null
-    toast.success(res.body?.message || 'Member removed')
+    if (res.error) {
+      toast.error(res.data?.message || 'Error removing member')
+    } else {
+      toast.success(res.data?.message || 'Member removed')
+    }
   }
 }
-
 
 </script>

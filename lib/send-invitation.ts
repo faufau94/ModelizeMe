@@ -16,7 +16,7 @@ export async function sendOrganizationInvitation({
   // Compose a beautiful HTML email
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
-      <div style="background: #4f46e5; color: white; padding: 24px 32px;">
+      <div style="color: white; padding: 24px 32px;">
         <h2 style="margin: 0;">You're Invited to Join <span style="color: #a5b4fc;">${teamName}</span>!</h2>
       </div>
       <div style="padding: 32px; background: #f9fafb;">

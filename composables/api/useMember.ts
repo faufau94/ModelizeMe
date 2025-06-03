@@ -52,7 +52,7 @@ export function useMember() {
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workspaceMembers', selectedWorkspaceId.value] })
+      queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value] })
     }
   })
   const updateMember = (id: string, data: any) => updateMemberMutation.mutateAsync({ id, data })
@@ -66,7 +66,7 @@ export function useMember() {
       })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workspaceMembers', selectedWorkspaceId.value] })
+      queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value] })
     }
   })
   const deleteMember = (id: string) => deleteMemberMutation.mutateAsync(id)

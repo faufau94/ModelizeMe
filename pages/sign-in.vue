@@ -29,6 +29,9 @@
           <CardDescription>
             Connectez-vous à votre compte
           </CardDescription>
+          <div v-if="showInviteMessage" class="mt-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-md">
+            Connectez-vous pour rejoindre l'espace de travail
+          </div>
         </CardHeader>
         <CardContent>
 
@@ -103,7 +106,7 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {Button} from '~/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Input} from '~/components/ui/input'
@@ -125,6 +128,7 @@ import { z } from "zod/v4";
 
 import { signIn, authClient } from "~/lib/auth-client.js";
 import { getDashboardUrl } from '~/utils/routes'
+import { computed } from 'vue'
 
 const formSchema = toTypedSchema(z.object({
   email: z.email({message: "Adresse email invalide."}),
@@ -150,9 +154,9 @@ const socialProviders = [
   { id: 'google', name: 'Google' },
   { id: 'github', name: 'GitHub' },
   { id: 'gitlab', name: 'GitLab' },
-]
+] as const
 
-const onSubmit = async (values) => {
+const onSubmit = async (values: { email: string; password: string }) => {
   isLoading.value = true
 
   const result = await signIn.email(
@@ -173,33 +177,46 @@ const onSubmit = async (values) => {
     message.value.type = 'error'
     message.value.text = result.error.message
     isLoading.value = false
-  }
+    
+  } else {
+
 
   // Wait for session to load
   const { data: session } = await authClient.getSession()
 
-  // Redirect to dynamic URL
-  const orgId = session?.session?.activeOrganizationId
-  if (orgId) {
-    const url = getDashboardUrl(orgId)
-    await navigateTo(url)
+  // Check for redirect parameter
+  const route = useRoute()
+  const redirect = route.query.redirect as string | undefined
+
+  if (redirect) {
+    await navigateTo(decodeURIComponent(redirect))
+  } else {
+    // Default redirect to dashboard
+    const orgId = session?.session?.activeOrganizationId
+    if (orgId) {
+      const url = getDashboardUrl(orgId)
+      await navigateTo(url)
+    }
   }
 }
 
-const signInProvider = async (providerId) => {
+}
+
+const signInProvider = async (providerId: typeof socialProviders[number]['id']) => {
   isLoading.value = true;
   try {
+    const route = useRoute()
+    const redirect = route.query.redirect as string | undefined
+    
     await authClient.signIn.social({
       provider: providerId,
-      callbackURL: "/dashboard", // or your dynamic URL
+      callbackURL: redirect ? decodeURIComponent(redirect) : "/dashboard",
       errorCallbackURL: "/error",
       newUserCallbackURL: "/welcome",
-      // disableRedirect: true, // if you want to handle the redirect yourself
     });
-    // If disableRedirect is true, handle the redirect here
   } catch (error) {
     message.value.type = 'error';
-    message.value.text = error.message || 'Erreur lors de la connexion avec le provider.';
+    message.value.text = error instanceof Error ? error.message : 'Erreur lors de la connexion avec le provider.';
   } finally {
     isLoading.value = false;
   }
@@ -213,4 +230,12 @@ const signInProvider = async (providerId) => {
 //         return result
 //       }, {})
 // })
+
+const route = useRoute()
+
+// Afficher un message si l'utilisateur vient d'une invitation
+const showInviteMessage = computed(() => {
+  const redirect = route.query.redirect as string | undefined
+  return redirect?.includes('/workspace/join/')
+})
 </script>

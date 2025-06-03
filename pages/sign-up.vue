@@ -233,7 +233,7 @@ const onSubmit = async (values) => {
     // Wait for session to load
     const { data: session } = await authClient.getSession()
 
-    console.log(session)
+    
 
     // Redirect to dynamic URL
     const orgId = session?.session?.activeOrganizationId
