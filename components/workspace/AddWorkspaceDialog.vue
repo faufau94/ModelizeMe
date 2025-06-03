@@ -183,7 +183,7 @@ async function handleSubmit(values: any) {
       return
     }
     // Invite members if emails provided
-    const emailList = values.emails.split(',') ?? []
+    const emailList = values.emails ? values.emails.split(',') : []
     if (emailList.length > 0) {
       try {
         for (const email of emailList) {

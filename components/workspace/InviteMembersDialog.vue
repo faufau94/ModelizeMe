@@ -93,7 +93,7 @@ import { Loader2, Plus } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authClient } from '~/lib/auth-client'
 
-const { selectedWorkspace } = useWorkspace()
+const { selectedWorkspaceId } = useWorkspace()
 const isDialogOpen = ref(false)
 const isLoading = ref(false)
 const formRef = ref<any>(null)
@@ -114,7 +114,7 @@ watch(isDialogOpen, (open) => {
 })
 
 async function handleSubmit(values: any) {
-  if (!selectedWorkspace.value?.id) {
+  if (!selectedWorkspaceId.value) {
     toast.error('Aucun espace de travail sélectionné')
     return
   }
@@ -129,7 +129,7 @@ async function handleSubmit(values: any) {
     for (const email of emailList) {
       try {
         await authClient.organization.inviteMember({
-          organizationId: selectedWorkspace.value.id,
+          organizationId: selectedWorkspaceId.value,
           email,
           role: 'member'
         })

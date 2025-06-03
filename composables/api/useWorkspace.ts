@@ -33,11 +33,11 @@ export const useWorkspace = () => {
     queryKey: ['workspaces'],
     queryFn: async () => {
       const organizations = await authClient.organization.list()
-      //Optionally, set the active org if not set
-      // if (!activeOrganizationId.value && res?.data?.length) {
-      //   activeOrganizationId.value = res.data[0].id
-      // }
-      return organizations.data
+      // Sort organizations by createdAt in ascending order
+      const sortedOrganizations = organizations.data?.sort((a, b) => 
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      ) || []
+      return sortedOrganizations
     },
   })
 
@@ -45,14 +45,23 @@ export const useWorkspace = () => {
   const {data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery<Workspace>({
     queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
     queryFn: async ({ queryKey }) => {
-
       const workspaceId = route.params.workspaceId
-
       const organization = await authClient.organization.getFullOrganization({
-        query: { organizationId: workspaceId }
+        query: { organizationId: String(workspaceId) }
       })
+      
+      if (!organization.data) {
+        throw new Error('Workspace not found')
+      }
 
-      return organization.data
+      // Sort teams in ascending order by createdAt
+      if (organization.data.teams) {
+        organization.data.teams = organization.data.teams.sort((a, b) => 
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        )
+      }
+
+      return organization.data as Workspace
     },
     staleTime: 0,
     enabled: computed(() => selectedWorkspaceId.value !== null),
@@ -83,30 +92,31 @@ export const useWorkspace = () => {
 
   // DELETE WORKSPACE (Organization)
   const deleteWorkspaceMutation = useMutation({
-    mutationFn: async (id) => {
+    mutationFn: async (id: string) => {
+      console.log("deleteWorkspaceMutation", id)
       return await authClient.organization.delete({ organizationId: id })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
   })
-  const deleteWorkspace = (id) => deleteWorkspaceMutation.mutateAsync(id)
+  const deleteWorkspace = (id: string) => deleteWorkspaceMutation.mutateAsync(id)
 
   // SWITCH WORKSPACE (Set Active Organization)
-  const switchWorkspace = async (organizationId) => {
+  const switchWorkspace = async (organizationId: string) => {
     await authClient.organization.setActive({ organizationId: organizationId })
     await queryClient.invalidateQueries({ queryKey: ['workspaces'] })
     await navigateTo(`/app/workspace/${organizationId}/dashboard`)
   }
 
-  // GET WORKSPACE ROLES (Organization Roles)
-  const { data: workspaceRoles, isLoading: isLoadingWorkspaceRoles } = useQuery({
-    queryKey: ['workspaceRoles', activeOrganizationId],
-    queryFn: async () => {
-      if (!activeOrganizationId.value) return []
-      const res = await authClient.organization.getRoles({ id: activeOrganizationId.value })
-      return res.data
-    },
-    enabled: computed(() => !!activeOrganizationId.value),
-  })
+  // // GET WORKSPACE ROLES (Organization Roles)
+  // const { data: workspaceRoles, isLoading: isLoadingWorkspaceRoles } = useQuery({
+  //   queryKey: ['workspaceRoles', activeOrganizationId],
+  //   queryFn: async () => {
+  //     if (!activeOrganizationId.value) return []
+  //     const res = await authClient.organization.getRoles({ id: activeOrganizationId.value })
+  //     return res.data
+  //   },
+  //   enabled: computed(() => !!activeOrganizationId.value),
+  // })
 
   // JOIN WORKSPACE
   const joinWorkspace = async (workspaceId: string, inviteCode: string) => {
@@ -162,8 +172,8 @@ export const useWorkspace = () => {
     updateWorkspace,
     deleteWorkspace,
     switchWorkspace,
-    workspaceRoles,
-    isLoadingWorkspaceRoles,
+    // workspaceRoles,
+    // isLoadingWorkspaceRoles,
     activeOrganizationId,
     joinWorkspace,
     copyWorkspaceLink,

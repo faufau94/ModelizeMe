@@ -336,7 +336,7 @@ const inviteMember = () => {
 }
 
 const removeWorkspace = async () => {
-  const res = await deleteWorkspace(selectedWorkspaceId?.value)
+  const res = await deleteWorkspace(selectedWorkspace?.value?.id)
   console.log('res', res)
 
   if (res.error) {

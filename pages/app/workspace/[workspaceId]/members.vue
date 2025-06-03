@@ -65,7 +65,7 @@
               </TableCell>
               <TableCell>
                 
-                <template v-if="getIsOwner && !isLoadingWorkspaceRoles">
+                <template v-if="getIsOwner">
                   <DropdownMenu>
                   <DropdownMenuTrigger as-child>
                     <Button v-if="member?.role !== 'owner'" variant="outline" class="w-[110px] justify-between">
@@ -227,7 +227,7 @@ const { data: session } = await useSession(useFetch)
 // const activeMember = await authClient.organization.getActiveMember()
 
 // Extract workspace share link
-const { selectedWorkspace, isLoadingWorkspaceRoles, getIsOwner, isLoadingSelectedWorkspace } = useWorkspace()
+const { selectedWorkspace, getIsOwner, isLoadingSelectedWorkspace } = useWorkspace()
 
 // Use Member composable
 const { addMember, updateMember, deleteMember } = useMember()

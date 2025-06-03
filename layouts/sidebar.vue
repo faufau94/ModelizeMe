@@ -46,7 +46,7 @@
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem >
+              <SidebarMenuItem v-if="getIsOwner">
                 <SidebarMenuButton 
                   @click="goToSettingsPage" 
                   :isActive="route.path.split('/').pop() === 'settings'"
@@ -454,7 +454,7 @@ const { data } = await useSession(useFetch);
 
 const copiedWorkspaceLink = ref(false)
 
-const { selectedWorkspace, copyWorkspaceLink, goToThisWorkspaceUrl } = useWorkspace()
+const { selectedWorkspace, copyWorkspaceLink, goToThisWorkspaceUrl, getIsOwner } = useWorkspace()
  const { renameTeam, deleteTeam } = useTeam()
 
 const copyLink = async () => {

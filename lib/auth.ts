@@ -48,6 +48,16 @@ export const auth = betterAuth({
             },
           },
 
+          organizationDeletion: {
+            // disabled: true, //to disable it altogether
+            beforeDelete: async (data, request) => {
+              // delete all models related to the organization
+              await prisma.model.deleteMany({
+                where: { workspaceId: data.organization.id },
+              })
+            },
+          },
+
           async sendInvitationEmail(data) {
             const baseUrl = process.env.BASE_URL || "http://localhost:3000";
             const inviteLink = `${baseUrl}/app/workspace/join/${data.id}`;
