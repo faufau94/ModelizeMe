@@ -300,18 +300,7 @@
       <header class="h-14 px-6 flex items-center">
         <!-- <h1 class="text-lg font-semibold text-foreground md:ml-0 ml-12">Vue d'ensemble</h1> -->
         <div class="ml-auto flex items-center space-x-4">
-
-            <Button
-            variant="outline"
-            size="sm"
-            class="hidden md:flex items-center gap-2 transition-colors"
-            aria-live="polite"
-            >
-              <Plus class="w-4 h-4" />
-              <span>Inviter des membres</span>
-
-            </Button>
-
+            <InviteMembersDialog />
 
           <Select>
             <SelectTrigger class="w-36">
@@ -391,8 +380,8 @@ import { useWorkspace } from '@/composables/api/useWorkspace';
 import { useTeam } from '@/composables/api/useTeam';
 import WorkspacesSidebar from '@/components/WorkspacesSidebar.vue'
 import AddWorkspaceDialog from '@/components/workspace/AddWorkspaceDialog.vue'
-import CreateTeamDialog from '@/components/teams/CreateTeamDialog.vue';
-
+import CreateTeamDialog from '@/components/teams/CreateTeamDialog.vue'
+import InviteMembersDialog from '@/components/workspace/InviteMembersDialog.vue'
 
 import { 
   HomeIcon, 

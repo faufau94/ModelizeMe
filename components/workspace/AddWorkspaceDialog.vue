@@ -186,7 +186,6 @@ async function handleSubmit(values: any) {
     const emailList = values.emails.split(',') ?? []
     if (emailList.length > 0) {
       try {
-        console.log('emailList', emailList)
         for (const email of emailList) {
           await authClient.organization.inviteMember({
             organizationId: res.data.id,
