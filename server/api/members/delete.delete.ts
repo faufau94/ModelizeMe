@@ -1,10 +1,12 @@
-import { getServerSession } from '#auth'
+import { auth } from '~/lib/auth'
 import prisma from '~/lib/prisma'
 
 export default defineEventHandler(async event => {
   console.log('DELETE MEMBER API CALLED')
   // Validate session
-  const session = await getServerSession(event)
+  const session = await auth.api.getSession({
+    headers: event.headers,
+  })
   if (!session?.user?.id) {
     return { status: 401, body: { message: 'Unauthorized' } }
   }

@@ -29,9 +29,18 @@
           <CardDescription>
             Connectez-vous à votre compte
           </CardDescription>
+          <div v-if="showInviteMessage" class="mt-2 text-sm text-blue-600 bg-blue-50 p-3 rounded-md">
+            Connectez-vous pour rejoindre l'espace de travail
+          </div>
         </CardHeader>
         <CardContent>
-          <form @submit.prevent="onSubmit" class="py-2">
+
+          <Form
+              as="form"
+              :validation-schema="formSchema"
+              @submit="onSubmit"
+              v-slot="{ errors }"
+            >
             <div class="grid gap-4">
               <FormField name="email" v-slot="{ field }">
                 <FormItem>
@@ -67,21 +76,20 @@
                 </div>
               </div>
 
-              <FormField name="submit-button">
-                <FormControl class="w-full">
-                  <Button type="submit" :disabled="isLoading">
-                    <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
-                    {{ isLoading ? "Chargement..." : "Se connecter" }}
-                  </Button>
-                </FormControl>
-              </FormField>
+              <Button type="submit" :disabled="isLoading">
+                <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                {{ isLoading ? "Chargement..." : "Se connecter" }}
+              </Button>
             </div>
-          </form>
+          </Form>
 
-          <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full py-2">
-            <Button class="w-full" variant="outline" @click="signInProvider(provider.id)">
-              Continuer avec {{ provider?.name }}
-            </Button>
+          <div class="my-4">
+            <div v-for="provider in socialProviders" :key="provider.id" class="w-full py-2">
+              <Button class="w-full" variant="outline" :disabled="isLoading" @click="signInProvider(provider.id)">
+                <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                Continuer avec {{ provider.name }}
+              </Button>
+            </div>
           </div>
 
           <div class="mt-4 text-center text-sm">
@@ -98,7 +106,7 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import {Button} from '~/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Input} from '~/components/ui/input'
@@ -117,10 +125,10 @@ import {AlertCircle, Loader2} from "lucide-vue-next";
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
-import { useWorkspaceNavigation } from '~/composables/api/useWorkspaceNavigation';
 
-
-const {goToDashboard} = useWorkspaceNavigation()
+import { signIn, authClient } from "~/lib/auth-client.js";
+import { getDashboardUrl } from '~/utils/routes'
+import { computed } from 'vue'
 
 const formSchema = toTypedSchema(z.object({
   email: z.email({message: "Adresse email invalide."}),
@@ -140,55 +148,94 @@ const message = ref({
   text: ''
 })
 
-const {signIn, getProviders, refresh} = useAuth()
-const providers = await getProviders()
-
 const isLoading = ref(false)
 
-const onSubmit = form.handleSubmit(async (values) => {
-   const res = await signIn('credentials', {
-    email: values.email,
-    password: values.password,
-    redirect: false,
-  })
+const socialProviders = [
+  { id: 'google', name: 'Google' },
+  { id: 'github', name: 'GitHub' },
+  { id: 'gitlab', name: 'GitLab' },
+] as const
 
-
-  if (res?.error) {
-    message.value.type = 'error'
-    message.value.text = res.error
-  } else {
-    // Redirection réussie
-      await refresh()
-
-      return navigateTo(goToDashboard())
-  }
-})
-
-const signInProvider = async (providerId) => {
+const onSubmit = async (values: { email: string; password: string }) => {
   isLoading.value = true
-  try {
-    const res = await signIn(providerId)
-    if (res?.error) {
-      console.error("Erreur de connexion avec le provider:", res.error)
-      // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
-    } else {
-      // Redirection réussie
-      await refresh()
-      return navigateTo(goToDashboard())
-    }
-  } catch (error) {
-    console.error("Erreur lors de la connexion avec le provider:", error)
-  } finally {
+
+  const result = await signIn.email(
+    {
+      email: values.email,
+      password: values.password,
+    },
+    {
+      onError(context) {
+        message.value.type = 'error'
+        message.value.text = context.error.message
+        isLoading.value = false
+      },
+    },
+  )
+
+  if (result.error) {
+    message.value.type = 'error'
+    message.value.text = result.error.message
     isLoading.value = false
+    
+  } else {
+
+
+  // Wait for session to load
+  const { data: session } = await authClient.getSession()
+
+  // Check for redirect parameter
+  const route = useRoute()
+  const redirect = route.query.redirect as string | undefined
+
+  if (redirect) {
+    await navigateTo(decodeURIComponent(redirect))
+  } else {
+    // Default redirect to dashboard
+    const orgId = session?.session?.activeOrganizationId
+    if (orgId) {
+      const url = getDashboardUrl(orgId)
+      await navigateTo(url)
+    }
   }
 }
 
-const filteredProviders = computed(() => {
-  return Object.keys(providers)
-      .filter(key => key !== 'credentials')
-      .reduce((result, key) => {
-        result[key] = providers[key]
-        return result
-      }, {})
+}
+
+const signInProvider = async (providerId: typeof socialProviders[number]['id']) => {
+  isLoading.value = true;
+  try {
+    const route = useRoute()
+    const redirect = route.query.redirect as string | undefined
+    
+    await authClient.signIn.social({
+      provider: providerId,
+      callbackURL: redirect ? decodeURIComponent(redirect) : "/dashboard",
+      errorCallbackURL: "/error",
+      newUserCallbackURL: "/welcome",
+    });
+  } catch (error) {
+    message.value.type = 'error';
+    message.value.text = error instanceof Error ? error.message : 'Erreur lors de la connexion avec le provider.';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// const filteredProviders = computed(() => {
+//   return Object.keys(providers)
+//       .filter(key => key !== 'credentials')
+//       .reduce((result, key) => {
+//         result[key] = providers[key]
+//         return result
+//       }, {})
+// })
+
+const route = useRoute()
+
+// Afficher un message si l'utilisateur vient d'une invitation
+const showInviteMessage = computed(() => {
+  const redirect = route.query.redirect as string | undefined
+  return redirect?.includes('/workspace/join/')
 })
 </script>

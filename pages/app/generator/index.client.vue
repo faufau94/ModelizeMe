@@ -159,7 +159,7 @@ import {storeToRefs} from "pinia";
 import {Check, CirclePlay, Loader2} from 'lucide-vue-next'
 import { Textarea } from '@/components/ui/textarea'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { useToast } from '@/components/ui/toast/use-toast'
+import { toast } from 'vue-sonner'
 import {useMLDStore} from "~/stores/mld-store.js";
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
@@ -187,7 +187,6 @@ const codeGeneratorStore = useCodeGeneratorStore()
 const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
 
 const models = ref(null)
-const { toast } = useToast()
 
 const isGenerating = ref(false)
 
@@ -257,10 +256,7 @@ async function onSubmit(values) {
     await navigateTo({path: `/app/generator/result/${response.projectName}`})
   } else {
     console.error('Erreur:', response.error);
-    toast({
-      title: 'Problème de génération.',
-      description: 'Il y a eu un problème lors de la génération du projet. Réessayez.',
-    })
+    toast.error('Il y a eu un problème lors de la génération du projet. Réessayez.',)
   }
   isGenerating.value = false
 }

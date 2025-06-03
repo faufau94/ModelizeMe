@@ -1,12 +1,12 @@
 <template>
-  <Dialog>
+  <Dialog v-model:open="isCreateModelDialogOpen">
     <DialogTrigger as-child>
-      <Button @click="showModel = true">
+      <Button @click="isCreateModelDialogOpen = true">
         <CirclePlus :size="20" class="mr-2"/>
         Nouveau modèle
       </Button>
     </DialogTrigger>
-    <DialogContent class="sm:max-w-[425px]" v-if="showModel">
+    <DialogContent class="sm:max-w-[425px]">
       <DialogHeader>
         <DialogTitle>Nouveau modèle</DialogTitle>
         <DialogDescription>
@@ -14,7 +14,8 @@
         </DialogDescription>
       </DialogHeader>
 
-      <form @submit="onSubmit">
+      <Form v-slot="{ handleSubmit }" :validation-schema="formSchema" as="">
+        <form @submit="handleSubmit($event, onSubmit)">
         <FormField v-slot="{ componentField }" name="title">
           <FormItem>
             <FormLabel>Nom</FormLabel>
@@ -26,22 +27,6 @@
             </FormDescription>
             
             <FormMessage />
-
-            <div v-if="message.type !== ''">
-              <div v-if="message.type === 'error'" class="w-full">
-                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 border border-red-300">
-                  <AlertCircle class="h-6 w-6 text-red-500" />
-                  <p class="text-red-600">{{ message.text }}</p>
-                </div>
-              </div>
-
-              <div v-if="message.type === 'success'" class="w-full">
-                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-green-50 border border-green-300">
-                  <CheckCircle class="h-6 w-6 text-green-500" />
-                  <p class="text-green-600">{{ message.text }}</p>
-                </div>
-              </div>
-            </div>
             <FormControl class="float-right">
               <Button type="submit" :disabled="isLoadingNewModel">
                 <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
@@ -50,8 +35,8 @@
             </FormControl>
           </FormItem>
         </FormField>
-      </form>
-
+        </form>
+      </Form>
     </DialogContent>
   </Dialog>
 </template>
@@ -77,6 +62,7 @@ import { z } from "zod/v4";
 import { useModel } from '@/composables/api/useModel'
 
 import { useWorkspaceStore } from '@/stores/api/workspace-store'
+import { toast } from 'vue-sonner'
 
 
 const formSchema = toTypedSchema(z.object({
@@ -91,52 +77,28 @@ const form = useForm({
   validationSchema: formSchema,
 })
 
-const message = ref({
-  type: '',
-  text: ''
-})
 
 const { addModel } = useModel()
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspaceId } = storeToRefs(workspaceStore)
 
-const showModel = ref(false);
+const isCreateModelDialogOpen = ref(false);
 const isLoadingNewModel = ref(false);
 
-const onSubmit = form.handleSubmit(async (values) => {
-  try {
-    
-    message.type = ''
-    message.text = ''
-    isLoadingNewModel.value = true
 
-    const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
-    
-    // Ici, vous feriez normalement un appel API pour créer l'espace de travail
-    console.log('Création de l\'espace de travail:', values)
-    
-    if (res.status === 200) {
-     
-      // Affichage d'une notification de succès
-      message.type = 'success'
-      message.text = 'Espace de travail créé avec succès !'
-      
-      // Réinitialisation du formulaire après un court délai
-      setTimeout(() => {
-        form.resetForm()
-        isCreateWorkspaceDialogOpen.value = false
-        message.type = ''
-        message.text = ''
-      }, 2000)
-  }
-    
-  } catch (error) {
-    console.error('Erreur lors de la création de l\'espace de travail:', error)
-    message.type = 'error'
-    message.text = 'Une erreur est survenue lors de la création de l\'espace de travail.'
-  } finally {
-    isLoadingNewModel.value = false
-  }
+const onSubmit = async (values) => {
+  isLoadingNewModel.value = true
+  
+  const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
+  
+  form.resetForm()
+  isLoadingNewModel.value = false
+  isCreateModelDialogOpen.value = false;
 
-})
+  if (res.status === 200) {
+    toast.success(res.body.message)
+  } else {
+    toast.error(res.body.message);
+  }
+}
 </script>

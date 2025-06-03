@@ -32,7 +32,10 @@
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuItem>
-        <NuxtLink class="cursor-pointer" @click.prevent="() => signOut({ callbackUrl: '/' })">
+        <NuxtLink class="cursor-pointer" @click.prevent="async () => {
+                    await signOut()
+                    await navigateTo('/')
+                }">
           Se déconnecter
         </NuxtLink>
       </DropdownMenuItem>
@@ -58,7 +61,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-
-const {data, signOut} = useAuth()
+import { signOut, useSession } from '~/lib/auth-client';
+const { data } = await useSession(useFetch);
 
 </script>

@@ -1,11 +1,13 @@
 import prisma from "~/lib/prisma"
-import { getServerSession } from "#auth"
+import { auth } from "~/lib/auth"
 
 export default defineEventHandler(async event => {
 
     console.log('Regenerating invite code for workspace')
   // Validate user session
-  const session = await getServerSession(event)
+  const session = await auth.api.getSession({
+    headers: event.headers,
+  })
   const userId = session?.user?.id
   if (!userId) {
     return { status: 401, body: { message: 'Unauthorized: User not authenticated' } }

@@ -1,10 +1,11 @@
 import prisma from "~/lib/prisma";
-import { getServerSession } from "#auth";
-import {H3Error} from "h3";
+import { auth } from "~/lib/auth";
 
 export default defineEventHandler(async event => {
     const { selectedWorkspaceId } = getQuery(event);
-    const session = await getServerSession(event);
+    const session = await auth.api.getSession({
+        headers: event.headers,
+    })
     try {
 
         if (!session?.user?.email) {
@@ -55,10 +56,6 @@ export default defineEventHandler(async event => {
 
     } catch (error) {
         console.error('Global error:', error);
-        throw error instanceof H3Error ? error : createError({
-            statusCode: 500,
-            message: "Internal server error",
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        
     }
 });

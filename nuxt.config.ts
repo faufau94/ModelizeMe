@@ -4,6 +4,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
 
+  plugins: [
+    '~/plugins/vue-query.ts'
+  ],
+
   postcss: {
     plugins: {
       tailwindcss: {},
@@ -14,7 +18,6 @@ export default defineNuxtConfig({
   modules: [
     "shadcn-nuxt",
     "@nuxtjs/tailwindcss",
-    "@sidebase/nuxt-auth",
     '@pinia/nuxt',
     "nuxt-lucide-icons",
     'dayjs-nuxt',
@@ -73,22 +76,22 @@ export default defineNuxtConfig({
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
 
   },
-  auth: {
-    isEnabled: true,
-    disableServerSideAuth: false,
-    originEnvKey: process.env.NUXT_AUTH_ORIGIN || '',
-    baseURL: process.env.NUXT_BASE_URL || '',
-    // sessionRefresh: {
-    //   enablePeriodically: true,
-    //   enableOnWindowFocus: true,
-    // },
-    provider: {
-      type: 'authjs',
-      trustHost: false,
-      defaultProvider: 'google',
-      addDefaultCallbackUrl: true,
-    },
-  },
+  // auth: {
+  //   isEnabled: true,
+  //   disableServerSideAuth: false,
+  //   originEnvKey: process.env.NUXT_AUTH_ORIGIN || '',
+  //   baseURL: process.env.NUXT_BASE_URL || '',
+  //   // sessionRefresh: {
+  //   //   enablePeriodically: true,
+  //   //   enableOnWindowFocus: true,
+  //   // },
+  //   provider: {
+  //     type: 'authjs',
+  //     trustHost: false,
+  //     defaultProvider: 'google',
+  //     addDefaultCallbackUrl: true,
+  //   },
+  // },
 
   shadcn: {
     /**

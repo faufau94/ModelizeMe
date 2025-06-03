@@ -1,9 +1,11 @@
-import { getServerSession } from '#auth'
+import { auth } from '~/lib/auth'
 import prisma from "~/lib/prisma"
 
 export default defineEventHandler(async event => {
   // Fetch current user session
-  const session = await getServerSession(event)
+  const session = await auth.api.getSession({
+    headers: event.headers,
+  })
   const userId = session?.user?.id
   if (!userId) {
     return { status: 401, body: { message: 'Unauthorized' } }
@@ -26,15 +28,23 @@ export default defineEventHandler(async event => {
     // Retrieve members of the workspace
     const members = await prisma.workspaceMember.findMany({
       where: { workspaceId: String(workspaceId) },
-      include: { 
-        user: true,
-        role: {
-          select: {
-            name: true
+      include: {
+        user: {
+          include: {
+            teamMemberships: {
+              where: { team: { workspaceId: String(workspaceId) } },
+              include: {
+                team: true
+              }
+            }
           }
+        },
+        role: {
+          select: { name: true }
         }
       }
     })
+
     
     const allMembers = [
       {
