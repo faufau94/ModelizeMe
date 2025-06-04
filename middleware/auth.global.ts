@@ -8,7 +8,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 			return navigateTo("/");
 		}
 	}
+
+	if (session.value) {
+		if (to.path === "/" || to.path === "/sign-in" || to.path === "/sign-up") {
+			return navigateTo("/dashboard");
+		}
+	}
 });
+
 
 
 // // /middleware/authentication.global.ts

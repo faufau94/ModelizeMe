@@ -146,7 +146,7 @@ model Team {
 }
 
 model Model {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   reference   String   @default(uuid())
   name        String
   description String?
@@ -176,10 +176,10 @@ model Model {
 }
 
 model Galery {
-  id         Int      @id @default(autoincrement())
-  modelId    Int
+  id         String   @id @default(cuid())
+  modelId    String
   model      Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
-  categoryId Int
+  categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
   userId String
@@ -192,7 +192,7 @@ model Galery {
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -202,10 +202,10 @@ model Category {
 }
 
 model Annotation {
-  id      Int    @id @default(autoincrement())
+  id      String    @id @default(cuid())
   content String
 
-  modelId Int
+  modelId String
   model   Model @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
   authorId String?

@@ -76,7 +76,7 @@
                 </div>
               </div>
 
-              <Button type="submit" :disabled="isLoading">
+              <Button type="submit" :disabled="isLoading || isLoadingProvider">
                 <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
                 {{ isLoading ? "Chargement..." : "Se connecter" }}
               </Button>
@@ -85,8 +85,8 @@
 
           <div class="my-4">
             <div v-for="provider in socialProviders" :key="provider.id" class="w-full py-2">
-              <Button class="w-full" variant="outline" :disabled="isLoading" @click="signInProvider(provider.id)">
-                <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+              <Button class="w-full" variant="outline" :disabled="isLoadingProvider || isLoading" @click="signInProvider(provider.id)">
+                <Loader2 v-if="isLoadingProvider" class="w-4 h-4 mr-2 animate-spin"/>
                 Continuer avec {{ provider.name }}
               </Button>
             </div>
@@ -149,6 +149,7 @@ const message = ref({
 })
 
 const isLoading = ref(false)
+const isLoadingProvider = ref(false)
 
 const socialProviders = [
   { id: 'google', name: 'Google' },
@@ -203,7 +204,7 @@ const onSubmit = async (values: { email: string; password: string }) => {
 }
 
 const signInProvider = async (providerId: typeof socialProviders[number]['id']) => {
-  isLoading.value = true;
+  isLoadingProvider.value = true;
   try {
     const route = useRoute()
     const redirect = route.query.redirect as string | undefined
@@ -218,7 +219,7 @@ const signInProvider = async (providerId: typeof socialProviders[number]['id']) 
     message.value.type = 'error';
     message.value.text = error instanceof Error ? error.message : 'Erreur lors de la connexion avec le provider.';
   } finally {
-    isLoading.value = false;
+    isLoadingProvider.value = false;
   }
 };
 
