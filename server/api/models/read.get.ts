@@ -5,7 +5,7 @@ export default defineEventHandler(async event => {
 
     return await prisma.model.findUnique({
         where: {
-            id: parseInt(id),
+            id: id?.toString(),
         }
     })
 })

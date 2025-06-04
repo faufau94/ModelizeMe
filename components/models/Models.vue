@@ -45,8 +45,6 @@ import {Search, Loader2} from 'lucide-vue-next';
 import CardModel from "@/components/ui/card/CardModel.vue";
 
 import {Input} from '@/components/ui/input'
-import {useMCDStore} from "@/stores/mcd-store.js";
-import {storeToRefs} from "pinia";
 import CreateModelDialog from "@/components/flow/CreateModelDialog.vue";
 import { useModel } from "@/composables/api/useModel"
 

@@ -4,16 +4,15 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
 	const { data: session } = await authClient.useSession(useFetch); 
 	if (!session.value) {
-		if (to.path === "/dashboard") {
-			return navigateTo("/");
+		if (to.path.startsWith("/dashboard") || to.path.startsWith("/app")) {
+			return await navigateTo("/sign-in");
 		}
 	}
 
-	if (session.value) {
-		if (to.path === "/" || to.path === "/sign-in" || to.path === "/sign-up") {
-			return navigateTo("/dashboard");
-		}
+	if (to.path === "/" || to.path === "/sign-in" || to.path === "/sign-up") {
+		return await navigateTo(`/app/workspace/${session?.value?.session?.activeOrganizationId}/dashboard`);
 	}
+
 });
 
 

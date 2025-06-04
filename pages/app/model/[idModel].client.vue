@@ -335,6 +335,8 @@ import { useModel } from '@/composables/api/useModel'
 const route = useRoute()
 const router = useRouter()
 
+console.log('route.params.idModel', route.params.idModel)
+
 const mcdStore = useMCDStore()
 const mldStore = useMLDStore()
 const mpdStore = useMPDStore()

@@ -13,13 +13,21 @@ export const useWorkspace = () => {
 
 
   const selectedWorkspaceId = computed<string|null>(() => {
-    // si l'URL fournit workspaceId, on l'utilise
-    if (route.params.workspaceId !== 'undefined') {
-      return String(route.params.workspaceId)
+
+    if(route.path.startsWith('/app/workspace/')) {
+      console.log('route', route.params.workspaceId)
+      // si l'URL fournit workspaceId, on l'utilise
+      if (route.params.workspaceId !== 'undefined' || route.params.workspaceId !== undefined) {
+        return String(route.params.workspaceId)
+      }
+
+      // sinon, on tombe sur la valeur stockée en session
+      return activeOrganizationId.value ?? null
     }
 
-    // sinon, on tombe sur la valeur stockée en session
-    return activeOrganizationId.value ?? null
+    if(route.path.startsWith('/app/model/')) {
+      return null
+    }
   })
 
   const workspaceShareLink = computed(() => {
@@ -45,6 +53,7 @@ export const useWorkspace = () => {
   const {data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery<Workspace>({
     queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
     queryFn: async ({ queryKey }) => {
+      console.log('selectedWorkspaceId.value', selectedWorkspaceId.value)
       const workspaceId = route.params.workspaceId
       const organization = await authClient.organization.getFullOrganization({
         query: { organizationId: String(workspaceId) }
@@ -64,7 +73,7 @@ export const useWorkspace = () => {
       return organization.data as Workspace
     },
     staleTime: 0,
-    enabled: computed(() => selectedWorkspaceId.value !== null),
+    enabled: computed(() => selectedWorkspaceId.value !== null && selectedWorkspaceId.value !== undefined),
   })
 
   // CREATE WORKSPACE (Organization)

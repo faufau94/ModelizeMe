@@ -299,7 +299,6 @@ const teamSchema = z.object({
 })
 
 const getMembersList = computed(() => {
-  console.log('selectedWorkspace', selectedWorkspace.value)
 
   const memberListWithoutOwners = selectedWorkspace?.value?.members?.filter(member => member.role !== 'owner')
   return memberListWithoutOwners.map(member => ({
