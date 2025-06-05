@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
 
     // Récupérer uniquement la colonne pertinente en fonction de body.type
     const currentContent = await prisma.model.findUnique({
-        where: { id: parseInt(query.id) },
+        where: { id: query.id?.toString() },
         select: {
             nodes: true,
             edges: true,
@@ -37,7 +37,7 @@ export default defineEventHandler(async (event) => {
 
     return await prisma.model.update({
         where: {
-            id: parseInt(query.id),
+            id: query.id?.toString(),
         },
         data: updateData
     });

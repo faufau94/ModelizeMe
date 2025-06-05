@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
     // Récupérer le modèle existant
     const existingModel = await prisma.model.findUnique({
         where: {
-            id: parseInt(body.modelId),
+            id: body.modelId.toString(),
         },
     });
 
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
     // Mise à jour du modèle en base de données en ajoutant les nouveaux nœuds et arêtes
     const updatedModel = await prisma.model.update({
         where: {
-            id: parseInt(body.modelId),
+            id: body.modelId.toString(),
         },
         data: {
             nodes: mergedNodes,

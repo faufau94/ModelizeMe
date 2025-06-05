@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
     const updateModelName = await prisma.model.update({
         where: {
-            id: parseInt(query.id),
+            id: query.id?.toString(),
         },
         data: {
             name: body.name

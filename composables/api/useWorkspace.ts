@@ -15,7 +15,6 @@ export const useWorkspace = () => {
   const selectedWorkspaceId = computed<string|null>(() => {
 
     if(route.path.startsWith('/app/workspace/')) {
-      console.log('route', route.params.workspaceId)
       // si l'URL fournit workspaceId, on l'utilise
       if (route.params.workspaceId !== 'undefined' || route.params.workspaceId !== undefined) {
         return String(route.params.workspaceId)
@@ -53,7 +52,6 @@ export const useWorkspace = () => {
   const {data: selectedWorkspace, isLoading: isLoadingSelectedWorkspace } = useQuery<Workspace>({
     queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
     queryFn: async ({ queryKey }) => {
-      console.log('selectedWorkspaceId.value', selectedWorkspaceId.value)
       const workspaceId = route.params.workspaceId
       const organization = await authClient.organization.getFullOrganization({
         query: { organizationId: String(workspaceId) }
@@ -102,7 +100,6 @@ export const useWorkspace = () => {
   // DELETE WORKSPACE (Organization)
   const deleteWorkspaceMutation = useMutation({
     mutationFn: async (id: string) => {
-      console.log("deleteWorkspaceMutation", id)
       return await authClient.organization.delete({ organizationId: id })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
