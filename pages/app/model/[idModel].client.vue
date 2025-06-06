@@ -24,7 +24,7 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button @click="goBack" variant="outline"
+              <Button @click="goBack" variant="ghost"
                       class="border-none rounded-sm">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -52,7 +52,7 @@
 
         <Dialog>
           <DialogTrigger as-child>
-            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="outline" class=" border-none rounded-sm">
+            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="ghost" class=" border-none rounded-sm">
               {{ model?.name.length > 20 ? model?.name.substring(0, 20) + '...' : model?.name }}
             </Button>
           </DialogTrigger>
@@ -143,7 +143,7 @@
                   @click="addNode(route.params.idModel)"
                   :draggable="true"
                   @dragstart="onDragStart($event, 'input')"
-                  variant="outline"
+                  variant="ghost"
                   class="border-none rounded-sm"
               >
                 <PanelTop :size="18"/>
@@ -162,7 +162,7 @@
           <Tooltip>
             <TooltipTrigger>
               <Button
-                  variant="outline"
+                  variant="ghost"
                   disabled
                   class="border-none rounded-sm"
               >
@@ -181,7 +181,7 @@
           <Tooltip>
             <TooltipTrigger>
               <Button
-                  variant="outline"
+                  variant="ghost"
                   disabled
                   class="border-none rounded-sm"
               >
@@ -200,7 +200,7 @@
         <Button
             disabled
             @click="autoLayout('LR')"
-            variant="outline"
+            variant="ghost"
             class="border-none rounded-sm"
         >
           <Workflow :size="18"/>
@@ -212,7 +212,7 @@
         <Button
             disabled
             @click="reorganize"
-            variant="outline"
+            variant="ghost"
             class="border-none rounded-sm"
         >
           <WandSparkles :size="18"/>
@@ -312,8 +312,8 @@
            :key="user.name" 
            class="remote-cursor"
            :style="{
-             left: user.cursor ? `${user.cursor.x}px` : '0px',
-             top: user.cursor ? `${user.cursor.y}px` : '0px',
+             left: user.cursor ? `${flowToScreenPosition(user.cursor).x}px` : '0px',
+             top: user.cursor ? `${flowToScreenPosition(user.cursor).y}px` : '0px',
              '--color': user.color
            }">
         <div class="remote-cursor-dot" :style="{ backgroundColor: user.color }"></div>
@@ -624,6 +624,13 @@ const reorganize = () => {
 }
 
  */
+
+const flowToScreenPosition = (flowPosition) => {
+  if (!currentFlow.value || !flowPosition) return { x: 0, y: 0 }
+  
+  // Convert flow coordinates back to screen coordinates
+  return currentFlow.value.flowToScreenCoordinate(flowPosition)
+}
 
 </script>
 

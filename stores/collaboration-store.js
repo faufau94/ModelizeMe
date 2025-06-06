@@ -174,12 +174,20 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     if (!provider.value) return
     const flowContainer = document.querySelector('.dndflow')
     if (!flowContainer) return
-    const rect = flowContainer.getBoundingClientRect()
-    const x = event.clientX - rect.left
-    const y = event.clientY - rect.top
+    
+    // Get the Vue Flow instance from MCD store
+    const mcdStore = useMCDStore()
+    if (!mcdStore.flowMCD) return
+    
+    // Convert screen coordinates to flow coordinates
+    const flowPosition = mcdStore.flowMCD.screenToFlowCoordinate({
+      x: event.clientX,
+      y: event.clientY
+    })
+    
     provider.value.awareness.setLocalStateField('user', {
       ...provider.value.awareness.getLocalState()?.user,
-      cursor: { x, y }
+      cursor: flowPosition
     })
   }
   function setupCursorTracking() {

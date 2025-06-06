@@ -49,7 +49,7 @@ const handleExport = (type) => {
 
   <DropdownMenu>
     <DropdownMenuTrigger as-child>
-      <Button variant="outline" class=" border-none rounded-sm">
+      <Button variant="ghost" class=" border-none rounded-sm">
         <Download :size="18"/>
       </Button>
     </DropdownMenuTrigger>

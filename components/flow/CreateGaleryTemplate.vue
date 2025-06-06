@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model:open="isOpen">
     <DialogTrigger as-child>
-      <Button variant="outline" class=" border-none rounded-sm">
+      <Button variant="ghost" class=" border-none rounded-sm">
         <GalleryHorizontalEnd :size="18"/>
       </Button>
     </DialogTrigger>
