@@ -53,9 +53,12 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     })
 
     // 5) when sharedNodes changes anywhere, let MCDStore update the Vue Flow instance
-    sharedNodes.value.observe(() => {
+    sharedNodes.value.observe((event) => {
+      console.log('🔄 Yjs: nodes changed event →', event)
       console.log('🔄 Yjs: nodes changed →', nodes.value)
-      if (!mcdStore.flowMCD) return
+      console.log('event.transaction.origin: ', event.transaction.origin)
+      if (!mcdStore.flowMCD || nodes.value.length === 0 || event.transaction.origin === 'local') return
+      console.log('On arrive ici !')
       // set VueFlow to exactly the current array of nodes
       mcdStore.flowMCD.setNodes(nodes.value)
     })
@@ -92,18 +95,18 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
     // 9) set up event listeners so that if the local user drags/moves a node in Vue Flow,
     //    we immediately write that change back into Yjs.  MCDStore provides onNodesChange/onEdgesChange.
-    if (mcdStore.flowMCD) {
-      mcdStore.flowMCD.onNodesChange(({ node, type }) => {
-        if (type === 'position' || type === 'dimensions') {
-          updateNode(node.id, node)
-        }
-      })
-      mcdStore.flowMCD.onEdgesChange(({ edge, type }) => {
-        if (type === 'update') {
-          updateEdge(edge.id, edge)
-        }
-      })
-    }
+    // if (mcdStore.flowMCD) {
+    //   mcdStore.flowMCD.onNodesChange(({ node, type }) => {
+    //     if (type === 'position' || type === 'dimensions') {
+    //       updateNode(node.id, node)
+    //     }
+    //   })
+    //   mcdStore.flowMCD.onEdgesChange(({ edge, type }) => {
+    //     if (type === 'update') {
+    //       updateEdge(edge.id, edge)
+    //     }
+    //   })
+    // }
   }
 
   // ─── NODE CRUD ───
@@ -122,8 +125,11 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     }
     // merge old fields with newData, then replace exactly that index
     const merged = { ...arr[idx], ...newData }
-    sharedNodes.value.delete(idx, 1)
-    sharedNodes.value.insert(idx, [ merged ])
+
+    ydoc.value.transact(() => {
+      sharedNodes.value.delete(idx, 1)
+      sharedNodes.value.insert(idx, [merged])
+    }, /* origin= */ 'local')
   }
 
   function removeNode(nodeId) {

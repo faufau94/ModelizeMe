@@ -6,8 +6,8 @@
     <VueFlow
         :id="getFlowId"
         :key="activeTab"
-        :nodes="currentFlow?.getNodes"
-        :edges="currentFlow?.getEdges"
+        :nodes="collaborationStore?.nodes"
+        :edges="collaborationStore?.edges"
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
         @dragover="onDragOver"
@@ -307,6 +307,8 @@
       </template>
     </VueFlow>
 
+    <div class="absolute top-0 left-0 pointer-events-none z-[1000] w-full h-full">
+      
     <div class="remote-cursors">
       <div v-for="user in remoteCursors" 
            :key="user.name" 
@@ -319,6 +321,7 @@
         <div class="remote-cursor-dot" :style="{ backgroundColor: user.color }"></div>
         <span class="remote-cursor-name" :style="{ backgroundColor: user.color }">{{ user.name }}</span>
       </div>
+    </div>
     </div>
 
     
@@ -415,24 +418,12 @@ mcdStore.flowMCD.onPaneClick((e) => {
 })
 
 
+const { data: session } = await authClient.useSession(useFetch)
+console.log('session', session.value)
 
-// Handle cursor movement
-const updateCursor = (event) => {
-  const flowContainer = document.querySelector('.dndflow')
-  if (!flowContainer) return
-  
-  const rect = flowContainer.getBoundingClientRect()
-  const x = event.clientX - rect.left
-  const y = event.clientY - rect.top
-  
-}
-
+collaborationStore.initialize(route.params.idModel, session.value.user.name);
 
 onMounted(async () => {
-  const { data: session } = await authClient.useSession(useFetch)
-  console.log('session', session.value)
-
-  collaborationStore.initialize(route.params.idModel, session.value.user.name);
 
   // Fetch initial model data from backend
   model.value = await $fetch("/api/models/read", {
