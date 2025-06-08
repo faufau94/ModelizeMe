@@ -6,8 +6,6 @@
     <VueFlow
         :id="getFlowId"
         :key="activeTab"
-        :nodes="collaborationStore?.nodes"
-        :edges="collaborationStore?.edges"
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
         @dragover="onDragOver"

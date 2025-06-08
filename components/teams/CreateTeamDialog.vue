@@ -157,15 +157,15 @@
                       @update:checked="toggleUser(member.id)"
                     />
                     <Avatar class="h-8 w-8">
-                      {{ member.first_name.charAt(0).toUpperCase() }}
+                      {{ member?.first_name?.charAt(0).toUpperCase() }}
                     </Avatar>
                     <div class="flex-1">
                       <p class="text-sm font-medium">{{ member.first_name }} {{ member.name }}</p>
                       <p class="text-xs text-gray-500">{{ member.email }}</p>
                     </div>
                     <div class="flex items-center gap-2">
-                      <Badge v-if="member.teamName" variant="outline" class="text-xs text-orange-600 border-orange-200">
-                        {{ member.teamName }}
+                      <Badge v-if="member?.teamName" variant="outline" class="text-xs text-orange-600 border-orange-200">
+                        {{ member?.teamName }}
                       </Badge>
                       <Badge v-else variant="outline" class="text-xs text-green-600 border-green-200">
                         Unassigned
@@ -301,15 +301,24 @@ const teamSchema = z.object({
 const getMembersList = computed(() => {
 
   const memberListWithoutOwners = selectedWorkspace?.value?.members?.filter(member => member.role !== 'owner')
-  return memberListWithoutOwners.map(member => ({
-    id: member.user.id,
-    name: member.user.name,
-    first_name: member.user.first_name,
-    email: member.user.email,
-    teamId: member.user.teamMemberships.length ?? null,
-    teamName: member.user.teamMemberships.length === 1 ? member.user.teamMemberships[0].team?.name : (member.user.teamMemberships.length > 0 ? '+'+member.user.teamMemberships.length + ' teams' : null),
-  }))
+  return memberListWithoutOwners.map(member => {
+    const teamMemberships = member.user.teamMemberships || []
+    let teamName = null
+    if (teamMemberships.length === 1) {
+      teamName = teamMemberships[0].team?.name
+    } else if (teamMemberships.length > 1) {
+      teamName = `+${teamMemberships.length} teams`
+    }
+    return {
+      id: member.user.id,
+      name: member.user.name,
+      first_name: member.user.first_name,
+      email: member.user.email,
+      teamName
+    }
+  })
 })
+
 
 // Component state
 const isOpen = ref(false)
