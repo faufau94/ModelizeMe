@@ -4,6 +4,8 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const query = getQuery(event);
 
+    console.log('Update Model:', body);
+
     // Récupérer uniquement la colonne pertinente en fonction de body.type
     const currentContent = await prisma.model.findUnique({
         where: { id: query.id?.toString() },
@@ -34,6 +36,13 @@ export default defineEventHandler(async (event) => {
     if (body.type === 'edge') {
         updateData.edges = updateContent(currentContent.edges || [], body.edge);
     }
+
+    // check if body contains teamId
+    if (body.teamId) {
+        updateData.teamId = body.teamId;
+    }
+
+
 
     return await prisma.model.update({
         where: {

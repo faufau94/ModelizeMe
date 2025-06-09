@@ -57,6 +57,18 @@
                 </AlertDialogContent>
               </AlertDialog>
             </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <span>Déplacer vers...</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem class="cursor-pointer" v-for="team in selectedWorkspace?.teams" @click.stop="moveModelToTeam(team)" :key="team.id">
+                    <span>{{team?.name }}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
             <DropdownMenuItem class="cursor-pointer">
               <AlertDialog>
                 <AlertDialogTrigger as-child>
@@ -97,6 +109,11 @@
           <Workflow :size="15"/>
           {{ props.model.edges.length }} {{ props.model.edges.length > 1 ? 'relations' : 'relation' }}
         </div>
+        <div class="flex items-center gap-x-1">
+          <Users :size="15"/>
+          {{ props.model.team.name }}
+        </div>
+
       </div>
       <div class="text-[11px] text-muted-foreground mt-3 text-right">
         Modifié le {{ $dayjs(props.model.updatedAt).format('DD-MM-YYYY à HH:mm') }}
@@ -106,7 +123,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
+import {Workflow, Loader2, PanelTop, EllipsisVertical, Users} from 'lucide-vue-next';
 import {
   AlertDialog, AlertDialogCancel,
   AlertDialogContent,
@@ -120,6 +137,7 @@ import { z } from "zod";
 import {useForm} from 'vee-validate'
 import { toast } from 'vue-sonner'
 import { useModel } from '@/composables/api/useModel'
+import { useWorkspace } from '@/composables/api/useWorkspace'
 
 
 const props = defineProps({
@@ -134,7 +152,8 @@ const openModel = async () => {
   await navigateTo(`/app/model/${props.model.id}`);
 }
 
-const { renameModel, deleteModel } = useModel()
+const { renameModel, deleteModel, updateModel } = useModel()
+const { selectedWorkspace } = useWorkspace()
 
 
 const isLoading = ref(false);
@@ -185,5 +204,27 @@ const rnModel = async (values) => {
   showDialogRenameModel.value = false
 
   toast.success('Le modèle a été renommé avec succès.');
+}
+
+const moveModelToTeam = (team: object) => {
+
+  console.log('Moving model to team:', props.model.id);
+
+  console.log('Moving model to team:', team);
+  if (!team || !team.id) {
+    toast.error('Veuillez sélectionner une équipe valide.');
+    return;
+  }
+
+  const res = updateModel(props.model.id, {
+    teamId: team.id,
+  });
+
+
+  if (!res) {
+    toast.error('Une erreur est survenue lors du déplacement du modèle.');
+    return;
+  }
+  toast.success('Ce modèle a été déplacé vers l’équipe ' + team.name);
 }
 </script>

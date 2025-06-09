@@ -21,29 +21,24 @@ export default defineEventHandler(async event => {
         try {
             const onlyTemplates = query.onlyTemplates === 'true';
 
-            if (onlyTemplates) {
-                models = await prisma.model.findMany({
-                    where: {
-                        workspaceId: selectedWorkspaceId,
-                        // Galery: {
-                        //     some: {},
-                        // },
+            const where: any = {
+                workspaceId: selectedWorkspaceId,
+                ...(onlyTemplates && { Galery: { some: {} } }),
+            };
+
+            models = await prisma.model.findMany({
+                where,
+                ...(onlyTemplates && {
+                    include: {
+                        Galery: {
+                            include: { category: true },
+                        },
                     },
-                    // include: {
-                    //     Galery: {
-                    //         include: {
-                    //             category: true,
-                    //         },
-                    //     },
-                    // },
-                });
-            } else {
-                models = await prisma.model.findMany({
-                    where: {
-                        workspaceId: selectedWorkspaceId,
-                    },
-                });
-            }
+                }),
+                include: {
+                    team: true,
+                },
+            });
         } catch (error) {
             console.error('Error fetching models:', error);
             throw createError({
