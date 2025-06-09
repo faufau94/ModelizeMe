@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   plugins: [
-    '~/plugins/vue-query.ts'
+    '~/plugins/vue-query.ts',
   ],
 
   postcss: {

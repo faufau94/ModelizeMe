@@ -350,7 +350,7 @@
                   Facturation
                 </DropdownMenuItem>
                 <DropdownMenuItem class="cursor-pointer">
-                  Paramètres
+                  <Settings />
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
