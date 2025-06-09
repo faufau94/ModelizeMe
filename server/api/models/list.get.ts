@@ -2,7 +2,7 @@ import prisma from "~/lib/prisma";
 import { auth } from "~/lib/auth";
 
 export default defineEventHandler(async event => {
-    const { selectedWorkspaceId } = getQuery(event);
+    const { selectedWorkspaceId, teamId } = getQuery(event);
     const session = await auth.api.getSession({
         headers: event.headers,
     })
@@ -23,6 +23,7 @@ export default defineEventHandler(async event => {
 
             const where: any = {
                 workspaceId: selectedWorkspaceId,
+                ...(teamId && { teamId: teamId }),
                 ...(onlyTemplates && { Galery: { some: {} } }),
             };
 

@@ -71,8 +71,10 @@
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem v-for="team in selectedWorkspace?.teams" :key="team.id">
-                    <SidebarMenuButton asChild>
-                      <a href="#">{{ team.name }}</a>
+                    <SidebarMenuButton asChild :isActive="route.path === goToThisWorkspaceUrl('team/'+ team.id)">
+                      <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team.id)" class="flex items-center gap-2">
+                        {{ team.name }}
+                      </NuxtLink>
                     </SidebarMenuButton>
 
                     <DropdownMenu>
@@ -448,6 +450,7 @@ import {
 import { toast } from 'vue-sonner';
 import { z } from "zod/v4";
 import { useSession, authClient } from '~/lib/auth-client';
+import { NuxtLink } from '#components';
 
 const route = useRoute()
 const { data } = await useSession(useFetch);
