@@ -24,4 +24,4 @@ logs
 !.env.example
 
 # Keep the generated Prisma Client + query engine out of version control
-prisma/generated/prisma
+prisma/generated/
