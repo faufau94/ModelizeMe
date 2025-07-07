@@ -6,8 +6,6 @@
     <VueFlow
         :id="getFlowId"
         :key="activeTab"
-        :edges="currentFlow?.edges"
-        :nodes="currentFlow?.nodes"
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
         @dragover="onDragOver"
@@ -24,7 +22,7 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button @click="goBack" variant="outline"
+              <Button @click="goBack" variant="ghost"
                       class="border-none rounded-sm">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -52,7 +50,7 @@
 
         <Dialog>
           <DialogTrigger as-child>
-            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="outline" class=" border-none rounded-sm">
+            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="ghost" class=" border-none rounded-sm">
               {{ model?.name.length > 20 ? model?.name.substring(0, 20) + '...' : model?.name }}
             </Button>
           </DialogTrigger>
@@ -66,7 +64,7 @@
                 <FormItem>
                   <FormLabel>Nom</FormLabel>
                   <FormControl>
-                    <Input type="text" v-bind="componentField" @keyup.enter="rnModel"/>
+                    <Input type="text" v-bind="componentField" />
                   </FormControl>
                   <FormMessage />
                   <FormControl class="float-right">
@@ -143,7 +141,7 @@
                   @click="addNode(route.params.idModel)"
                   :draggable="true"
                   @dragstart="onDragStart($event, 'input')"
-                  variant="outline"
+                  variant="ghost"
                   class="border-none rounded-sm"
               >
                 <PanelTop :size="18"/>
@@ -162,7 +160,7 @@
           <Tooltip>
             <TooltipTrigger>
               <Button
-                  variant="outline"
+                  variant="ghost"
                   disabled
                   class="border-none rounded-sm"
               >
@@ -181,7 +179,7 @@
           <Tooltip>
             <TooltipTrigger>
               <Button
-                  variant="outline"
+                  variant="ghost"
                   disabled
                   class="border-none rounded-sm"
               >
@@ -200,7 +198,7 @@
         <Button
             disabled
             @click="autoLayout('LR')"
-            variant="outline"
+            variant="ghost"
             class="border-none rounded-sm"
         >
           <Workflow :size="18"/>
@@ -212,7 +210,7 @@
         <Button
             disabled
             @click="reorganize"
-            variant="outline"
+            variant="ghost"
             class="border-none rounded-sm"
         >
           <WandSparkles :size="18"/>
@@ -220,6 +218,24 @@
 
 
       </Panel>
+
+
+
+      <Panel position="top-right" class="bg-white z-40 px-2 py-1 drop-shadow-md rounded-sm">
+      <div class="flex flex-col gap-1">
+        <div class="text-sm font-medium text-zinc-600 mb-1">Active Users</div>
+        <div class="flex flex-col gap-1">
+          <div v-for="user in activeUsers" 
+               :key="user.id" 
+               class="flex items-center gap-2 px-2 py-1 rounded-sm"
+               :class="{ 'bg-zinc-100': user.isLocal }">
+            <div class="w-2 h-2 rounded-full" :style="{ backgroundColor: user.color }"></div>
+            <span class="text-sm text-zinc-800">{{ user.name }}</span>
+            <span v-if="user.isLocal" class="text-xs text-zinc-500">(you)</span>
+          </div>
+        </div>
+      </div>
+    </Panel>
 
       <Panel position="top-right" class="bg-white mr-10 z-40 drop-shadow-md flex items-center rounded-sm">
         <Tabs default-value="mcd" v-model="activeTab" class="w-full">
@@ -288,12 +304,31 @@
         <CustomEdge v-if="sourceNode && targetNode" :source-x="sourceX" :source-y="sourceY" :target-x="targetX" :target-y="targetY" :source-node="sourceNode" :target-node="targetNode"/>
       </template>
     </VueFlow>
+
+    <div class="absolute top-0 left-0 pointer-events-none z-[1000] w-full h-full">
+      
+    <div class="remote-cursors">
+      <div v-for="user in remoteCursors" 
+           :key="user.name" 
+           class="remote-cursor"
+           :style="{
+             left: user.cursor ? `${flowToScreenPosition(user.cursor).x}px` : '0px',
+             top: user.cursor ? `${flowToScreenPosition(user.cursor).y}px` : '0px',
+             '--color': user.color
+           }">
+        <div class="remote-cursor-dot" :style="{ backgroundColor: user.color }"></div>
+        <span class="remote-cursor-name" :style="{ backgroundColor: user.color }">{{ user.name }}</span>
+      </div>
+    </div>
+    </div>
+
+    
   </div>
 
 </template>
 
 <script setup>
-import {computed, markRaw, onMounted, ref, nextTick} from "vue";
+import {computed, markRaw, onMounted, onUnmounted, ref, nextTick, watch, defineComponent, h} from "vue";
 import CustomEdge from "~/components/flow/CustomEdge.vue";
 import ElementMenu from "~/components/flow/ElementMenu.vue";
 import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
@@ -312,6 +347,7 @@ import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
+import {useCollaborationStore} from '~/stores/collaboration-store.js';
 
 import {
   Tooltip,
@@ -330,10 +366,13 @@ import {useForm} from 'vee-validate'
 import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 
 import { useModel } from '@/composables/api/useModel'
+import { authClient } from '~/lib/auth-client'
 
 
 const route = useRoute()
 const router = useRouter()
+
+const model = ref(null)
 
 const mcdStore = useMCDStore()
 const mldStore = useMLDStore()
@@ -342,6 +381,8 @@ const {addNode} = mcdStore
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType} = storeToRefs(mcdStore)
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
+
+const collaborationStore = useCollaborationStore();
 
 const nodeTypes = {
   customEntity: markRaw(CustomEntity),
@@ -352,9 +393,12 @@ const edgeTypes = {
   customEdge: markRaw(CustomEdge)
 };
 
-const model = ref(null)
+
 const isRenamingModel = ref(false)
 const showDialogRenameModel = ref(false)
+
+
+const { activeUsers, remoteCursors } = storeToRefs(collaborationStore)
 
 
 mcdStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
@@ -371,12 +415,27 @@ mcdStore.flowMCD.onPaneClick((e) => {
   }
 })
 
+
+const { data: session } = await authClient.useSession(useFetch)
+console.log('session', session.value)
+
+collaborationStore.initialize(route.params.idModel, session.value.user.name);
+
 onMounted(async () => {
 
+  // Fetch initial model data from backend
   model.value = await $fetch("/api/models/read", {
     method: "GET",
-    query: {id: route.params.idModel},
+    query: { id: route.params.idModel },
   });
+
+  // Set initial nodes/edges in Yjs (if not already present)
+  if (model.value?.nodes?.length) {
+    collaborationStore.setNodes(model.value.nodes);
+  }
+  if (model.value?.edges?.length) {
+    collaborationStore.setEdges(model.value.edges);
+  }
 
   if(model.value) {
     setValues({
@@ -384,28 +443,15 @@ onMounted(async () => {
     });
   }
 
-
-  if (model.value.nodes.length !== 0) {
-    mcdStore.flowMCD.addNodes(model.value.nodes)
-  }
-
-  if (model.value.edges.length !== 0) {
-    mcdStore.flowMCD.addEdges(model.value.edges)
-  }
-
-
-
   mcdStore.flowMCD.onConnect((params) => {
-
     const newEdge = mcdStore.createNewEdge(params)
-
-    mcdStore.flowMCD.addEdges([newEdge])
+    // Use shared edges instead of directly adding to flow
+    collaborationStore.addEdge(newEdge)
 
     isSubMenuVisible.value = true
     elementsMenu.value = false
     edgeIdSelected.value = newEdge.id
     nodeIdSelected.value = null
-
   })
 
   mcdStore.flowMCD.onNodeClick((e) => {
@@ -429,10 +475,14 @@ onMounted(async () => {
   await nextTick(() => {
     mcdStore.flowMCD.fitView({ padding: 0.4 })
   })
+
+  await nextTick(); // Ensure DOM is updated and .dndflow exists
+  collaborationStore.setupCursorTracking();
 })
 
 onUnmounted(() => {
   activeTab.value = 'mcd'
+  collaborationStore.cleanup();
 })
 
 const onChange = (changes) => {
@@ -443,6 +493,7 @@ const onChange = (changes) => {
       changes[0].id.startsWith('dndnode') &&
       activeTab.value === 'mcd'
   ) {
+    console.log('onChange', changes)
     mcdStore.updateNode(route.params.idModel, changes[0].id)
   }
 }
@@ -563,4 +614,52 @@ const reorganize = () => {
 
  */
 
+const flowToScreenPosition = (flowPosition) => {
+  if (!currentFlow.value || !flowPosition) return { x: 0, y: 0 }
+  
+  // Convert flow coordinates back to screen coordinates
+  return currentFlow.value.flowToScreenCoordinate(flowPosition)
+}
+
 </script>
+
+<style>
+.remote-cursors {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1000;
+  width: 100%;
+  height: 100%;
+}
+
+.remote-cursor {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  transition: all 0.1s ease;
+}
+
+.remote-cursor-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.remote-cursor-name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--color);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: white;
+  font-size: 12px;
+  margin-top: 5px;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+</style>

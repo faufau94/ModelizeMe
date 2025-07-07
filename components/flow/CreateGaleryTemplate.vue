@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model:open="isOpen">
     <DialogTrigger as-child>
-      <Button variant="outline" class=" border-none rounded-sm">
+      <Button variant="ghost" class=" border-none rounded-sm">
         <GalleryHorizontalEnd :size="18"/>
       </Button>
     </DialogTrigger>
@@ -123,8 +123,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import {Input} from '@/components/ui/input'
-import {useToast} from '@/components/ui/toast/use-toast'
-import {Toaster} from '@/components/ui/toast'
 import {toTypedSchema} from '@vee-validate/zod'
 import {Check, ChevronsUpDown, GalleryHorizontalEnd, Loader2} from 'lucide-vue-next'
 import {useForm} from 'vee-validate'
@@ -150,7 +148,6 @@ const {handleSubmit, setFieldValue, values} = useForm({
 const isCreatingGaleryModel = ref(false)
 const categoryAlreadyExistsMessage = ref('')
 const newCategory = ref('')
-const {toast} = useToast()
 const isOpen = ref(false)
 
 const addCategory = async () => {

@@ -1,125 +1,167 @@
-import {ref, watch} from 'vue'
-
-import {storeToRefs} from "pinia";
-import {useMCDStore} from "~/stores/mcd-store.js";
+import { ref, watch } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useMCDStore } from '~/stores/mcd-store.js';
+import { useCollaborationStore } from '~/stores/collaboration-store';
 
 /**
- * In a real world scenario you'd want to avoid creating refs in a global scope like this as they might not be cleaned up properly.
- * @type {{draggedType: Ref<string|null>, isDragOver: Ref<boolean>, isDragging: Ref<boolean>}}
+ * Global state for drag‐and‐drop so it persists across component re‐renders.
  */
 const state = {
-    /**
-     * The type of the node being dragged.
-     */
-    draggedType: ref(null),
-    isDragOver: ref(false),
-    isDragging: ref(false),
-}
+  draggedType: ref(null),   // what type of node is being dragged (e.g. 'input', etc.)
+  isDragOver: ref(false),   // whether the cursor is currently over a valid drop target
+  isDragging: ref(false),   // whether a drag operation is in progress
+};
 
 export default function useDragAndDrop() {
-    const { draggedType, isDragOver, isDragging } = state
+  // 1) grab reactive flags from our global state object
+  const { draggedType, isDragOver, isDragging } = state;
 
-    const mcdStore = useMCDStore(); // Utiliser le store importé
-    const { isSubMenuVisible, elementsMenu, nodeIdSelected, addNewNode } = storeToRefs(mcdStore);
-    const { createNewNode } = mcdStore
+  // 2) Pinia stores (singleton instances)
+  const mcdStore = useMCDStore();
+  const collaborationStore = useCollaborationStore();
 
+  // 3) we extract only the refs we need from mcdStore
+  //    - isSubMenuVisible, elementsMenu, nodeIdSelected, addNewNode
+  const {
+    isSubMenuVisible,
+    elementsMenu,
+    nodeIdSelected,
+    addNewNode,
+  } = storeToRefs(mcdStore);
 
-    watch(isDragging, (dragging) => {
-        document.body.style.userSelect = dragging ? 'none' : ''
-    })
+  // 4) mcdStore.createNewNode() factory to generate a fresh node object
+  const { createNewNode } = mcdStore;
 
-    function onDragStart(event, type) {
-        if (event.dataTransfer) {
-            event.dataTransfer.setData('application/vueflow', type)
-            event.dataTransfer.effectAllowed = 'move'
-        }
+  // 5) whenever we start dragging, disable text selection in the document
+  watch(isDragging, (dragging) => {
+    document.body.style.userSelect = dragging ? 'none' : '';
+  });
 
-        draggedType.value = type
-        isDragging.value = true
-
-        document.addEventListener('drop', onDragEnd)
+  /**
+   * Called when the user starts dragging a draggable item.
+   * We set up the DataTransfer so Vue Flow knows what type of node is being dragged.
+   */
+  function onDragStart(event, type) {
+    if (event.dataTransfer) {
+      event.dataTransfer.setData('application/vueflow', type);
+      event.dataTransfer.effectAllowed = 'move';
     }
+    draggedType.value = type;
+    isDragging.value = true;
+
+    // Listen for a drop anywhere on the document so we can detect when drag ends
+    document.addEventListener('drop', onDragEnd);
+  }
+
+  /**
+   * Called when the cursor moves over a valid drop target.
+   * We preventDefault() so the browser allows dropping.
+   */
+  function onDragOver(event) {
+    event.preventDefault();
+    if (draggedType.value) {
+      isDragOver.value = true;
+      if (event.dataTransfer) {
+        event.dataTransfer.dropEffect = 'move';
+      }
+    }
+  }
+
+  function onDragLeave() {
+    isDragOver.value = false;
+  }
+
+  /**
+   * Called once a drop has occurred (or drag is canceled).
+   * We reset dragging flags and re‐enable text selection.
+   */
+  function onDragEnd() {
+    isDragging.value = false;
+    isDragOver.value = false;
+    draggedType.value = null;
+    isSubMenuVisible.value = true;
+    elementsMenu.value = false;
+    document.removeEventListener('drop', onDragEnd);
+  }
+
+  /**
+   * Handles the actual drop event on the VueFlow container.
+   * Steps:
+   *   1) Convert screen coords to flow coords,
+   *   2) Create a new node object,
+   *   3) Persist to your backend,
+   *   4) Push into Yjs shared array via collaborationStore,
+   *   5) Let Yjs observer update VueFlow state automatically,
+   *   6) Select the new node and finish.
+   */
+  async function onDrop(event, idModel) {
+    // a) Show loading UI in the sub‐menu
+    addNewNode.value = true;
+
+    // b) Compute the new node's position inside the VueFlow canvas
+    const position = mcdStore.flowMCD.screenToFlowCoordinate({
+      x: event.clientX,
+      y: event.clientY,
+    });
+
+    // c) Build a fresh node object
+    const newNode = createNewNode(position);
 
     /**
-     * Handles the drag over event.
-     *
-     * @param {DragEvent} event
+     * We want to center the node under the cursor once VueFlow actually
+     * renders it. So we listen for onNodesInitialized, and then offset
+     * by half the node's width/height.
      */
-    function onDragOver(event) {
-        event.preventDefault()
-
-        if (draggedType.value) {
-            isDragOver.value = true
-
-            if (event.dataTransfer) {
-                event.dataTransfer.dropEffect = 'move'
-            }
+    const { off } = mcdStore.flowMCD.onNodesInitialized(() => {
+        // 1) grab the actual VueFlow‐rendered node (with dimensions)
+        const vfNode = mcdStore.flowMCD.findNode(newNode.id);
+        if (!vfNode) {
+          off();
+          return;
         }
-    }
+      
+        // 2) compute half‐width/height offset
+        const centeredPosition = {
+          x: vfNode.position.x - vfNode.dimensions.width / 2,
+          y: vfNode.position.y - vfNode.dimensions.height / 2,
+        };
+      
+        // 3) push that offset back into Yjs so everyone stays in sync
+        collaborationStore.updateNode(newNode.id, { position: centeredPosition });
+      
+        off();
+    });
+      
 
-    function onDragLeave() {
-        isDragOver.value = false
-    }
+    // d) Persist the new node to your own API
+    await $fetch(`/api/models/update`, {
+      method: 'PUT',
+      query: { id: idModel },
+      body: {
+        node: newNode,
+        type: 'node',
+        action: 'addNode',
+      },
+    });
 
-    function onDragEnd() {
-        isDragging.value = false
-        isDragOver.value = false
-        draggedType.value = null
-        isSubMenuVisible.value = true
-        elementsMenu.value = false
-        document.removeEventListener('drop', onDragEnd)
-    }
+    // e) Push the node into the shared Yjs array.
+    //    That triggers the Yjs observer in collaborationStore, which does:
+    //       mcdStore.flowMCD.setNodes(collaborationStore.nodes)
+    //    → VueFlow renders the new node automatically.
+    collaborationStore.addNode(newNode);
 
-    /**
-     * Handles the drop event.
-     *
-     * @param {DragEvent} event
-     */
-    async function onDrop(event, idModel) {
-        addNewNode.value = true
-        const position = mcdStore.flowMCD.screenToFlowCoordinate({
-            x: event.clientX,
-            y: event.clientY,
-        })
+    // f) Mark that the new node is selected in the sidebar
+    nodeIdSelected.value = newNode.id;
+    addNewNode.value = false;
+  }
 
-        const newNode = createNewNode(position)
-
-        /**
-         * Align node position after drop, so it's centered to the mouse
-         *
-         * We can hook into events even in a callback, and we can remove the event listener after it's been called.
-         **/
-        const { off } = mcdStore.flowMCD.onNodesInitialized(() => {
-            mcdStore.flowMCD.updateNode(newNode.id, (node) => ({
-                position: { x: node.position.x - node.dimensions.width / 2, y: node.position.y - node.dimensions.height / 2 },
-            }))
-
-            off()
-        })
-
-        const res = await $fetch(`/api/models/update`, {
-            method: 'PUT',
-            query: { id: idModel },
-            body: {
-                node: newNode,
-                type: 'node',
-                action: 'addNode'
-            }
-        });
-
-        mcdStore.flowMCD.addNodes(newNode)
-
-        nodeIdSelected.value = newNode.id
-        addNewNode.value = false
-    }
-
-    return {
-        draggedType,
-        isDragOver,
-        isDragging,
-        onDragStart,
-        onDragLeave,
-        onDragOver,
-        onDrop,
-    }
+  return {
+    draggedType,
+    isDragOver,
+    isDragging,
+    onDragStart,
+    onDragLeave,
+    onDragOver,
+    onDrop,
+  };
 }

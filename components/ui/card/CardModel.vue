@@ -2,12 +2,9 @@
   <Card @click="openModel" class="cursor-pointer hover:border-gray-300 hover:shadow-md duration-150 transition">
     <CardHeader class="flex flex-row items-start gap-4 space-y-0">
       <div class="space-y-1 flex-1">
-        <CardTitle class="text-lg">{{ modelName.length > 20 ? modelName.substring(0, 20) + '...' : modelName }}</CardTitle>
+        <CardTitle class="text-lg">{{ props.model.name.length > 20 ? props.model.name.substring(0, 20) + '...' : props.model.name }}</CardTitle>
       </div>
       <div class="rounded-md text-secondary-foreground">
-
-        <Toaster/>
-
 
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
@@ -22,42 +19,56 @@
           >
 
             <DropdownMenuItem class="cursor-pointer">
-              <AlertDialog>
+              <AlertDialog v-model:open="showDialogRenameModel">
                 <AlertDialogTrigger as-child>
-                  <div @click.stop="showDialogRenameModel = true; setValues({name: modelName})">
+                  <div @click.stop="showDialogRenameModel = true">
                     Renommer
                   </div>
                 </AlertDialogTrigger>
-                <AlertDialogContent v-if="showDialogRenameModel">
+                <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Renommer le nom</AlertDialogTitle>
+                    <AlertDialogTitle>Renommer le modèle</AlertDialogTitle>
+                    <AlertDialogDescription>
+                    </AlertDialogDescription>
                   </AlertDialogHeader>
 
-                  <form @submit="rnModel">
+                  <Form v-slot="{ handleSubmit }" :initial-values="{ name: props.model.name }" :validation-schema="formSchema" as="">
+                    <form @submit="handleSubmit($event, rnModel)">
                     <FormField v-slot="{ componentField }" name="name">
                       <FormItem>
                         <FormLabel>Nom</FormLabel>
                         <FormControl>
-                          <Input type="text" v-bind="componentField" @keyup.enter="rnModel"/>
+                          <Input type="text" v-bind="componentField"/>
                         </FormControl>
                         <FormMessage />
                         <FormControl class="float-right">
-                          <DialogClose as-child>
-                            <Button type="button" variant="secondary">
-                              Annuler
-                            </Button>
-                          </DialogClose>
                           <Button type="submit" :disabled="isRenamingModel">
                             <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
                             {{ isRenamingModel ? 'Renommage...' : 'Renommer' }}
                           </Button>
+                            <Button type="button" variant="secondary" @click.stop="showDialogRenameModel = false">
+                              Annuler
+                            </Button>
                         </FormControl>
                       </FormItem>
                     </FormField>
                   </form>
+                  </Form>
                 </AlertDialogContent>
               </AlertDialog>
             </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <span>Déplacer vers...</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem class="cursor-pointer" v-for="team in selectedWorkspace?.teams" @click.stop="moveModelToTeam(team)" :key="team.id">
+                    <span>{{team?.name }}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
             <DropdownMenuItem class="cursor-pointer">
               <AlertDialog>
                 <AlertDialogTrigger as-child>
@@ -74,7 +85,7 @@
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <Button variant="destructive" @keyup.enter="delModel" @click.stop="delModel" :disabled="isLoading">
+                    <Button variant="destructive" @click.stop="delModel" :disabled="isLoading">
                       <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
                       {{ isLoading ? 'Suppression...' : 'Supprimer' }}
                     </Button>
@@ -98,6 +109,11 @@
           <Workflow :size="15"/>
           {{ props.model.edges.length }} {{ props.model.edges.length > 1 ? 'relations' : 'relation' }}
         </div>
+        <div class="flex items-center gap-x-1">
+          <Users :size="15"/>
+          {{ props.model.team.name }}
+        </div>
+
       </div>
       <div class="text-[11px] text-muted-foreground mt-3 text-right">
         Modifié le {{ $dayjs(props.model.updatedAt).format('DD-MM-YYYY à HH:mm') }}
@@ -107,9 +123,7 @@
 </template>
 <script setup lang="ts">
 import {ref} from 'vue';
-import {Workflow, Loader2, PanelTop, EllipsisVertical} from 'lucide-vue-next';
-import {useToast} from '@/components/ui/toast/use-toast'
-import {Toaster} from '@/components/ui/toast'
+import {Workflow, Loader2, PanelTop, EllipsisVertical, Users} from 'lucide-vue-next';
 import {
   AlertDialog, AlertDialogCancel,
   AlertDialogContent,
@@ -118,13 +132,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
-import {useMCDStore} from "@/stores/mcd-store.js";
-import {storeToRefs} from "pinia";
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";;
+import { z } from "zod";
 import {useForm} from 'vee-validate'
-
+import { toast } from 'vue-sonner'
 import { useModel } from '@/composables/api/useModel'
+import { useWorkspace } from '@/composables/api/useWorkspace'
 
 
 const props = defineProps({
@@ -135,16 +148,12 @@ const props = defineProps({
 });
 
 
-const mcdStore = useMCDStore()
-const {models} = storeToRefs(mcdStore)
-
-const {toast} = useToast()
-
 const openModel = async () => {
   await navigateTo(`/app/model/${props.model.id}`);
 }
 
-const { renameModel, deleteModel } = useModel()
+const { renameModel, deleteModel, updateModel } = useModel()
+const { selectedWorkspace } = useWorkspace()
 
 
 const isLoading = ref(false);
@@ -161,27 +170,19 @@ const delModel = async () => {
     })
 
   
-  // remove model from list
-  models.value = models.value.filter((model) => model.id !== props.model.id);
-
   isLoading.value = false;
   showDialogDeleteModel.value = false;
-  toast({
-    description: 'Le modèle a été supprimé.',
-  });
+  toast.success('Le modèle a été supprimé.');
 }
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
-    error: (issue) => issue.input === undefined 
-    ? "Veuillez remplir le champs." 
-    : ""
+    message: "Veuillez remplir le champs."
   }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
 }))
 
-const modelName = ref(props.model.name)
 
-const { handleSubmit, setValues } = useForm({
+const { setValues } = useForm({
   validationSchema: formSchema,
   initialValues: {
     name: ''
@@ -190,15 +191,40 @@ const { handleSubmit, setValues } = useForm({
 })
 
 
-const rnModel = handleSubmit(async (values) => {
+
+const rnModel = async (values) => {
   isRenamingModel.value = true
   renameModel(props.model.id,{name: values.name})
 
   setValues({
     name: values.name,
   });
-  modelName.value = values.name
+
   isRenamingModel.value = false
   showDialogRenameModel.value = false
-})
+
+  toast.success('Le modèle a été renommé avec succès.');
+}
+
+const moveModelToTeam = (team: object) => {
+
+  console.log('Moving model to team:', props.model.id);
+
+  console.log('Moving model to team:', team);
+  if (!team || !team.id) {
+    toast.error('Veuillez sélectionner une équipe valide.');
+    return;
+  }
+
+  const res = updateModel(props.model.id, {
+    teamId: team.id,
+  });
+
+
+  if (!res) {
+    toast.error('Une erreur est survenue lors du déplacement du modèle.');
+    return;
+  }
+  toast.success('Ce modèle a été déplacé vers l’équipe ' + team.name);
+}
 </script>

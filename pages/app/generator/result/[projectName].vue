@@ -49,16 +49,15 @@
 import {Download, Loader2, Github, Gitlab} from 'lucide-vue-next'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Button} from '~/components/ui/button'
-import {useToast} from '@/components/ui/toast/use-toast'
-import {Toaster} from '@/components/ui/toast'
 import {Separator} from '@/components/ui/separator'
+import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'sidebar',
 });
 
+
 const route = useRoute()
-const {toast} = useToast()
 const { signIn, token, getSession } = useAuth();
 
 const isProviderLinked = async (userId, provider) => {
@@ -149,11 +148,7 @@ const createRepoWithProvider = async (provider) => {
  */
   } catch (error) {
     console.error('Erreur lors de la création du dépôt', error);
-    toast({
-      title: 'Erreur',
-      message: 'Une erreur est survenue lors de la création du dépôt.',
-      type: 'error',
-    });
+    
   }
 };
 

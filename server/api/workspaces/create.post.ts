@@ -39,7 +39,7 @@ export default defineEventHandler(async event => {
         return {
             status: 404,
             body: {
-                message: 'Il y a eu une erreur lors de la création du workspace, veuillez réessayer'
+                message: 'Il y a eu une erreur lors de la création du workspace, veuillez réessayer.'
             }
         }
     }
@@ -73,7 +73,8 @@ export default defineEventHandler(async event => {
     return {
         status: 200,
         body: {
-            message: `Workspace "${workspaceCreated}" créée avec succès`,
+            workspaceId: workspaceCreated.id,
+            message: `Espace de travail créé avec succès.`,
         }
     }
 

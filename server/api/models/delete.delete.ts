@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
         // Récupère le contenu actuel
         const currentContent = await prisma.model.findUnique({
-            where: { id: parseInt(query.idModel) },
+            where: { id: query.idModel?.toString() },
             select: { [field]: true },
         });
 
@@ -28,13 +28,13 @@ export default defineEventHandler(async (event) => {
 
         // Met à jour le modèle avec le nouveau contenu
         return await prisma.model.update({
-            where: { id: parseInt(query.idModel) },
+            where: { id: query.idModel?.toString() },
             data: { [field]: updatedContent },
         });
     }
 
     // Suppression générale du modèle si aucune autre condition n'est remplie
     return await prisma.model.delete({
-        where: { id: parseInt(query.id) },
+        where: { id: query.id?.toString() },
     });
 });

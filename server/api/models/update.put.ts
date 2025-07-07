@@ -1,13 +1,14 @@
 import prisma from "~/lib/prisma";
-import { getServerSession } from "#auth";
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const query = getQuery(event);
 
+    console.log('Update Model:', body);
+
     // Récupérer uniquement la colonne pertinente en fonction de body.type
     const currentContent = await prisma.model.findUnique({
-        where: { id: parseInt(query.id) },
+        where: { id: query.id?.toString() },
         select: {
             nodes: true,
             edges: true,
@@ -36,9 +37,16 @@ export default defineEventHandler(async (event) => {
         updateData.edges = updateContent(currentContent.edges || [], body.edge);
     }
 
+    // check if body contains teamId
+    if (body.teamId) {
+        updateData.teamId = body.teamId;
+    }
+
+
+
     return await prisma.model.update({
         where: {
-            id: parseInt(query.id),
+            id: query.id?.toString(),
         },
         data: updateData
     });

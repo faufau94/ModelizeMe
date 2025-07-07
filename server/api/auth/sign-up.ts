@@ -41,6 +41,7 @@ export default defineEventHandler(async event => {
                 lastActiveWorkspaceId: workspace.id
             },
         })
+        
 
         if(user && workspace) {
             if(isFromAdmin) {

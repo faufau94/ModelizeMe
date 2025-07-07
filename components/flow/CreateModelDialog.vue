@@ -1,12 +1,12 @@
 <template>
-  <Dialog>
+  <Dialog v-model:open="isCreateModelDialogOpen">
     <DialogTrigger as-child>
-      <Button @click="showModel = true">
+      <Button @click="isCreateModelDialogOpen = true">
         <CirclePlus :size="20" class="mr-2"/>
         Nouveau modèle
       </Button>
     </DialogTrigger>
-    <DialogContent class="sm:max-w-[425px]" v-if="showModel">
+    <DialogContent class="sm:max-w-[425px]">
       <DialogHeader>
         <DialogTitle>Nouveau modèle</DialogTitle>
         <DialogDescription>
@@ -14,16 +14,18 @@
         </DialogDescription>
       </DialogHeader>
 
-      <form @submit="onSubmit">
+      <Form v-slot="{ handleSubmit }" :validation-schema="formSchema" as="">
+        <form @submit="handleSubmit($event, onSubmit)">
         <FormField v-slot="{ componentField }" name="title">
           <FormItem>
             <FormLabel>Nom</FormLabel>
             <FormControl>
-              <Input type="text" v-bind="componentField" @keyup.enter="onSubmit"/>
+              <Input type="text" v-bind="componentField"/>
             </FormControl>
             <FormDescription>
               Il pourra toujours être modifié plus tard.
             </FormDescription>
+            
             <FormMessage />
             <FormControl class="float-right">
               <Button type="submit" :disabled="isLoadingNewModel">
@@ -33,8 +35,8 @@
             </FormControl>
           </FormItem>
         </FormField>
-      </form>
-
+        </form>
+      </Form>
     </DialogContent>
   </Dialog>
 </template>
@@ -51,7 +53,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {CirclePlus, Loader2} from "lucide-vue-next";
+import {AlertCircle, CheckCircle, CirclePlus, Loader2} from "lucide-vue-next";
 import {ref} from "vue";
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
@@ -60,9 +62,8 @@ import { z } from "zod/v4";
 import { useModel } from '@/composables/api/useModel'
 
 import { useWorkspaceStore } from '@/stores/api/workspace-store'
+import { toast } from 'vue-sonner'
 
-const showModel = ref(false);
-const isLoadingNewModel = ref(false);
 
 const formSchema = toTypedSchema(z.object({
   title: z.string({
@@ -76,50 +77,28 @@ const form = useForm({
   validationSchema: formSchema,
 })
 
-const message = ref({
-  type: '',
-  text: ''
-})
 
 const { addModel } = useModel()
 const workspaceStore = useWorkspaceStore()
 const { selectedWorkspaceId } = storeToRefs(workspaceStore)
-const isFormLoading = ref(false)
 
-const onSubmit = form.handleSubmit(async (values) => {
-  try {
-    
-    message.type = ''
-    message.text = ''
-    isFormLoading.value = true
+const isCreateModelDialogOpen = ref(false);
+const isLoadingNewModel = ref(false);
 
-    const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
-    
-    // Ici, vous feriez normalement un appel API pour créer l'espace de travail
-    console.log('Création de l\'espace de travail:', values)
-    
-    if (res.status === 200) {
-     
-      // Affichage d'une notification de succès
-      message.type = 'success'
-      message.text = 'Espace de travail créé avec succès !'
-      
-      // Réinitialisation du formulaire après un court délai
-      setTimeout(() => {
-        form.resetForm()
-        isCreateWorkspaceDialogOpen.value = false
-        message.type = ''
-        message.text = ''
-      }, 2000)
+
+const onSubmit = async (values) => {
+  isLoadingNewModel.value = true
+  
+  const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
+  
+  form.resetForm()
+  isLoadingNewModel.value = false
+  isCreateModelDialogOpen.value = false;
+
+  if (res.status === 200) {
+    toast.success(res.body.message)
+  } else {
+    toast.error(res.body.message);
   }
-    
-  } catch (error) {
-    console.error('Erreur lors de la création de l\'espace de travail:', error)
-    message.type = 'error'
-    message.text = 'Une erreur est survenue lors de la création de l\'espace de travail.'
-  } finally {
-    isFormLoading.value = false
-  }
-
-})
+}
 </script>

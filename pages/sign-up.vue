@@ -31,7 +31,12 @@
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form @submit="signUp">
+          <Form
+              as="form"
+              :validation-schema="formSchema"
+              @submit="onSubmit"
+              v-slot="{ errors }"
+            >
             <div class="grid gap-4">
               <div class="grid grid-cols-2 gap-4">
                 <FormField v-slot="{ componentField }" name="firstName">
@@ -105,22 +110,18 @@
                 </div>
               </div>
 
-              <FormField name="button-submit">
-                <FormControl class="w-full">
-                  <Button type="submit" :disabled="isLoading">
-                    <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
-                    {{ isLoading ? "Chargement..." : "S'inscrire" }}
-                  </Button>
-                </FormControl>
-              </FormField>
+              <Button type="submit" :disabled="isLoading">
+                <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
+                {{ isLoading ? "Chargement..." : "S'inscrire" }}
+              </Button>
 
-              <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
+              <!-- <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
                 <Button  class="w-full" variant="outline" @click="signInProvider(provider.id)">
                   Continuer avec {{ provider?.name }}
                 </Button>
-              </div>
+              </div> -->
             </div>
-          </form>
+          </Form>
 
           <div class="mt-4 text-center text-sm">
             Vous avez déjà un compte ?
@@ -153,11 +154,9 @@ import {Loader2} from "lucide-vue-next";
 import { useForm } from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod/v4";
-import { useUser } from '~/composables/api/useUser';
-import { useWorkspaceNavigation } from '~/composables/api/useWorkspaceNavigation';
 
+import { signUp, authClient } from "~/lib/auth-client.js";
 
-const {goToDashboard} = useWorkspaceNavigation()
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
@@ -175,18 +174,19 @@ const formSchema = toTypedSchema(z.object({
     ? "Veuillez remplir le champs." 
     : ""})
       .nonempty("Veuillez remplir le champ.")
-      .refine(
-        // la fonction doit renvoyer true (valide) ou false (erreur)
-        async (email) => {
-          const res = await $fetch("/api/auth/email-exists", {
-            method: "GET",
-            params: { email },
-          })
-          // on suppose que GET /api/users?email=… → { exists: boolean }
-          return !res.body.exists
-        },
-        { message: "Cet email est déjà utilisé." }
-      ),
+      // .refine(
+      //   // la fonction doit renvoyer true (valide) ou false (erreur)
+      //   async (email) => {
+      //     const res = await $fetch("/api/auth/email-exists", {
+      //       method: "GET",
+      //       params: { email },
+      //     })
+      //     // on suppose que GET /api/users?email=… → { exists: boolean }
+      //     return !res.body.exists
+      //   },
+      //   { message: "Cet email est déjà utilisé." }
+      // )
+      ,
   password: z.string({
     error: (issue) => issue.input === undefined 
     ? "Veuillez remplir le champs." 
@@ -207,55 +207,44 @@ const form = useForm({
 })
 
 
-const {signIn, getProviders, refresh} = useAuth()
-const providers = await getProviders()
+// const {signIn, getProviders, refresh} = useAuth()
+// const providers = await getProviders()
 
 const message = ref({
   type: '',
   text: ''
 })
 
-const { addUser } = useUser()
 const isLoading = ref(false)
-const signUp = form.handleSubmit(async (values) => {
-  isLoading.value = true
-
-  const result = await addUser(values)
-
-  console.log("Response from addUser:", result)
-
-
-  if (result.status === 200) {
-    message.value.type = 'success'
-    message.value.message =  result.body.message
-    setTimeout(() => {
-      isLoading.value = false
-    }, 5000)
-    message.value = {text: "", type: ""}
+const onSubmit = async (values) => {
+  isLoading.value = true;
+  
+  const res = await signUp.email({
+    email: values.email,
+    password: values.password,
+    name: values.name,
+  });
+  
+  if (res.error) {
+    message.value.type = 'error';
+    message.value.text = res.error.message || "";
+    isLoading.value = false;
+  } else {
+    // Wait for session to load
+    const { data: session } = await authClient.getSession()
 
     
-    const res = await signIn('credentials', {
-      email: values.email,
-      password: values.password,
-      redirect: false,
-    })
 
-    if (res?.error) {
-      message.value.type = 'error'
-      message.value.text = res.error
-  } else {
-      // Redirection réussie
-        await refresh()
-
-        return navigateTo(goToDashboard())
+    // Redirect to dynamic URL
+    const orgId = session?.session?.activeOrganizationId
+    console.log(orgId)
+    if (orgId) {
+      const url = getDashboardUrl(orgId)
+      console.log(url)
+      await navigateTo(url)
     }
-
-
-  } else {
-    message.value = {type: 'error', text: result.body.error}
-    isLoading.value = false
   }
-})
+};
 
 const signInProvider = async (providerId) => {
   isLoading.value = true
@@ -276,12 +265,12 @@ const signInProvider = async (providerId) => {
   }
 }
 
-const filteredProviders = computed(() => {
-  return Object.keys(providers)
-      .filter(key => key !== 'credentials')
-      .reduce((result, key) => {
-        result[key] = providers[key]
-        return result
-      }, {})
-})
+// const filteredProviders = computed(() => {
+//   return Object.keys(providers)
+//       .filter(key => key !== 'credentials')
+//       .reduce((result, key) => {
+//         result[key] = providers[key]
+//         return result
+//       }, {})
+// })
 </script>

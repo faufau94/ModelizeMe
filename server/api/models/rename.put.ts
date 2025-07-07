@@ -1,5 +1,4 @@
 import prisma from "~/lib/prisma";
-import {getServerSession} from "#auth";
 
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
@@ -8,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
     const updateModelName = await prisma.model.update({
         where: {
-            id: parseInt(query.id),
+            id: query.id?.toString(),
         },
         data: {
             name: body.name

@@ -6,21 +6,30 @@ import { useWorkspace } from '@/composables/api/useWorkspace'
 
 export const useModel = () => {
   const modelStore = useModelStore()
-  const workspace = useWorkspace()
-  const { selectedWorkspaceId } = workspace
+  const { selectedWorkspaceId } = useWorkspace()
   const { selectedModelId } = storeToRefs(modelStore)
   const queryClient = useQueryClient()
+
+  const route = useRoute()
+  const teamId = computed(() => route.params.teamId as string|undefined|null)
 
 
   // — LIST —
   const {data: models, isLoading: isLoadingModels, isFetched: isModelsFetched, error, suspense } = useQuery<Model[]>({
-    queryKey: computed(() => ['models', selectedWorkspaceId.value]),
+    queryKey: computed(() => ['models', selectedWorkspaceId.value, teamId.value]),
     queryFn: async () => {
-      
       const headers = useRequestHeaders(['cookie']) as HeadersInit
+
+      const params: Record<string, any> = {
+        selectedWorkspaceId: selectedWorkspaceId.value
+      }
+      if (teamId.value) {
+        params.teamId = teamId.value
+      }
+
       const res = await $fetch<Model[]>('/api/models/list', {
         method: 'GET',
-        query: { selectedWorkspaceId: selectedWorkspaceId.value },
+        query: params,
         headers
       })
       return res
@@ -57,13 +66,13 @@ export const useModel = () => {
   } 
 
   // — EDIT —
-  const editModelMutation = useMutation({
+  const updateModelMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) =>
       await $fetch('/api/models/update', { method: 'PUT', query: { id }, body: data }),
     onSuccess: () => queryClient.invalidateQueries(['models']),
   })
-  const editModel = (id: number, updatedData: any) =>
-    editModelMutation.mutateAsync({ id, data: updatedData })
+  const updateModel = (id: number, updatedData: any) =>
+    updateModelMutation.mutateAsync({ id, data: updatedData })
 
 
   // — RENAME —
@@ -87,7 +96,7 @@ export const useModel = () => {
   return {
     // mutations
     addModel,
-    editModel,
+    updateModel,
     renameModel,
     deleteModel,
 

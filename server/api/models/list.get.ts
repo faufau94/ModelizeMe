@@ -1,10 +1,11 @@
 import prisma from "~/lib/prisma";
-import { getServerSession } from "#auth";
-import {H3Error} from "h3";
+import { auth } from "~/lib/auth";
 
 export default defineEventHandler(async event => {
-    const { selectedWorkspaceId } = getQuery(event);
-    const session = await getServerSession(event);
+    const { selectedWorkspaceId, teamId } = getQuery(event);
+    const session = await auth.api.getSession({
+        headers: event.headers,
+    })
     try {
 
         if (!session?.user?.email) {
@@ -20,31 +21,25 @@ export default defineEventHandler(async event => {
         try {
             const onlyTemplates = query.onlyTemplates === 'true';
 
-            if (onlyTemplates) {
-                models = await prisma.model.findMany({
-                    where: {
-                        authorId: session.user.id,
-                        workspaceId: selectedWorkspaceId,
-                        // Galery: {
-                        //     some: {},
-                        // },
+            const where: any = {
+                workspaceId: selectedWorkspaceId,
+                ...(teamId && { teamId: teamId }),
+                ...(onlyTemplates && { Galery: { some: {} } }),
+            };
+
+            models = await prisma.model.findMany({
+                where,
+                ...(onlyTemplates && {
+                    include: {
+                        Galery: {
+                            include: { category: true },
+                        },
                     },
-                    // include: {
-                    //     Galery: {
-                    //         include: {
-                    //             category: true,
-                    //         },
-                    //     },
-                    // },
-                });
-            } else {
-                models = await prisma.model.findMany({
-                    where: {
-                        authorId: session.user.id,
-                        workspaceId: selectedWorkspaceId,
-                    },
-                });
-            }
+                }),
+                include: {
+                    team: true,
+                },
+            });
         } catch (error) {
             console.error('Error fetching models:', error);
             throw createError({
@@ -57,10 +52,6 @@ export default defineEventHandler(async event => {
 
     } catch (error) {
         console.error('Global error:', error);
-        throw error instanceof H3Error ? error : createError({
-            statusCode: 500,
-            message: "Internal server error",
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        
     }
 });

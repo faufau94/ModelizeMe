@@ -19,7 +19,7 @@
           <FormItem>
             <FormLabel>Nom</FormLabel>
             <FormControl>
-              <Input type="text" v-bind="componentField" @keyup.enter="onSubmit"/>
+              <Input type="text" v-bind="componentField"/>
             </FormControl>
             <FormDescription>
               Il pourra toujours être modifié plus tard.
