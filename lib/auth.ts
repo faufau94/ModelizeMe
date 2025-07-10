@@ -60,7 +60,7 @@ export const auth = betterAuth({
 
           async sendInvitationEmail(data) {
             console.log("Sending invitation email to:", data.email);
-            const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+            const baseUrl = useRuntimeConfig().public.BASE_URL || "http://localhost:3000";
             const inviteLink = `${baseUrl}/app/workspace/join/${data.id}`;
             console.log("Send invitation to:", data.email, "with link:", inviteLink);
             await sendOrganizationInvitation({
