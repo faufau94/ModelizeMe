@@ -7,7 +7,7 @@
     "dev": "npx prisma generate && nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare && prisma generate"
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
@@ -45,6 +45,8 @@
     "pinia": "^3.0.2",
     "postcss": "^8.4.41",
     "preline": "^2.3.0",
+    "@prisma/client": "^6.8.2",
+    "prisma": "^6.8.2",
     "radix-vue": "^1.9.3",
     "reka-ui": "^2.3.0",
     "shadcn-nuxt": "^0.10.4",
