@@ -7,7 +7,8 @@
     "dev": "npx prisma generate && nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare && prisma generate"
+    "postinstall": "nuxt prepare && prisma generate",
+    "vercel-build": "npx prisma generate && npx prisma migrate deploy && nuxt build"
   },
   "dependencies": {
     "@dagrejs/dagre": "^1.1.4",
