@@ -25,13 +25,13 @@ export default defineNuxtConfig({
     //'@nuxtjs/i18n'
   ],
 
-  i18n: {
-    defaultLocale: 'en',
-    locales: [
-      { code: 'en', name: 'English', file: 'en.json' },
-      { code: 'fr', name: 'Français', file: 'fr.json' }
-    ]
-  },
+  //   i18n: {
+  //     defaultLocale: 'en',
+  //     locales: [
+  //       { code: 'en', name: 'English', file: 'en.json' },
+  //       { code: 'fr', name: 'Français', file: 'fr.json' }
+  //     ]
+  //   },
 
   vite: {
     optimizeDeps: {
@@ -42,11 +42,15 @@ export default defineNuxtConfig({
       alias: {
         ".prisma/client/index-browser": "./node_modules/.prisma/client/index-browser.js"
       }
+    },
+    ssr: {
+      noExternal: [
+        '@prisma/client',
+        'prisma',
+        'better-auth',
+        'better-auth/adapters/prisma'
+      ]
     }
-  },
-
-  router: {
-    middleware: ['require-super-admin'],
   },
 
   dayjs: {
@@ -103,5 +107,16 @@ export default defineNuxtConfig({
      * @default "./components/ui"
      */
     componentDir: './components/ui'
+  },
+
+  nitro: {
+    externals: {
+      external: [
+        '@prisma/client',
+        'prisma',
+        'better-auth',
+        'better-auth/adapters/prisma'
+      ]
+    }
   }
 })
