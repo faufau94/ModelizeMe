@@ -110,6 +110,9 @@ export default defineNuxtConfig({
   },
 
   nitro: {
+    runtimeConfig: {
+      proxy: ['process'],
+    },
     externals: {
       external: [
         '@prisma/client',
