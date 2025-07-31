@@ -77,8 +77,6 @@ export default defineNuxtConfig({
       external: ['.prisma', '@prisma/client', 'process'],
       inline: [],
     },
-    replace: {
-      'import * as process': 'import * as processUnused',
-    },
+    
   }
 })
