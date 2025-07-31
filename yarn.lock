@@ -1577,7 +1577,7 @@
   resolved "https://registry.yarnpkg.com/@preline/select/-/select-2.6.0.tgz#5a0876aaada7f3d91db3cce1e1f902864a7a2ddb"
   integrity sha512-plQ2DDmMx8qr6TaObutbbC9H+Pf3HxJe0jV8vcOiFXch+ze+sCuZV2UmQLno2frSaBzqoNDOdO2W1ywpAzPJfA==
 
-"@prisma/client@^6.8.2":
+"@prisma/client@^6.13.0":
   version "6.13.0"
   resolved "https://registry.yarnpkg.com/@prisma/client/-/client-6.13.0.tgz#7073ab6ccf10c0c99ab7582e39aa7a1422c6a7db"
   integrity sha512-8m2+I3dQovkV8CkDMluiwEV1TxV9EXdT6xaCz39O6jYw7mkf5gwfmi+cL4LJsEPwz5tG7sreBwkRpEMJedGYUQ==
@@ -6492,7 +6492,7 @@ pretty-bytes@^6.1.1:
   resolved "https://registry.yarnpkg.com/pretty-bytes/-/pretty-bytes-6.1.1.tgz#38cd6bb46f47afbf667c202cfc754bffd2016a3b"
   integrity sha512-mQUvGU6aUFQ+rNvTIAcZuWGRT9a6f6Yrg9bHs4ImKF+HZCEK+plBvnAZYSIQztknZF2qnzNtr6F8s0+IuptdlQ==
 
-prisma@^6.8.2:
+prisma@^6.13.0:
   version "6.13.0"
   resolved "https://registry.yarnpkg.com/prisma/-/prisma-6.13.0.tgz#a1b88c9b9a11e8ffcba12870b9abac04b7d10ae8"
   integrity sha512-dfzORf0AbcEyyzxuv2lEwG8g+WRGF/qDQTpHf/6JoHsyF5MyzCEZwClVaEmw3WXcobgadosOboKUgQU0kFs9kw==
