@@ -70,13 +70,4 @@ export default defineNuxtConfig({
     prefix: '',
     componentDir: './components/ui'
   },
-
-  nitro: {
-    preset: 'node',
-    externals: {
-      external: ['.prisma', '@prisma/client', 'process'],
-      inline: [],
-    },
-    
-  }
 })
