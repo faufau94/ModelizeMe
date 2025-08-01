@@ -17,7 +17,7 @@
     "@pinia/nuxt": "^0.5.3",
     "@preline/overlay": "^2.3.0",
     "@preline/select": "^2.3.0",
-    "@prisma/client": "^6.5.0",
+    "@prisma/client": "6.5.0",
     "@tanstack/vue-query": "^5.76.0",
     "@tanstack/vue-table": "^8.21.3",
     "@vee-validate/nuxt": "^4.13.2",
@@ -47,7 +47,7 @@
     "pinia": "^3.0.2",
     "postcss": "^8.4.41",
     "preline": "^2.3.0",
-    "prisma": "^6.5.0",
+    "prisma": "6.5.0",
     "radix-vue": "^1.9.3",
     "reka-ui": "^2.3.0",
     "shadcn-nuxt": "^0.10.4",
@@ -65,11 +65,11 @@
     "zod": "^3.25.17"
   },
   "devDependencies": {
-    "@prisma/client": "^6.5.0",
+    "@prisma/client": "6.5.0",
     "@types/bcrypt": "^5.0.2",
     "@types/nodemailer": "^6.4.17",
     "@y/websocket-server": "^0.1.1",
-    "prisma": "^6.5.0",
+    "prisma": "6.5.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.4"
   },

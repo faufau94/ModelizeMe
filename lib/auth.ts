@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "../prisma/generated/prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
 import { sendOrganizationInvitation } from "@/lib/send-invitation";
