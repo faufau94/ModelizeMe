@@ -2,7 +2,7 @@
 import UiMeteors from '@/components/UiMeteors.client.vue'
 //import UiRetroGrid from '@/components/RetroGrid.vue'
 import { signOut, useSession } from '~/lib/auth-client';
-const { data } = await useAsyncData('session', () => useSession(useFetch));
+const { data } = await useSession(useFetch);
 </script>
 
 <template>
