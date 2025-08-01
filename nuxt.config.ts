@@ -25,14 +25,6 @@ export default defineNuxtConfig({
     //'@nuxtjs/i18n'
   ],
 
-  //   i18n: {
-  //     defaultLocale: 'en',
-  //     locales: [
-  //       { code: 'en', name: 'English', file: 'en.json' },
-  //       { code: 'fr', name: 'Français', file: 'fr.json' }
-  //     ]
-  //   },
-
   vite: {
     optimizeDeps: {
       include: ["zod"],
@@ -60,63 +52,22 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
-
     public: {
       baseUrl: process.env.BASE_URL,
     },
-
-
     authSecret: process.env.AUTH_SECRET,
     authOrigin: process.env.NUXT_AUTH_ORIGIN,
     baseURL: process.env.NUXT_BASE_URL,
-
     githubClientId: process.env.GITHUB_CLIENT_ID,
     githubClientSecret: process.env.GITHUB_CLIENT_SECRET,
-
     gitlabClientId: process.env.GITLAB_CLIENT_ID,
     gitlabClientSecret: process.env.GITLAB_CLIENT_SECRET,
-
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-
   },
-  // auth: {
-  //   isEnabled: true,
-  //   disableServerSideAuth: false,
-  //   originEnvKey: process.env.NUXT_AUTH_ORIGIN || '',
-  //   baseURL: process.env.NUXT_BASE_URL || '',
-  //   // sessionRefresh: {
-  //   //   enablePeriodically: true,
-  //   //   enableOnWindowFocus: true,
-  //   // },
-  //   provider: {
-  //     type: 'authjs',
-  //     trustHost: false,
-  //     defaultProvider: 'google',
-  //     addDefaultCallbackUrl: true,
-  //   },
-  // },
 
   shadcn: {
-    /**
-     * Prefix for all the imported component
-     */
     prefix: '',
-    /**
-     * Directory that the component lives in.
-     * @default "./components/ui"
-     */
     componentDir: './components/ui'
   },
-
-  nitro: {
-    externals: {
-      external: [
-        '@prisma/client',
-        'prisma',
-        'better-auth',
-        'better-auth/adapters/prisma'
-      ]
-    }
-  }
 })

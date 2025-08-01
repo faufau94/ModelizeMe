@@ -14,7 +14,6 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 			return await navigateTo(`/app/workspace/${session?.value?.session?.activeOrganizationId}/dashboard`);
 		}
 	}
-
 });
 
 
