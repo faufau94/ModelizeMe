@@ -53,9 +53,15 @@ export function useTeam() {
   const createTeamMutation = useMutation({
     mutationFn: async (payload: Partial<Team>) => {
       const name = payload.name as string
+        const description = payload.description as string | undefined
+        const color = payload.color as string | undefined
+        const maxMembers = payload.maxMembers as number | undefined
       if (!name) throw new Error('Team name is required')
       return await authClient.organization.createTeam({
         name,
+        description,
+        color,
+        maxMembers,
         organizationId: selectedWorkspaceId.value as string | undefined
       }).then((res: any) => res.data)
     },
@@ -87,7 +93,11 @@ export function useTeam() {
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] }),
   })
-  const deleteTeam = (id: string) => deleteTeamMutation.mutateAsync(id)
+  const deleteTeam = (id: string) => {
+      console.log('Deleting team with id:', id)
+      console.log('Selected workspace id:', selectedWorkspaceId.value)
+      return deleteTeamMutation.mutateAsync(id)
+  }
 
   // — ASSIGN MEMBERS —
   const assignMembersMutation = useMutation({

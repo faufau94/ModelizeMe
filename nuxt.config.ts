@@ -3,6 +3,13 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: false },
   css: ['~/assets/css/main.css'],
+  components: [
+        {
+            path: '~/components',
+            pathPrefix: false,
+            ignore: ['**/index.*']
+        }
+  ],
 
   plugins: [
     '~/plugins/vue-query.ts',

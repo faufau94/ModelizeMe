@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import nodemailer from 'nodemailer';
 
 export default defineEventHandler(async event => {
+    console.log("saluuut")
     const { name, firstName, email, password, isFromAdmin } = await readBody(event);
 
     const existingUser = await prisma.user.findUnique({
@@ -12,6 +13,7 @@ export default defineEventHandler(async event => {
     });
 
     if (!existingUser) {
+            console.log('Creating new user:', email);
         const hashedPassword = await bcrypt.hash(password, 10);
         // Créer un nouvel utilisateur s'il n'existe pas
         const user = await prisma.user.create({
@@ -23,7 +25,7 @@ export default defineEventHandler(async event => {
                 role: { connect: { name: "USER" } },
             },
         });
-
+        console.log('Creating new user 2:', email);
         // créer un workspace par défaut
         const workspace = await prisma.workspace.create({
             data: {
@@ -33,7 +35,7 @@ export default defineEventHandler(async event => {
                 },
             }
         });
-
+        console.log('Creating new user 3:', email);
         // add lastActiveWorkspaceId to user
         await prisma.user.update({
             where: { id: user.id },
@@ -42,8 +44,9 @@ export default defineEventHandler(async event => {
             },
         })
         
-
+        console.log('Creating new user 4:', email);
         if(user && workspace) {
+            console.log('User and workspace created successfully:', user, workspace);
             if(isFromAdmin) {
                 const transporter = nodemailer.createTransport({
                     host: 'in-v3.mailjet.com',

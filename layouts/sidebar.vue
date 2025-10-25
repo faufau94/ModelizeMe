@@ -73,7 +73,12 @@
                   <SidebarMenuItem v-for="team in selectedWorkspace?.teams" :key="team.id">
                     <SidebarMenuButton asChild :isActive="route.path === goToThisWorkspaceUrl('team/'+ team.id)">
                       <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team.id)" class="flex items-center gap-2">
-                        {{ team.name }}
+                        <div>
+                          <Circle :color="team.color" :fill="team.color" class="h-3 w-3" />
+                        </div>
+                        <div>
+                          {{ team.name }}
+                        </div>
                       </NuxtLink>
                     </SidebarMenuButton>
 
@@ -136,7 +141,7 @@
                               </AlertDialogTrigger>
                               <AlertDialogContent v-if="showDialogDeleteTeam">
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Voulez-vous supprimer ce modèle ?</AlertDialogTitle>
+                                  <AlertDialogTitle>Voulez-vous supprimer cette équipe ?</AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Cette action est irréversible et supprimera définitement ce modèle.
                                   </AlertDialogDescription>
@@ -413,6 +418,7 @@ import {
   PlusCircle,
   Share2,
   Settings2,
+    Circle
 } from 'lucide-vue-next'
 
 import { Button } from '@/components/ui/button'

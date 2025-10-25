@@ -35,8 +35,16 @@ export function useMember() {
 
   // — CREATE MEMBER —
   const addMemberMutation = useMutation({
-    mutationFn: async (payload: any) =>
-      await $fetch('/api/members/add', { method: 'POST', body: payload }),
+    mutationFn: async (payload: any) => {
+        const { email } = payload;
+        return await authClient.organization.inviteMember({
+            organizationId: selectedWorkspaceId.value,
+            email,
+            role: 'member',
+            resend: true,
+        })
+    },
+      //await $fetch('/api/members/add', { method: 'POST', body: payload }),
     onSuccess: () => {
       queryClient.invalidateQueries(['workspaceMembers', selectedWorkspaceId.value])
     }

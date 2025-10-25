@@ -33,6 +33,7 @@ model User {
   authoredModels Model[]      @relation("AuthorModels")
   galeries       Galery[]
   annotations    Annotation[]
+  teammembers    TeamMember[]
 
   @@unique([email])
   @@map("user")
@@ -52,6 +53,7 @@ model Session {
   impersonatedBy String? @db.Text
 
   activeOrganizationId String? @db.Text
+  activeTeamId         String? @db.Text
 
   @@unique([token])
   @@map("session")
@@ -112,8 +114,6 @@ model Member {
   role           String       @db.Text
   createdAt      DateTime
 
-  teamId String? @db.Text
-
   @@map("member")
 }
 
@@ -136,13 +136,28 @@ model Invitation {
 model Team {
   id             String       @id
   name           String       @db.Text
+  description    String?      @db.Text
+  color          String?
+  maxMembers     Int?
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime
   updatedAt      DateTime?
   models         Model[]
+  teammembers    TeamMember[]
 
   @@map("team")
+}
+
+model TeamMember {
+  id        String    @id
+  teamId    String
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime?
+
+  @@map("teamMember")
 }
 
 model Model {

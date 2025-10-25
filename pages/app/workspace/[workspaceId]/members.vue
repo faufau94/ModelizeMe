@@ -252,7 +252,7 @@ const changeMemberRole = async (memberId: number, newRole: string) => {
   }
 }
 
-// Add new member (invite via API)
+// Add new member (using better-auth)
 const addNewMember = async () => {
   if (!newMemberEmail.value) return
   await addMember({ email: newMemberEmail.value })

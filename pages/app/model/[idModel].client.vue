@@ -347,6 +347,13 @@ import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form'
 import {useCollaborationStore} from '~/stores/collaboration-store.js';
 
 import {
@@ -361,7 +368,7 @@ import { getLayoutedElements, elkOptions } from '@/utils/useElk.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";;
+import { z } from "zod/v4";
 import {useForm} from 'vee-validate'
 import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 
@@ -556,6 +563,7 @@ watch(activeTab, () => {
     mldStore.flowMLD.setNodes(nodesMLD)
     mldStore.flowMLD.setEdges(edgesMLD)
     currentFlow.value = mldStore.flowMLD;
+    console.log("nodesMLD", nodesMLD);
   }
   if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};
 

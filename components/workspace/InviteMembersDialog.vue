@@ -92,8 +92,10 @@ import { Button } from '@/components/ui/button'
 import { Loader2, Plus } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { authClient } from '~/lib/auth-client'
+import {useMember} from "~/composables/api/useMember";
 
 const { selectedWorkspaceId } = useWorkspace()
+const { addMember } = useMember()
 const isDialogOpen = ref(false)
 const isLoading = ref(false)
 const formRef = ref<any>(null)
@@ -128,11 +130,7 @@ async function handleSubmit(values: any) {
     if (emailList.length > 0) {
     for (const email of emailList) {
       try {
-        await authClient.organization.inviteMember({
-          organizationId: selectedWorkspaceId.value,
-          email,
-          role: 'member'
-        })
+        await addMember({ email })
         successCount++
       } catch (error) {
         console.error('Error inviting member:', email, error)

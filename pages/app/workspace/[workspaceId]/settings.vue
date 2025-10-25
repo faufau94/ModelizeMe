@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen bg-background">
-
-    <div class="container mx-auto px-4 py-8">
+    <div class="container flex items-center justify-center mx-auto px-4 py-8">
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Main Content -->
         <div class="lg:col-span-3 space-y-6">
@@ -344,7 +343,7 @@ const removeWorkspace = async () => {
   } else {
     toast.success('Workspace deleted successfully')
     // redirect to the latest workspace by using the created at date
-    const latestWorkspace = workspaces.value.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0]
+    const latestWorkspace = [...workspaces.value].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0]
     await navigateTo(`/app/workspace/${latestWorkspace.id}/dashboard`)
   }
 }

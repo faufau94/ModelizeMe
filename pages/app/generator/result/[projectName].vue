@@ -60,16 +60,6 @@ definePageMeta({
 const route = useRoute()
 const { signIn, token, getSession } = useAuth();
 
-const isProviderLinked = async (userId, provider) => {
-  return await $fetch('/api/helper/is-provider-linked', {
-    method: 'POST',
-    body: {
-      userId,
-      provider,
-    },
-  });
-};
-
 
 const createRepoWithProvider = async (provider) => {
   try {

@@ -1,11 +1,11 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
 import { sendOrganizationInvitation } from "@/lib/send-invitation";
+import {authClient} from "~/lib/auth-client";
 
-const prisma = new PrismaClient();
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "mysql",
@@ -38,25 +38,59 @@ export const auth = betterAuth({
             enabled: true,
             allowRemovingAllTeams: true
           },
+          organizationHooks: {
+            afterCreateOrganization: async ({ organization }) => {
+                // Remove teams created
+                const { data, error } = await authClient.organization.listTeams({
+                    query: {
+                        organizationId: organization.id,
+                    },
+                });
 
-          organizationCreation: {
-            afterCreate: async ({ organization }) => {
-              // Supprimer la team auto-créée
-              await prisma.team.deleteMany({
-                where: { organizationId: organization.id },
-              })
+                if (!error) {
+                    for (const team of data) {
+                        await authClient.organization.removeTeam({
+                            teamId: team.id,
+                            organizationId: organization.id,
+                        });
+                    }
+                }
+              // await prisma.team.deleteMany({
+              //   where: { organizationId: organization.id },
+              // })
             },
-          },
-
-          organizationDeletion: {
-            // disabled: true, //to disable it altogether
-            beforeDelete: async (data, request) => {
+            beforeDeleteOrganization: async (data) => {
               // delete all models related to the organization
               await prisma.model.deleteMany({
                 where: { workspaceId: data.organization.id },
               })
             },
           },
+
+            schema: {
+                team: {
+                    additionalFields: {
+                        // Add additional fields to the team table
+                        description: {
+                            type: "string",
+                            input: true,
+                            required: false,
+                        },
+                        color: {
+                            type: "string",
+                            input: true,
+                            required: false,
+                        },
+                        maxMembers: {
+                            type: "number",
+                            input: true,
+                            required: false,
+                        }
+                    },
+                },
+            },
+
+
 
           async sendInvitationEmail(data) {
             console.log("Sending invitation email to:", data.email);

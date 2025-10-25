@@ -46,34 +46,10 @@
                   <SelectValue placeholder="Select color" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="blue">
+                  <SelectItem v-for="color in colors" :value="color" :key="color">
                     <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                      Blue
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="green">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                      Green
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="purple">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-purple-500"></div>
-                      Purple
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="orange">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-orange-500"></div>
-                      Orange
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="red">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                      Red
+                      <Circle :color="color" :fill="color" class="h-3 w-3" />
+                      {{ color.charAt(0).toUpperCase() + color.slice(1) }}
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -277,7 +253,8 @@ import {
   PlusIcon,
   XIcon,
   InfoIcon,
-  LoaderIcon
+  LoaderIcon,
+    Circle
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 
@@ -382,7 +359,7 @@ const onSubmit = handleSubmit(async (formValues) => {
   isSubmitting.value = true
 
   try {
-    createTeam(formValues)
+    await createTeam(formValues)
 
     // let members = []
     // if (formValues.dispatchMode === 'manual') {
@@ -415,4 +392,6 @@ const onSubmit = handleSubmit(async (formValues) => {
     isSubmitting.value = false
   }
 })
+
+const colors = ['blue', 'green', 'purple', 'orange', 'red']
 </script>

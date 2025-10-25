@@ -109,9 +109,9 @@
           <Workflow :size="15"/>
           {{ props.model.edges.length }} {{ props.model.edges.length > 1 ? 'relations' : 'relation' }}
         </div>
-        <div class="flex items-center gap-x-1">
+        <div v-if="props.model.teamId" class="flex items-center gap-x-1">
           <Users :size="15"/>
-          {{ props.model.team.name }}
+          {{ props?.model?.team?.name }}
         </div>
 
       </div>
@@ -132,6 +132,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import {Button} from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {toTypedSchema} from "@vee-validate/zod";
 import { z } from "zod";
 import {useForm} from 'vee-validate'
