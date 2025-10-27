@@ -4,7 +4,6 @@ import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import { ref, computed } from 'vue'
 import { useMCDStore } from './mcd-store'
-import { useSession } from '~/lib/auth-client'
 
 export const useCollaborationStore = defineStore('collaboration', () => {
 
@@ -57,22 +56,19 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       console.log('🔄 Yjs: nodes changed event →', event)
       console.log('🔄 Yjs: nodes changed →', nodes.value)
       console.log('event.transaction.origin: ', event.transaction.origin)
-      if (!mcdStore.flowMCD || nodes.value.length === 0 || event.transaction.origin === 'local') return
-      console.log('On arrive ici !')
+      if (!mcdStore.flowMCD) return
       // set VueFlow to exactly the current array of nodes
       mcdStore.flowMCD.setNodes(nodes.value)
     })
 
     // 6) similarly for edges
     sharedEdges.value.observe(() => {
-      console.log('🔄 Yjs: edges changed →', edges.value)
       if (!mcdStore.flowMCD) return
       mcdStore.flowMCD.setEdges(edges.value)
     })
 
     // 7) track connection status
     provider.value.on('status', ({ status }) => {
-      console.log('Connection status:', status)
       isConnected.value = (status === 'connected')
     })
 

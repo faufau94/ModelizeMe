@@ -97,23 +97,6 @@ export function useTeam() {
       return deleteTeamMutation.mutateAsync(id)
   }
 
-  // - LIST TEAM MEMBERS -
-  const {
-    data: teamMembers,
-    isLoading: isLoadingTeamMembers,
-  } = useQuery<TeamMember[]>({
-    queryKey: computed(() => ['teamMembers', selectedWorkspaceId.value as string | undefined]),
-    queryFn: async ({ queryKey }) => {
-      const [, teamId] = queryKey
-      if (!teamId) return []
-      return await authClient.organization.listTeamMembers({
-          query: {
-            teamId: teamId as string
-          }
-      }).then((res: any) => res.data)
-    },
-    enabled: computed(() => !!selectedWorkspaceId.value),
-  })
 
   // — ADD TEAM MEMBER —
   const addTeamMemberMutation = useMutation({
@@ -165,8 +148,6 @@ export function useTeam() {
     selectedTeamId,
     selectedTeam,
     isLoadingSelectedTeam,
-    teamMembers,
-    isLoadingTeamMembers,
 
     // mutations
     createTeam,

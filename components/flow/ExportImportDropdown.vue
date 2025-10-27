@@ -23,16 +23,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 
-const props = defineProps({
-  vueFlowRef: Element,
-  modelName: String,
-});
+const props = defineProps<{
+  vueFlowRef?: any;
+  modelName?: string;
+}>();
 
 const isOpen = ref(false);
 const toggleDialog = () => isOpen.value = !isOpen.value;
 const { exportAsImage } = useScreenshot();
 
-const handleExport = (type) => {
+const handleExport = (type: string) => {
   // Accéder directement à l'élément DOM contenant le diagramme
   const flowElement = props.vueFlowRef;
 

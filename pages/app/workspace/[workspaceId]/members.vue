@@ -111,9 +111,10 @@
                   v-if="getIsOwner && member?.role !== 'owner'"
                   @click="confirmRemoveMember(member.id)"
                   variant="ghost"
+                  size="icon"
                   class="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
-                  Remove
+                  <TrashIcon class="w-4 h-4" />
                 </Button>
 
               </TableCell>
@@ -198,7 +199,7 @@ import {useWorkspace} from '@/composables/api/useWorkspace'
 import {useMember} from '@/composables/api/useMember'
 
 // UI components and icons
-import {ChevronDownIcon, PlusIcon} from 'lucide-vue-next'
+import {ChevronDownIcon, PlusIcon, TrashIcon} from 'lucide-vue-next'
 import {Button} from '@/components/ui/button'
 import {Input} from '@/components/ui/input'
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table'

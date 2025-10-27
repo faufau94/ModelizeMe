@@ -216,26 +216,13 @@
           <WandSparkles :size="18"/>
         </Button>
 
+        <Separator orientation="vertical" class="h-6"/>
+
+        <div class="px-3">
+          <ActiveUsersAvatars :activeUsers="activeUsers" :maxVisible="3" />
+        </div>
 
       </Panel>
-
-
-
-      <Panel position="top-right" class="bg-white z-40 px-2 py-1 drop-shadow-md rounded-sm">
-      <div class="flex flex-col gap-1">
-        <div class="text-sm font-medium text-zinc-600 mb-1">Active Users</div>
-        <div class="flex flex-col gap-1">
-          <div v-for="user in activeUsers" 
-               :key="user.id" 
-               class="flex items-center gap-2 px-2 py-1 rounded-sm"
-               :class="{ 'bg-zinc-100': user.isLocal }">
-            <div class="w-2 h-2 rounded-full" :style="{ backgroundColor: user.color }"></div>
-            <span class="text-sm text-zinc-800">{{ user.name }}</span>
-            <span v-if="user.isLocal" class="text-xs text-zinc-500">(you)</span>
-          </div>
-        </div>
-      </div>
-    </Panel>
 
       <Panel position="top-right" class="bg-white mr-10 z-40 drop-shadow-md flex items-center rounded-sm">
         <Tabs default-value="mcd" v-model="activeTab" class="w-full">
@@ -362,6 +349,7 @@ import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 
 import {useModel} from '@/composables/api/useModel'
 import {authClient} from '~/lib/auth-client'
+import ActiveUsersAvatars from '@/components/ActiveUsersAvatars.vue'
 
 
 const route = useRoute()
