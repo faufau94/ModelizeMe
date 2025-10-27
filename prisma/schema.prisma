@@ -158,6 +158,7 @@ model TeamMember {
   createdAt DateTime?
 
   @@map("teamMember")
+  @@unique([teamId, userId])
 }
 
 model Model {

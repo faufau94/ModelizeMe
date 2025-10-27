@@ -130,10 +130,10 @@
 
 <script setup>
 import {ref} from 'vue'
-import {Card, CardHeader, CardTitle, CardDescription, CardContent} from '@/components/ui/card'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
 import {Button} from '@/components/ui/button'
-import {Table, TableHeader, TableRow, TableHead, TableBody, TableCell} from '@/components/ui/table'
-import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from '@/components/ui/dialog'
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table'
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog'
 import {Label} from '@/components/ui/label'
 import {Input} from '@/components/ui/input'
 import {CirclePlus, FilePenIcon, TrashIcon} from 'lucide-vue-next'

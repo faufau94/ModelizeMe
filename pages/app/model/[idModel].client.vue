@@ -328,10 +328,10 @@
 </template>
 
 <script setup>
-import {computed, markRaw, onMounted, onUnmounted, ref, nextTick, watch, defineComponent, h} from "vue";
+import {computed, markRaw, nextTick, onMounted, onUnmounted, ref, watch} from "vue";
 import CustomEdge from "~/components/flow/CustomEdge.vue";
 import ElementMenu from "~/components/flow/ElementMenu.vue";
-import {useVueFlow, VueFlow, Panel} from "@vue-flow/core";
+import {Panel, useVueFlow, VueFlow} from "@vue-flow/core";
 import DropzoneBackground from "~/components/flow/DropzoneBackground.vue";
 import {MiniMap} from "@vue-flow/minimap";
 import {Controls} from "@vue-flow/controls";
@@ -342,38 +342,26 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {PanelTop, Download, Undo2, Redo2, Loader2, Check, WandSparkles, Workflow} from "lucide-vue-next";
+import {Check, Loader2, PanelTop, Redo2, Undo2, WandSparkles, Workflow} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
-import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs'
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage
-} from '@/components/ui/form'
+import {Tabs, TabsList, TabsTrigger} from '@/components/ui/tabs'
+import {FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form'
 import {useCollaborationStore} from '~/stores/collaboration-store.js';
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from '@/components/ui/tooltip'
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip'
 import {useLayout} from "@/composables/useLayout.js";
-import {useReorganize} from "@/composables/useReorganize.js";
-import { getLayoutedElements, elkOptions } from '@/utils/useElk.js';
+import {elkOptions, getLayoutedElements} from '@/utils/useElk.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";
+import {z} from "zod/v4";
 import {useForm} from 'vee-validate'
 import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 
-import { useModel } from '@/composables/api/useModel'
-import { authClient } from '~/lib/auth-client'
+import {useModel} from '@/composables/api/useModel'
+import {authClient} from '~/lib/auth-client'
 
 
 const route = useRoute()

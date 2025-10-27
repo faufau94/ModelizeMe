@@ -139,23 +139,15 @@
 import {Button} from '~/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Input} from '~/components/ui/input'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from '@/components/ui/form'
 
 import {Loader2} from "lucide-vue-next";
 
-import { useForm } from 'vee-validate'
+import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";
+import {z} from "zod/v4";
 
-import { signUp, authClient } from "~/lib/auth-client.js";
+import {authClient, signUp} from "~/lib/auth-client.js";
 
 
 const formSchema = toTypedSchema(z.object({

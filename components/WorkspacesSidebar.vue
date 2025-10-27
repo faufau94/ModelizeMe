@@ -4,7 +4,7 @@
         <!-- Organization Logo -->
         
         <!-- Organization Selector - No Popover -->
-        <div class="flex flex-col items-center space-y-3 mt-4">
+        <div class="flex flex-col items-center space-y-3">
           <!-- Simple button without dropdown -->
           <template v-for="workspace in workspaces" :key="workspace.id">
             <Button @click="switchWorkspaceUrl(workspace.id)" variant="outline" size="icon" 

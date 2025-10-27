@@ -51,9 +51,9 @@
 </template>
 
 <script setup lang="ts">
-import { AlertCircle, Loader2 } from 'lucide-vue-next'
-import { ref } from 'vue'
-import { useSession, authClient } from '~/lib/auth-client'
+import {AlertCircle, Loader2} from 'lucide-vue-next'
+import {ref} from 'vue'
+import {authClient, useSession} from '~/lib/auth-client'
 
 const isJoining = ref(false)
 const route = useRoute()

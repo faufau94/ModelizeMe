@@ -37,14 +37,14 @@
 </template>
 
 <script setup>
-import {ref, computed} from 'vue'
+import {computed, ref} from 'vue'
 import {Label} from '@/components/ui/label'
 import {Checkbox} from '@/components/ui/checkbox'
 import {Input} from '@/components/ui/input'
 
 import CardModel from "@/components/ui/card/CardModel.vue";
 
-import {CirclePlus, Loader2, LucideCable, Search} from 'lucide-vue-next'
+import {Loader2, Search} from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'sidebar',

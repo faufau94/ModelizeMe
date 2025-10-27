@@ -134,55 +134,39 @@
           <div class="space-y-6">
             <Card class="border-destructive">
               <CardHeader>
-                <CardTitle class="text-destructive">Danger Zone</CardTitle>
+                <CardTitle class="text-destructive">Delete Workspace</CardTitle>
                 <CardDescription>
-                  Irreversible and destructive actions.
+                  Permanently delete this workspace and all its data. This action cannot be undone.
                 </CardDescription>
               </CardHeader>
               <CardContent class="space-y-4">
                 <div class="space-y-4">
-                  <!-- <div class="p-4 border border-destructive/20 rounded-lg">
-                    <h4 class="font-medium mb-2">Transfer Workspace</h4>
-                    <p class="text-sm text-muted-foreground mb-3">
-                      Transfer this workspace to another user. You will lose admin access.
-                    </p>
-                    <Button variant="outline" size="sm">
-                      Transfer Workspace
-                    </Button>
-                  </div> -->
-                  
-                  <div class="p-4 border border-destructive/20 rounded-lg">
-                    <h4 class="font-medium mb-2 text-destructive">Delete Workspace</h4>
-                    <p class="text-sm text-muted-foreground mb-3">
-                      Permanently delete this workspace and all its data. This action cannot be undone.
-                    </p>
-                    <AlertDialog>
-                      <AlertDialogTrigger as-child>
-                        <Button variant="destructive" size="sm">
-                          <Trash2 class="mr-2 h-4 w-4" />
-                          Delete Workspace
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the
-                            "{{ selectedWorkspace.name }}" workspace and remove all associated data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
+                  <AlertDialog>
+                    <AlertDialogTrigger as-child>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 class="mr-2 h-4 w-4" />
+                        Delete Workspace
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone. This will permanently delete the
+                          "{{ selectedWorkspace.name }}" workspace and remove all associated data.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
                             @click="removeWorkspace"
                             class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete Workspace
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                        >
+                          Delete Workspace
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </CardContent>
             </Card>
@@ -199,42 +183,14 @@ definePageMeta({
   layout: 'sidebar',
 })
 
-import { ref, reactive } from 'vue'
-import {
-  ChevronRight,
-  Settings,
-  Users,
-  Shield,
-  AlertTriangle,
-  Upload,
-  UserPlus,
-  MoreHorizontal,
-  Loader2,
-  Trash2
-} from 'lucide-vue-next'
+import {reactive, ref} from 'vue'
+import {AlertTriangle, Loader2, Settings, Shield, Trash2, Users} from 'lucide-vue-next'
 
 // Shadcn-vue components
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { Switch } from '@/components/ui/switch'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import {Button} from '@/components/ui/button'
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from '@/components/ui/card'
+import {Input} from '@/components/ui/input'
+import {Textarea} from '@/components/ui/textarea'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -246,20 +202,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { useWorkspace } from '~/composables/api/useWorkspace'
-import { useForm } from 'vee-validate'
-import { toTypedSchema } from '@vee-validate/zod'
-import { z } from 'zod'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
-import { toast } from 'vue-sonner'
+import {useWorkspace} from '~/composables/api/useWorkspace'
+import {useForm} from 'vee-validate'
+import {toTypedSchema} from '@vee-validate/zod'
+import {z} from 'zod'
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from '@/components/ui/form'
+import {toast} from 'vue-sonner'
 
 // Navigation sections
 const sections = [

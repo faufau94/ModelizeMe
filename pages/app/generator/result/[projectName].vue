@@ -46,11 +46,10 @@
 </template>
 
 <script setup>
-import {Download, Loader2, Github, Gitlab} from 'lucide-vue-next'
+import {Download, Github, Gitlab, Loader2} from 'lucide-vue-next'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Button} from '~/components/ui/button'
 import {Separator} from '@/components/ui/separator'
-import { toast } from 'vue-sonner'
 
 definePageMeta({
   layout: 'sidebar',

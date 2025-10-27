@@ -1,9 +1,8 @@
 // ~/composables/useWorkspace.ts
-import { computed, ref, onMounted } from 'vue'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
-import type { Workspace, WorkspaceRole } from '@/components/dataTable/data/schema'
-import { useSession } from '~/lib/auth-client'
-import { authClient } from '~/lib/auth-client'
+import {computed} from 'vue'
+import {useMutation, useQuery, useQueryClient} from '@tanstack/vue-query'
+import type {Workspace} from '@/components/dataTable/data/schema'
+import {authClient, useSession} from '~/lib/auth-client'
 
 export const useWorkspace = () => {
   const route = useRoute()
@@ -41,10 +40,9 @@ export const useWorkspace = () => {
     queryFn: async () => {
       const organizations = await authClient.organization.list()
       // Sort organizations by createdAt in ascending order
-      const sortedOrganizations = organizations.data?.sort((a, b) => 
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      return organizations.data?.sort((a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       ) || []
-      return sortedOrganizations
     },
   })
 
@@ -53,22 +51,51 @@ export const useWorkspace = () => {
     queryKey: computed(() => ['workspace', selectedWorkspaceId.value]),
     queryFn: async ({ queryKey }) => {
       const workspaceId = route.params.workspaceId
+
+      // Récupérer l'organisation de base avec Better Auth
       const organization = await authClient.organization.getFullOrganization({
         query: { organizationId: String(workspaceId) }
       })
-      
+
       if (!organization.data) {
         throw new Error('Workspace not found')
       }
 
-      // Sort teams in ascending order by createdAt
-      if (organization.data.teams) {
-        organization.data.teams = organization.data.teams.sort((a, b) => 
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        )
-      }
+      console.log('Organization Data:', organization.data);
 
-      return organization.data as Workspace
+      // Enrichir les équipes avec les membres et modèles
+      const teamsWithCounts = await Promise.all(
+        (organization.data.teams || []).map(async (team) => {
+          const [members, models] = await Promise.all([
+            $fetch('/api/team-members/list', {
+              query: { teamId: team.id }
+            }).catch(() => []),
+            $fetch('/api/teams/models', {
+              query: { teamId: team.id }
+            }).catch(() => [])
+          ])
+
+          return {
+            ...team,
+            members,
+            models,
+          }
+        })
+      )
+
+        console.log('Teams with Counts:', teamsWithCounts);
+
+      // Sort teams in ascending order by createdAt
+      const sortedTeams = teamsWithCounts.sort((a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      )
+
+        console.log('Sorted Teams:', sortedTeams);
+
+      return {
+        ...organization.data,
+        teams: sortedTeams,
+      }
     },
     staleTime: 0,
     enabled: computed(() => selectedWorkspaceId.value !== null && selectedWorkspaceId.value !== undefined),

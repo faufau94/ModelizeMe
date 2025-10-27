@@ -157,11 +157,10 @@
 import {useCodeGeneratorStore} from "@/stores/generator-store.js";
 import {storeToRefs} from "pinia";
 import {Check, CirclePlay, Loader2} from 'lucide-vue-next'
-import { Textarea } from '@/components/ui/textarea'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { toast } from 'vue-sonner'
+import {Textarea} from '@/components/ui/textarea'
+import {toast} from 'vue-sonner'
 import {useMLDStore} from "~/stores/mld-store.js";
-import { toTypedSchema } from '@vee-validate/zod';
+import {toTypedSchema} from '@vee-validate/zod';
 import * as z from 'zod';
 
 import {ref} from 'vue'

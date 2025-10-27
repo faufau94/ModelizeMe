@@ -7,6 +7,7 @@ import { sendOrganizationInvitation } from "@/lib/send-invitation";
 import {authClient} from "~/lib/auth-client";
 
 export const auth = betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     database: prismaAdapter(prisma, {
         provider: "mysql",
     }),
@@ -41,23 +42,9 @@ export const auth = betterAuth({
           organizationHooks: {
             afterCreateOrganization: async ({ organization }) => {
                 // Remove teams created
-                const { data, error } = await authClient.organization.listTeams({
-                    query: {
-                        organizationId: organization.id,
-                    },
+                await prisma.team.deleteMany({
+                    where: { organizationId: organization.id },
                 });
-
-                if (!error) {
-                    for (const team of data) {
-                        await authClient.organization.removeTeam({
-                            teamId: team.id,
-                            organizationId: organization.id,
-                        });
-                    }
-                }
-              // await prisma.team.deleteMany({
-              //   where: { organizationId: organization.id },
-              // })
             },
             beforeDeleteOrganization: async (data) => {
               // delete all models related to the organization

@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen bg-background p-4 md:p-8">
 
-    <div class="mx-auto max-w-4xl bg-card rounded-xl shadow-sm">
+    <div class="mx-auto max-w-4xl px-8 pb-8 border-b bg-card rounded-xl shadow-sm">
 
       <!-- Header -->
       <div class="flex justify-between items-center p-6">
@@ -17,7 +17,7 @@
         </div>
       </div>
 
-      
+
       <!-- Share Link Section -->
       <!-- <div v-if="getIsOwner" class="border-b p-6">
         <h2 class="text-lg font-medium text-foreground mb-4">Share Link</h2>
@@ -64,7 +64,7 @@
                 </div>
               </TableCell>
               <TableCell>
-                
+
                 <template v-if="getIsOwner">
                   <DropdownMenu>
                   <DropdownMenuTrigger as-child>
@@ -78,11 +78,11 @@
                       </Badge>
                     </div>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
+                  <DropdownMenuContent v-if="member?.role !== 'owner'">
                     <DropdownMenuLabel>Change Role</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      v-for="(role, index) in availableRoles" 
+                    <DropdownMenuItem
+                      v-for="(role, index) in availableRoles"
                       :key="index"
                       @click="changeMemberRole(member.id, role)"
                     >
@@ -104,7 +104,7 @@
                     </Badge>
                   </template>
                 </template>
-                
+
               </TableCell>
               <TableCell class="text-right">
                 <Button
@@ -128,11 +128,11 @@
             </TableRow>
           </TableBody>
         </Table>
-        
-        
+
+
       </div>
     </div>
-    
+
     <!-- Add Member Dialog -->
     <Dialog :open="showAddMemberDialog" @update:open="showAddMemberDialog = $event">
       <DialogContent>
@@ -177,8 +177,8 @@
           <Button variant="outline" @click="memberToRemove = null">
             Cancel
           </Button>
-          <Button 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             @click="removeMember()"
           >
             Remove
@@ -192,33 +192,33 @@
 <script setup lang="ts">
 
 // Replace useAuth with useSession from better-auth
-import { useSession } from '~/lib/auth-client'
+import {useSession} from '~/lib/auth-client'
+import {ref} from 'vue'
+import {useWorkspace} from '@/composables/api/useWorkspace'
+import {useMember} from '@/composables/api/useMember'
+
+// UI components and icons
+import {ChevronDownIcon, PlusIcon} from 'lucide-vue-next'
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table'
+import {Avatar} from '@/components/ui/avatar'
+import {Badge} from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import {Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle} from '@/components/ui/dialog'
+import {Label} from '@/components/ui/label'
+import {toast} from 'vue-sonner'
 
 definePageMeta({
   layout: 'sidebar',
 })
-import { ref } from 'vue'
-import { useWorkspace } from '@/composables/api/useWorkspace'
-import { useMember } from '@/composables/api/useMember'
-
-// UI components and icons
-import { CopyIcon, CheckIcon, RefreshCwIcon, ChevronDownIcon, PlusIcon } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
-import { 
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
-  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu'
-import { 
-  Dialog, DialogContent, DialogHeader,
-  DialogFooter, DialogTitle, DialogDescription
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { toast } from 'vue-sonner'
-import { authClient } from '~/lib/auth-client'
 
 // Use better-auth's useSession
 const { data: session } = await useSession(useFetch)

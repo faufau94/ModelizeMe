@@ -3,9 +3,8 @@
     <Dialog v-model:open="isDialogOpen">
       <DialogTrigger as-child>
         <Button
-          variant="outline"
-          size="sm"
-          class="hidden md:flex items-center gap-2 transition-colors"
+          size="lg"
+          class="hidden md:flex items-center gap-2 transition-colors px-4 bg-white text-black hover:bg-gray-100 hover:text-black border border-gray-300"
           aria-live="polite"
         >
           <Plus class="w-4 h-4" />

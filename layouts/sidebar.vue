@@ -1,8 +1,8 @@
 <template>
   <div class="flex h-screen w-full bg-background">
     <!-- Organization Sidebar -->
-    <div class="w-16 border-r border-border bg-card flex flex-col items-center hidden md:flex">
-      <div class="flex flex-col items-center space-y-4">
+    <div class="w-16 border-r border-border bg-card flex flex-col items-center hidden md:flex py-4">
+      <div class="flex flex-col items-center space-y-4 w-full px-2">
         <!-- Organization Logo -->
         
         <!-- Organization Selector - No Popover -->
@@ -16,23 +16,25 @@
     <!-- Navigation Sidebar -->
     <div class="w-64 border-r border-border bg-card flex flex-col hidden md:flex">
       <!-- Logo -->
-      <div class="flex justify-center py-4">
-        <span class="text-xl font-bold ml-2">ModelizeMe</span>
+      <div class="flex justify-center py-6">
+        <span class="text-xl font-bold ml-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">ModelizeMe</span>
       </div>
       
       <!-- Navigation Sidebar -->
       <SidebarProvider>
         <Sidebar side="left" variant="sidebar" collapsible="none">
-          <SidebarHeader>
+          <SidebarHeader class="px-3">
             <!-- Main Navigation -->
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   @click="goToModelsPage"
                   :isActive="route.path.split('/').pop() === 'dashboard'"
+                  class="py-5 cursor-pointer transition-all duration-200 hover:bg-accent hover:text-accent-foreground rounded-md"
+                  :class="{ 'bg-accent text-accent-foreground': route.path.split('/').pop() === 'dashboard' }"
                 >
-                  <PanelTopIcon />
-                  <span>Modèles</span>
+                  <PanelTopIcon class="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                  <span class="font-medium">Modèles</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
@@ -40,9 +42,11 @@
                 <SidebarMenuButton 
                   @click="goToMembersPage"
                   :isActive="route.path.split('/').pop() === 'members'"
+                  class="py-5 cursor-pointer transition-all duration-200 hover:bg-accent hover:text-accent-foreground rounded-md"
+                  :class="{ 'bg-accent text-accent-foreground': route.path.split('/').pop() === 'members' }"
                 >
-                  <UsersRound />
-                  <span>Membres</span>
+                  <UsersRound class="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                  <span class="font-medium">Membres</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
@@ -50,100 +54,154 @@
                 <SidebarMenuButton 
                   @click="goToSettingsPage" 
                   :isActive="route.path.split('/').pop() === 'settings'"
+                  class="py-5 cursor-pointer transition-all duration-200 hover:bg-accent hover:text-accent-foreground rounded-md"
+                  :class="{ 'bg-accent text-accent-foreground': route.path.split('/').pop() === 'settings' }"
                 >
-                  <Settings2 />
-                  <span>Paramètres</span>
+                  <Settings2 class="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                  <span class="font-medium">Paramètres</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarHeader>
 
-          <SidebarContent>
-            <!-- Teams List -->
-            <SidebarGroup>
-              <SidebarGroupLabel class="font-normal text-muted-foreground uppercase tracking-wider">
-                Équipes
-              </SidebarGroupLabel>
-              <SidebarGroupAction>
-                <CreateTeamDialog />
-              </SidebarGroupAction>
+            <SidebarContent>
+              <!-- Teams List -->
+              <SidebarGroup>
+                <div class="flex items-center justify-between px-3 py-2">
+                  <SidebarGroupLabel class="text-xs font-semibold text-muted-foreground uppercase tracking-wider p-0">
+                    Équipes
+                  </SidebarGroupLabel>
+                  <SidebarGroupAction class="transition-opacity duration-200 hover:opacity-100 opacity-70">
+                    <CreateTeamDialog />
+                  </SidebarGroupAction>
+                </div>
 
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  <SidebarMenuItem v-for="team in selectedWorkspace?.teams" :key="team.id">
-                    <SidebarMenuButton asChild :isActive="route.path === goToThisWorkspaceUrl('team/'+ team.id)">
-                      <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team.id)" class="flex items-center gap-2">
-                        <div>
-                          <Circle :color="team.color" :fill="team.color" class="h-3 w-3" />
-                        </div>
-                        <div>
-                          {{ team.name }}
-                        </div>
-                      </NuxtLink>
-                    </SidebarMenuButton>
+                <SidebarGroupContent class="px-2">
+                  <SidebarMenu>
+                    <SidebarMenuItem v-for="team in selectedWorkspace?.teams" :key="team.id" class="group">
+                      <SidebarMenuButton
+                          asChild
+                          :isActive="route.path === goToThisWorkspaceUrl('team/'+ team.id)"
+                          class="py-6 transition-all duration-200 hover:bg-accent hover:text-accent-foreground rounded-md"
+                          :class="{ 'bg-accent text-accent-foreground': route.path === goToThisWorkspaceUrl('team/'+ team.id) }"
+                      >
+                        <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team?.id)" class="flex items-center gap-3 w-full">
+                          <div class="flex flex-col">
+                            <div class="flex items-center gap-2">
+                              <div class="transition-transform duration-200 group-hover:scale-110">
+                                <div class="w-3 h-3 rounded-full" :class="teamColorClass(team?.color)"></div>
+                              </div>
+                              <div class="font-medium truncate">
+                                {{ team.name }}
+                              </div>
+                            </div>
+                            <div class="flex">
+                              <div class="w-5"></div>
+                              <div class="flex items-center gap-4 mt-1">
+                                <div class="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Users class="h-3 w-3" />
+                                  <span>{{ team?.members?.length || 0 }}</span>
+                                </div>
+                                <div class="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <PanelTopIcon class="h-3 w-3" />
+                                  <span>{{ team.models?.length || 0 }}</span>
+                                </div>
+                              </div>
+                            </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction>
-                          <MoreHorizontalIcon class="h-4 w-4" />
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                                    <DropdownMenuItem class="cursor-pointer">
-              <AlertDialog v-model:open="showDialogRenameTeam">
-                <AlertDialogTrigger as-child>
-                  <div @click.stop="showDialogRenameTeam = true">
-                    Renommer
-                  </div>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Renommer l'équipe</AlertDialogTitle>
-                    <AlertDialogDescription>
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                    <Form 
-                    v-slot="{ handleSubmit, values }" 
-                    :initial-values="{ name: team.name }" 
-                    :validation-schema="formSchema"
-                    >
-                    <form @submit="handleSubmit($event, (formValues) => rnTeam({ ...formValues, teamId: team.id }))">
-                    <FormField v-slot="{ componentField }" name="name">
-                      <FormItem>
-                        <FormLabel>Nom</FormLabel>
-                        <FormControl>
-                          <Input type="text" v-bind="componentField"/>
-                        </FormControl>
-                        <FormMessage />
-                        <FormControl class="float-right">
-                          <Button type="submit" :disabled="isRenamingTeam">
-                            <Loader2 v-if="isRenamingTeam" class="w-4 h-4 mr-2 animate-spin"/>
-                            {{ isRenamingTeam ? 'Renommage...' : 'Renommer' }}
-                          </Button>
-                            <Button type="button" variant="secondary" @click.stop="showDialogRenameTeam = false">
-                              Annuler
-                            </Button>
-                        </FormControl>
-                      </FormItem>
-                    </FormField>
-                  </form>
-                  </Form>
-                </AlertDialogContent>
-              </AlertDialog>
-            </DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                          </div>
+                        </NuxtLink>
+                      </SidebarMenuButton>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuAction class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-300 rounded-sm">
+                            <MoreHorizontalIcon class="h-6 w-6" />
+                          </SidebarMenuAction>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" class="w-48">
+                          <DropdownMenuItem class="cursor-pointer" @click.stop="openManageTeamDialog(team.id)">
+                            <Users class="mr-2 h-4 w-4" />
+                            <span>Gérer l'équipe</span>
+                          </DropdownMenuItem>
                           <DropdownMenuItem class="cursor-pointer">
+                            <AlertDialog v-model:open="showDialogRenameTeam">
+                              <AlertDialogTrigger as-child>
+                                <div @click.stop="showDialogRenameTeam = true" class="flex items-center w-full">
+                                  <PencilIcon class="mr-2 h-4 w-4" />
+                                  <span>Renommer</span>
+                                </div>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Renommer l'équipe</AlertDialogTitle>
+                                </AlertDialogHeader>
+                                <Form
+                                    v-slot="{ handleSubmit }"
+                                    :initial-values="{ name: team.name }"
+                                    :validation-schema="formSchema"
+                                >
+                                  <form @submit="handleSubmit($event, (formValues) => rnTeam({ ...formValues, teamId: team.id }))">
+                                    <FormField v-slot="{ componentField }" name="name">
+                                      <FormItem>
+                                        <FormLabel>Nom</FormLabel>
+                                        <FormControl>
+                                          <Input type="text" v-bind="componentField"/>
+                                        </FormControl>
+                                        <FormMessage />
+                                        <FormControl class="float-right">
+                                          <Button type="submit" :disabled="isRenamingTeam">
+                                            <Loader2 v-if="isRenamingTeam" class="w-4 h-4 mr-2 animate-spin"/>
+                                            {{ isRenamingTeam ? 'Renommage...' : 'Renommer' }}
+                                          </Button>
+                                          <Button type="button" variant="secondary" @click.stop="showDialogRenameTeam = false">
+                                            Annuler
+                                          </Button>
+                                        </FormControl>
+                                      </FormItem>
+                                    </FormField>
+                                  </form>
+                                </Form>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuItem>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <div class="flex items-center w-full">
+                                <Paintbrush class="mr-2 h-4 w-4" />
+                                <span>Changer la couleur</span>
+                              </div>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuItem
+                                    class="cursor-pointer"
+                                    v-for="color in colors"
+                                    @click.stop="updateTeamColor(team.id, color)"
+                                    :key="color"
+                                >
+                                  <div class="flex items-center gap-2">
+                                    <div class="w-3 h-3 rounded-full" :class="teamColorClass(color)"></div>
+                                    {{ color.charAt(0).toUpperCase() + color.slice(1) }}
+                                  </div>
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive">
                             <AlertDialog>
                               <AlertDialogTrigger as-child>
-                                <div @click.stop="showDialogDeleteTeam = true" class="text-red-500">
-                                  Supprimer
+                                <div @click.stop="showDialogDeleteTeam = true" class="flex items-center w-full">
+                                  <TrashIcon class="mr-2 h-4 w-4" />
+                                  <span>Supprimer</span>
                                 </div>
                               </AlertDialogTrigger>
                               <AlertDialogContent v-if="showDialogDeleteTeam">
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Voulez-vous supprimer cette équipe ?</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Cette action est irréversible et supprimera définitement ce modèle.
+                                    Cette action est irréversible et supprimera définitivement cette équipe.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -156,13 +214,14 @@
                               </AlertDialogContent>
                             </AlertDialog>
                           </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </SidebarContent>
+
         </Sidebar>
       </SidebarProvider>
     </div>
@@ -170,14 +229,14 @@
     <!-- Mobile Navigation -->
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" class="absolute left-4 top-4 md:hidden">
+        <Button variant="outline" size="icon" class="absolute left-4 top-4 md:hidden transition-all duration-200 hover:bg-accent">
           <MenuIcon class="h-5 w-5" />
         </Button>
       </SheetTrigger>
       <SheetContent side="left" class="w-72 p-0">
         <!-- Logo -->
-        <div class="flex justify-center py-4">
-          <span class="text-xl font-bold ml-2">ModelizeMe</span>
+        <div class="flex justify-center py-6 border-b border-border">
+          <span class="text-xl font-bold ml-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">ModelizeMe</span>
         </div>
         
         <!-- Mobile Navigation Menu -->
@@ -185,110 +244,51 @@
           <nav class="py-3">
             <div class="px-3 mb-2">
               <div class="space-y-1">
-                <Button @click="goToModelsPage" :variant="route.path.split('/').pop() === 'dashboard' ? 'secondary' : 'ghost'" class="w-full justify-start">
+                <Button @click="goToModelsPage" :variant="route.path.split('/').pop() === 'dashboard' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
                   <PanelTopIcon class="mr-2 h-4 w-4" />
-                  Modèles
+                  <span class="font-medium">Modèles</span>
                 </Button>
-                <Button @click="goToMembersPage" :variant="route.path.split('/').pop() === 'members' ? 'secondary' : 'ghost'" class="w-full justify-start">
+                <Button @click="goToMembersPage" :variant="route.path.split('/').pop() === 'members' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
                   <UsersRound class="mr-2 h-4 w-4" />
-                  Membres
+                  <span class="font-medium">Membres</span>
                 </Button>
-                <Button v-if="data?.user?.id === selectedWorkspace?.ownerId" @click="goToSettingsPage" :variant="route.path.split('/').pop() === 'settings' ? 'secondary' : 'ghost'" class="w-full justify-start">
+                <Button v-if="data?.user?.id === selectedWorkspace?.ownerId" @click="goToSettingsPage" :variant="route.path.split('/').pop() === 'settings' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
                   <Settings2 class="mr-2 h-4 w-4" />
-                  Paramètes
+                  <span class="font-medium">Paramètres</span>
                 </Button>
               </div>
             </div>
             
             <!-- Teams Section with Simple List -->
             <div class="px-3 mb-2 mt-6">
-              <div class="flex items-center justify-between px-3">
-                <h3 class="text-xs font-medium text-muted-foreground uppercase tracking-wider">Équipes</h3>
-                <Button variant="ghost" size="icon" class="h-6 w-6">
-                  <PlusIcon class="h-4 w-4" />
-                </Button>
+              <div class="flex items-center justify-between px-3 mb-2">
+                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Équipes</h3>
+                <CreateTeamDialog />
               </div>
               
               <div class="mt-2 space-y-1">
-                <!-- Team 1 - Separate Button and Dropdown -->
-                <div class="flex items-center">
-                  <Button variant="ghost" class="flex-1 justify-start" asChild>
-                    <a href="#">Équipe 1</a>
+                <!-- Teams dynamiques -->
+                <div v-for="team in selectedWorkspace?.teams" :key="team.id" class="flex items-center group rounded-md hover:bg-accent transition-all duration-200">
+                  <Button variant="ghost" class="flex-1 justify-start hover:bg-transparent" asChild>
+                    <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team.id)" class="flex items-center gap-2">
+                      <Circle :color="team.color" :fill="team.color" class="h-3 w-3 drop-shadow-sm" />
+                      <span class="font-medium">{{ team.name }}</span>
+                    </NuxtLink>
                   </Button>
                   
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" class="h-8 w-8">
+                      <Button variant="ghost" size="icon" class="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                         <MoreHorizontalIcon class="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem class="cursor-pointer">
                         <PencilIcon class="mr-2 h-4 w-4" />
                         <span>Renommer</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem class="text-destructive focus:text-destructive">
-                        <TrashIcon class="mr-2 h-4 w-4" />
-                        <span>Supprimer</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                
-                <!-- Team 2 - Separate Button and Dropdown -->
-                <div class="flex items-center">
-                  <Button variant="ghost" class="flex-1 justify-start" asChild>
-                    <a href="#">Équipe 2</a>
-                  </Button>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" class="h-8 w-8">
-                        <MoreHorizontalIcon class="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <PencilIcon class="mr-2 h-4 w-4" />
-                        <span>Renommer</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <LinkIcon class="mr-2 h-4 w-4" />
-                        <span>Copier le lien</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem class="text-destructive focus:text-destructive">
-                        <TrashIcon class="mr-2 h-4 w-4" />
-                        <span>Supprimer</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-                
-                <!-- Team 3 - Separate Button and Dropdown -->
-                <div class="flex items-center">
-                  <Button variant="ghost" class="flex-1 justify-start" asChild>
-                    <a href="#">Équipe 3</a>
-                  </Button>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" class="h-8 w-8">
-                        <MoreHorizontalIcon class="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <PencilIcon class="mr-2 h-4 w-4" />
-                        <span>Renommer</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <LinkIcon class="mr-2 h-4 w-4" />
-                        <span>Copier le lien</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem class="text-destructive focus:text-destructive">
+                      <DropdownMenuItem class="text-destructive focus:text-destructive cursor-pointer">
                         <TrashIcon class="mr-2 h-4 w-4" />
                         <span>Supprimer</span>
                       </DropdownMenuItem>
@@ -304,14 +304,14 @@
     
     <!-- Main Content -->
     <div class="flex-1 overflow-auto">
-      <header class="h-14 px-6 flex items-center">
+      <header class="h-16 px-6 flex items-center">
         <!-- <h1 class="text-lg font-semibold text-foreground md:ml-0 ml-12">Vue d'ensemble</h1> -->
-        <div class="ml-auto flex items-center space-x-4">
-            <InviteMembersDialog />
+        <div class="ml-auto flex items-center space-x-3">
+          <InviteMembersDialog />
 
           <Select>
-            <SelectTrigger class="w-36">
-              <div class="flex items-center justify-center gap-4">
+            <SelectTrigger class="w-36 transition-all duration-200 hover:bg-accent bg-white">
+              <div class="flex items-center justify-center gap-2">
                 <Globe class="h-4 w-4" />
                 <SelectValue placeholder="Language" />
               </div>
@@ -331,7 +331,7 @@
           <!-- User Account Dropdown (Updated) -->
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" class="relative h-8 w-8 rounded-full">
+              <Button variant="ghost" class="relative h-8 w-8 rounded-full transition-all duration-200 hover:bg-accent hover:ring-2 hover:ring-ring hover:ring-offset-2">
                 <Avatar class="h-8 w-8">
                   {{ data?.user?.name?.charAt(0).toUpperCase()  }}
                 </Avatar>
@@ -351,19 +351,23 @@
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem class="cursor-pointer">
-                  Profil
+                  <UserIcon class="mr-2 h-4 w-4" />
+                  <span>Profil</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem class="cursor-pointer">
-                  Facturation
+                  <CreditCardIcon class="mr-2 h-4 w-4" />
+                  <span>Facturation</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem class="cursor-pointer">
-                  <Settings />
+                  <SettingsIcon class="mr-2 h-4 w-4" />
+                  <span>Paramètres</span>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <NuxtLink class="cursor-pointer" @click.prevent="signOut">
-                  Se déconnecter
+              <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive">
+                <NuxtLink class="flex items-center w-full" @click.prevent="signOut">
+                  <LogOutIcon class="mr-2 h-4 w-4" />
+                  <span>Se déconnecter</span>
                 </NuxtLink>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -376,67 +380,65 @@
         <slot></slot>
       </main>
     </div>
+
+    <!-- Manage Team Dialog (contrôlé par le parent) -->
+    <ManageTeamDialog
+      v-model:open="isManageTeamDialogOpen"
+      :team-id="currentTeamId"
+    />
   </div>
 </template>
 
 
 <script setup lang="ts">
 
-import { ref } from 'vue';
-import { useWorkspace } from '@/composables/api/useWorkspace';
-import { useTeam } from '@/composables/api/useTeam';
+import {ref} from 'vue';
+import {useWorkspace} from '@/composables/api/useWorkspace';
+import {useTeam} from '@/composables/api/useTeam';
 import WorkspacesSidebar from '@/components/WorkspacesSidebar.vue'
 import AddWorkspaceDialog from '@/components/workspace/AddWorkspaceDialog.vue'
 import CreateTeamDialog from '@/components/teams/CreateTeamDialog.vue'
 import InviteMembersDialog from '@/components/workspace/InviteMembersDialog.vue'
+import ManageTeamDialog from '@/components/teams/ManageTeamDialog.vue'
+import { teamColorClass } from "~/utils";
 
-import { 
-  HomeIcon, 
-  UsersIcon, 
-  SettingsIcon, 
-  LogOutIcon,
-  BellIcon,
-  PlusIcon,
-  TrendingUpIcon,
-  TrendingDownIcon,
-  ChevronDownIcon,
-  MenuIcon,
-  UserIcon,
-  MoreHorizontalIcon,
-  LinkIcon,
-  PencilIcon,
-  TrashIcon,
-  CodeIcon,
-  CheckIcon,
-  PanelTopIcon,
-  Search,
-  Loader2,
-  UsersRound,
+import {
+  Circle,
+  CreditCardIcon,
   Globe,
-  Plus,
-  BoxSelectIcon,
-  PlusCircle,
-  Share2,
+  Loader2,
+  LogOutIcon,
+  MenuIcon,
+  MoreHorizontalIcon,
+  Paintbrush,
+  PanelTopIcon,
+  PencilIcon,
   Settings2,
-    Circle
+  SettingsIcon,
+  TrashIcon,
+  UserIcon,
+  UsersRound,
+  Users,
+  PlusIcon
 } from 'lucide-vue-next'
 
-import { Button } from '@/components/ui/button'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-  DropdownMenuGroup
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import {Button} from '@/components/ui/button'
 import {
-  SidebarProvider,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu'
+import {Avatar} from '@/components/ui/avatar'
+import {ScrollArea} from '@/components/ui/scroll-area'
+import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet'
+import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -445,18 +447,15 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarProvider,
 } from "@/components/ui/sidebar"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { toast } from 'vue-sonner';
-import { z } from "zod/v4";
-import { useSession, authClient } from '~/lib/auth-client';
-import { NuxtLink } from '#components';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select'
+import {toast} from 'vue-sonner';
+import {z} from "zod/v4";
+import {authClient, useSession} from '~/lib/auth-client';
+import {NuxtLink} from '#components';
+import {DropdownMenuPortal} from "~/components/ui/dropdown-menu";
+
 
 const route = useRoute()
 const { data } = await useSession(useFetch);
@@ -464,7 +463,7 @@ const { data } = await useSession(useFetch);
 const copiedWorkspaceLink = ref(false)
 
 const { selectedWorkspace, copyWorkspaceLink, goToThisWorkspaceUrl, getIsOwner } = useWorkspace()
- const { renameTeam, deleteTeam } = useTeam()
+ const { renameTeam, deleteTeam, updateTeam } = useTeam()
 
 const copyLink = async () => {
   try {
@@ -495,7 +494,7 @@ const goToSettingsPage = async () => {
 
 const showDialogDeleteTeam = ref(false)
 const isDeletingTeam = ref(false)
-const removeTeam = async (teamId: Number) => {
+const removeTeam = async (teamId: string) => {
   try {
     await deleteTeam(teamId)
     toast.success('Équipe supprimée avec succès')
@@ -528,7 +527,7 @@ const isRenamingTeam = ref(false)
 const showDialogRenameTeam = ref(false)
 const rnTeam = async (values) => {
   isRenamingTeam.value = true
-  renameTeam(values.teamId,values.name)
+  await renameTeam(values.teamId, values.name)
 
   isRenamingTeam.value = false
   showDialogRenameTeam.value = false
@@ -537,13 +536,37 @@ const rnTeam = async (values) => {
 }
 
 
+const updateTeamColor = async (teamId: string, color: string) => {
+  try {
+    console.log('Updating team color:', teamId, color)
+    await updateTeam(teamId, { color })
+    toast.success('Couleur de l\'équipe mise à jour avec succès')
+  } catch (error) {
+    console.error('Error updating team color:', error)
+    toast.error('Erreur lors de la mise à jour de la couleur de l\'équipe')
+  }
+}
+
+
 const signOut = async () => {
   await authClient.signOut({
     fetchOptions: {
-      onSuccess: async () => {
-        await navigateTo('/')
+      onSuccess: () => {
+        navigateTo('/', { replace: true, external: true })
       },
     },
   })
+}
+
+const colors = ['blue', 'green', 'purple', 'orange', 'red']
+
+// État pour contrôler le Dialog ManageTeamDialog
+const currentTeamId = ref('')
+const isManageTeamDialogOpen = ref(false)
+
+// Fonction pour ouvrir le dialog de gestion d'équipe
+const openManageTeamDialog = (teamId: string) => {
+  currentTeamId.value = teamId
+  isManageTeamDialogOpen.value = true
 }
 </script>

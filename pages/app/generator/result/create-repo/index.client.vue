@@ -46,26 +46,18 @@
 </template>
 
 <script setup>
-import {FormField, FormItem, FormControl, FormLabel, FormMessage} from '@/components/ui/form'
+import {FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form'
 import {toTypedSchema} from '@vee-validate/zod';
 import * as z from 'zod';
 import {useForm} from 'vee-validate'
 import StepAnimation from "@/components/StepAnimation.vue";
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle,} from '@/components/ui/card';
+import {Input} from '@/components/ui/input';
+import {Button} from '@/components/ui/button';
 
 definePageMeta({
   layout: 'sidebar',
 });
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {Input} from '@/components/ui/input';
-import {Button} from '@/components/ui/button';
 
 const route = useRoute();
 const router = useRouter();
