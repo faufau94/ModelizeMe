@@ -15,13 +15,6 @@ export default defineNuxtConfig({
     '~/plugins/vue-query.ts',
   ],
 
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
-  },
-
   modules: [
     "shadcn-nuxt",
     "@nuxtjs/tailwindcss",

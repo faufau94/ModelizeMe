@@ -105,7 +105,7 @@
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :modelName="model?.name" />
+              <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :import-items="importItems" :export-items="exportItems" />
             </TooltipTrigger>
             <TooltipContent class="bg-black text-white">
               <p>Exporter</p>
@@ -293,8 +293,7 @@
     </VueFlow>
 
     <div class="absolute top-0 left-0 pointer-events-none z-[1000] w-full h-full">
-      
-    <div class="remote-cursors">
+      <div class="remote-cursors">
       <div v-for="user in remoteCursors" 
            :key="user.name" 
            class="remote-cursor"
@@ -350,7 +349,8 @@ import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 import {useModel} from '@/composables/api/useModel'
 import {authClient} from '~/lib/auth-client'
 import ActiveUsersAvatars from '@/components/ActiveUsersAvatars.vue'
-
+import { useScreenshot } from '@/composables/useScreenshot';
+import {toast} from "vue-sonner";
 
 const route = useRoute()
 const router = useRouter()
@@ -605,6 +605,76 @@ const flowToScreenPosition = (flowPosition) => {
   return currentFlow.value.flowToScreenCoordinate(flowPosition)
 }
 
+
+const handleExport = (type) => {
+  const flowElement = currentFlow.value.vueFlowRef;
+
+  if (flowElement) {
+    const { exportAsImage } = useScreenshot();
+    exportAsImage(flowElement, type, model.value?.name);
+  } else {
+    console.warn('Current flow element not found');
+  }
+}
+
+const exportToSQL = async (database) => {
+
+    const getMCDModel = await $fetch("/api/models/read", {
+      method: "GET",
+      query: {id: route.params.idModel},
+    });
+    console.log('getMCDModel', getMCDModel)
+
+    const {nodesMLD, edgesMLD} = mldStore.generateMLD(getMCDModel['nodes'],getMCDModel['edges'])
+
+    const newTitle = getMCDModel?.name?.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_') +
+      `_${Date.now()}_${crypto.randomUUID()}`;
+    const response = await $fetch('/api/generator/generate-file', {
+      method: 'POST',
+      body: { title: newTitle, database: database , nodes: nodesMLD, edges: edgesMLD },
+    });
+
+    console.log('response', response)
+
+
+  try {
+    // Créer une URL Object pour le blob
+    const blob = new Blob([response], {type: 'application/x-sql'});
+    const url = window.URL.createObjectURL(blob);
+
+    // Créer un élément <a> pour télécharger le fichier
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${newTitle}.sql`; // Nom du fichier à télécharger
+
+    // Ajouter le lien au document et simuler un clic
+    document.body.appendChild(a);
+    a.click();
+
+    // Nettoyer le document
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    toast.success('Export SQL généré avec succès !')
+  } catch (e) {
+      toast.error('Une erreur est survenue lors de l\'export SQL.')
+  }
+
+
+}
+
+const importItems = [
+  { title: 'Importer un fichier XML' },
+  { title: 'Importer un fichier SQL (coming soon...)', disabled: true },
+  { title: 'Importer un fichier JSON (coming soon...)', disabled: true },
+];
+
+const exportItems = [
+  { title: 'Exporter en PNG', action: () => handleExport('png') },
+  { title: 'Exporter en JPEG', action: () => handleExport('jpeg') },
+    // Exporter en SQL
+  { title: 'Exporter en SQL (MySQL)', action: () => exportToSQL('mysql') },
+  { title: 'Exporter en SQL (PostgreSQL)', action: () => exportToSQL('pgsql') },
+];
 </script>
 
 <style>

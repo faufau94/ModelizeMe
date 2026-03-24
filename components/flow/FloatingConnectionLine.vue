@@ -21,7 +21,7 @@
   <script setup>
   import { computed } from 'vue';
   import { getSmoothStepPath } from '@vue-flow/vue';
-  import { getEdgeParams } from '@/utils/useFloatingEdge.js';
+  import { getEdgeParams } from '~/utils/useFloatingEdge.js';
   
   // Props provided by Vue Flow when rendering connection lines
   const props = defineProps({

@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 import { WebSocketServer } from 'ws'
-import * as Y from 'yjs'
-import { setupWSConnection } from 'y-websocket/bin/utils'
+import { setupWSConnection } from '@y/websocket-server/utils'
 
 const host = process.env.HOST || 'localhost'
 const port = process.env.PORT || 1234
@@ -19,4 +18,4 @@ process.on('SIGINT', () => {
     console.log('WebSocket server closed')
     process.exit(0)
   })
-}) 
+})
