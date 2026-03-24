@@ -2,131 +2,94 @@
 
   <ContextMenu>
     <ContextMenuTrigger>
-    <div class="bg-white shadow-md rounded-2xl w-80 z-40 relative hover:bg-zinc-50 cursor-pointer"
-        :class="nodeIdSelected === props.id ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
+    <div class="bg-white shadow-lg rounded-xl w-80 z-40 relative cursor-pointer transition-all duration-200 hover:shadow-xl"
+        :class="nodeIdSelected === props.id ? 'ring-2 ring-blue-400 ring-offset-2' : 'border border-gray-200'"
         v-bind="$attrs"
         @mouseover="showHandles"
         @mousedown="showHandles"
         @mouseout="nodeIdSelected === props.id ? showHandles : hideHandles()">
 
-      <!-- <NodeToolbar
-          v-if="activeTab === 'mcd'"
-          class="p-1 bg-white rounded-md"
-          @mouseover="isNodeHovered = false"
-          @mouseout="isNodeHovered = true"
-          :is-visible="isNodeShown" :position="Position.Top">
-        <Button @click="removeNode(route.params.idModel, props.id)" variant="outline" class=" border-none rounded-sm">
-          <Trash2 class="text-red-500" :size="20"/>
-        </Button>
-        <Button @click="duplicateNode(props)" variant="outline" class=" border-none rounded-sm">
-          <Copy class="text-gray-600" :size="20"/>
-        </Button>
-
-      </NodeToolbar> -->
-
-
-      <div class="flex justify-center items-center border-b rounded-t-xl py-3 px-4 md:px-5">
-        <div>
-
-        </div>
-        <h3 v-if="props?.data?.name !== ''" class="text-lg font-bold text-center text-gray-800">
-          {{ props?.data?.name?.toUpperCase() ?? 'Sans nom' }}
+      <!-- Entity header -->
+      <div class="flex justify-center items-center border-b border-gray-100 rounded-t-xl py-3 px-4 md:px-5 bg-gray-50/50">
+        <h3 v-if="props?.data?.name !== ''" class="text-sm font-semibold text-center text-gray-800 tracking-wide uppercase">
+          {{ props?.data?.name ?? 'Sans nom' }}
         </h3>
-        <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
+        <h3 v-else class="text-sm font-semibold text-center text-gray-400 tracking-wide uppercase italic">Sans nom</h3>
       </div>
-      <div class="p-4 md:px-5">
-        <div class="flex justify-between items-center gap-6 py-1" v-for="(field,index) in props?.data?.properties"
-            :key="index">
-          <div class="flex font-bold items-center justify-center">
-            <div class="w-5" v-if="field?.isPrimaryKey">
-              <KeyRound :size="13" class="text-red-500"/>
-            </div>
-            <div class="w-5" v-else-if="field?.isForeignKey">
-              <KeyRound :size="13" class="text-gray-500"/>
-            </div>
-            <div v-else class="w-5"></div>
 
-            <div :class="{ 'underline' : field?.isPrimaryKey }" class="truncate w-32">
-              {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
+      <!-- Entity fields -->
+      <div class="px-4 py-3 space-y-0.5">
+        <div class="flex justify-between items-center gap-4 py-1 rounded-md px-1 hover:bg-gray-50 transition-colors"
+             v-for="(field,index) in props?.data?.properties"
+             :key="index">
+          <div class="flex items-center gap-1 min-w-0">
+            <div class="w-4 flex-shrink-0" v-if="field?.isPrimaryKey">
+              <KeyRound :size="12" class="text-amber-500"/>
             </div>
+            <div class="w-4 flex-shrink-0" v-else-if="field?.isForeignKey">
+              <KeyRound :size="12" class="text-blue-400"/>
+            </div>
+            <div v-else class="w-4 flex-shrink-0"></div>
+
+            <span :class="{ 'underline decoration-amber-400 decoration-2 underline-offset-2' : field?.isPrimaryKey }"
+                  class="truncate text-sm font-medium text-gray-700">
+              {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
+            </span>
           </div>
 
-          <div class="flex justify-end items-end">
-            <div class="">
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <span class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
               {{ field?.typeName }}
-            </div>
-            <div class="w-5" v-if="field?.propertyName !== 'id'">
-              <NullableIcon class="w-5 h-5 cursor-pointer"
+            </span>
+            <div class="w-4" v-if="field?.propertyName !== 'id'">
+              <NullableIcon class="w-4 h-4 cursor-pointer transition-colors"
                             @click="field.isNullable = !field.isNullable"
                             :class="[field?.isNullable ?
-                                      'text-black' :
-                                      'text-gray-400']"
+                                      'text-gray-700' :
+                                      'text-gray-300']"
               />
             </div>
-            <div v-else class="w-5"></div>
+            <div v-else class="w-4"></div>
           </div>
         </div>
 
-
-        <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-6 py-1">
-          <div class="flex font-bold items-center justify-center">
-            <div class="w-5"></div>
-
-            <div class="text-gray-500 font-normal">
-              created_at
-            </div>
+        <!-- Timestamp fields (dimmed) -->
+        <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-4 py-1 px-1">
+          <div class="flex items-center gap-1">
+            <div class="w-4"></div>
+            <span class="text-xs text-gray-400 italic">created_at</span>
           </div>
-          <div class="flex justify-end items-end">
-            <div class="">
-              Timestamp
-            </div>
-
-            <div>
-              <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
-            </div>
+          <div class="flex items-center gap-1">
+            <span class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
+            <NullableIcon class="w-4 h-4 text-gray-400"/>
           </div>
         </div>
 
-        <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-6 py-1">
-          <div class="flex font-bold items-center justify-center">
-            <div class="w-5"></div>
-            <div class="text-gray-500 font-normal">
-              updated_at
-            </div>
+        <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-4 py-1 px-1">
+          <div class="flex items-center gap-1">
+            <div class="w-4"></div>
+            <span class="text-xs text-gray-400 italic">updated_at</span>
           </div>
-          <div class="flex justify-end items-end">
-            <div class="">
-              Timestamp
-            </div>
-
-            <div>
-              <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
-            </div>
+          <div class="flex items-center gap-1">
+            <span class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
+            <NullableIcon class="w-4 h-4 text-gray-400"/>
           </div>
         </div>
 
-        <div v-if="props?.data?.usesSoftDeletes" class="flex justify-between items-center gap-6 py-1">
-          <div class="flex font-bold items-center justify-center">
-            <div class="w-5"></div>
-
-            <div class="text-gray-500 font-normal">
-              deleted_at
-            </div>
+        <div v-if="props?.data?.usesSoftDeletes" class="flex justify-between items-center gap-4 py-1 px-1">
+          <div class="flex items-center gap-1">
+            <div class="w-4"></div>
+            <span class="text-xs text-gray-400 italic">deleted_at</span>
           </div>
-          <div class="flex justify-end items-end">
-            <div class="">
-              Timestamp
-            </div>
-
-            <div>
-              <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
-            </div>
+          <div class="flex items-center gap-1">
+            <span class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
+            <NullableIcon class="w-4 h-4 text-gray-400"/>
           </div>
         </div>
 
       </div>
 
-      <div v-if="activeTab === 'mcd'">
+      <div>
         <Handle id="s1" type="source" :position="Position.Left" :style="sourceHandleStyle"/>
         <Handle id="s2" type="source" :position="Position.Top" :style="sourceHandleStyle"/>
         <Handle id="s3" type="source" :position="Position.Bottom" :style="sourceHandleStyle"/>
@@ -275,9 +238,12 @@ const sourceHandle = ref(0)
 
 const sourceHandleStyle = computed(() => {
   return {
-    backgroundColor: '#8392A6',
-    padding: '7px',
+    backgroundColor: '#6366f1',
+    padding: '6px',
     opacity: sourceHandle.value,
+    border: '2px solid white',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+    transition: 'opacity 0.2s ease, transform 0.2s ease',
   }
 })
 

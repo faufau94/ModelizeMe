@@ -57,12 +57,12 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     restart: unless-stopped
     ports:
       - "${APP_PORT:-3100}:3000"
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
       DB_HOST: mysql
       DB_PORT: 3306
@@ -85,8 +85,14 @@ services:
       MAILER_USER: ${MAILER_USER}
       MAILER_PASSWORD: ${MAILER_PASSWORD}
       MAILER_FROM: ${MAILER_FROM}
-      # WebSocket
+      # WebSocket (server-side uses internal Docker hostname, browser uses localhost)
       WEBSOCKET_URL: ws://websocket:1234
+      NUXT_PUBLIC_WEBSOCKET_URL: ws://localhost:1234
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.nuxt
+      - /app/.output
     depends_on:
       mysql:
         condition: service_healthy
@@ -94,6 +100,7 @@ services:
         condition: service_healthy
     networks:
       - modelizeme
+    command: ["yarn", "dev"]
 
   # ─── WebSocket Server (y-websocket) ──────
   websocket:
@@ -108,8 +115,11 @@ services:
       PORT: 1234
       YPERSISTENCE: redis
       REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+    volumes:
+      - ./server:/app/server
     entrypoint: []
-    command: ["node", "server/websocket-server.js"]
+    command: ["node", "--watch", "server/websocket-server.js"]
     depends_on:
       redis:
         condition: service_healthy

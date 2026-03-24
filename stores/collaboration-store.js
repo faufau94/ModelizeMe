@@ -53,16 +53,18 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       cursor: null
     })
 
-    // 5) when sharedNodes changes anywhere, let MCDStore update the Vue Flow instance
-    sharedNodes.value.observe((event) => {
+    // 5) when sharedNodes changes from REMOTE users, update VueFlow
+    //    Skip 'local' origin to avoid resetting positions during/after drag
+    sharedNodes.value.observe((event, transaction) => {
       if (!mcdStore.flowMCD) return
-      // set VueFlow to exactly the current array of nodes
+      if (transaction.origin === 'local') return
       mcdStore.flowMCD.setNodes(nodes.value)
     })
 
-    // 6) similarly for edges
-    sharedEdges.value.observe(() => {
+    // 6) similarly for edges — skip local changes
+    sharedEdges.value.observe((event, transaction) => {
       if (!mcdStore.flowMCD) return
+      if (transaction.origin === 'local') return
       mcdStore.flowMCD.setEdges(edges.value)
     })
 
@@ -91,8 +93,16 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   }
 
   // ─── NODE CRUD ───
+  // All local mutations use origin='local' so the observer skips them
   function addNode(node) {
-    sharedNodes.value?.push([ node ])
+    const mcdStore = useMCDStore()
+    // Always add directly to VueFlow immediately (no waiting for Yjs sync)
+    if (mcdStore.flowMCD) mcdStore.flowMCD.addNodes([ node ])
+    // Also persist in Yjs for collaboration
+    if (!sharedNodes.value) return
+    ydoc.value.transact(() => {
+      sharedNodes.value.push([ node ])
+    }, 'local')
   }
 
   function updateNode(nodeId, newData) {
@@ -100,27 +110,39 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     const arr = sharedNodes.value.toArray()
     const idx = arr.findIndex(n => n.id === nodeId)
     if (idx === -1) return
-    // merge old fields with newData, then replace exactly that index
     const merged = { ...arr[idx], ...newData }
 
     ydoc.value.transact(() => {
       sharedNodes.value.delete(idx, 1)
       sharedNodes.value.insert(idx, [merged])
-    }, /* origin= */ 'local')
+    }, 'local')
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) mcdStore.flowMCD.setNodes(nodes.value)
   }
 
   function removeNode(nodeId) {
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) mcdStore.flowMCD.removeNodes([ nodeId ])
     if (!sharedNodes.value) return
     const arr = sharedNodes.value.toArray()
     const idx = arr.findIndex(n => n.id === nodeId)
     if (idx >= 0) {
-      sharedNodes.value.delete(idx, 1)
+      ydoc.value.transact(() => {
+        sharedNodes.value.delete(idx, 1)
+      }, 'local')
     }
   }
 
   // ─── EDGE CRUD ───
   function addEdge(edge) {
-    sharedEdges.value?.push([ edge ])
+    const mcdStore = useMCDStore()
+    // Always add directly to VueFlow immediately
+    if (mcdStore.flowMCD) mcdStore.flowMCD.addEdges([ edge ])
+    // Also persist in Yjs for collaboration
+    if (!sharedEdges.value) return
+    ydoc.value.transact(() => {
+      sharedEdges.value.push([ edge ])
+    }, 'local')
   }
 
   function updateEdge(edgeId, newData) {
@@ -129,27 +151,41 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     const idx = arr.findIndex(e => e.id === edgeId)
     if (idx === -1) return
     const merged = { ...arr[idx], ...newData }
-    sharedEdges.value.delete(idx, 1)
-    sharedEdges.value.insert(idx, [ merged ])
+    ydoc.value.transact(() => {
+      sharedEdges.value.delete(idx, 1)
+      sharedEdges.value.insert(idx, [ merged ])
+    }, 'local')
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) mcdStore.flowMCD.setEdges(edges.value)
   }
 
   function removeEdge(edgeId) {
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) mcdStore.flowMCD.removeEdges([ edgeId ])
     if (!sharedEdges.value) return
     const arr = sharedEdges.value.toArray()
     const idx = arr.findIndex(e => e.id === edgeId)
-    if (idx >= 0) sharedEdges.value.delete(idx, 1)
+    if (idx >= 0) {
+      ydoc.value.transact(() => {
+        sharedEdges.value.delete(idx, 1)
+      }, 'local')
+    }
   }
 
   // ─── BULK SET ─── (e.g. initial load from your database)
   function setNodes(newNodes) {
     if (!sharedNodes.value) return
-    sharedNodes.value.delete(0, sharedNodes.value.length)
-    sharedNodes.value.push(newNodes)
+    ydoc.value.transact(() => {
+      sharedNodes.value.delete(0, sharedNodes.value.length)
+      sharedNodes.value.push(newNodes)
+    }, 'local')
   }
   function setEdges(newEdges) {
     if (!sharedEdges.value) return
-    sharedEdges.value.delete(0, sharedEdges.value.length)
-    sharedEdges.value.push(newEdges)
+    ydoc.value.transact(() => {
+      sharedEdges.value.delete(0, sharedEdges.value.length)
+      sharedEdges.value.push(newEdges)
+    }, 'local')
   }
 
   // ─── CURSOR / AWARENESS ───

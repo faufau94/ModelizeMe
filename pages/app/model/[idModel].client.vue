@@ -18,45 +18,32 @@
       <MiniMap/>
       <Controls/>
 
-      <Panel position="top-left" class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+      <!-- Unified top toolbar -->
+      <Panel position="top-left" class="bg-white/95 backdrop-blur-sm z-40 px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-1 border border-gray-100">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button @click="goBack" variant="ghost"
-                      class="border-none rounded-sm">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="h-6 w-6"
-                >
-                  <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
-                </svg>
+              <Button @click="goBack" variant="ghost" size="sm" class="rounded-md hover:bg-gray-100">
+                <ArrowLeft :size="18"/>
               </Button>
             </TooltipTrigger>
-            <TooltipContent class="bg-black text-white">
+            <TooltipContent class="bg-gray-900 text-white text-xs">
               <p>Retour au tableau de bord</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-6"/>
+        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
 
         <Dialog>
           <DialogTrigger as-child>
-            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="ghost" class=" border-none rounded-sm">
+            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-gray-700 hover:bg-gray-100 max-w-[180px] truncate">
               {{ model?.name.length > 20 ? model?.name.substring(0, 20) + '...' : model?.name }}
             </Button>
           </DialogTrigger>
           <DialogContent class="sm:max-w-[425px]" v-if="showDialogRenameModel">
             <DialogHeader>
-              <DialogTitle>Renommer le nom</DialogTitle>
+              <DialogTitle>Renommer le modèle</DialogTitle>
             </DialogHeader>
 
             <form @submit="rnModel">
@@ -87,52 +74,47 @@
           </DialogContent>
         </Dialog>
 
-        <Separator orientation="vertical" class="h-6"/>
+        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
               <CreateGaleryTemplate />
             </TooltipTrigger>
-            <TooltipContent class="bg-black text-white">
-              <p>Créer un modèle de galerie</p>
+            <TooltipContent class="bg-gray-900 text-white text-xs">
+              <p>Sauvegarder comme template</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-
-        <Separator orientation="vertical" class="h-6"/>
 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
               <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :import-items="importItems" :export-items="exportItems" />
             </TooltipTrigger>
-            <TooltipContent class="bg-black text-white">
-              <p>Exporter</p>
+            <TooltipContent class="bg-gray-900 text-white text-xs">
+              <p>Import / Export</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-6"/>
-
-        <div>
-          <PricingDialog />
-        </div>
+        <PricingDialog />
       </Panel>
 
+      <!-- Center toolbar: MCD actions + save status -->
       <Panel v-if="activeTab === 'mcd'" position="top-center"
-             class="bg-white z-40 px-2 py-1 drop-shadow-md flex items-center rounded-sm space-x-1">
+             class="bg-white/95 backdrop-blur-sm z-40 px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-1 border border-gray-100">
 
-        <div v-if="addNewNode" class="flex justify-between items-center gap-3 px-2 transition duration-150">
-          <Loader2 :size="18" class="animate-spin"/>
-          <span class="text-sm">Enregistrement...</span>
+        <div v-if="addNewNode" class="flex items-center gap-2 px-2 text-amber-600 transition-all duration-200">
+          <Loader2 :size="16" class="animate-spin"/>
+          <span class="text-xs font-medium">Enregistrement...</span>
         </div>
-        <div v-else class="flex justify-between items-center gap-3 px-2 transition duration-150">
-          <Check :size="18"/>
-          <span class="text-sm">Enregistré</span>
+        <div v-else class="flex items-center gap-2 px-2 text-green-600 transition-all duration-200">
+          <Check :size="16"/>
+          <span class="text-xs font-medium">Sauvegardé</span>
         </div>
 
-        <Separator orientation="vertical" class="h-6"/>
+        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
 
         <TooltipProvider>
           <Tooltip>
@@ -142,19 +124,19 @@
                   :draggable="true"
                   @dragstart="onDragStart($event, 'input')"
                   variant="ghost"
-                  class="border-none rounded-sm"
+                  size="sm"
+                  class="rounded-md hover:bg-blue-50 hover:text-blue-600"
               >
-                <PanelTop :size="18"/>
+                <PanelTop :size="16"/>
               </Button>
             </TooltipTrigger>
-            <TooltipContent class="bg-black text-white">
-              <p>Ajouter un nœud</p>
+            <TooltipContent class="bg-gray-900 text-white text-xs">
+              <p>Ajouter une entité</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-
-        <Separator orientation="vertical" class="h-6"/>
+        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
 
         <TooltipProvider>
           <Tooltip>
@@ -162,18 +144,17 @@
               <Button
                   variant="ghost"
                   disabled
-                  class="border-none rounded-sm"
+                  size="sm"
+                  class="rounded-md"
               >
-                <Undo2 :size="18"/>
+                <Undo2 :size="16"/>
               </Button>
             </TooltipTrigger>
-            <TooltipContent class="bg-black text-white">
-              <p>Undo</p>
+            <TooltipContent class="bg-gray-900 text-white text-xs">
+              <p>Annuler</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-
-        <Separator orientation="vertical" class="h-6"/>
 
         <TooltipProvider>
           <Tooltip>
@@ -181,94 +162,109 @@
               <Button
                   variant="ghost"
                   disabled
-                  class="border-none rounded-sm"
+                  size="sm"
+                  class="rounded-md"
               >
-                <Redo2 :size="18"/>
+                <Redo2 :size="16"/>
               </Button>
             </TooltipTrigger>
-            <TooltipContent class="bg-black text-white">
-              <p>Redo</p>
+            <TooltipContent class="bg-gray-900 text-white text-xs">
+              <p>Rétablir</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-6"/>
+        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
 
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                  disabled
+                  @click="autoLayout('LR')"
+                  variant="ghost"
+                  size="sm"
+                  class="rounded-md"
+              >
+                <Workflow :size="16"/>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent class="bg-gray-900 text-white text-xs">
+              <p>Auto-layout</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <Button
-            disabled
-            @click="autoLayout('LR')"
-            variant="ghost"
-            class="border-none rounded-sm"
-        >
-          <Workflow :size="18"/>
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                  disabled
+                  @click="reorganize"
+                  variant="ghost"
+                  size="sm"
+                  class="rounded-md"
+              >
+                <WandSparkles :size="16"/>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent class="bg-gray-900 text-white text-xs">
+              <p>Réorganiser</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-6"/>
+        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
 
-
-        <Button
-            disabled
-            @click="reorganize"
-            variant="ghost"
-            class="border-none rounded-sm"
-        >
-          <WandSparkles :size="18"/>
-        </Button>
-
-        <Separator orientation="vertical" class="h-6"/>
-
-        <div class="px-3">
+        <div class="pl-1">
           <ActiveUsersAvatars :activeUsers="activeUsers" :maxVisible="3" />
         </div>
 
       </Panel>
 
-      <Panel position="top-right" class="bg-white mr-10 z-40 drop-shadow-md flex items-center rounded-sm">
+      <!-- Tab switcher: MCD / MLD / MPD -->
+      <Panel position="top-right" class="bg-white/95 backdrop-blur-sm mr-10 z-40 shadow-md flex items-center rounded-lg border border-gray-100">
         <Tabs default-value="mcd" v-model="activeTab" class="w-full">
           <TabsList class="grid grid-cols-3">
 
-            <!-- MCD Tab with Tooltip -->
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
                   <TabsTrigger :disabled="isChangingTab" value="mcd">MCD</TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent class="bg-black text-white">
+                <TooltipContent class="bg-gray-900 text-white text-xs">
                   <p>Modèle Conceptuel de Données</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
-            <!-- MLD Tab with Tooltip -->
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
                   <TabsTrigger
-                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-none' : 'cursor-pointer']"
+                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-not-allowed' : 'cursor-pointer']"
                       :disabled="mcdStore.flowMCD.nodes.length === 0 || isChangingTab"
                       value="mld">
                     MLD
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent class="bg-black text-white">
+                <TooltipContent class="bg-gray-900 text-white text-xs">
                   <p>Modèle Logique de Données</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
-            <!-- MPD Tab with Tooltip -->
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
                   <TabsTrigger
-                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-none' : 'cursor-pointer']"
+                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-not-allowed' : 'cursor-pointer']"
                       :disabled="mcdStore.flowMCD.nodes.length === 0 || isChangingTab"
                       value="mpd">
                     MPD
                   </TabsTrigger>
                 </TooltipTrigger>
-                <TooltipContent class="bg-black text-white">
+                <TooltipContent class="bg-gray-900 text-white text-xs">
                   <p>Modèle Physique de Données</p>
                 </TooltipContent>
               </Tooltip>
@@ -328,7 +324,7 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {Check, Loader2, PanelTop, Redo2, Undo2, WandSparkles, Workflow} from "lucide-vue-next";
+import {ArrowLeft, Check, Loader2, PanelTop, Redo2, Undo2, WandSparkles, Workflow} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
@@ -402,7 +398,9 @@ mcdStore.flowMCD.onPaneClick((e) => {
 const { data: session } = await authClient.useSession(useFetch)
 console.log('session', session.value)
 
-collaborationStore.initialize(route.params.idModel, session.value.user.name);
+// Initialize collaboration with proper auth token
+const sessionToken = session.value?.session?.token || ''
+collaborationStore.initialize(route.params.idModel, session.value.user.name, sessionToken);
 
 onMounted(async () => {
 
@@ -468,16 +466,18 @@ onUnmounted(() => {
   collaborationStore.cleanup();
 })
 
-const onChange = (changes) => {
-  // changes are arrays of type `NodeChange` or `EdgeChange`
-  if (changes.length > 0 &&
-      changes[0].type === 'position' &&
-      changes[0].dragging === false &&
-      changes[0].id.startsWith('dndnode') &&
+const onChange = async (changes) => {
+  for (const change of changes) {
+    // Only persist position changes when dragging ends
+    if (
+      change.type === 'position' &&
+      change.dragging === false &&
+      change.id.startsWith('dndnode') &&
       activeTab.value === 'mcd'
-  ) {
-    console.log('onChange', changes)
-    mcdStore.updateNode(route.params.idModel, changes[0].id)
+    ) {
+      // mcdStore.updateNode already persists to DB + syncs via collaborationStore
+      await mcdStore.updateNode(route.params.idModel, change.id)
+    }
   }
 }
 
@@ -691,29 +691,31 @@ const exportItems = [
 .remote-cursor {
   position: absolute;
   transform: translate(-50%, -50%);
-  transition: all 0.1s ease;
+  transition: left 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              top 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .remote-cursor-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   border: 2px solid white;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .remote-cursor-name {
   position: absolute;
   top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 8px;
+  transform: translateX(0);
   background-color: var(--color);
-  padding: 2px 6px;
-  border-radius: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
   color: white;
-  font-size: 12px;
-  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 2px;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 </style>
