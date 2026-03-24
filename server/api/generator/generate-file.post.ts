@@ -1,31 +1,17 @@
-import prisma from '@/lib/prisma';
+import { requireAuth } from "~/server/utils/auth";
+import { generateFileSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-    const body = await readBody(event);
-    const { title, database, nodes, edges } = body;
+  await requireAuth(event);
 
-    try {
+  const body = await readBody(event);
+  const { title, database, nodes, edges } = generateFileSchema.parse(body);
 
-        // Créer un objet MLD
-        const mld = { nodes: nodes, edges: edges};
+  const mld = { nodes, edges };
 
-        // Appeler l'API Laravel pour la génération du fichier sql
-        return await $fetch(process.env.URL_BACKEND + '/api/generate-file', {
-            method: 'POST',
-            body: {
-                title: title,
-                database,
-                mld
-            },
-            // Important : spécifier le type de réponse
-            responseType: 'blob'
-        });
-
-    } catch (error) {
-        console.error('Erreur lors de la génération du fichier SQL:', error);
-        throw createError({
-            statusCode: 400,
-            statusMessage: 'Erreur lors de la génération du fichier SQL'
-        });
-    }
+  return await $fetch(process.env.URL_BACKEND + "/api/generate-file", {
+    method: "POST",
+    body: { title, database, mld },
+    responseType: "blob",
+  });
 });

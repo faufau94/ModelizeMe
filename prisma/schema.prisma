@@ -56,6 +56,7 @@ model Session {
   activeTeamId         String? @db.Text
 
   @@unique([token])
+  @@index([userId])
   @@map("session")
 }
 
@@ -114,6 +115,7 @@ model Member {
   role           String       @db.Text
   createdAt      DateTime
 
+  @@index([organizationId, userId])
   @@map("member")
 }
 
@@ -130,6 +132,8 @@ model Invitation {
 
   teamId String? @db.Text
 
+  @@index([organizationId])
+  @@index([inviterId])
   @@map("invitation")
 }
 
@@ -146,6 +150,7 @@ model Team {
   models         Model[]
   teammembers    TeamMember[]
 
+  @@index([organizationId])
   @@map("team")
 }
 
@@ -188,6 +193,8 @@ model Model {
   // Nouvelles annotations
   annotations Annotation[]
 
+  @@index([workspaceId, teamId])
+  @@index([authorId])
   @@map("models")
 }
 

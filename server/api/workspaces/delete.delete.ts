@@ -1,13 +1,31 @@
 import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-    const query = getQuery(event);   
-    const { id } = query;
-    
-    // remove the class by id
-    const classObj = await prisma.class.delete({
-        where: { id },
-    });
+  const session = await requireAuth(event);
 
-    return classObj;
+  const { id } = getQuery(event);
+  const orgId = idSchema.parse(id);
+
+  // Verify user is owner (has "owner" role in this org)
+  const member = await prisma.member.findFirst({
+    where: {
+      organizationId: orgId,
+      userId: session.user.id,
+      role: "owner",
+    },
+  });
+
+  if (!member) {
+    throw createError({
+      statusCode: 403,
+      message: "Seul le propriétaire peut supprimer l'organisation",
+    });
+  }
+
+  // Models are cascade-deleted via schema
+  await prisma.organization.delete({ where: { id: orgId } });
+
+  return { success: true };
 });

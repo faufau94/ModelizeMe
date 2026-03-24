@@ -1,19 +1,18 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
 
 export async function sendOrganizationInvitation({
   email,
   invitedByUsername,
   invitedByEmail,
   teamName,
-  inviteLink
+  inviteLink,
 }: {
-  email: string,
-  invitedByUsername: string,
-  invitedByEmail: string,
-  teamName: string,
-  inviteLink: string
+  email: string;
+  invitedByUsername: string;
+  invitedByEmail: string;
+  teamName: string;
+  inviteLink: string;
 }) {
-  // Compose a beautiful HTML email
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
       <div style="color: white; padding: 24px 32px;">
@@ -30,24 +29,28 @@ export async function sendOrganizationInvitation({
     </div>
   `;
 
+  const config = useRuntimeConfig();
+
   const transporter = nodemailer.createTransport({
-    host: 'in-v3.mailjet.com',
-    port: 587,
+    host: config.mailerHost || process.env.MAILER_HOST,
+    port: Number(config.mailerPort || process.env.MAILER_PORT || 587),
     auth: {
-      user: 'c1e5fb67e5770d386b6d5c03776f35fc',
-      pass: '1b468458e81e6b44423c228efb08bb3c',
-    }
+      user: config.mailerUser || process.env.MAILER_USER,
+      pass: config.mailerPassword || process.env.MAILER_PASSWORD,
+    },
   });
+
+  const from = config.mailerFrom || process.env.MAILER_FROM || "noreply@modelizeme.com";
 
   try {
     const info = await transporter.sendMail({
-      from: 'faudel.hammoudi@outlook.fr',
+      from,
       to: email,
-      subject: `Invitation to join ${teamName} on ModelizeMe` ,
+      subject: `Invitation to join ${teamName} on ModelizeMe`,
       html,
     });
-    console.log('Invitation email sent:', info.messageId);
+    console.log("Invitation email sent:", info.messageId);
   } catch (error) {
-    console.error('Error sending invitation email:', error);
+    console.error("Error sending invitation email:", error);
   }
-} 
+}

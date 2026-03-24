@@ -61,8 +61,6 @@ export const useWorkspace = () => {
         throw new Error('Workspace not found')
       }
 
-      console.log('Organization Data:', organization.data);
-
       // Enrichir les équipes avec les membres et modèles
       const teamsWithCounts = await Promise.all(
         (organization.data.teams || []).map(async (team) => {
@@ -83,14 +81,10 @@ export const useWorkspace = () => {
         })
       )
 
-        console.log('Teams with Counts:', teamsWithCounts);
-
       // Sort teams in ascending order by createdAt
       const sortedTeams = teamsWithCounts.sort((a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       )
-
-        console.log('Sorted Teams:', sortedTeams);
 
       return {
         ...organization.data,

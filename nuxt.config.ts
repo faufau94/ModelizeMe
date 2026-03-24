@@ -54,6 +54,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       baseUrl: process.env.BASE_URL,
+      websocketUrl: process.env.WEBSOCKET_URL || 'ws://localhost:1234',
     },
     authSecret: process.env.AUTH_SECRET,
     authOrigin: process.env.NUXT_AUTH_ORIGIN,
@@ -64,6 +65,11 @@ export default defineNuxtConfig({
     gitlabClientSecret: process.env.GITLAB_CLIENT_SECRET,
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    mailerHost: process.env.MAILER_HOST,
+    mailerPort: process.env.MAILER_PORT,
+    mailerUser: process.env.MAILER_USER,
+    mailerPassword: process.env.MAILER_PASSWORD,
+    mailerFrom: process.env.MAILER_FROM,
   },
 
   shadcn: {

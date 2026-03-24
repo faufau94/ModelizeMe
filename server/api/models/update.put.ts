@@ -1,53 +1,54 @@
 import prisma from "~/lib/prisma";
+import { requireModelAccess } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-    const body = await readBody(event);
-    const query = getQuery(event);
+  const body = await readBody(event);
+  const query = getQuery(event);
+  const modelId = idSchema.parse(query.id);
 
-    console.log('Update Model:', body);
+  await requireModelAccess(event, modelId);
 
-    // Récupérer uniquement la colonne pertinente en fonction de body.type
-    const currentContent = await prisma.model.findUnique({
-        where: { id: query.id?.toString() },
-        select: {
-            nodes: true,
-            edges: true,
-        }
-    });
+  const currentContent = await prisma.model.findUnique({
+    where: { id: modelId },
+    select: { nodes: true, edges: true },
+  });
 
-    if (!currentContent) {
-        throw new Error('Modèle non trouvé');
+  if (!currentContent) {
+    throw createError({ statusCode: 404, message: "Modèle non trouvé" });
+  }
+
+  const updateContent = (content: any[], newItem: any) => {
+    const exists = content.some((item) => item.id === newItem.id);
+    return exists
+      ? content.map((item) => (item.id === newItem.id ? newItem : item))
+      : [...content, newItem];
+  };
+
+  const updateData: Record<string, any> = {};
+
+  if (body.type === "node" && body.node) {
+    const nodes = (currentContent.nodes as any[]) || [];
+    if (nodes.length >= 500) {
+      throw createError({ statusCode: 400, message: "Limite de 500 nœuds atteinte" });
     }
+    updateData.nodes = updateContent(nodes, body.node);
+  }
 
-    // Préparer les données à mettre à jour
-    const updateContent = (content, newItem) => {
-        const exists = content.some(item => item.id === newItem.id);
-        return exists
-            ? content.map(item => item.id === newItem.id ? newItem : item)
-            : [...content, newItem];
-    };
-
-    const updateData = {};
-
-    if (body.type === 'node') {
-        updateData.nodes = updateContent(currentContent.nodes || [], body.node);
+  if (body.type === "edge" && body.edge) {
+    const edges = (currentContent.edges as any[]) || [];
+    if (edges.length >= 1000) {
+      throw createError({ statusCode: 400, message: "Limite de 1000 arêtes atteinte" });
     }
+    updateData.edges = updateContent(edges, body.edge);
+  }
 
-    if (body.type === 'edge') {
-        updateData.edges = updateContent(currentContent.edges || [], body.edge);
-    }
+  if (body.teamId) {
+    updateData.teamId = body.teamId;
+  }
 
-    // check if body contains teamId
-    if (body.teamId) {
-        updateData.teamId = body.teamId;
-    }
-
-
-
-    return await prisma.model.update({
-        where: {
-            id: query.id?.toString(),
-        },
-        data: updateData
-    });
+  return await prisma.model.update({
+    where: { id: modelId },
+    data: updateData,
+  });
 });

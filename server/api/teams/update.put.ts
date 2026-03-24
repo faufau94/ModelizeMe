@@ -1,20 +1,17 @@
 import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { idSchema, updateTeamSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
+  await requireAuth(event);
 
-  const { id } = getQuery(event)
-  const data = await readBody(event)
-  if (!id) {
-    throw createError({ statusCode: 400, message: 'id est requis' })
-  }
+  const { id } = getQuery(event);
+  const teamId = idSchema.parse(id);
+  const body = await readBody(event);
+  const data = updateTeamSchema.parse(body);
 
-  // Ici on ne met à jour que name (et éventuellement inviteCode)
-  const updated = await prisma.team.update({
-    where: { id: Number(id) },
-    data: {
-      name: data.name,
-      inviteCode: data.inviteCode
-    }
-  })
-  return updated
-})
+  return await prisma.team.update({
+    where: { id: teamId },
+    data,
+  });
+});

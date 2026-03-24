@@ -1,83 +1,29 @@
-import prisma from "~/lib/prisma";
-import nodemailer from 'nodemailer';
+import { requireAuth } from "~/server/utils/auth";
+import { auth } from "~/lib/auth";
 
-export default defineEventHandler(async event => {
+export default defineEventHandler(async (event) => {
+  const session = await requireAuth(event);
 
-    const body = await readBody(event);
-    const { inviteCode, userId, userEmail, name } = body;
-    
+  const body = await readBody(event);
+  const { name } = body;
 
-    if (!userId) {
-        return {
-            status: 404,
-            body: {
-                message: 'Impossible de créer le workspace, veuillez réessayer'
-            }
-        }
-    }
-
-
-    const workspaceCreated = await prisma.workspace.create({
-        data: {
-            name: name,
-            owner: {
-                connect: { id: userId }
-            },
-            inviteCode: inviteCode,
-        }
+  if (!name || typeof name !== "string" || name.trim().length < 1) {
+    throw createError({
+      statusCode: 400,
+      message: "Le nom de l'organisation est requis",
     });
+  }
 
-    // add lastActiveWorkspaceId to user
-    await prisma.user.update({
-        where: { id: userId },
-        data: {
-            lastActiveWorkspaceId: workspaceCreated.id
-        },
-    })
+  // Use better-auth's organization API to create the org
+  const slug = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
-    if (!workspaceCreated) {
-        return {
-            status: 404,
-            body: {
-                message: 'Il y a eu une erreur lors de la création du workspace, veuillez réessayer.'
-            }
-        }
-    }
+  const org = await auth.api.createOrganization({
+    body: {
+      name: name.trim(),
+      slug: `${slug}-${Date.now()}`,
+      userId: session.user.id,
+    },
+  });
 
-    // TODO : send email to user
-
-    const transporter = nodemailer.createTransport({
-        host: 'in-v3.mailjet.com',
-        port: 587,
-        auth: {
-            user: 'c1e5fb67e5770d386b6d5c03776f35fc',
-            pass: '1b468458e81e6b44423c228efb08bb3c',
-        }
-    });
-
-    let res = await transporter.sendMail({
-        from: "faudelh94@hotmail.fr", // sender address
-        to: userEmail, // list of receivers
-        subject: "Nouveau workspace créé", // Subject line
-        text: "Nouveau workspace créé", // plain text body
-        connectionTimeout: 30000,   // 30 seconds
-        greetingTimeout: 30000,     // 30 seconds
-        socketTimeout: 30000,
-        html: `
-        <h1>Bonjour,</h1>
-        <p>Voici le lien: </p>
-        `
-    });
-
-
-    return {
-        status: 200,
-        body: {
-            workspaceId: workspaceCreated.id,
-            message: `Espace de travail créé avec succès.`,
-        }
-    }
-
-
-    
+  return org;
 });

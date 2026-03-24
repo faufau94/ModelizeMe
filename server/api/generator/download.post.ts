@@ -1,23 +1,18 @@
-import prisma from '@/lib/prisma';
+import { requireAuth } from "~/server/utils/auth";
 
 export default defineEventHandler(async (event) => {
-    const body = await readBody(event);
-    const { projectName } = body;
+  await requireAuth(event);
 
+  const body = await readBody(event);
+  const { projectName } = body;
 
-    try {
-        return await $fetch(process.env.URL_BACKEND + '/api/download-project', {
-            method: 'POST',
-            body: {
-                projectName
-            },
-            responseType: 'blob',
-        });
-    } catch (error) {
-        console.error('Erreur lors du téléchargement du projet via Laravel:', error);
-        return {
-            status: 400,
-            message: 'Erreur lors du téléchargement du projet'
-        };
-    }
+  if (!projectName || typeof projectName !== "string") {
+    throw createError({ statusCode: 400, message: "projectName requis" });
+  }
+
+  return await $fetch(process.env.URL_BACKEND + "/api/download-project", {
+    method: "POST",
+    body: { projectName },
+    responseType: "blob",
+  });
 });

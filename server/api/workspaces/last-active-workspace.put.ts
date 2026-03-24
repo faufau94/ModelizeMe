@@ -1,20 +1,19 @@
-import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
 import { auth } from "~/lib/auth";
 
-export default defineEventHandler(async event => {
-    const { workspaceId } = getQuery(event);
-    const session = await auth.api.getSession({
-        headers: event.headers,
-    })
+export default defineEventHandler(async (event) => {
+  const session = await requireAuth(event);
 
-    // Update lastActiveWorkspaceId by adding the workspaceId
-    await prisma.user.update({
-        where: {
-            id: session.user.id,
-        },
-        data: {
-            lastActiveWorkspaceId: workspaceId,
-        },
-    });
+  const { workspaceId } = getQuery(event);
+  if (!workspaceId || typeof workspaceId !== "string") {
+    throw createError({ statusCode: 400, message: "workspaceId requis" });
+  }
 
-})
+  // Update active organization on the session via better-auth
+  await auth.api.setActiveOrganization({
+    headers: event.headers,
+    body: { organizationId: workspaceId },
+  });
+
+  return { success: true };
+});

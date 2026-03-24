@@ -4,7 +4,6 @@ import prisma from "@/lib/prisma";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
 import { sendOrganizationInvitation } from "@/lib/send-invitation";
-import {authClient} from "~/lib/auth-client";
 
 export const auth = betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
@@ -20,7 +19,7 @@ export const auth = betterAuth({
         enabled: true,
         autoSignIn: true,
         async sendResetPassword(url, user) {
-			console.log("Reset password url:", url);
+			// TODO: implement password reset email
 		},
     },
     // socialProviders: { 
@@ -85,10 +84,8 @@ export const auth = betterAuth({
 
 
           async sendInvitationEmail(data) {
-            console.log("Sending invitation email to:", data.email);
-            const baseUrl = useRuntimeConfig().public.BASE_URL || "http://localhost:3000";
+            const baseUrl = useRuntimeConfig().public.baseUrl || "http://localhost:3000";
             const inviteLink = `${baseUrl}/app/workspace/join/${data.id}`;
-            console.log("Send invitation to:", data.email, "with link:", inviteLink);
             await sendOrganizationInvitation({
               email: data.email,
               invitedByUsername: data.inviter.user.name,

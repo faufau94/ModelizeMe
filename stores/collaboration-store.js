@@ -22,18 +22,20 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   const edges = computed(() => sharedEdges.value?.toArray() ?? [])
 
   // ─── INITIALIZATION ───
-  function initialize(flowId, userName) {
+  function initialize(flowId, userName, sessionToken) {
     // do nothing if already initialized
     if (ydoc.value) return
 
     const mcdStore = useMCDStore()
+    const config = useRuntimeConfig()
+    const wsUrl = config.public.websocketUrl || 'ws://localhost:1234'
 
     // 1) create exactly one Y.Doc
     ydoc.value = new Y.Doc()
 
-    // 2) open a websocket to your Yjs server
+    // 2) open a websocket to your Yjs server with auth token
     provider.value = new WebsocketProvider(
-      'ws://localhost:1234',
+      `${wsUrl}?token=${sessionToken || ''}`,
       'flow-' + flowId, // room name
       ydoc.value
     )
@@ -53,9 +55,6 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
     // 5) when sharedNodes changes anywhere, let MCDStore update the Vue Flow instance
     sharedNodes.value.observe((event) => {
-      console.log('🔄 Yjs: nodes changed event →', event)
-      console.log('🔄 Yjs: nodes changed →', nodes.value)
-      console.log('event.transaction.origin: ', event.transaction.origin)
       if (!mcdStore.flowMCD) return
       // set VueFlow to exactly the current array of nodes
       mcdStore.flowMCD.setNodes(nodes.value)
@@ -89,25 +88,10 @@ export const useCollaborationStore = defineStore('collaboration', () => {
         .filter(u => u.name)
     })
 
-    // 9) set up event listeners so that if the local user drags/moves a node in Vue Flow,
-    //    we immediately write that change back into Yjs.  MCDStore provides onNodesChange/onEdgesChange.
-    // if (mcdStore.flowMCD) {
-    //   mcdStore.flowMCD.onNodesChange(({ node, type }) => {
-    //     if (type === 'position' || type === 'dimensions') {
-    //       updateNode(node.id, node)
-    //     }
-    //   })
-    //   mcdStore.flowMCD.onEdgesChange(({ edge, type }) => {
-    //     if (type === 'update') {
-    //       updateEdge(edge.id, edge)
-    //     }
-    //   })
-    // }
   }
 
   // ─── NODE CRUD ───
   function addNode(node) {
-    console.log('Adding node to Yjs:', node)
     sharedNodes.value?.push([ node ])
   }
 
@@ -115,10 +99,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     if (!sharedNodes.value) return
     const arr = sharedNodes.value.toArray()
     const idx = arr.findIndex(n => n.id === nodeId)
-    if (idx === -1) {
-      console.warn('Yjs node not found for update:', nodeId)
-      return
-    }
+    if (idx === -1) return
     // merge old fields with newData, then replace exactly that index
     const merged = { ...arr[idx], ...newData }
 

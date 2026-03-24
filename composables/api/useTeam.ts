@@ -92,8 +92,6 @@ export function useTeam() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] }),
   })
   const deleteTeam = (id: string) => {
-      console.log('Deleting team with id:', id)
-      console.log('Selected workspace id:', selectedWorkspaceId.value)
       return deleteTeamMutation.mutateAsync(id)
   }
 
