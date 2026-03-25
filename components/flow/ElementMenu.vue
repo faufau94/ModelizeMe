@@ -852,7 +852,7 @@ const type = [
   "Boolean",
   "Date",
   "Time",
-  "Datetime",
+  "DateTime",
   "Decimal",
   "Double",
   "Float",

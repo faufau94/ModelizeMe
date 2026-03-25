@@ -28,6 +28,12 @@ export default defineNuxtConfig({
   vite: {
     optimizeDeps: {
       include: ["zod"],
+      // Force le scan de tout le dossier node_modules au démarrage
+      entries: [
+        './app.vue',
+        './pages/**/*.vue',
+        './components/**/*.vue'
+      ],
       exclude: ['vee-validate']
     },
     resolve: {
