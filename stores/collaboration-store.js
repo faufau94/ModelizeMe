@@ -15,6 +15,9 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   const provider      = ref(null)     // will hold the single WebsocketProvider
   const sharedNodes   = ref(null)     // a Y.Array for nodes
   const sharedEdges   = ref(null)     // a Y.Array for edges
+  const currentModelId  = ref(null)
+  const currentUserId   = ref(null)
+  const heartbeatTimer  = ref(null)
 
   // ─── REACTIVE ACCESSORS ───
   // these computed() functions turn Y.Array → plain JS array
@@ -22,14 +25,19 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   const edges = computed(() => sharedEdges.value?.toArray() ?? [])
 
   // ─── INITIALIZATION ───
-  function initialize(flowId, userName, sessionToken) {
+  function initialize(flowId, userName, sessionToken, userId = null, userImage = null) {
     // cleanup any previous session before re-initializing
     cleanup()
-    if (ydoc.value) return
 
     const mcdStore = useMCDStore()
     const config = useRuntimeConfig()
     const wsUrl = config.public.websocketUrl || 'ws://localhost:1234'
+
+    currentModelId.value = flowId
+    currentUserId.value = userId || userName
+
+    // Register this user as viewing the model
+    registerViewerHeartbeat(flowId, currentUserId.value, userName, userImage)
 
     // 1) create exactly one Y.Doc
     ydoc.value = new Y.Doc()
@@ -217,6 +225,23 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     }
   }
 
+  // ─── VIEWER HEARTBEAT ───
+  function registerViewerHeartbeat(modelId, userId, userName, userImage) {
+    // Send initial registration
+    $fetch('/api/models/viewers', {
+      method: 'POST',
+      body: { modelId, userId, userName, userImage }
+    }).catch(() => {})
+
+    // Send heartbeat every 30 seconds to keep viewer alive
+    heartbeatTimer.value = setInterval(() => {
+      $fetch('/api/models/viewers', {
+        method: 'POST',
+        body: { modelId, userId, userName, userImage }
+      }).catch(() => {})
+    }, 30_000)
+  }
+
   // ─── CLEANUP ───
   function cleanup() {
     const flowContainer = document.querySelector('.dndflow')
@@ -231,6 +256,18 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       ydoc.value.destroy()
     }
 
+    // Unregister viewer
+    if (currentModelId.value && currentUserId.value) {
+      $fetch('/api/models/viewers', {
+        method: 'DELETE',
+        body: { modelId: currentModelId.value, userId: currentUserId.value }
+      }).catch(() => {})
+    }
+    if (heartbeatTimer.value) {
+      clearInterval(heartbeatTimer.value)
+      heartbeatTimer.value = null
+    }
+
     isConnected.value = false
     activeUsers.value = []
     remoteCursors.value = []
@@ -238,6 +275,8 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     provider.value = null
     sharedNodes.value = null
     sharedEdges.value = null
+    currentModelId.value = null
+    currentUserId.value = null
   }
 
   return {

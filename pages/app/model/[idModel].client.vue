@@ -403,7 +403,8 @@ const showDialogRenameModel = ref(false)
 const { activeUsers, remoteCursors } = storeToRefs(collaborationStore)
 
 
-mcdStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
+const mcdFlowInstance = useVueFlow('flow-mcd-' + route.params.idModel)
+mcdStore.setFlowInstance(mcdFlowInstance)
 mcdGenStore.setFlowInstance(useVueFlow('flow-mcd-gen-' + route.params.idModel))
 mldStore.setFlowInstance(useVueFlow('flow-mld-' + route.params.idModel))
 mpdStore.setFlowInstance(useVueFlow('flow-mpd-' + route.params.idModel))
@@ -424,9 +425,19 @@ console.log('session', session.value)
 
 // Initialize collaboration with proper auth token
 const sessionToken = session.value?.session?.token || ''
-collaborationStore.initialize(route.params.idModel, session.value.user.name, sessionToken);
+collaborationStore.initialize(
+  route.params.idModel,
+  session.value.user.name,
+  sessionToken,
+  session.value.user.id,
+  session.value.user.image
+);
 
 onMounted(async () => {
+
+  // Always start with a clean slate to avoid stale data from previous models
+  mcdStore.flowMCD.setNodes([]);
+  mcdStore.flowMCD.setEdges([]);
 
   // Fetch initial model data from backend
   model.value = await $fetch("/api/models/read", {
@@ -434,15 +445,13 @@ onMounted(async () => {
     query: { id: route.params.idModel },
   });
 
-  // Set initial nodes/edges in Yjs AND VueFlow
-  if (model.value?.nodes?.length) {
-    collaborationStore.setNodes(model.value.nodes);
-    mcdStore.flowMCD.setNodes(model.value.nodes);
-  }
-  if (model.value?.edges?.length) {
-    collaborationStore.setEdges(model.value.edges);
-    mcdStore.flowMCD.setEdges(model.value.edges);
-  }
+  // Set initial nodes/edges in Yjs AND VueFlow — always, even if empty
+  const initialNodes = model.value?.nodes || [];
+  const initialEdges = model.value?.edges || [];
+  collaborationStore.setNodes(initialNodes);
+  mcdStore.flowMCD.setNodes(initialNodes);
+  collaborationStore.setEdges(initialEdges);
+  mcdStore.flowMCD.setEdges(initialEdges);
 
   if(model.value) {
     setValues({
@@ -557,7 +566,8 @@ const isChangingTab = ref(false)
 const currentFlow = ref(mcdStore.flowMCD)
 
 const hasNoNodes = computed(() => {
-  return !mcdStore.flowMCD?.nodes?.length
+  // Use the local VueFlow instance ref directly for proper reactivity tracking
+  return mcdFlowInstance.getNodes.value.length === 0
 })
 
 watch(activeTab, () => {
@@ -571,9 +581,10 @@ watch(activeTab, () => {
   }
   if (activeTab.value === 'mcd') {
     // Generate read-only MCD from the editable model
+    // .nodes/.edges are auto-unwrapped by reactive(), no .value needed
     const { nodesMCD, edgesMCD } = mcdGenStore.generateMCD(
-      mcdStore.flowMCD.getNodes.value,
-      mcdStore.flowMCD.getEdges.value
+      mcdStore.flowMCD.nodes,
+      mcdStore.flowMCD.edges
     )
     mcdGenStore.flowMCDGen.setNodes(nodesMCD)
     mcdGenStore.flowMCDGen.setEdges(edgesMCD)
@@ -581,15 +592,21 @@ watch(activeTab, () => {
   }
   if (activeTab.value === 'mld') {
     const { nodesMLD, edgesMLD } = mldStore.generateMLD(
-      mcdStore.flowMCD.getNodes.value,
-      mcdStore.flowMCD.getEdges.value
+      mcdStore.flowMCD.nodes,
+      mcdStore.flowMCD.edges
     )
     mldStore.flowMLD.setNodes(nodesMLD)
     mldStore.flowMLD.setEdges(edgesMLD)
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') {
-    currentFlow.value = mpdStore.flowMPD ?? { nodes: [], edges: [] };
+    const { nodesMPD, edgesMPD } = mpdStore.generateMPD(
+      mcdStore.flowMCD.nodes,
+      mcdStore.flowMCD.edges
+    )
+    mpdStore.flowMPD.setNodes(nodesMPD)
+    mpdStore.flowMPD.setEdges(edgesMPD)
+    currentFlow.value = mpdStore.flowMPD;
   }
 
   nextTick(() => {

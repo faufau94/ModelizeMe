@@ -9,9 +9,6 @@
         <CardTitle class="text-xl font-semibold leading-tight tracking-tight text-gray-900">
           {{ props.model.name.length > 25 ? props.model.name.substring(0, 25) + '...' : props.model.name }}
         </CardTitle>
-        <p class="text-xs text-muted-foreground mt-1">
-          Dernière modif. le {{ $dayjs(props.model.updatedAt).format('DD MMM YYYY à HH:mm') }}
-        </p>
       </div>
       <div class="rounded-md text-secondary-foreground z-10">
 
@@ -106,15 +103,28 @@
         </Badge>
       </div>
 
-      <!-- Author -->
-      <div v-if="props.model.author" class="mt-6 flex items-center justify-between border-t pt-4">
-        <div class="flex items-center gap-2">
-          <Avatar class="w-6 h-6 border">
-            <AvatarImage v-if="props.model.author.image" :src="props.model.author.image" :alt="props.model.author.name" />
-            <AvatarFallback class="text-[10px]">{{ props.model.author.name?.substring(0, 2).toUpperCase() || 'U' }}</AvatarFallback>
-          </Avatar>
-          <span class="text-xs font-medium text-gray-600">{{ props.model.author.name }}</span>
+      <!-- Footer: active viewers + date -->
+      <div class="mt-6 flex items-center justify-between border-t pt-4">
+        <div v-if="props.viewers?.length" class="flex items-center -space-x-1.5">
+          <TooltipProvider v-for="viewer in props.viewers.slice(0, 3)" :key="viewer.userId">
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Avatar class="w-6 h-6 border-2 border-white shadow-sm ring-2 ring-green-400">
+                  <AvatarImage v-if="viewer.userImage" :src="viewer.userImage" :alt="viewer.userName" />
+                  <AvatarFallback class="text-[9px] bg-green-50 text-green-700">{{ viewer.userName?.substring(0, 2).toUpperCase() || '?' }}</AvatarFallback>
+                </Avatar>
+              </TooltipTrigger>
+              <TooltipContent class="bg-gray-900 text-white text-xs">
+                <p>{{ viewer.userName }} - en ligne</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <span v-if="props.viewers.length > 3" class="text-[10px] text-green-600 font-medium ml-1">+{{ props.viewers.length - 3 }}</span>
         </div>
+        <div v-else></div>
+        <p class="text-[11px] text-muted-foreground">
+          {{ $dayjs(props.model.updatedAt).format('DD MMM YYYY à HH:mm') }}
+        </p>
       </div>
     </CardContent>
   </Card>
@@ -177,6 +187,7 @@ import {ref} from 'vue';
 import {Workflow, Loader2, PanelTop, EllipsisVertical, Users, Copy, ArrowRightToLine, ExternalLink, Pencil, Trash2} from 'lucide-vue-next';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   AlertDialog, AlertDialogCancel,
   AlertDialogContent,
@@ -222,6 +233,10 @@ const props = defineProps({
   model: {
     type: Object,
     required: true,
+  },
+  viewers: {
+    type: Array as () => Array<{ userId: string; userName: string; userImage?: string | null }>,
+    default: () => []
   },
   isSelected: {
     type: Boolean,

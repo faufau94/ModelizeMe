@@ -48,10 +48,11 @@
             <Loader2 :size="30" class="animate-spin"/>
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <CardModel 
-              v-for="model in filteredModels" 
-              :key="model.id" 
+            <CardModel
+              v-for="model in filteredModels"
+              :key="model.id"
               :model="model"
+              :viewers="modelViewers[model.id] || []"
               :is-selected="selectedModels.includes(model.id)"
               :selection-mode="selectionMode"
               @toggle-select="toggleSelection"
@@ -89,7 +90,7 @@
 </template>
 
 <script setup>
-import {computed, ref} from 'vue';
+import {computed, ref, watch, onMounted, onUnmounted} from 'vue';
 import { Search as SearchIcon, Loader2, Trash2, X, CheckSquare as CheckSquareIcon } from 'lucide-vue-next'
 import CardModel from "@/components/ui/card/CardModel.vue";
 import {toast} from "vue-sonner";
@@ -103,6 +104,31 @@ const { models, isLoadingModels, isModelsFetched, bulkDeleteModels } = useModel(
 
 const searchTerm = ref("");
 const selectedModels = ref([]);
+const modelViewers = ref({})
+let viewerPollTimer = null
+
+const fetchViewers = async () => {
+  if (!models.value?.length) return
+  const ids = models.value.map(m => m.id).join(',')
+  try {
+    modelViewers.value = await $fetch('/api/models/viewers', { query: { modelIds: ids } })
+  } catch (e) {
+    // Silently fail
+  }
+}
+
+// Poll viewers every 15 seconds
+onMounted(() => {
+  fetchViewers()
+  viewerPollTimer = setInterval(fetchViewers, 15_000)
+})
+
+onUnmounted(() => {
+  if (viewerPollTimer) clearInterval(viewerPollTimer)
+})
+
+// Refresh viewers when models change
+watch(models, () => fetchViewers(), { deep: false })
 const isDeleting = ref(false);
 const selectionMode = ref(false);
 
