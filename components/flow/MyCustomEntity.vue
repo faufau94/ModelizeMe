@@ -1,16 +1,20 @@
 <template>
 
   <ContextMenu>
-    <ContextMenuTrigger>
+    <ContextMenuTrigger :disabled="isReadOnly">
     <div class="bg-white shadow-lg rounded-xl w-80 z-40 relative cursor-pointer transition-all duration-200 hover:shadow-xl"
-        :class="nodeIdSelected === props.id ? 'ring-2 ring-indigo-400 ring-offset-2' : 'border border-gray-200'"
+        :class="[
+          isSelected ? 'ring-2 ring-indigo-400 ring-offset-2' : 'border border-gray-200',
+          headerColorClass
+        ]"
         v-bind="$attrs"
         @mouseover="showHandles"
         @mousedown="showHandles"
-        @mouseout="nodeIdSelected === props.id ? showHandles : hideHandles()">
+        @mouseout="isSelected ? showHandles : hideHandles()">
 
       <!-- Entity header -->
-      <div class="flex justify-center items-center border-b border-gray-100 rounded-t-xl py-3 px-4 md:px-5 bg-gray-50/50">
+      <div class="flex justify-center items-center border-b border-gray-100 rounded-t-xl py-3 px-4 md:px-5"
+           :class="headerBgClass">
         <h3 v-if="props?.data?.name !== ''" class="text-sm font-semibold text-center text-gray-800 tracking-wide uppercase">
           {{ props?.data?.name ?? 'Sans nom' }}
         </h3>
@@ -38,73 +42,91 @@
           </div>
 
           <div class="flex items-center gap-1 flex-shrink-0">
-            <span class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+            <!-- Type badge: hidden in MCD, shown in default/MLD/MPD -->
+            <span v-if="modelType !== 'mcd' && field?.typeName" class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
               {{ field?.typeName }}
             </span>
-            <div class="w-4" v-if="field?.propertyName !== 'id'">
-              <NullableIcon class="w-4 h-4 cursor-pointer transition-colors"
-                            @click="field.isNullable = !field.isNullable"
-                            :class="[field?.isNullable ?
-                                      'text-gray-700' :
-                                      'text-gray-300']"
-              />
+
+            <!-- MPD: show NOT NULL / NULL badge -->
+            <span v-if="modelType === 'mpd'" class="text-[10px] px-1 py-0.5 rounded font-mono"
+                  :class="field?.isNullable ? 'text-gray-400 bg-gray-50' : 'text-orange-600 bg-orange-50'">
+              {{ field?.isNullable ? 'NULL' : 'NOT NULL' }}
+            </span>
+
+            <!-- MPD: show AUTO_INCREMENT -->
+            <span v-if="modelType === 'mpd' && field?.autoIncrement" class="text-[10px] text-blue-500 bg-blue-50 px-1 py-0.5 rounded font-mono">
+              AI
+            </span>
+
+            <!-- Nullable toggle: only in editable (default) mode -->
+            <template v-if="!isReadOnly">
+              <div class="w-4" v-if="field?.propertyName !== 'id'">
+                <NullableIcon class="w-4 h-4 cursor-pointer transition-colors"
+                              @click="field.isNullable = !field.isNullable"
+                              :class="[field?.isNullable ?
+                                        'text-gray-700' :
+                                        'text-gray-300']"
+                />
+              </div>
+              <div v-else class="w-4"></div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Timestamp fields (dimmed) — only in default and MLD views -->
+        <template v-if="props?.data?.hasTimestamps">
+          <div class="flex justify-between items-center gap-4 py-1 px-1">
+            <div class="flex items-center gap-1">
+              <div class="w-4"></div>
+              <span class="text-xs text-gray-400 italic">created_at</span>
             </div>
-            <div v-else class="w-4"></div>
+            <div class="flex items-center gap-1">
+              <span v-if="modelType !== 'mcd'" class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
+              <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-gray-400"/>
+            </div>
           </div>
-        </div>
 
-        <!-- Timestamp fields (dimmed) — masqués en vue MCD -->
-        <div v-if="props?.data?.hasTimestamps " class="flex justify-between items-center gap-4 py-1 px-1">
-          <div class="flex items-center gap-1">
-            <div class="w-4"></div>
-            <span class="text-xs text-gray-400 italic">created_at</span>
+          <div class="flex justify-between items-center gap-4 py-1 px-1">
+            <div class="flex items-center gap-1">
+              <div class="w-4"></div>
+              <span class="text-xs text-gray-400 italic">updated_at</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <span v-if="modelType !== 'mcd'" class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
+              <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-gray-400"/>
+            </div>
           </div>
-          <div class="flex items-center gap-1">
-            <span class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
-            <NullableIcon class="w-4 h-4 text-gray-400"/>
-          </div>
-        </div>
+        </template>
 
-        <div v-if="props?.data?.hasTimestamps " class="flex justify-between items-center gap-4 py-1 px-1">
-          <div class="flex items-center gap-1">
-            <div class="w-4"></div>
-            <span class="text-xs text-gray-400 italic">updated_at</span>
-          </div>
-          <div class="flex items-center gap-1">
-            <span class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
-            <NullableIcon class="w-4 h-4 text-gray-400"/>
-          </div>
-        </div>
-
-        <div v-if="props?.data?.usesSoftDeletes " class="flex justify-between items-center gap-4 py-1 px-1">
+        <div v-if="props?.data?.usesSoftDeletes" class="flex justify-between items-center gap-4 py-1 px-1">
           <div class="flex items-center gap-1">
             <div class="w-4"></div>
             <span class="text-xs text-gray-400 italic">deleted_at</span>
           </div>
           <div class="flex items-center gap-1">
-            <span class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
-            <NullableIcon class="w-4 h-4 text-gray-400"/>
+            <span v-if="modelType !== 'mcd'" class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
+            <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-gray-400"/>
           </div>
         </div>
 
       </div>
 
       <div>
-        <Handle id="s1" type="source" :position="Position.Left" :style="sourceHandleStyle"/>
-        <Handle id="s2" type="source" :position="Position.Top" :style="sourceHandleStyle"/>
-        <Handle id="s3" type="source" :position="Position.Bottom" :style="sourceHandleStyle"/>
-        <Handle id="s4" type="source" :position="Position.Right" :style="sourceHandleStyle"/>
+        <Handle id="s1" type="source" :position="Position.Left" :style="isReadOnly ? hiddenHandleStyle : sourceHandleStyle"/>
+        <Handle id="s2" type="source" :position="Position.Top" :style="isReadOnly ? hiddenHandleStyle : sourceHandleStyle"/>
+        <Handle id="s3" type="source" :position="Position.Bottom" :style="isReadOnly ? hiddenHandleStyle : sourceHandleStyle"/>
+        <Handle id="s4" type="source" :position="Position.Right" :style="isReadOnly ? hiddenHandleStyle : sourceHandleStyle"/>
       </div>
     </div>
     </ContextMenuTrigger>
-    <ContextMenuContent>
+    <ContextMenuContent v-if="!isReadOnly">
         <ContextMenuItem @click="duplicateNode(props)" class="cursor-pointer">Dupliquer</ContextMenuItem>
         <ContextMenuItem class="cursor-pointer" as-child @click="setNodeTimestamps(!getNodeTimestamps)">
           <div v-if="getNodeTimestamps">
-            Désactiver l’horodatage
+            Désactiver l'horodatage
           </div>
           <div v-else>
-            Activer l’horodatage
+            Activer l'horodatage
           </div>
         </ContextMenuItem>
         <ContextMenuItem class="cursor-pointer" as-child @click="setNodeSoftDeletes(!getNodeSoftDeletes)">
@@ -122,12 +144,11 @@
 </template>
 
 <script lang="ts" setup>
-import {Handle, Position, useNodesData} from '@vue-flow/core'
+import {Handle, Position} from '@vue-flow/core'
 import {computed, ref, watch} from 'vue'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {storeToRefs} from "pinia";
-import {NodeToolbar} from '@vue-flow/node-toolbar'
-import {Trash2, Copy, KeyRound} from "lucide-vue-next";
+import {KeyRound} from "lucide-vue-next";
 import NullableIcon from '@/components/icon/nullable-icon';
 
 import {
@@ -166,7 +187,42 @@ const route = useRoute()
 const isNodeShown = ref(false)
 const isNodeHovered = ref(false)
 
+/** Model type from the node data (set by generators). Defaults to editable mode. */
+const modelType = computed(() => props.data?.modelType ?? 'default')
+const isReadOnly = computed(() => modelType.value !== 'default')
+const isSelected = computed(() => props.selected || nodeIdSelected.value === props.id)
+
+/** Header background color per model type */
+const headerBgClass = computed(() => {
+  switch (modelType.value) {
+    case 'mcd': return 'bg-blue-50/60';
+    case 'mld': return 'bg-emerald-50/60';
+    case 'mpd': return 'bg-purple-50/60';
+    default: return 'bg-gray-50/50';
+  }
+})
+
+const headerColorClass = computed(() => {
+  if (!isReadOnly.value) return '';
+  switch (modelType.value) {
+    case 'mcd': return 'border-blue-200';
+    case 'mld': return 'border-emerald-200';
+    case 'mpd': return 'border-purple-200';
+    default: return '';
+  }
+})
+
+const badgeColorClass = computed(() => {
+  switch (modelType.value) {
+    case 'mcd': return 'text-blue-400';
+    case 'mld': return 'text-emerald-400';
+    case 'mpd': return 'text-purple-400';
+    default: return 'text-gray-400';
+  }
+})
+
 watch(() => nodeIdSelected.value === props.id, (newVal) => {
+  if (isReadOnly.value) return;
   if (newVal) {
     showHandles();
   } else {
@@ -211,28 +267,6 @@ const updateNode = async () => {
   isSaving.value = false;
 };
 
-// const nodeTimestamps = computed({
-//   get() {
-//     return nodeData?.value?.data?.hasTimestamps;
-//   },
-//   set(value) {
-//     if (nodeData && nodeData.value.data) {
-//       nodeData.value.data.hasTimestamps = value;
-//     }
-//   },
-// });
-
-// const nodeSoftDeletes = computed({
-//   get() {
-//     return nodeData?.value?.data?.usesSoftDeletes;
-//   },
-//   set(value) {
-//     if (nodeData && nodeData.value.data) {
-//       nodeData.value.data.usesSoftDeletes = value;
-//     }
-//   },
-// });
-
 const sourceHandle = ref(0)
 
 
@@ -247,13 +281,25 @@ const sourceHandleStyle = computed(() => {
   }
 })
 
+const hiddenHandleStyle = {
+  opacity: 0,
+  pointerEvents: 'none',
+  width: '1px',
+  height: '1px',
+  padding: 0,
+  border: 'none',
+  backgroundColor: 'transparent',
+}
+
 const showHandles = () => {
+  if (isReadOnly.value) return
   isNodeShown.value = true
   isNodeHovered.value = true
   sourceHandle.value = 1
 }
 
 const hideHandles = () => {
+  if (isReadOnly.value) return
   setTimeout(() => {
     if (isNodeHovered.value) isNodeShown.value = false
     isNodeHovered.value = false
@@ -287,5 +333,3 @@ const hideHandles = () => {
   right: -15px;
 }
 </style>
-
-

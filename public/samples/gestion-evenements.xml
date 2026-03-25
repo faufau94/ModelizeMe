@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="Gestion d'Événements">
+  <entities>
+    <entity name="Utilisateur" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="prenom" type="String" nullable="false"/>
+      <property name="email" type="String" nullable="false"/>
+      <property name="telephone" type="String" nullable="true"/>
+      <property name="mot_de_passe" type="String" nullable="false"/>
+    </entity>
+
+    <entity name="Evenement" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="titre" type="String" nullable="false"/>
+      <property name="description" type="Text" nullable="true"/>
+      <property name="date_debut" type="DateTime" nullable="false"/>
+      <property name="date_fin" type="DateTime" nullable="false"/>
+      <property name="lieu" type="String" nullable="true"/>
+      <property name="capacite_max" type="Integer" nullable="true"/>
+      <property name="statut" type="String" nullable="false"/>
+    </entity>
+
+    <entity name="Categorie" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="description" type="Text" nullable="true"/>
+    </entity>
+
+    <entity name="Salle" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="adresse" type="String" nullable="false"/>
+      <property name="capacite" type="Integer" nullable="false"/>
+      <property name="equipements" type="Text" nullable="true"/>
+    </entity>
+
+    <entity name="Billet" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="code_billet" type="String" nullable="false"/>
+      <property name="prix" type="Decimal" nullable="false"/>
+      <property name="type_billet" type="String" nullable="false"/>
+      <property name="est_utilise" type="Boolean" nullable="false"/>
+    </entity>
+
+    <entity name="Intervenant" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="prenom" type="String" nullable="false"/>
+      <property name="specialite" type="String" nullable="true"/>
+      <property name="biographie" type="Text" nullable="true"/>
+    </entity>
+
+    <entity name="Sponsor" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom_entreprise" type="String" nullable="false"/>
+      <property name="montant" type="Decimal" nullable="false"/>
+      <property name="niveau" type="String" nullable="false"/>
+    </entity>
+  </entities>
+
+  <relationships>
+    <!-- Un utilisateur peut s'inscrire à plusieurs événements, un événement a plusieurs inscrits -->
+    <relationship name="s_inscrire" source="Utilisateur" target="Evenement"
+                  sourceCardinality="0,N" targetCardinality="0,N">
+      <property name="date_inscription" type="DateTime" nullable="false"/>
+      <property name="statut_inscription" type="String" nullable="false"/>
+    </relationship>
+
+    <!-- Un utilisateur achète des billets -->
+    <relationship name="acheter" source="Utilisateur" target="Billet"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Un billet est pour un événement -->
+    <relationship name="concerner" source="Billet" target="Evenement"
+                  sourceCardinality="0,N" targetCardinality="1,1"/>
+
+    <!-- Un événement appartient à une catégorie -->
+    <relationship name="appartenir" source="Evenement" target="Categorie"
+                  sourceCardinality="0,N" targetCardinality="1,1"/>
+
+    <!-- Un événement se déroule dans une salle -->
+    <relationship name="se_derouler" source="Evenement" target="Salle"
+                  sourceCardinality="0,N" targetCardinality="1,1"/>
+
+    <!-- Un événement a plusieurs intervenants, un intervenant participe à plusieurs événements -->
+    <relationship name="intervenir" source="Intervenant" target="Evenement"
+                  sourceCardinality="0,N" targetCardinality="0,N">
+      <property name="role" type="String" nullable="false"/>
+      <property name="heure_passage" type="DateTime" nullable="true"/>
+    </relationship>
+
+    <!-- Un événement est sponsorisé par plusieurs sponsors -->
+    <relationship name="sponsoriser" source="Sponsor" target="Evenement"
+                  sourceCardinality="0,N" targetCardinality="0,N">
+      <property name="type_sponsoring" type="String" nullable="false"/>
+    </relationship>
+
+    <!-- Un utilisateur peut organiser des événements -->
+    <relationship name="organiser" source="Evenement" target="Utilisateur"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+  </relationships>
+</model>

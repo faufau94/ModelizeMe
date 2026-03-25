@@ -20,8 +20,17 @@ function getHandleCoordsByPosition(node, handlePosition) {
     );
 
     if (!handle) {
-        console.error('Handle not found for position:', handlePosition);
-        return [null, null];
+        // Fallback: compute position from node center + half-dimension
+        const pos = node.computedPosition || node.positionAbsolute || node.position || { x: 0, y: 0 };
+        const w = node.dimensions?.width ?? node.width ?? 0;
+        const h = node.dimensions?.height ?? node.height ?? 0;
+        switch (handlePosition) {
+            case Position.Left:   return [pos.x, pos.y + h / 2];
+            case Position.Right:  return [pos.x + w, pos.y + h / 2];
+            case Position.Top:    return [pos.x + w / 2, pos.y];
+            case Position.Bottom: return [pos.x + w / 2, pos.y + h];
+            default:              return [pos.x + w / 2, pos.y + h / 2];
+        }
     }
 
     let offsetX = handle.width / 2;

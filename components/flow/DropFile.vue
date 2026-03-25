@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -105,6 +105,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {Copy, Loader2} from 'lucide-vue-next'
 import { useConvertToFlowElements } from '@/composables/useConvertToFlowElements';
+import { getLayoutedElements } from '@/utils/useElk.js';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-vue-next'
@@ -123,7 +124,7 @@ const emit = defineEmits(['toggleDialog'])
 const route = useRoute()
 
 
-const { convertSQLToFlowElements, convertXMLToFlowElements } = useConvertToFlowElements();
+const { convertSQLToFlowElements, convertXMLToFlowElements, convertJSONToFlowElements } = useConvertToFlowElements();
 const mcdStore = useMCDStore()
 
 const isDragging = ref(false)
@@ -131,16 +132,14 @@ const file = ref(null)
 const fileInput = ref(null)
 
 const errorMessage = ref('')
-const allowedFileTypes = ['.xml', '.sql']
+const allowedFileTypes = ['.xml', '.sql', '.json']
 const isConvertingFile = ref(false)
 
 const handleFile = async () => {
   isConvertingFile.value = true
   if (file.value) {
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-      const fileContent = e.target.result;
+    try {
+      const fileContent = await readFileAsText(file.value);
       const fileType = file.value.name.split('.').pop().toLowerCase();
 
       let nodes, edges;
@@ -149,19 +148,40 @@ const handleFile = async () => {
         ({nodes, edges} = await convertSQLToFlowElements(fileContent, route.params.idModel));
       } else if (fileType === 'xml') {
         ({nodes, edges} = await convertXMLToFlowElements(fileContent, route.params.idModel));
+      } else if (fileType === 'json') {
+        ({nodes, edges} = await convertJSONToFlowElements(fileContent, route.params.idModel));
       }
-
 
       if (nodes && edges) {
-        mcdStore.flowMCD.addNodes(nodes);
-        mcdStore.flowMCD.addEdges(edges);
-      }
-    };
+        const existingNodes = mcdStore.flowMCD.getNodes ?? []
+        const existingEdges = mcdStore.flowMCD.getEdges ?? []
+        const layouted = await getLayoutedElements(
+          [...existingNodes, ...nodes],
+          [...existingEdges, ...edges]
+        )
 
-    reader.readAsText(file.value);
+        mcdStore.flowMCD.setNodes(layouted.nodes);
+        mcdStore.flowMCD.setEdges(layouted.edges);
+
+        await nextTick()
+        mcdStore.flowMCD.fitView({ padding: 0.4 })
+      }
+    } catch (err) {
+      errorMessage.value = 'Erreur lors de l\'importation du fichier.';
+      console.error(err);
+    }
   }
   isConvertingFile.value = false
   emit('toggleDialog')
+}
+
+function readFileAsText(f) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = (e) => reject(e);
+    reader.readAsText(f);
+  });
 }
 
 const onDragOver = () => {

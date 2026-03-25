@@ -92,6 +92,23 @@ export const useModel = () => {
   })
   const deleteModel = (id: string, body: any) => deleteModelMutation.mutateAsync({id, body})
 
+  // — BULK DELETE —
+  const bulkDeleteModelsMutation = useMutation({
+    mutationFn: async (ids: string[]) =>
+      await $fetch('/api/models/bulk-delete', { method: 'POST', body: { ids } }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const bulkDeleteModels = (ids: string[]) => bulkDeleteModelsMutation.mutateAsync(ids)
+
+  // — DUPLICATE —
+  const duplicateModelMutation = useMutation({
+    mutationFn: async ({ modelId, targetWorkspaceId }: { modelId: string; targetWorkspaceId?: string }) =>
+      await $fetch('/api/models/duplicate', { method: 'POST', body: { modelId, targetWorkspaceId } }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const duplicateModel = (modelId: string, targetWorkspaceId?: string) =>
+    duplicateModelMutation.mutateAsync({ modelId, targetWorkspaceId })
+
   
   return {
     // mutations
@@ -99,6 +116,8 @@ export const useModel = () => {
     updateModel,
     renameModel,
     deleteModel,
+    bulkDeleteModels,
+    duplicateModel,
 
     // list
     models,

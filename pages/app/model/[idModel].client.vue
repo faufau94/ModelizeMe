@@ -356,7 +356,7 @@ import {useCollaborationStore} from '~/stores/collaboration-store.js';
 
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip'
 import {useLayout} from "@/composables/useLayout.js";
-import {elkOptions, getLayoutedElements} from '@/utils/useElk.js';
+import {computeElkOptions, getLayoutedElements} from '@/utils/useElk.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
@@ -612,7 +612,7 @@ const autoLayout = (direction) => {
 
 
 const reorganize = () => {
-  const opts = { ...elkOptions };
+  const opts = computeElkOptions(currentFlow.value.getNodes);
   const ns = currentFlow.value.getNodes;
   const es = currentFlow.value.getEdges;
 

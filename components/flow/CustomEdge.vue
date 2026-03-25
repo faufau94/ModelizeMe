@@ -27,7 +27,7 @@
           transform: `translate(-50%, -50%) translate(${sourceLabelX}px, ${sourceLabelY}px)`,
         }"
       >
-        <div class="cardinality-label" :class="{ 'cardinality-label--selected': props.selected }">
+        <div class="cardinality-label" :class="[cardinalityClass, { 'cardinality-label--selected': props.selected }]">
           {{ sourceCardinality }}
         </div>
       </div>
@@ -42,13 +42,13 @@
           transform: `translate(-50%, -50%) translate(${targetLabelX}px, ${targetLabelY}px)`,
         }"
       >
-        <div class="cardinality-label" :class="{ 'cardinality-label--selected': props.selected }">
+        <div class="cardinality-label" :class="[cardinalityClass, { 'cardinality-label--selected': props.selected }]">
           {{ targetCardinality }}
         </div>
       </div>
     </EdgeLabelRenderer>
 
-    <!-- Association table at edge midpoint (editable view) -->
+    <!-- Association table at edge midpoint (editable view only) -->
     <EdgeLabelRenderer v-if="activeTab === 'default'">
       <div
         :style="{
@@ -93,6 +93,8 @@ const props = defineProps({
   markerEnd: String,
 });
 
+const modelType = computed(() => props.data?.modelType ?? 'default');
+
 const edgeParams = computed(() => getEdgeParams(props.sourceNode, props.targetNode));
 
 // Disable animated dash — we use our own selection color instead
@@ -117,11 +119,32 @@ const edgePath = computed(() => {
   });
 });
 
+/** Edge color per model type */
+const edgeColor = computed(() => {
+  if (props.selected) return '#6366f1';
+  switch (modelType.value) {
+    case 'mcd': return '#60a5fa';
+    case 'mld': return '#34d399';
+    case 'mpd': return '#a78bfa';
+    default: return '#94a3b8';
+  }
+});
+
 const edgeStyle = computed(() => ({
   strokeWidth: props.selected ? 2.5 : 1.8,
-  stroke: props.selected ? '#6366f1' : '#94a3b8',
+  stroke: edgeColor.value,
   transition: 'stroke 0.15s ease, stroke-width 0.15s ease',
 }));
+
+/** Cardinality label color per model type */
+const cardinalityClass = computed(() => {
+  switch (modelType.value) {
+    case 'mcd': return 'cardinality-label--mcd';
+    case 'mld': return 'cardinality-label--mld';
+    case 'mpd': return 'cardinality-label--mpd';
+    default: return '';
+  }
+});
 
 const onclick = () => {
   nodeIdSelected.value = null;
@@ -187,5 +210,23 @@ const targetLabelY = computed(() => {
   color: #6366f1;
   border-color: #a5b4fc;
   background: #eef2ff;
+}
+
+.cardinality-label--mcd {
+  color: #2563eb;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.cardinality-label--mld {
+  color: #059669;
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.cardinality-label--mpd {
+  color: #7c3aed;
+  background: #f5f3ff;
+  border-color: #c4b5fd;
 }
 </style>

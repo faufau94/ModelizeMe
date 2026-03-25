@@ -20,6 +20,12 @@ export default defineEventHandler(async (event) => {
     where,
     include: {
       team: true,
+      author: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
       ...(isTemplates && {
         Galery: {
           include: { category: true },

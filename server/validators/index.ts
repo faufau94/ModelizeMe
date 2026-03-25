@@ -17,8 +17,12 @@ export const updateModelSchema = z.object({
 });
 
 export const deleteModelElementSchema = z.object({
-  type: z.enum(["node", "edge"]).optional(),
-  action: z.enum(["removeNode", "removeEdge"]).optional(),
+  type: z.enum(["node", "edge", "model"]).optional(),
+  action: z.enum(["removeNode", "removeEdge", "removeModel"]).optional(),
+});
+
+export const bulkDeleteModelsSchema = z.object({
+  ids: z.array(z.string().min(1)),
 });
 
 export const renameModelSchema = z.object({

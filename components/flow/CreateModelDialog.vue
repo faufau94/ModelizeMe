@@ -89,16 +89,18 @@ const isLoadingNewModel = ref(false);
 const onSubmit = async (values) => {
   isLoadingNewModel.value = true
   
-  const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
-  
-  form.resetForm()
-  isLoadingNewModel.value = false
-  isCreateModelDialogOpen.value = false;
+  try {
+    const res = await addModel({...values, selectedWorkspaceId: selectedWorkspaceId.value})
+    
+    form.resetForm()
+    isLoadingNewModel.value = false
+    isCreateModelDialogOpen.value = false;
 
-  if (res.status === 200) {
-    toast.success(res.body.message)
-  } else {
-    toast.error(res.body.message);
+    toast.success('Modèle créé avec succès')
+    await navigateTo(`/app/model/${res.id}`)
+  } catch (err) {
+    isLoadingNewModel.value = false
+    toast.error(err?.data?.message || 'Erreur lors de la création du modèle')
   }
 }
 </script>

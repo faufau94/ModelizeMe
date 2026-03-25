@@ -23,7 +23,8 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
   // ─── INITIALIZATION ───
   function initialize(flowId, userName, sessionToken) {
-    // do nothing if already initialized
+    // cleanup any previous session before re-initializing
+    cleanup()
     if (ydoc.value) return
 
     const mcdStore = useMCDStore()

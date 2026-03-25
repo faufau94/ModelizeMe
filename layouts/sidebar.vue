@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen w-full bg-background">
+  <div class="flex h-screen w-full bg-background overflow-hidden">
     <!-- Organization Sidebar -->
     <div class="w-16 border-r border-border bg-card flex flex-col items-center hidden md:flex py-4">
       <div class="flex flex-col items-center space-y-4 w-full px-2">
