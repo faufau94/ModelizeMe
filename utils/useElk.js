@@ -7,19 +7,28 @@ const elk = new ELK();
  * Calculates from the real property count so spacing is always correct.
  */
 const estimateNodeSize = (node) => {
+    // If Vue Flow has already rendered the node, use its real dimensions + safety margin
+    if (node?.dimensions?.width && node?.dimensions?.height) {
+        return {
+            width: node.dimensions.width + 20,
+            height: node.dimensions.height + 20,
+        };
+    }
+
+    // Otherwise, estimate from data
     const propertyCount = Array.isArray(node?.data?.properties) ? node.data.properties.length : 0;
     const hasTimestamps = node?.data?.hasTimestamps ? 2 : 0;
     const hasSoftDeletes = node?.data?.usesSoftDeletes ? 1 : 0;
     const rowCount = propertyCount + hasTimestamps + hasSoftDeletes;
     const isAssociation = node?.type === 'customEntityAssociation';
 
-    const width = isAssociation ? 240 : 320;
-    const baseHeight = isAssociation ? 56 : 64;
-    const rowHeight = isAssociation ? 24 : 30;
+    const width = isAssociation ? 260 : 340;
+    const baseHeight = isAssociation ? 60 : 80;
+    const rowHeight = isAssociation ? 26 : 32;
 
     return {
-        width: node?.dimensions?.width || width,
-        height: node?.dimensions?.height || Math.max(baseHeight + rowCount * rowHeight, isAssociation ? 80 : 140),
+        width: width,
+        height: Math.max(baseHeight + rowCount * rowHeight, isAssociation ? 100 : 160),
     };
 };
 
@@ -37,13 +46,18 @@ const computeElkOptions = (nodes) => {
         if (height > maxH) maxH = height;
     }
 
-    const nodeSpacing = Math.max(180, Math.round(Math.max(maxW, maxH) * 0.6));
-
     return {
-        'elk.algorithm': 'force',
-        'elk.force.repulsivePower': '2',
-        'elk.force.iterations': '300',
-        'elk.spacing.nodeNode': String(nodeSpacing),
+        'elk.algorithm': 'layered',
+        'elk.direction': 'RIGHT',
+        'elk.layered.noOverlap': 'true',
+        'elk.spacing.nodeNode': String(Math.max(80, Math.round(maxH * 0.4))),
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(250, Math.round(maxW * 0.8))),
+        'elk.spacing.edgeEdge': '30',
+        'elk.spacing.edgeNode': '80',
+        'elk.spacing.componentComponent': '120',
+        'elk.edgeRouting': 'ORTHOGONAL',
+        'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
+        'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
         'elk.separateConnectedComponents': 'true',
     };
 };
@@ -86,27 +100,39 @@ const determineHandles = (sourceNode, targetNode) => {
 const getLayoutedElements = (nodes, edges, options) => {
     const opts = options || computeElkOptions(nodes);
 
+    // Build a clean graph for ELK — only pass id, width, height.
+    // Never pass reactive Vue Flow objects to ELK.
     const graph = {
         id: 'root',
         layoutOptions: opts,
-        children: nodes.map((node) => ({
-            ...node,
-            ...estimateNodeSize(node),
-        })),
+        children: nodes.map((node) => {
+            const size = estimateNodeSize(node);
+            return { id: node.id, width: size.width, height: size.height };
+        }),
         edges: edges.map((edge) => ({
-            ...edge,
-            source: edge.source,
-            target: edge.target,
+            id: edge.id,
+            sources: [edge.source],
+            targets: [edge.target],
         })),
     };
+
+    // Keep a lookup of the original nodes/edges so we can patch them.
+    const originalNodeMap = new Map(nodes.map((n) => [n.id, n]));
 
     return elk
         .layout(graph)
         .then((layoutedGraph) => {
-            const layoutedNodes = layoutedGraph.children.map((node) => ({
-                ...node,
-                position: { x: node.x, y: node.y },
-            }));
+            // Build a position map from ELK results
+            const positionMap = new Map();
+            for (const child of layoutedGraph.children) {
+                positionMap.set(child.id, { x: child.x, y: child.y });
+            }
+
+            // Apply new positions to the original node objects (preserving all Vue Flow properties)
+            const layoutedNodes = nodes.map((node) => {
+                const pos = positionMap.get(node.id);
+                return { ...node, position: pos || node.position };
+            });
 
             const nodeMap = new Map(layoutedNodes.map((n) => [n.id, n]));
 
@@ -128,10 +154,8 @@ const getLayoutedElements = (nodes, edges, options) => {
                 if (idx === 0) {
                     handles = determineHandles(sourceNode, targetNode);
                 } else {
-                    // Pick an alternate handle pair for subsequent edges
                     const primary = determineHandles(sourceNode, targetNode);
                     const primaryKey = `${primary.sourceHandle}-${primary.targetHandle}`;
-                    // Find the next unused pair
                     const alt = HANDLE_PAIRS.filter(
                         (p) => `${p.sourceHandle}-${p.targetHandle}` !== primaryKey
                     );

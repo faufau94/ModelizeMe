@@ -336,7 +336,7 @@ import {FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/compon
 import {useCollaborationStore} from '~/stores/collaboration-store.js';
 
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip'
-import {computeElkOptions, getLayoutedElements} from '@/utils/useElk.js';
+import {computeElkOptions, getLayoutedElements, estimateNodeSize} from '@/utils/useElk.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
@@ -493,7 +493,16 @@ onMounted(async () => {
 
 onUnmounted(() => {
   activeTab.value = 'default'
-  collaborationStore.cleanup();
+  isSubMenuVisible.value = false
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
+  elementsMenu.value = false
+  collaborationStore.cleanup()
+  
+  if (mcdStore.flowMCD) {
+    mcdStore.flowMCD.setNodes([])
+    mcdStore.flowMCD.setEdges([])
+  }
 })
 
 const onChange = async (changes) => {
@@ -544,8 +553,16 @@ const rnModel = handleSubmit(async (values) => {
   showDialogRenameModel.value = false
 })
 
+const saveAllNodePositions = async () => {
+  const ns = mcdFlowInstance.getNodes.value;
+  for (const node of ns) {
+    await mcdStore.updateNode(route.params.idModel, node.id);
+  }
+};
+
 const goBack = async () => {
   isSubMenuVisible.value = false
+  await saveAllNodePositions()
   const workspaceId = model.value?.workspaceId || session.value?.session?.activeOrganizationId
   if (workspaceId) {
     await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
@@ -616,26 +633,31 @@ watch(activeTab, async () => {
 
 
 
-const reorganize = () => {
+const reorganize = async () => {
+  await nextTick();
   const ns = mcdFlowInstance.getNodes.value;
   const es = mcdFlowInstance.getEdges.value;
+  if (!ns.length) return;
+
   const opts = computeElkOptions(ns);
+  const result = await getLayoutedElements(ns, es, opts);
+  if (!result) return;
 
-  getLayoutedElements(ns, es, opts).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-    mcdFlowInstance.setNodes(layoutedNodes);
-    mcdFlowInstance.setEdges(layoutedEdges);
+  const { nodes: layoutedNodes, edges: layoutedEdges } = result;
 
-    // Persist new positions to Yjs and DB
-    collaborationStore.setNodes(layoutedNodes);
-    collaborationStore.setEdges(layoutedEdges);
-    for (const node of layoutedNodes) {
-      mcdStore.updateNode(route.params.idModel, node.id);
-    }
+  // Apply to Vue Flow
+  mcdFlowInstance.setNodes(layoutedNodes);
+  mcdFlowInstance.setEdges(layoutedEdges);
 
-    nextTick(() => {
-      mcdFlowInstance.fitView({ padding: 0.4 });
-    });
-  });
+  // Persist new positions to Yjs and DB
+  collaborationStore.setNodes(layoutedNodes);
+  collaborationStore.setEdges(layoutedEdges);
+  for (const node of layoutedNodes) {
+    mcdStore.updateNode(route.params.idModel, node.id);
+  }
+
+  await nextTick();
+  mcdFlowInstance.fitView({ padding: 0.4 });
 };
 
 
@@ -703,15 +725,46 @@ const exportToSQL = async (database) => {
 
 }
 
+const exportToJSON = async () => {
+  try {
+    const getMCDModel = await $fetch("/api/models/read", {
+      method: "GET",
+      query: {id: route.params.idModel},
+    });
+
+    const dataForExport = {
+      nodes: getMCDModel.nodes,
+      edges: getMCDModel.edges
+    };
+
+    const blob = new Blob([JSON.stringify(dataForExport, null, 2)], {type: 'application/json'});
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    const newTitle = getMCDModel?.name?.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_') || 'model';
+    a.download = `${newTitle}.json`;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    toast.success('Export JSON généré avec succès !');
+  } catch (e) {
+    toast.error('Une erreur est survenue lors de l\'export JSON.');
+  }
+}
+
 const importItems = [
   { title: 'Importer un fichier XML' },
-  { title: 'Importer un fichier SQL (coming soon...)', disabled: true },
-  { title: 'Importer un fichier JSON (coming soon...)', disabled: true },
+  { title: 'Importer un fichier SQL' },
+  { title: 'Importer un fichier JSON' },
 ];
 
 const exportItems = [
   { title: 'Exporter en PNG', action: () => handleExport('png') },
   { title: 'Exporter en JPEG', action: () => handleExport('jpeg') },
+  { title: 'Exporter en JSON', action: () => exportToJSON() },
     // Exporter en SQL
   { title: 'Exporter en SQL (MySQL)', action: () => exportToSQL('mysql') },
   { title: 'Exporter en SQL (PostgreSQL)', action: () => exportToSQL('pgsql') },
