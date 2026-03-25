@@ -18,6 +18,12 @@ export default defineEventHandler(async (event) => {
   // Ensure user is a member of the source workspace
   await requireOrgMembership(event, original.workspaceId)
 
+  // If duplicating to a different workspace, verify membership there too
+  const destinationWorkspaceId = targetWorkspaceId || original.workspaceId
+  if (targetWorkspaceId && targetWorkspaceId !== original.workspaceId) {
+    await requireOrgMembership(event, targetWorkspaceId)
+  }
+
   const duplicate = await prisma.model.create({
     data: {
       name: `${original.name} (copie)`,
@@ -25,7 +31,7 @@ export default defineEventHandler(async (event) => {
       type: original.type,
       nodes: original.nodes,
       edges: original.edges,
-      workspaceId: targetWorkspaceId || original.workspaceId,
+      workspaceId: destinationWorkspaceId,
       authorId: user.id,
     },
   })

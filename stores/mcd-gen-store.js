@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import { autoLayout } from "~/utils/useAutoLayout.js";
+import { getLayoutedElements } from "~/utils/useElk.js";
 
 export const useMCDGenStore = defineStore("flow-mcd-gen", () => {
   const flowMCDGen = ref(null);
@@ -11,43 +11,22 @@ export const useMCDGenStore = defineStore("flow-mcd-gen", () => {
 
   /**
    * Generate a true MCD (Modèle Conceptuel de Données) from the editable model.
-   *
-   * MCD rules:
-   * - Entities show name + property names only (no types, no nullable indicators)
-   * - Primary keys are underlined (kept via isPrimaryKey flag)
-   * - No timestamps, no softDeletes
-   * - Foreign keys are NOT shown (they belong to MLD/MPD)
-   * - Associations (N:N) are shown as diamond-shaped association nodes
-   * - Edges show cardinalities
-   * - All nodes are read-only (not draggable, not selectable)
+   * MCD: entity names + property names only (no types), PK underlined,
+   * no FK, no timestamps, cardinalities shown on edges.
    */
-  function generateMCD(nodes, edges) {
-    if (!nodes || !edges) return { nodesMCD: [], edgesMCD: [] };
+  async function generateMCD(nodes, edges) {
+    if (!nodes?.length) return { nodesMCD: [], edgesMCD: [] };
 
     const mcdNodes = nodes.map((node) => {
       const copy = JSON.parse(JSON.stringify(node));
-
-      // Filter out foreign keys — they don't exist in MCD
       copy.data.properties = copy.data.properties
         .filter((prop) => !prop.isForeignKey)
-        .map((prop) => ({
-          ...prop,
-          typeName: "", // hide types in MCD
-          isNullable: false, // not relevant in MCD
-          autoIncrement: false, // not relevant in MCD
-        }));
-
-      // No timestamps/softDeletes in conceptual view
+        .map((prop) => ({ ...prop, typeName: "", isNullable: false, autoIncrement: false }));
       copy.data.hasTimestamps = false;
       copy.data.usesSoftDeletes = false;
-
-      // Mark as read-only
       copy.draggable = false;
       copy.selectable = false;
-
-      // Tag for model type
       copy.data.modelType = "mcd";
-
       return copy;
     });
 
@@ -59,15 +38,9 @@ export const useMCDGenStore = defineStore("flow-mcd-gen", () => {
       return copy;
     });
 
-    // Apply auto-layout for clean positioning
-    const { nodes: layoutedNodes, edges: layoutedEdges } = autoLayout(mcdNodes, mcdEdges);
-
-    return { nodesMCD: layoutedNodes, edgesMCD: layoutedEdges };
+    const result = await getLayoutedElements(mcdNodes, mcdEdges);
+    return { nodesMCD: result.nodes, edgesMCD: result.edges };
   }
 
-  return {
-    flowMCDGen,
-    setFlowInstance,
-    generateMCD,
-  };
+  return { flowMCDGen, setFlowInstance, generateMCD };
 });

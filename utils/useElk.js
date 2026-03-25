@@ -31,34 +31,20 @@ const estimateNodeSize = (node) => {
 const computeElkOptions = (nodes) => {
     let maxW = 0;
     let maxH = 0;
-    for (const node of nodes) {
+    for (const node of (nodes || [])) {
         const { width, height } = estimateNodeSize(node);
         if (width > maxW) maxW = width;
         if (height > maxH) maxH = height;
     }
 
-    // Association entities are drawn at edge midpoints and are ~240x80.
-    // We need enough space between layers/nodes to avoid them overlapping.
-    const assocWidth = 240;
-    const assocHeight = 100;
-
-    const nodeNodeSpacing  = Math.max(120, Math.round(Math.max(maxH, assocHeight) * 0.6));
-    const betweenLayers    = Math.max(200, Math.round((maxW + assocWidth) * 0.45));
-    const edgeNodeSpacing  = Math.max(80, Math.round(assocHeight * 0.9));
+    const nodeSpacing = Math.max(180, Math.round(Math.max(maxW, maxH) * 0.6));
 
     return {
-        'elk.algorithm': 'layered',
-        'elk.direction': 'RIGHT',
-        'elk.spacing.nodeNode': String(nodeNodeSpacing),
-        'elk.spacing.edgeNode': String(edgeNodeSpacing),
-        'elk.spacing.edgeEdge': '50',
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(betweenLayers),
-        'elk.layered.spacing.edgeNodeBetweenLayers': String(Math.round(edgeNodeSpacing * 1.3)),
-        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
-        'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-        'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+        'elk.algorithm': 'force',
+        'elk.force.repulsivePower': '2',
+        'elk.force.iterations': '300',
+        'elk.spacing.nodeNode': String(nodeSpacing),
         'elk.separateConnectedComponents': 'true',
-        'elk.layered.mergeEdges': 'false',
     };
 };
 

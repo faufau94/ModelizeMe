@@ -2,7 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import { MarkerType } from "@vue-flow/core";
 import { v4 as uuidv4 } from "uuid";
-import { autoLayout } from "~/utils/useAutoLayout.js";
+import { getLayoutedElements } from "~/utils/useElk.js";
 
 /**
  * Map logical type names to physical SQL types.
@@ -60,8 +60,8 @@ export const useMPDStore = defineStore("flow-mpd", () => {
    * - Same relationship logic as MLD (1:N, N:N junction tables)
    * - All read-only
    */
-  function generateMPD(nodes, edges) {
-    if (!nodes || !edges) return { nodesMPD: [], edgesMPD: [] };
+  async function generateMPD(nodes, edges) {
+    if (!nodes?.length) return { nodesMPD: [], edgesMPD: [] };
 
     const nodesMap = new Map();
     for (const node of nodes) {
@@ -245,14 +245,16 @@ export const useMPDStore = defineStore("flow-mpd", () => {
         }
 
         edgeCopy.type = "customEdge";
+        // Strip cardinalities — FK constraints replace them in MPD
+        edgeCopy.data.sourceCardinality = "";
+        edgeCopy.data.targetCardinality = "";
         mpdEdges.push(edgeCopy);
       }
     }
 
     const allNodes = [...nodesMap.values(), ...extraNodes];
-    const { nodes: layoutedNodes, edges: layoutedEdges } = autoLayout(allNodes, mpdEdges);
-
-    return { nodesMPD: layoutedNodes, edgesMPD: layoutedEdges };
+    const result = await getLayoutedElements(allNodes, mpdEdges);
+    return { nodesMPD: result.nodes, edgesMPD: result.edges };
   }
 
   return {

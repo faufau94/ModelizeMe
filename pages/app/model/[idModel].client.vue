@@ -180,26 +180,7 @@
           <Tooltip>
             <TooltipTrigger>
               <Button
-                  disabled
-                  @click="autoLayout('LR')"
-                  variant="ghost"
-                  size="sm"
-                  class="rounded-md"
-              >
-                <Workflow :size="16"/>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent class="bg-gray-900 text-white text-xs">
-              <p>Auto-layout</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                  disabled
+                  :disabled="activeTab !== 'default'"
                   @click="reorganize"
                   variant="ghost"
                   size="sm"
@@ -346,7 +327,7 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {ArrowLeft, Check, Loader2, PanelTop, Redo2, Undo2, WandSparkles, Workflow} from "lucide-vue-next";
+import {ArrowLeft, Check, Loader2, PanelTop, Redo2, Undo2, WandSparkles} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
@@ -355,7 +336,6 @@ import {FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/compon
 import {useCollaborationStore} from '~/stores/collaboration-store.js';
 
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip'
-import {useLayout} from "@/composables/useLayout.js";
 import {computeElkOptions, getLayoutedElements} from '@/utils/useElk.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
@@ -404,6 +384,9 @@ const { activeUsers, remoteCursors } = storeToRefs(collaborationStore)
 
 
 const mcdFlowInstance = useVueFlow('flow-mcd-' + route.params.idModel)
+// Clear immediately to prevent flash of cached nodes from a previous visit
+mcdFlowInstance.setNodes([])
+mcdFlowInstance.setEdges([])
 mcdStore.setFlowInstance(mcdFlowInstance)
 mcdGenStore.setFlowInstance(useVueFlow('flow-mcd-gen-' + route.params.idModel))
 mldStore.setFlowInstance(useVueFlow('flow-mld-' + route.params.idModel))
@@ -421,7 +404,6 @@ mcdStore.flowMCD.onPaneClick((e) => {
 
 
 const { data: session } = await authClient.useSession(useFetch)
-console.log('session', session.value)
 
 // Initialize collaboration with proper auth token
 const sessionToken = session.value?.session?.token || ''
@@ -440,10 +422,25 @@ onMounted(async () => {
   mcdStore.flowMCD.setEdges([]);
 
   // Fetch initial model data from backend
-  model.value = await $fetch("/api/models/read", {
-    method: "GET",
-    query: { id: route.params.idModel },
-  });
+  try {
+    model.value = await $fetch("/api/models/read", {
+      method: "GET",
+      query: { id: route.params.idModel },
+    });
+  } catch (error) {
+    if (error?.statusCode === 401) {
+      return navigateTo('/sign-in')
+    }
+    if (error?.statusCode === 403 || error?.statusCode === 404) {
+      toast.error(error?.statusCode === 403
+        ? "Vous n'avez pas accès à ce modèle."
+        : "Modèle introuvable."
+      )
+      return navigateTo(`/app/workspace/${session.value?.session?.activeOrganizationId}/dashboard`)
+    }
+    toast.error("Une erreur est survenue lors du chargement du modèle.")
+    return navigateTo(`/app/workspace/${session.value?.session?.activeOrganizationId}/dashboard`)
+  }
 
   // Set initial nodes/edges in Yjs AND VueFlow — always, even if empty
   const initialNodes = model.value?.nodes || [];
@@ -549,7 +546,12 @@ const rnModel = handleSubmit(async (values) => {
 
 const goBack = async () => {
   isSubMenuVisible.value = false
-  router.back()
+  const workspaceId = model.value?.workspaceId || session.value?.session?.activeOrganizationId
+  if (workspaceId) {
+    await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
+  } else {
+    router.back()
+  }
 }
 
 // Tabs
@@ -570,7 +572,7 @@ const hasNoNodes = computed(() => {
   return mcdFlowInstance.getNodes.value.length === 0
 })
 
-watch(activeTab, () => {
+watch(activeTab, async () => {
   isChangingTab.value = true
   isSubMenuVisible.value = false
   nodeIdSelected.value = null
@@ -580,9 +582,7 @@ watch(activeTab, () => {
     currentFlow.value = mcdStore.flowMCD;
   }
   if (activeTab.value === 'mcd') {
-    // Generate read-only MCD from the editable model
-    // .nodes/.edges are auto-unwrapped by reactive(), no .value needed
-    const { nodesMCD, edgesMCD } = mcdGenStore.generateMCD(
+    const { nodesMCD, edgesMCD } = await mcdGenStore.generateMCD(
       mcdStore.flowMCD.nodes,
       mcdStore.flowMCD.edges
     )
@@ -591,7 +591,7 @@ watch(activeTab, () => {
     currentFlow.value = mcdGenStore.flowMCDGen;
   }
   if (activeTab.value === 'mld') {
-    const { nodesMLD, edgesMLD } = mldStore.generateMLD(
+    const { nodesMLD, edgesMLD } = await mldStore.generateMLD(
       mcdStore.flowMCD.nodes,
       mcdStore.flowMCD.edges
     )
@@ -600,7 +600,7 @@ watch(activeTab, () => {
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') {
-    const { nodesMPD, edgesMPD } = mpdStore.generateMPD(
+    const { nodesMPD, edgesMPD } = await mpdStore.generateMPD(
       mcdStore.flowMCD.nodes,
       mcdStore.flowMCD.edges
     )
@@ -609,60 +609,35 @@ watch(activeTab, () => {
     currentFlow.value = mpdStore.flowMPD;
   }
 
-  nextTick(() => {
-    currentFlow.value?.fitView?.({ padding: 0.4 })
-  })
+  await nextTick()
+  currentFlow.value?.fitView?.({ padding: 0.4 })
   isChangingTab.value = false
 })
 
-// just for testing
-const autoLayout = (direction) => {
-  const { nodes, edges } = useLayout(currentFlow?.value, direction);
-  mcdStore.flowMCD.setNodes(nodes);
-  mcdStore.flowMCD.setEdges(edges);
-
-  // Adjust the view to fit the new layout
-  nextTick(() => {
-    mcdStore.flowMCD.fitView({ padding: 0.4 })
-  })
-}
 
 
 const reorganize = () => {
-  const opts = computeElkOptions(currentFlow.value.getNodes);
-  const ns = currentFlow.value.getNodes;
-  const es = currentFlow.value.getEdges;
+  const ns = mcdFlowInstance.getNodes.value;
+  const es = mcdFlowInstance.getEdges.value;
+  const opts = computeElkOptions(ns);
 
   getLayoutedElements(ns, es, opts).then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-    mcdStore.flowMCD.setNodes(layoutedNodes);
-    mcdStore.flowMCD.setEdges(layoutedEdges);
+    mcdFlowInstance.setNodes(layoutedNodes);
+    mcdFlowInstance.setEdges(layoutedEdges);
+
+    // Persist new positions to Yjs and DB
+    collaborationStore.setNodes(layoutedNodes);
+    collaborationStore.setEdges(layoutedEdges);
+    for (const node of layoutedNodes) {
+      mcdStore.updateNode(route.params.idModel, node.id);
+    }
 
     nextTick(() => {
-      mcdStore.flowMCD.fitView({ padding: 0.4 });
+      mcdFlowInstance.fitView({ padding: 0.4 });
     });
   });
 };
 
-
-/*
-const reorganize = () => {
-  const { reorganizeNodesAndEdges } = useReorganize(currentFlow?.value);
-
-// Applique la réorganisation des nodes pour éviter les chevauchements
-  const { nodes, edges } = reorganizeNodesAndEdges();
-
-
-  mcdStore.flowMCD.setNodes(nodes);
-  mcdStore.flowMCD.setEdges(edges);
-
-
-  // Adjust the view to fit the new layout
-  nextTick(() => {
-    mcdStore.flowMCD.fitView({ padding: 0.1 })
-  })
-}
-
- */
 
 const flowToScreenPosition = (flowPosition) => {
   if (!currentFlow.value || !flowPosition) return { x: 0, y: 0 }

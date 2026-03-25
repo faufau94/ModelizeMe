@@ -15,7 +15,7 @@ export const useWorkspace = () => {
 
     if(route.path.startsWith('/app/workspace/')) {
       // si l'URL fournit workspaceId, on l'utilise
-      if (route.params.workspaceId !== 'undefined' || route.params.workspaceId !== undefined) {
+      if (route.params.workspaceId && route.params.workspaceId !== 'undefined') {
         return String(route.params.workspaceId)
       }
 
