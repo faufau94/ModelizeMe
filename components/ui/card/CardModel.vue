@@ -4,6 +4,13 @@
     class="relative group cursor-pointer border hover:border-primary/50 hover:shadow-lg transition-all duration-300 bg-white"
     :class="{ 'ring-2 ring-primary border-primary': isSelected }"
   >
+    <Checkbox
+      v-show="isSelected || isAnySelected"
+      :checked="isSelected"
+      @click.stop="emit('toggle-select', props.model.id)"
+      class="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100"
+      :class="{ 'opacity-100': isSelected || isAnySelected }"
+    />
     <CardHeader class="flex flex-row items-start justify-between gap-4 space-y-0 pb-3 pt-5 px-5">
       <div class="space-y-1 flex-1">
         <CardTitle class="text-xl font-semibold leading-tight tracking-tight text-gray-900">
@@ -185,6 +192,7 @@
 <script setup lang="ts">
 import {ref} from 'vue';
 import {Workflow, Loader2, PanelTop, EllipsisVertical, Users, Copy, ArrowRightToLine, ExternalLink, Pencil, Trash2} from 'lucide-vue-next';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -242,7 +250,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  selectionMode: {
+  isAnySelected: {
     type: Boolean,
     default: false
   }
@@ -251,7 +259,7 @@ const props = defineProps({
 const emit = defineEmits(['toggle-select']);
 
 const handleCardClick = async (e: Event) => {
-  if (props.selectionMode) {
+  if (props.isAnySelected) {
     emit('toggle-select', props.model.id)
     return
   }

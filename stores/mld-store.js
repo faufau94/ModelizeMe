@@ -2,7 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import { MarkerType } from "@vue-flow/core";
 import { v4 as uuidv4 } from "uuid";
-import { getLayoutedElements } from "~/utils/useElk.js";
+import { getLayoutedElements, computeElkOptions } from "~/utils/useElk.js";
 
 export const useMLDStore = defineStore("flow-mld", () => {
   const flowMLD = ref(null);
@@ -126,7 +126,9 @@ export const useMLDStore = defineStore("flow-mld", () => {
     }
 
     const allNodes = [...nodesMap.values(), ...extraNodes];
-    const result = await getLayoutedElements(allNodes, mldEdges);
+    const opts = computeElkOptions(allNodes);
+    opts['elk.direction'] = 'RIGHT';
+    const result = await getLayoutedElements(allNodes, mldEdges, opts);
     return { nodesMLD: result.nodes, edgesMLD: result.edges };
   }
 

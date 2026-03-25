@@ -49,16 +49,18 @@ const computeElkOptions = (nodes) => {
     return {
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
-        'elk.layered.noOverlap': 'true',
-        'elk.spacing.nodeNode': String(Math.max(80, Math.round(maxH * 0.4))),
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(250, Math.round(maxW * 0.8))),
-        'elk.spacing.edgeEdge': '30',
-        'elk.spacing.edgeNode': '80',
-        'elk.spacing.componentComponent': '120',
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(300, Math.round(maxW * 1.0))),
+        'elk.spacing.nodeNode': String(Math.max(100, Math.round(maxH * 0.6))),
+        'elk.spacing.edgeEdge': '40',
+        'elk.spacing.edgeNode': '100',
+        'elk.spacing.componentComponent': '150',
         'elk.edgeRouting': 'ORTHOGONAL',
-        'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
+        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+        'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
         'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
         'elk.separateConnectedComponents': 'true',
+        'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
+        'elk.padding': '[top=50,left=50,bottom=50,right=50]',
     };
 };
 

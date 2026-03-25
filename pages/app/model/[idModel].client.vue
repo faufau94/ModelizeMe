@@ -4,6 +4,7 @@
     <ElementMenu/>
 
     <VueFlow
+        v-if="isFlowReady"
         :id="getFlowId"
         :key="activeTab"
         :edgeTypes="edgeTypes"
@@ -14,6 +15,8 @@
         @nodes-change="onChange"
         @edges-change="onChange"
         @edge-update="onEdgeUpdate"
+        @nodes-delete="onNodesDelete"
+        @edges-delete="onEdgesDelete"
     >
       <MiniMap/>
       <Controls/>
@@ -378,7 +381,7 @@ const edgeTypes = {
 
 const isRenamingModel = ref(false)
 const showDialogRenameModel = ref(false)
-
+const isFlowReady = ref(false)
 
 const { activeUsers, remoteCursors } = storeToRefs(collaborationStore)
 
@@ -483,6 +486,9 @@ onMounted(async () => {
     }
   })
 
+
+  isFlowReady.value = true
+
   await nextTick(() => {
     mcdStore.flowMCD.fitView({ padding: 0.4 })
   })
@@ -499,11 +505,45 @@ onUnmounted(() => {
   elementsMenu.value = false
   collaborationStore.cleanup()
   
+  isFlowReady.value = false
+
   if (mcdStore.flowMCD) {
     mcdStore.flowMCD.setNodes([])
     mcdStore.flowMCD.setEdges([])
   }
+  if (mcdGenStore.flowMCDGen) {
+    mcdGenStore.flowMCDGen.setNodes([])
+    mcdGenStore.flowMCDGen.setEdges([])
+  }
+  if (mldStore.flowMLD) {
+    mldStore.flowMLD.setNodes([])
+    mldStore.flowMLD.setEdges([])
+  }
+  if (mpdStore.flowMPD) {
+    mpdStore.flowMPD.setNodes([])
+    mpdStore.flowMPD.setEdges([])
+  }
 })
+
+const onNodesDelete = (deletedNodes) => {
+  if (activeTab.value !== 'default') return
+  for (const node of deletedNodes) {
+    mcdStore.removeNode(route.params.idModel, node.id)
+  }
+  isSubMenuVisible.value = false
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
+}
+
+const onEdgesDelete = (deletedEdges) => {
+  if (activeTab.value !== 'default') return
+  for (const edge of deletedEdges) {
+    mcdStore.removeEdge(route.params.idModel, edge.id)
+  }
+  isSubMenuVisible.value = false
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
+}
 
 const onChange = async (changes) => {
   for (const change of changes) {
@@ -627,14 +667,16 @@ watch(activeTab, async () => {
   }
 
   await nextTick()
-  currentFlow.value?.fitView?.({ padding: 0.4 })
+  await nextTick()
+  currentFlow.value?.fitView?.({ padding: 0.3 })
   isChangingTab.value = false
 })
 
 
 
 const reorganize = async () => {
-  await nextTick();
+  await nextTick()
+  await nextTick() // double tick pour garantir le rendu DOM
   const ns = mcdFlowInstance.getNodes.value;
   const es = mcdFlowInstance.getEdges.value;
   if (!ns.length) return;
@@ -649,11 +691,22 @@ const reorganize = async () => {
   mcdFlowInstance.setNodes(layoutedNodes);
   mcdFlowInstance.setEdges(layoutedEdges);
 
-  // Persist new positions to Yjs and DB
+  // Persist new positions to Yjs (skip individual updateNode to avoid Yjs→VueFlow feedback loop)
   collaborationStore.setNodes(layoutedNodes);
   collaborationStore.setEdges(layoutedEdges);
+
+  // Persist each node position to DB directly (without going through collaborationStore.updateNode)
   for (const node of layoutedNodes) {
-    mcdStore.updateNode(route.params.idModel, node.id);
+    node.selected = false;
+    $fetch(`/api/models/update`, {
+      method: "PUT",
+      query: { id: route.params.idModel },
+      body: {
+        node: node,
+        type: "node",
+        action: "updateNode",
+      },
+    });
   }
 
   await nextTick();

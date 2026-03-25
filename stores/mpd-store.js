@@ -2,7 +2,7 @@ import { ref } from "vue";
 import { defineStore } from "pinia";
 import { MarkerType } from "@vue-flow/core";
 import { v4 as uuidv4 } from "uuid";
-import { getLayoutedElements } from "~/utils/useElk.js";
+import { getLayoutedElements, computeElkOptions } from "~/utils/useElk.js";
 
 /**
  * Map logical type names to physical SQL types.
@@ -253,7 +253,9 @@ export const useMPDStore = defineStore("flow-mpd", () => {
     }
 
     const allNodes = [...nodesMap.values(), ...extraNodes];
-    const result = await getLayoutedElements(allNodes, mpdEdges);
+    const opts = computeElkOptions(allNodes);
+    opts['elk.direction'] = 'RIGHT';
+    const result = await getLayoutedElements(allNodes, mpdEdges, opts);
     return { nodesMPD: result.nodes, edgesMPD: result.edges };
   }
 

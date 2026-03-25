@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
-import { getLayoutedElements } from "~/utils/useElk.js";
+import { getLayoutedElements, computeElkOptions } from "~/utils/useElk.js";
 
 export const useMCDGenStore = defineStore("flow-mcd-gen", () => {
   const flowMCDGen = ref(null);
@@ -38,7 +38,9 @@ export const useMCDGenStore = defineStore("flow-mcd-gen", () => {
       return copy;
     });
 
-    const result = await getLayoutedElements(mcdNodes, mcdEdges);
+    const opts = computeElkOptions(mcdNodes);
+    opts['elk.direction'] = 'RIGHT';
+    const result = await getLayoutedElements(mcdNodes, mcdEdges, opts);
     return { nodesMCD: result.nodes, edgesMCD: result.edges };
   }
 

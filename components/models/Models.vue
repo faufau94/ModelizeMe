@@ -23,14 +23,13 @@
               <p class="text-sm text-muted-foreground mt-1">{{ models?.length }} modèle(s) dans ce workspace</p>
             </div>
             <div class="flex items-center gap-2">
-              <Button 
-                @click="selectionMode = !selectionMode; if (!selectionMode) clearSelection()"
-                :variant="selectionMode ? 'secondary' : 'outline'" 
-                size="sm" 
-                class="gap-2"
+              <Button
+                v-if="selectedModels.length > 0"
+                @click="selectAll"
+                variant="outline"
+                size="sm"
               >
-                <CheckSquareIcon class="w-4 h-4" />
-                {{ selectionMode ? 'Annuler' : 'Sélectionner' }}
+                Tout sélectionner ({{ models?.length }})
               </Button>
               <CreateModelDialog/>
             </div>
@@ -54,7 +53,7 @@
               :model="model"
               :viewers="modelViewers[model.id] || []"
               :is-selected="selectedModels.includes(model.id)"
-              :selection-mode="selectionMode"
+              :is-any-selected="selectedModels.length > 0"
               @toggle-select="toggleSelection"
             />
           </div>
@@ -91,7 +90,7 @@
 
 <script setup>
 import {computed, ref, watch, onMounted, onUnmounted} from 'vue';
-import { Search as SearchIcon, Loader2, Trash2, X, CheckSquare as CheckSquareIcon } from 'lucide-vue-next'
+import { Search as SearchIcon, Loader2, Trash2, X } from 'lucide-vue-next'
 import CardModel from "@/components/ui/card/CardModel.vue";
 import {toast} from "vue-sonner";
 
@@ -130,7 +129,6 @@ onUnmounted(() => {
 // Refresh viewers when models change
 watch(models, () => fetchViewers(), { deep: false })
 const isDeleting = ref(false);
-const selectionMode = ref(false);
 
 const filteredModels = computed(() => {
   if (searchTerm.value === "") return models?.value
@@ -150,6 +148,10 @@ const toggleSelection = (modelId) => {
 
 const clearSelection = () => {
   selectedModels.value = [];
+};
+
+const selectAll = () => {
+  selectedModels.value = models.value.map(m => m.id);
 };
 
 const handleBulkDelete = async () => {
