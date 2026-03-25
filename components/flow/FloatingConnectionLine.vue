@@ -1,78 +1,98 @@
 <template>
-    <g v-if="fromNode">
-      <path
-        :d="edgePath"
-        fill="none"
-        stroke="#222"
-        :stroke-width="1.5"
-        class="animated"
-      />
-      <circle
-        :cx="(tx !== undefined ? tx : toX)"
-        :cy="(ty !== undefined ? ty : toY)"
-        fill="#fff"
-        r="3"
-        stroke="#222"
-        :stroke-width="1.5"
-      />
-    </g>
-  </template>
-  
-  <script setup>
-  import { computed } from 'vue';
-  import { getSmoothStepPath } from '@vue-flow/vue';
-  import { getEdgeParams } from '~/utils/useFloatingEdge.js';
-  
-  // Props provided by Vue Flow when rendering connection lines
-  const props = defineProps({
-    fromNode: Object,
-    toX: Number,
-    toY: Number,
-    fromPosition: String,
-    toPosition: String,
-  });
-  
-  const { fromNode, toX, toY, fromPosition, toPosition } = props;
-  
-  // Compute parameters based on source node and a mock target at cursor
-  const params = computed(() => {
-    if (!fromNode) return null;
-    const targetNode = {
-      width: 1,
-      height: 1,
-      positionAbsolute: { x: toX, y: toY },
-    };
-    return getEdgeParams(fromNode, targetNode);
-  });
-  
-  // Generate the bezier path string
-  const edgePath = computed(() => {
-    if (!params.value) return '';
-    const { sx, sy, tx: px, ty: py, sourcePos, targetPos } = params.value;
-    const [path] = getSmoothStepPath({
-      sourceX: sx,
-      sourceY: sy,
-      sourcePosition: sourcePos || fromPosition,
-      targetPosition: targetPos || toPosition,
-      targetX: px !== undefined ? px : toX,
-      targetY: py !== undefined ? py : toY,
-    });
-    return path;
-  });
-  
-  // Expose tx/ty for the circle fallback
-  const tx = computed(() => params.value?.tx);
-  const ty = computed(() => params.value?.ty);
-  </script>
-  
-  <style scoped>
-  .animated {
-    /* optional dash animation */
-    stroke-dasharray: 5;
-    animation: dash 1s linear infinite;
+  <g v-if="fromNode">
+    <path
+      :d="edgePath"
+      fill="none"
+      stroke="#222"
+      :stroke-width="1.5"
+      class="animated"
+    />
+    <circle
+      :cx="toX"
+      :cy="toY"
+      fill="#fff"
+      r="3"
+      stroke="#222"
+      :stroke-width="1.5"
+    />
+  </g>
+</template>
+
+<script setup>
+import { computed } from 'vue';
+import { Position, getSmoothStepPath } from '@vue-flow/core';
+
+const props = defineProps({
+  fromNode: Object,
+  toX: Number,
+  toY: Number,
+  fromPosition: String,
+  toPosition: String,
+});
+
+const params = computed(() => {
+  const node = props.fromNode;
+  if (!node) return null;
+
+  const pos = node.computedPosition || node.positionAbsolute || node.position;
+  if (!pos) return null;
+
+  const w = node.dimensions?.width ?? 0;
+  const h = node.dimensions?.height ?? 0;
+  const cx = pos.x + w / 2;
+  const cy = pos.y + h / 2;
+
+  const dx = Math.abs(cx - props.toX);
+  const dy = Math.abs(cy - props.toY);
+
+  let handlePos;
+  if (dx > dy) {
+    handlePos = cx > props.toX ? Position.Left : Position.Right;
+  } else {
+    handlePos = cy > props.toY ? Position.Top : Position.Bottom;
   }
-  
-  @keyframes dash {
-    to { stroke-dashoffset: -10; }
+
+  const handle = node.handleBounds?.source?.find((h) => h.position === handlePos);
+  let sx, sy;
+  if (handle) {
+    let offsetX = handle.width / 2;
+    let offsetY = handle.height / 2;
+    if (handlePos === Position.Left) offsetX = 0;
+    else if (handlePos === Position.Right) offsetX = handle.width;
+    else if (handlePos === Position.Top) offsetY = 0;
+    else if (handlePos === Position.Bottom) offsetY = handle.height;
+    sx = pos.x + handle.x + offsetX;
+    sy = pos.y + handle.y + offsetY;
+  } else {
+    sx = cx;
+    sy = cy;
   }
-  </style>
+
+  return { sx, sy, sourcePos: handlePos };
+});
+
+const edgePath = computed(() => {
+  if (!params.value) return '';
+  const { sx, sy, sourcePos } = params.value;
+  const [path] = getSmoothStepPath({
+    sourceX: sx,
+    sourceY: sy,
+    sourcePosition: sourcePos,
+    targetPosition: sourcePos,
+    targetX: props.toX,
+    targetY: props.toY,
+  });
+  return path;
+});
+</script>
+
+<style scoped>
+.animated {
+  stroke-dasharray: 5;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to { stroke-dashoffset: -10; }
+}
+</style>

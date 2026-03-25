@@ -1,68 +1,82 @@
 <template>
   <g>
-    <!-- Dessiner l'arête avec BaseEdge -->
-    <BaseEdge :id="id" :style="style" :path="edgePath[0]" />
+    <!-- Hit area (invisible, wider for easier clicking) -->
+    <BaseEdge
+      :id="id + '-hit'"
+      :path="edgePath[0]"
+      :style="{
+        strokeWidth: 14,
+        stroke: 'transparent',
+        cursor: 'pointer',
+      }"
+    />
+    <!-- Visible edge path -->
+    <BaseEdge
+      :id="id"
+      :path="edgePath[0]"
+      :style="edgeStyle"
+      :marker-end="markerEnd"
+    />
 
-    <!-- Rendu des labels avec EdgeLabelRenderer -->
-    <EdgeLabelRenderer v-if="sourceCardinality !== null || activeTab === 'mcd'">
+    <!-- Source cardinality label -->
+    <EdgeLabelRenderer v-if="sourceCardinality">
       <div
-          :style="{
-          pointerEvents: 'all',
+        :style="{
+          pointerEvents: 'none',
           position: 'absolute',
           transform: `translate(-50%, -50%) translate(${sourceLabelX}px, ${sourceLabelY}px)`,
         }"
-          class=""
       >
-        <div class="edge-label">
+        <div class="cardinality-label" :class="{ 'cardinality-label--selected': props.selected }">
           {{ sourceCardinality }}
         </div>
       </div>
     </EdgeLabelRenderer>
 
-    <EdgeLabelRenderer v-if="targetCardinality !== null || activeTab === 'mcd'">
+    <!-- Target cardinality label -->
+    <EdgeLabelRenderer v-if="targetCardinality">
       <div
-          :style="{
-          pointerEvents: 'all',
+        :style="{
+          pointerEvents: 'none',
           position: 'absolute',
           transform: `translate(-50%, -50%) translate(${targetLabelX}px, ${targetLabelY}px)`,
         }"
-          class=""
       >
-        <div class="edge-label">
+        <div class="cardinality-label" :class="{ 'cardinality-label--selected': props.selected }">
           {{ targetCardinality }}
         </div>
       </div>
     </EdgeLabelRenderer>
-    <EdgeLabelRenderer>
-    <div
+
+    <!-- Association table at edge midpoint (editable view) -->
+    <EdgeLabelRenderer v-if="activeTab === 'default'">
+      <div
         :style="{
-        pointerEvents: 'all',
-        position: 'absolute',
-        transform: `translate(-50%, -50%) translate(${edgePath[1]}px,${edgePath[2]}px)`,
-      }"
+          pointerEvents: 'all',
+          position: 'absolute',
+          transform: `translate(-50%, -50%) translate(${edgePath[1]}px, ${edgePath[2]}px)`,
+        }"
         class="nodrag nopan"
-    >
-      <div @click="onclick" v-if="activeTab === 'mcd'">
-        <MyCustomEntityAssociation :data="data" :selected="selected" />
+      >
+        <div @click="onclick">
+          <MyCustomEntityAssociation :data="data" :selected="props.selected" />
+        </div>
       </div>
-    </div>
     </EdgeLabelRenderer>
   </g>
 </template>
 
 <script setup lang="ts">
-import { computed, watchEffect, ref, watch} from 'vue';
+import { computed, watchEffect } from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, useNode, getSmoothStepPath } from "@vue-flow/core";
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from "@vue-flow/core";
 import { storeToRefs } from "pinia";
 import { useMCDStore } from "~/stores/mcd-store.js";
 import { getEdgeParams } from '~/utils/useFloatingEdge.js';
 
 const mcdStore = useMCDStore();
-const { activeTab, nodeIdSelected,
-  isSubMenuVisible, edgeIdSelected} = storeToRefs(mcdStore);
+const { activeTab, nodeIdSelected, isSubMenuVisible, edgeIdSelected } = storeToRefs(mcdStore);
 
-// Props
 const props = defineProps({
   id: String,
   selected: Boolean,
@@ -76,35 +90,20 @@ const props = defineProps({
   sourceNode: Object,
   targetNode: Object,
   data: Object,
+  markerEnd: String,
 });
 
-// Références pour les paramètres de l'arête
-// const edgeParams = ref({
-//   sx: 0,
-//   sy: 0,
-//   tx: 0,
-//   ty: 0,
-//   sourcePos:null,
-//   targetPos: null,
-// });
+const edgeParams = computed(() => getEdgeParams(props.sourceNode, props.targetNode));
 
-const edgeParams = computed(() => (
-  getEdgeParams(
-    props.sourceNode,
-    props.targetNode,
-)));
-
-
-// Mise à jour des paramètres de l'arête
+// Disable animated dash — we use our own selection color instead
 watchEffect(() => {
-  if(props.id) {
-    const edge = mcdStore.flowMCD.findEdge(props.id)
-    edge.animated = props.selected
+  const flow = mcdStore.flowMCD as any;
+  if (props.id && flow) {
+    const edge = flow.findEdge(props.id);
+    if (edge) edge.animated = false;
   }
 });
 
-
-// Calcul du chemin de l'arête
 const edgePath = computed(() => {
   const { sx, sy, tx, ty, sourcePos, targetPos } = edgeParams.value;
   return getSmoothStepPath({
@@ -114,99 +113,79 @@ const edgePath = computed(() => {
     targetY: ty,
     sourcePosition: sourcePos,
     targetPosition: targetPos,
+    borderRadius: 12,
   });
 });
 
-const onclick = () => {
-  nodeIdSelected.value = null
-  isSubMenuVisible.value = true
-  edgeIdSelected.value = props.id
-
-  const edge = mcdStore.flowMCD.findEdge(props.id)
-  edge.selected = true
-  edge.animated = true
-}
-
-const style = computed(() => ({
-  strokeWidth: 2,
+const edgeStyle = computed(() => ({
+  strokeWidth: props.selected ? 2.5 : 1.8,
+  stroke: props.selected ? '#6366f1' : '#94a3b8',
+  transition: 'stroke 0.15s ease, stroke-width 0.15s ease',
 }));
 
-const sourceCardinality = computed(() => props.data?.sourceCardinality || null);
-const targetCardinality = computed(() => props.data?.targetCardinality || null);
+const onclick = () => {
+  nodeIdSelected.value = null;
+  isSubMenuVisible.value = true;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (edgeIdSelected as any).value = props.id ?? null;
 
-const center = computed(() => {
-  const { sourceX, sourceY, targetX, targetY } = props;
-  return [(sourceX + targetX) / 2, (sourceY + targetY) / 2];
-});
+  const flow = mcdStore.flowMCD as any;
+  if (props.id && flow) {
+    const edge = flow.findEdge(props.id);
+    if (edge) edge.selected = true;
+  }
+};
 
-// Offsets pour positionner les labels près des poignées
-const offset = 30;
+const sourceCardinality = computed<string | null>(() => props.data?.sourceCardinality ?? null);
+const targetCardinality = computed<string | null>(() => props.data?.targetCardinality ?? null);
+
+const offset = 32;
 
 const sourceLabelX = computed(() => {
   const { sx, sourcePos } = edgeParams.value;
-  switch (sourcePos) {
-    case 'left':
-      return sx - offset;
-    case 'right':
-      return sx + offset;
-    case 'top':
-    case 'bottom':
-      return sx;
-    default:
-      return sx;
-  }
+  if (sourcePos === 'left') return sx - offset;
+  if (sourcePos === 'right') return sx + offset;
+  return sx;
 });
 
 const sourceLabelY = computed(() => {
   const { sy, sourcePos } = edgeParams.value;
-  switch (sourcePos) {
-    case 'top':
-      return sy - offset;
-    case 'bottom':
-      return sy + offset;
-    case 'left':
-    case 'right':
-      return sy;
-    default:
-      return sy;
-  }
+  if (sourcePos === 'top') return sy - offset;
+  if (sourcePos === 'bottom') return sy + offset;
+  return sy;
 });
 
 const targetLabelX = computed(() => {
   const { tx, targetPos } = edgeParams.value;
-  switch (targetPos) {
-    case 'left':
-      return tx - offset;
-    case 'right':
-      return tx + offset;
-    case 'top':
-    case 'bottom':
-      return tx;
-    default:
-      return tx;
-  }
+  if (targetPos === 'left') return tx - offset;
+  if (targetPos === 'right') return tx + offset;
+  return tx;
 });
 
 const targetLabelY = computed(() => {
   const { ty, targetPos } = edgeParams.value;
-  switch (targetPos) {
-    case 'top':
-      return ty - offset;
-    case 'bottom':
-      return ty + offset;
-    case 'left':
-    case 'right':
-      return ty;
-    default:
-      return ty;
-  }
+  if (targetPos === 'top') return ty - offset;
+  if (targetPos === 'bottom') return ty + offset;
+  return ty;
 });
 </script>
 
 <style scoped>
-.edge-label {
-  font-size: 15px;
-  background: #F2F5F7;
-  padding: 2px;
+.cardinality-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.4;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.cardinality-label--selected {
+  color: #6366f1;
+  border-color: #a5b4fc;
+  background: #eef2ff;
 }
 </style>

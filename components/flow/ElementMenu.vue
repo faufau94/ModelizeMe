@@ -244,7 +244,7 @@
           <div class="mt-6 flex justify-between items-center w-full">
             <div class="w-full">
               <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
-                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.sourceNode?.data?.name.toUpperCase()
+                  mcdStore.flowMCD?.findEdge(edgeIdSelected)?.sourceNode?.data?.name?.toUpperCase() ?? ''
                 }}</label>
             </div>
             <div class="w-full">
@@ -252,7 +252,7 @@
             </div>
             <div class="w-full">
               <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
-                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.targetNode?.data?.name.toUpperCase()
+                  mcdStore.flowMCD?.findEdge(edgeIdSelected)?.targetNode?.data?.name?.toUpperCase() ?? ''
                 }}</label>
             </div>
           </div>
@@ -821,29 +821,28 @@ const edgeSoftDeletes = computed({
 
 const sourceCardinality = computed({
   get() {
-    return mcdStore.flowMCD.findEdge(edgeIdSelected.value)?.data?.sourceCardinality ?? "";
+    return mcdStore.flowMCD?.findEdge(edgeIdSelected.value)?.data?.sourceCardinality ?? "";
   },
   set(value) {
-    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.sourceCardinality = value;
+    const edge = mcdStore.flowMCD?.findEdge(edgeIdSelected.value);
+    if (edge?.data) edge.data.sourceCardinality = value;
   },
 });
 
 const targetCardinality = computed({
   get() {
-    return mcdStore.flowMCD.findEdge(edgeIdSelected.value)?.data?.targetCardinality ?? "";
+    return mcdStore.flowMCD?.findEdge(edgeIdSelected.value)?.data?.targetCardinality ?? "";
   },
   set(value) {
-    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.targetCardinality = value;
+    const edge = mcdStore.flowMCD?.findEdge(edgeIdSelected.value);
+    if (edge?.data) edge.data.targetCardinality = value;
   },
 });
 
 const checkIfTwoNRelation = computed(() => {
-  if (sourceCardinality.value.split(',')[1] === 'N' && targetCardinality.value.split(',')[1] === 'N') {
-    return true;
-  } else {
-    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.properties = [];
-    return false;
-  }
+  const src = sourceCardinality.value?.split(',')[1] ?? '';
+  const tgt = targetCardinality.value?.split(',')[1] ?? '';
+  return src === 'N' && tgt === 'N';
 });
 
 const type = [
@@ -920,49 +919,7 @@ let filteredProperty = computed(() =>
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  transform: translateY(30px, 0);
-}
-
-
-<style scoped>
-.container {
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
-  background: #f8f8f8;
-  border-radius: 8px;
-}
-
-.field-row {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  margin-bottom: 10px;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.drag-handle {
-  cursor: grab;
-  padding: 10px;
-}
-
-.field-details {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.3s ease;
-}
-
-.list-enter-from,
-.list-leave-to {
-  transform: translateY(20px);
-  opacity: 0;
+  transform: translateY(30px);
 }
 </style>
+

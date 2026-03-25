@@ -1,126 +1,96 @@
 <template>
-
-    <div
-        ref="content"
-        class="bg-white shadow-md rounded-[50px] z-40 w-80 relative hover:bg-zinc-50 cursor-pointer"
-        :class="props.selected || edgeIdSelected === props.id ? 'border-2 border-blue-400 transition-all duration-400' : 'border-2 border-transparent'"
-        v-bind="$attrs"
-        @mouseover="showHandles"
-        @mouseout="hideHandles">
-
-      <div class="flex justify-center items-center rounded-t-xl py-3 px-4 md:px-5">
-        <h3 v-if="props?.data?.name !== ''" class="text-lg font-bold text-center text-gray-800">
-          {{ props?.data?.name }}
-        </h3>
-        <h3 v-else class="text-lg font-bold text-center text-gray-400">Sans nom</h3>
-      </div>
-      <hr >
-      <div class="md:px-4 py-5" >
-        <div class="flex justify-between items-center gap-6 py-1" v-for="(field,index) in props?.data?.properties"
-            :key="index">
-          <div class="flex font-bold items-center justify-center">
-            <div class="w-5" v-if="field?.isPrimaryKey">
-              <KeyRound :size="13" class="text-red-500"/>
-            </div>
-            <div class="w-5" v-else-if="field?.isForeignKey">
-              <KeyRound :size="13" class="text-gray-500"/>
-            </div>
-            <div v-else class="w-5"></div>
-
-            <div :class="{ 'underline' : field?.isPrimaryKey }">
-              {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
-            </div>
-          </div>
-
-          <div class="flex justify-end items-end">
-            <div class="">
-              {{ field?.typeName }}
-            </div>
-            <div class="w-5" v-if="field?.propertyName !== 'id'">
-              <NullableIcon class="w-5 h-5 cursor-pointer"
-                            @click="field.isNullable = !field.isNullable"
-                            :class="[field?.isNullable ?
-                                      'text-black' :
-                                      'text-gray-400']"
-              />
-            </div>
-            <div v-else class="w-5"></div>
-          </div>
-        </div>
-
-        <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-6 py-1">
-          <div class="flex font-bold items-center justify-center">
-            <div class="w-5"></div>
-
-            <div class="text-gray-500 font-normal">
-              created_at
-            </div>
-          </div>
-          <div class="flex justify-end items-end">
-            <div class="">
-              Timestamp
-            </div>
-
-            <div>
-              <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-6 py-1">
-          <div class="flex font-bold items-center justify-center">
-            <div class="w-5"></div>
-            <div class="text-gray-500 font-normal">
-              updated_at
-            </div>
-          </div>
-          <div class="flex justify-end items-end">
-            <div class="">
-              Timestamp
-            </div>
-
-            <div>
-              <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="props?.data?.usesSoftDeletes" class="flex justify-between items-center gap-6 py-1">
-          <div class="flex font-bold items-center justify-center">
-            <div class="w-5"></div>
-
-            <div class="text-gray-500 font-normal">
-              deleted_at
-            </div>
-          </div>
-          <div class="flex justify-end items-end">
-            <div class="">
-              Timestamp
-            </div>
-
-            <div>
-              <NullableIcon class="w-5 h-5 cursor-pointer text-black"/>
-            </div>
-          </div>
-        </div>
-      </div>
-
+  <div
+    ref="content"
+    class="bg-white z-40 relative cursor-pointer transition-all duration-200"
+    :class="isSelected
+      ? 'ring-2 ring-indigo-400 ring-offset-2 shadow-lg'
+      : 'shadow-md hover:shadow-lg border border-gray-200'"
+    style="border-radius: 14px; min-width: 160px; max-width: 240px;"
+    v-bind="$attrs"
+  >
+    <!-- Diamond icon + name header -->
+    <div class="flex items-center justify-center gap-1.5 px-4 pt-3 pb-2 border-b border-gray-100">
+      <!-- Diamond shape (SVG) to signal "association" -->
+      <svg width="10" height="10" viewBox="0 0 10 10" class="flex-shrink-0" :class="isSelected ? 'text-indigo-500' : 'text-gray-400'">
+        <polygon points="5,0 10,5 5,10 0,5" fill="currentColor"/>
+      </svg>
+      <h3
+        v-if="props.data?.name"
+        class="text-xs font-semibold text-center text-gray-700 tracking-wide uppercase truncate"
+        :class="isSelected ? 'text-indigo-600' : ''"
+      >
+        {{ props.data.name }}
+      </h3>
+      <h3 v-else class="text-xs font-semibold text-center text-gray-400 tracking-wide uppercase italic">
+        Association
+      </h3>
     </div>
+
+    <!-- Fields -->
+    <div v-if="props.data?.properties?.length" class="px-3 py-2 space-y-0.5">
+      <div
+        v-for="(field, index) in props.data.properties"
+        :key="index"
+        class="flex items-center justify-between gap-3 py-0.5 px-1 rounded hover:bg-gray-50 transition-colors"
+      >
+        <div class="flex items-center gap-1 min-w-0">
+          <div class="w-3.5 flex-shrink-0" v-if="field?.isPrimaryKey">
+            <KeyRound :size="11" class="text-amber-500"/>
+          </div>
+          <div class="w-3.5 flex-shrink-0" v-else-if="field?.isForeignKey">
+            <KeyRound :size="11" class="text-gray-400"/>
+          </div>
+          <div v-else class="w-3.5 flex-shrink-0"></div>
+
+          <span
+            class="text-xs text-gray-700 truncate"
+            :class="field?.isPrimaryKey ? 'font-semibold underline decoration-amber-400 decoration-2 underline-offset-2' : 'font-normal'"
+          >
+            {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
+          </span>
+        </div>
+
+        <span class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded flex-shrink-0 border border-gray-100">
+          {{ field?.typeName }}
+        </span>
+      </div>
+
+      <!-- Timestamps -->
+      <div v-if="props.data?.hasTimestamps" class="flex items-center justify-between gap-3 py-0.5 px-1">
+        <span class="text-xs text-gray-300 italic w-3.5 inline-block"></span>
+        <span class="text-xs text-gray-300 italic flex-1">created_at</span>
+        <span class="text-xs text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">Timestamp</span>
+      </div>
+      <div v-if="props.data?.hasTimestamps" class="flex items-center justify-between gap-3 py-0.5 px-1">
+        <span class="text-xs text-gray-300 italic w-3.5 inline-block"></span>
+        <span class="text-xs text-gray-300 italic flex-1">updated_at</span>
+        <span class="text-xs text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">Timestamp</span>
+      </div>
+      <div v-if="props.data?.usesSoftDeletes" class="flex items-center justify-between gap-3 py-0.5 px-1">
+        <span class="text-xs text-gray-300 italic w-3.5 inline-block"></span>
+        <span class="text-xs text-gray-300 italic flex-1">deleted_at</span>
+        <span class="text-xs text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">Timestamp</span>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div v-else class="px-3 py-2">
+      <p class="text-xs text-gray-300 italic text-center">Aucun champ</p>
+    </div>
+
+    <div class="pb-1"></div>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import {inject, onMounted, onUpdated, ref} from 'vue'
-import {useMCDStore} from "~/stores/mcd-store.js";
-import {KeyRound, Trash2} from 'lucide-vue-next';
-import {Button} from '@/components/ui/button';
-import {storeToRefs} from "pinia";
-import NullableIcon from '@/components/icon/nullable-icon';
+import { computed, ref } from 'vue';
+import { useMCDStore } from "~/stores/mcd-store.js";
+import { KeyRound } from 'lucide-vue-next';
+import { storeToRefs } from "pinia";
 
-const mcdStore = useMCDStore()
-const {edgeIdSelected} = storeToRefs(mcdStore)
-const {duplicateNode, removeNode, updateNode} = mcdStore
+const mcdStore = useMCDStore();
+const { edgeIdSelected } = storeToRefs(mcdStore);
 const content = ref(null);
-
 
 const props = defineProps({
   id: {
@@ -135,51 +105,9 @@ const props = defineProps({
     type: Object,
     required: false,
   },
-})
+});
 
-
-const sourceHandle = ref(0)
-
-const isEdgeShown = ref(false)
-const isEdgeHovered = ref(false)
-
-const showHandles = () => {
-  isEdgeShown.value = true
-  isEdgeHovered.value = true
-  sourceHandle.value = 1
-}
-
-const getNodeTimestamps = computed(() => {
-  return props?.data?.hasTimestamps
-})
-
-const getNodeSoftDeletes = computed(() => {
-  return props?.data?.usesSoftDeletes
-})
-
-const setNodeTimestamps = async value => {
-  let nodeData = mcdStore?.flowMCD?.findNode(props.id);
-  if (nodeData) {
-    nodeData.data.hasTimestamps = value
-    await updateNode()
-  }
-}
-const setNodeSoftDeletes = async value => {
-  let nodeData = mcdStore?.flowMCD?.findNode(props.id);
-  if (nodeData) {
-    nodeData.data.usesSoftDeletes = value
-    await updateNode()
-  }
-}
-
-const hideHandles = () => {
-  setTimeout(() => {
-    if (isEdgeHovered.value) isEdgeShown.value = false
-    isEdgeHovered.value = false
-  }, 3000)
-
-  sourceHandle.value = 0
-}
-
+const isSelected = computed(() =>
+  props.selected || (props.id != null && edgeIdSelected.value === props.id)
+);
 </script>
-

@@ -102,7 +102,7 @@
       </Panel>
 
       <!-- Center toolbar: MCD actions + save status -->
-      <Panel v-if="activeTab === 'mcd'" position="top-center"
+      <Panel v-if="activeTab === 'default'" position="top-center"
              class="bg-white/95 backdrop-blur-sm z-40 px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-1 border border-gray-100">
 
         <div v-if="addNewNode" class="flex items-center gap-2 px-2 text-amber-600 transition-all duration-200">
@@ -224,16 +224,16 @@
 
       <!-- Tab switcher: MCD / MLD / MPD -->
       <Panel position="top-right" class="bg-white/95 backdrop-blur-sm mr-10 z-40 shadow-md flex items-center rounded-lg border border-gray-100">
-        <Tabs default-value="mcd" v-model="activeTab" class="w-full">
-          <TabsList class="grid grid-cols-3">
+        <Tabs default-value="default" v-model="activeTab" class="w-full">
+          <TabsList class="grid grid-cols-4">
 
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <TabsTrigger :disabled="isChangingTab" value="mcd">MCD</TabsTrigger>
+                  <TabsTrigger :disabled="isChangingTab" value="default">Modèle</TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent class="bg-gray-900 text-white text-xs">
-                  <p>Modèle Conceptuel de Données</p>
+                  <p>Vue éditable du modèle</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -242,14 +242,30 @@
               <Tooltip>
                 <TooltipTrigger as-child>
                   <TabsTrigger
-                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-not-allowed' : 'cursor-pointer']"
-                      :disabled="mcdStore.flowMCD.nodes.length === 0 || isChangingTab"
+                      :class="[hasNoNodes ? 'cursor-not-allowed' : 'cursor-pointer']"
+                      :disabled="hasNoNodes || isChangingTab"
+                      value="mcd">
+                    MCD
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-gray-900 text-white text-xs">
+                  <p>Modèle Conceptuel de Données (lecture seule)</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <TabsTrigger
+                      :class="[hasNoNodes ? 'cursor-not-allowed' : 'cursor-pointer']"
+                      :disabled="hasNoNodes || isChangingTab"
                       value="mld">
                     MLD
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent class="bg-gray-900 text-white text-xs">
-                  <p>Modèle Logique de Données</p>
+                  <p>Modèle Logique de Données (lecture seule)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -258,14 +274,14 @@
               <Tooltip>
                 <TooltipTrigger as-child>
                   <TabsTrigger
-                      :class="[mcdStore.flowMCD.nodes.length === 0 ? 'cursor-not-allowed' : 'cursor-pointer']"
-                      :disabled="mcdStore.flowMCD.nodes.length === 0 || isChangingTab"
+                      :class="[hasNoNodes ? 'cursor-not-allowed' : 'cursor-pointer']"
+                      :disabled="hasNoNodes || isChangingTab"
                       value="mpd">
                     MPD
                   </TabsTrigger>
                 </TooltipTrigger>
                 <TooltipContent class="bg-gray-900 text-white text-xs">
-                  <p>Modèle Physique de Données</p>
+                  <p>Modèle Physique de Données (lecture seule)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -274,7 +290,7 @@
       </Panel>
 
       <DropzoneBackground
-          v-if="activeTab === 'mcd'"
+          v-if="activeTab === 'default'"
           :style="{
           backgroundColor: isDragOver ? '#e0eefa' : 'transparent',
           transition: 'background-color 0.2s ease',
@@ -283,8 +299,12 @@
       </DropzoneBackground>
 
 
-      <template #connection-line="{ sourceX, sourceY, targetX, targetY, sourceNode, targetNode }">
-        <CustomEdge v-if="sourceNode && targetNode" :source-x="sourceX" :source-y="sourceY" :target-x="targetX" :target-y="targetY" :source-node="sourceNode" :target-node="targetNode"/>
+      <template #connection-line="{ sourceX, sourceY, targetX, targetY, sourceNode }">
+        <FloatingConnectionLine
+          :from-node="sourceNode"
+          :to-x="targetX"
+          :to-y="targetY"
+        />
       </template>
     </VueFlow>
 
@@ -312,6 +332,7 @@
 <script setup>
 import {computed, markRaw, nextTick, onMounted, onUnmounted, ref, watch} from "vue";
 import CustomEdge from "~/components/flow/CustomEdge.vue";
+import FloatingConnectionLine from "~/components/flow/FloatingConnectionLine.vue";
 import ElementMenu from "~/components/flow/ElementMenu.vue";
 import {Panel, useVueFlow, VueFlow} from "@vue-flow/core";
 import DropzoneBackground from "~/components/flow/DropzoneBackground.vue";
@@ -320,6 +341,7 @@ import {Controls} from "@vue-flow/controls";
 import CustomEntity from "~/components/flow/MyCustomEntity.vue";
 import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation.vue";
 import {useMCDStore} from "~/stores/mcd-store.js";
+import {useMCDGenStore} from "~/stores/mcd-gen-store.js";
 import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
@@ -354,6 +376,7 @@ const router = useRouter()
 const model = ref(null)
 
 const mcdStore = useMCDStore()
+const mcdGenStore = useMCDGenStore()
 const mldStore = useMLDStore()
 const mpdStore = useMPDStore()
 const {addNode} = mcdStore
@@ -381,11 +404,12 @@ const { activeUsers, remoteCursors } = storeToRefs(collaborationStore)
 
 
 mcdStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
+mcdGenStore.setFlowInstance(useVueFlow('flow-mcd-gen-' + route.params.idModel))
 mldStore.setFlowInstance(useVueFlow('flow-mld-' + route.params.idModel))
 mpdStore.setFlowInstance(useVueFlow('flow-mpd-' + route.params.idModel))
 
 mcdStore.flowMCD.onPaneClick((e) => {
-  if (activeTab.value === 'mcd') {
+  if (activeTab.value === 'default') {
     if (isSubMenuVisible.value)
       isSubMenuVisible.value = false
     elementsMenu.value = false
@@ -410,12 +434,14 @@ onMounted(async () => {
     query: { id: route.params.idModel },
   });
 
-  // Set initial nodes/edges in Yjs (if not already present)
+  // Set initial nodes/edges in Yjs AND VueFlow
   if (model.value?.nodes?.length) {
     collaborationStore.setNodes(model.value.nodes);
+    mcdStore.flowMCD.setNodes(model.value.nodes);
   }
   if (model.value?.edges?.length) {
     collaborationStore.setEdges(model.value.edges);
+    mcdStore.flowMCD.setEdges(model.value.edges);
   }
 
   if(model.value) {
@@ -436,17 +462,15 @@ onMounted(async () => {
   })
 
   mcdStore.flowMCD.onNodeClick((e) => {
-    if (activeTab.value === 'mcd') {
+    if (activeTab.value === 'default') {
       edgeIdSelected.value = null
       isSubMenuVisible.value = true
       nodeIdSelected.value = e.node.id
-
-
     }
   })
 
   mcdStore.flowMCD.onEdgeClick((e) => {
-    if (activeTab.value === 'mcd') {
+    if (activeTab.value === 'default') {
       nodeIdSelected.value = null
       isSubMenuVisible.value = true
       edgeIdSelected.value = e.edge.id
@@ -462,7 +486,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  activeTab.value = 'mcd'
+  activeTab.value = 'default'
   collaborationStore.cleanup();
 })
 
@@ -473,7 +497,7 @@ const onChange = async (changes) => {
       change.type === 'position' &&
       change.dragging === false &&
       change.id.startsWith('dndnode') &&
-      activeTab.value === 'mcd'
+      activeTab.value === 'default'
     ) {
       // mcdStore.updateNode already persists to DB + syncs via collaborationStore
       await mcdStore.updateNode(route.params.idModel, change.id)
@@ -521,30 +545,55 @@ const goBack = async () => {
 
 // Tabs
 const getFlowId = computed(() => {
-  if (activeTab.value === 'mcd') return 'flow-mcd-' + route.params.idModel;
+  if (activeTab.value === 'default') return 'flow-mcd-' + route.params.idModel;
+  if (activeTab.value === 'mcd') return 'flow-mcd-gen-' + route.params.idModel;
   if (activeTab.value === 'mld') return 'flow-mld-' + route.params.idModel;
   if (activeTab.value === 'mpd') return 'flow-mpd-' + route.params.idModel;
-  return 'flow-mcd-' + route.params.idModel; // Default to MCD
+  return 'flow-mcd-' + route.params.idModel;
 });
 
 const isChangingTab = ref(false)
 
 const currentFlow = ref(mcdStore.flowMCD)
 
+const hasNoNodes = computed(() => {
+  return !mcdStore.flowMCD?.nodes?.length
+})
+
 watch(activeTab, () => {
   isChangingTab.value = true
-  if (activeTab.value === 'mcd') currentFlow.value = mcdStore.flowMCD;
+  isSubMenuVisible.value = false
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
+
+  if (activeTab.value === 'default') {
+    currentFlow.value = mcdStore.flowMCD;
+  }
+  if (activeTab.value === 'mcd') {
+    // Generate read-only MCD from the editable model
+    const { nodesMCD, edgesMCD } = mcdGenStore.generateMCD(
+      mcdStore.flowMCD.getNodes.value,
+      mcdStore.flowMCD.getEdges.value
+    )
+    mcdGenStore.flowMCDGen.setNodes(nodesMCD)
+    mcdGenStore.flowMCDGen.setEdges(edgesMCD)
+    currentFlow.value = mcdGenStore.flowMCDGen;
+  }
   if (activeTab.value === 'mld') {
-    const { nodesMLD, edgesMLD } = mldStore.generateMLD(mcdStore.flowMCD.getNodes, mcdStore.flowMCD.getEdges)
+    const { nodesMLD, edgesMLD } = mldStore.generateMLD(
+      mcdStore.flowMCD.getNodes.value,
+      mcdStore.flowMCD.getEdges.value
+    )
     mldStore.flowMLD.setNodes(nodesMLD)
     mldStore.flowMLD.setEdges(edgesMLD)
     currentFlow.value = mldStore.flowMLD;
-    console.log("nodesMLD", nodesMLD);
   }
-  if (activeTab.value === 'mpd') currentFlow.value = {nodes: [], edges: []};
+  if (activeTab.value === 'mpd') {
+    currentFlow.value = mpdStore.flowMPD ?? { nodes: [], edges: [] };
+  }
 
   nextTick(() => {
-    currentFlow.value.fitView()
+    currentFlow.value?.fitView?.({ padding: 0.4 })
   })
   isChangingTab.value = false
 })

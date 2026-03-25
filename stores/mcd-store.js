@@ -15,7 +15,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
   // ─── LOCAL REFS FOR VUE FLOW & UI STATE ───
   // Will hold the VueFlow instance once set via setFlowInstance(...)
   const flowMCD = ref(null);
-  const activeTab = ref("mcd");
+  const activeTab = ref("default");
   const isSubMenuVisible = ref(false);
   const elementsMenu = ref(false);
   const models = ref([]);

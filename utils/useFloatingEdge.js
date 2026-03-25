@@ -2,9 +2,13 @@ import { Position } from '@vue-flow/core';
 
 // Function to get the center position of a node
 function getNodeCenter(node) {
+    const pos = node.computedPosition || node.positionAbsolute || node.position;
+    if (!pos) return { x: 0, y: 0 };
+    const w = node.dimensions?.width ?? node.width ?? 0;
+    const h = node.dimensions?.height ?? node.height ?? 0;
     return {
-        x: node.position.x + node.dimensions.width / 2,
-        y: node.position.y + node.dimensions.height / 2,
+        x: pos.x + w / 2,
+        y: pos.y + h / 2,
     };
 }
 

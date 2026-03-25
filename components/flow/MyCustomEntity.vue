@@ -3,7 +3,7 @@
   <ContextMenu>
     <ContextMenuTrigger>
     <div class="bg-white shadow-lg rounded-xl w-80 z-40 relative cursor-pointer transition-all duration-200 hover:shadow-xl"
-        :class="nodeIdSelected === props.id ? 'ring-2 ring-blue-400 ring-offset-2' : 'border border-gray-200'"
+        :class="nodeIdSelected === props.id ? 'ring-2 ring-indigo-400 ring-offset-2' : 'border border-gray-200'"
         v-bind="$attrs"
         @mouseover="showHandles"
         @mousedown="showHandles"
@@ -27,7 +27,7 @@
               <KeyRound :size="12" class="text-amber-500"/>
             </div>
             <div class="w-4 flex-shrink-0" v-else-if="field?.isForeignKey">
-              <KeyRound :size="12" class="text-blue-400"/>
+              <KeyRound :size="12" class="text-gray-400"/>
             </div>
             <div v-else class="w-4 flex-shrink-0"></div>
 
@@ -53,8 +53,8 @@
           </div>
         </div>
 
-        <!-- Timestamp fields (dimmed) -->
-        <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-4 py-1 px-1">
+        <!-- Timestamp fields (dimmed) — masqués en vue MCD -->
+        <div v-if="props?.data?.hasTimestamps " class="flex justify-between items-center gap-4 py-1 px-1">
           <div class="flex items-center gap-1">
             <div class="w-4"></div>
             <span class="text-xs text-gray-400 italic">created_at</span>
@@ -65,7 +65,7 @@
           </div>
         </div>
 
-        <div v-if="props?.data?.hasTimestamps" class="flex justify-between items-center gap-4 py-1 px-1">
+        <div v-if="props?.data?.hasTimestamps " class="flex justify-between items-center gap-4 py-1 px-1">
           <div class="flex items-center gap-1">
             <div class="w-4"></div>
             <span class="text-xs text-gray-400 italic">updated_at</span>
@@ -76,7 +76,7 @@
           </div>
         </div>
 
-        <div v-if="props?.data?.usesSoftDeletes" class="flex justify-between items-center gap-4 py-1 px-1">
+        <div v-if="props?.data?.usesSoftDeletes " class="flex justify-between items-center gap-4 py-1 px-1">
           <div class="flex items-center gap-1">
             <div class="w-4"></div>
             <span class="text-xs text-gray-400 italic">deleted_at</span>

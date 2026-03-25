@@ -42,6 +42,12 @@ export default defineNuxtConfig({
         'better-auth',
         'better-auth/adapters/prisma'
       ]
+    },
+    server: {
+      watch: {
+        usePolling: true,
+        interval: 1000
+      }
     }
   },
 
@@ -54,7 +60,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       baseUrl: process.env.BASE_URL,
-      websocketUrl: process.env.WEBSOCKET_URL || 'ws://localhost:1234',
+      websocketUrl: process.env.NUXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:1234',
     },
     authSecret: process.env.AUTH_SECRET,
     authOrigin: process.env.NUXT_AUTH_ORIGIN,
