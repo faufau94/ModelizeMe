@@ -99,16 +99,16 @@
     <CardContent class="px-5 pb-5 pt-0">
       
       <!-- Stats / metrics -->
-      <div class="flex flex-wrap gap-2 mt-4 text-sm">
-        <Badge variant="secondary" class="bg-blue-50/70 text-blue-500 border border-blue-100 font-normal gap-1 px-2 py-0.5 text-[11px]">
+      <div class="flex flex-wrap gap-1.5 mt-4">
+        <Badge variant="outline" class="gap-1 px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
           <PanelTop class="w-3 h-3"/>
           {{ props.model.nodes?.length || 0 }} {{ props.model.nodes?.length > 1 ? 'Entités' : 'Entité' }}
         </Badge>
-        <Badge variant="secondary" class="bg-purple-50/70 text-purple-500 border border-purple-100 font-normal gap-1 px-2 py-0.5 text-[11px]">
+        <Badge variant="outline" class="gap-1 px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
           <Workflow class="w-3 h-3"/>
           {{ props.model.edges?.length || 0 }} {{ props.model.edges?.length > 1 ? 'Relations' : 'Relation' }}
         </Badge>
-        <Badge v-if="props.model.teamId" variant="secondary" class="bg-gray-50 text-gray-400 border border-gray-100 font-normal gap-1 px-2 py-0.5 text-[11px]">
+        <Badge v-if="props.model.teamId" variant="outline" class="gap-1 px-2 py-0.5 text-[11px] font-normal text-muted-foreground">
           <Users class="w-3 h-3"/>
           {{ props?.model?.team?.name }}
         </Badge>
