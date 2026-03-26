@@ -4,13 +4,17 @@
     class="relative group cursor-pointer border hover:border-primary/50 hover:shadow-lg transition-all duration-300 bg-white"
     :class="{ 'ring-2 ring-primary border-primary': isSelected }"
   >
-    <Checkbox
+    <div
       v-show="isSelected || isAnySelected"
-      :checked="isSelected"
-      @click.stop="emit('toggle-select', props.model.id)"
-      class="absolute top-3 right-3 z-20 opacity-0 group-hover:opacity-100"
-      :class="{ 'opacity-100': isSelected || isAnySelected }"
-    />
+      class="absolute top-3 right-3 z-20"
+    >
+      <Checkbox
+        :checked="isSelected"
+        @click.stop="emit('toggle-select', props.model.id)"
+        class="opacity-0 group-hover:opacity-100"
+        :class="{ 'opacity-100': isSelected || isAnySelected }"
+      />
+    </div>
     <CardHeader class="flex flex-row items-start justify-between gap-4 space-y-0 pb-3 pt-5 px-5">
       <div class="space-y-1 flex-1">
         <CardTitle class="text-xl font-semibold leading-tight tracking-tight text-gray-900">

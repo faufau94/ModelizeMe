@@ -125,8 +125,6 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       sharedNodes.value.delete(idx, 1)
       sharedNodes.value.insert(idx, [merged])
     }, 'local')
-    const mcdStore = useMCDStore()
-    if (mcdStore.flowMCD) mcdStore.flowMCD.setNodes(nodes.value)
   }
 
   function removeNode(nodeId) {
@@ -164,8 +162,6 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       sharedEdges.value.delete(idx, 1)
       sharedEdges.value.insert(idx, [ merged ])
     }, 'local')
-    const mcdStore = useMCDStore()
-    if (mcdStore.flowMCD) mcdStore.flowMCD.setEdges(edges.value)
   }
 
   function removeEdge(edgeId) {

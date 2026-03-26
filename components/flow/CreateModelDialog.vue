@@ -96,7 +96,6 @@ const onSubmit = async (values) => {
     isLoadingNewModel.value = false
     isCreateModelDialogOpen.value = false;
 
-    toast.success('Modèle créé avec succès')
     await navigateTo(`/app/model/${res.id}`)
   } catch (err) {
     isLoadingNewModel.value = false

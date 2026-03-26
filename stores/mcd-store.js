@@ -4,6 +4,7 @@ import { getStraightPath, useVueFlow } from "@vue-flow/core";
 import { v4 as uuidv4 } from "uuid";
 import { useMLDStore } from "./mld-store.js";
 import { useCollaborationStore } from "~/stores/collaboration-store.js";
+import { resolveCollisions } from "~/utils/useCollisions.js";
 
 export const useMCDStore = defineStore("flow-mcd", () => {
   // ─── STORE SINGLETONS ───
@@ -102,6 +103,18 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     //    That triggers collaborationStore.sharedNodes.observe(...) → flowMCD.setNodes(...)
     collaborationStore.addNode(newNode);
 
+    // 2b) Resolve collisions with existing nodes
+    if (flowMCD.value) {
+      const allNodes = flowMCD.value.getNodes.value;
+      if (allNodes.length > 1) {
+        const resolved = resolveCollisions(allNodes, { margin: 20 });
+        const resolvedNew = resolved.find((n) => n.id === newNode.id);
+        if (resolvedNew) {
+          collaborationStore.updateNode(newNode.id, { position: resolvedNew.position });
+        }
+      }
+    }
+
     // 3) Update UI state
     isSubMenuVisible.value = true;
     elementsMenu.value = false;
@@ -131,6 +144,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
   async function updateNode(idModel, idNode) {
     // 1) Grab the current node from Vue Flow
     const node = flowMCD.value.findNode(idNode);
+    if (!node) return;
     node.selected = false;
 
     // 2) Persist to your database

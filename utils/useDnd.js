@@ -2,6 +2,7 @@ import { ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useMCDStore } from '~/stores/mcd-store.js';
 import { useCollaborationStore } from '~/stores/collaboration-store';
+import { resolveCollisions } from '~/utils/useCollisions.js';
 
 /**
  * Global state for drag‐and‐drop so it persists across component re‐renders.
@@ -125,10 +126,17 @@ export default function useDragAndDrop() {
           x: vfNode.position.x - vfNode.dimensions.width / 2,
           y: vfNode.position.y - vfNode.dimensions.height / 2,
         };
-      
-        // 3) push that offset back into Yjs so everyone stays in sync
-        collaborationStore.updateNode(newNode.id, { position: centeredPosition });
-      
+        vfNode.position = centeredPosition;
+
+        // 3) resolve collisions with existing nodes
+        const allNodes = mcdStore.flowMCD.getNodes.value;
+        const resolved = resolveCollisions(allNodes, { margin: 20 });
+        const resolvedNode = resolved.find((n) => n.id === newNode.id);
+        const finalPos = resolvedNode?.position || centeredPosition;
+
+        // 4) push final position back into Yjs so everyone stays in sync
+        collaborationStore.updateNode(newNode.id, { position: finalPos });
+
         off();
     });
       

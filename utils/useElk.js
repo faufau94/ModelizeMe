@@ -1,4 +1,5 @@
 import ELK from 'elkjs/lib/elk.bundled';
+import { resolveCollisions } from './useCollisions.js';
 
 const elk = new ELK();
 
@@ -10,8 +11,8 @@ const estimateNodeSize = (node) => {
     // If Vue Flow has already rendered the node, use its real dimensions + safety margin
     if (node?.dimensions?.width && node?.dimensions?.height) {
         return {
-            width: node.dimensions.width + 20,
-            height: node.dimensions.height + 20,
+            width: node.dimensions.width + 40,
+            height: node.dimensions.height + 40,
         };
     }
 
@@ -22,13 +23,13 @@ const estimateNodeSize = (node) => {
     const rowCount = propertyCount + hasTimestamps + hasSoftDeletes;
     const isAssociation = node?.type === 'customEntityAssociation';
 
-    const width = isAssociation ? 260 : 340;
-    const baseHeight = isAssociation ? 60 : 80;
-    const rowHeight = isAssociation ? 26 : 32;
+    const width = isAssociation ? 280 : 340;
+    const baseHeight = isAssociation ? 70 : 80;
+    const rowHeight = isAssociation ? 28 : 32;
 
     return {
         width: width,
-        height: Math.max(baseHeight + rowCount * rowHeight, isAssociation ? 100 : 160),
+        height: Math.max(baseHeight + rowCount * rowHeight, isAssociation ? 120 : 160),
     };
 };
 
@@ -49,18 +50,19 @@ const computeElkOptions = (nodes) => {
     return {
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(300, Math.round(maxW * 1.0))),
-        'elk.spacing.nodeNode': String(Math.max(100, Math.round(maxH * 0.6))),
-        'elk.spacing.edgeEdge': '40',
-        'elk.spacing.edgeNode': '100',
-        'elk.spacing.componentComponent': '150',
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(420, Math.round(maxW * 1.4))),
+        'elk.spacing.nodeNode': String(Math.max(200, Math.round(maxH * 1.1))),
+        'elk.spacing.edgeEdge': '100',
+        'elk.spacing.edgeNode': '200',
+        'elk.spacing.componentComponent': '300',
         'elk.edgeRouting': 'ORTHOGONAL',
-        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
+        'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
+        'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
         'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
         'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
         'elk.separateConnectedComponents': 'true',
         'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
-        'elk.padding': '[top=50,left=50,bottom=50,right=50]',
+        'elk.padding': '[top=80,left=80,bottom=80,right=80]',
     };
 };
 
@@ -102,20 +104,43 @@ const determineHandles = (sourceNode, targetNode) => {
 const getLayoutedElements = (nodes, edges, options) => {
     const opts = options || computeElkOptions(nodes);
 
+    // Inject phantom nodes for association entities so ELK reserves space for them.
+    // An edge with data.hasNodeAssociation or non-empty data.properties gets a phantom.
+    const phantomNodes = [];
+    const elkEdges = [];
+    const phantomEdgeIds = new Set();
+
+    for (const edge of edges) {
+        const hasAssoc = edge.data?.hasNodeAssociation || (edge.data?.properties?.length > 0);
+        if (hasAssoc) {
+            const phantomId = `phantom_${edge.id}`;
+            // Size phantom to match actual association entity content
+            const propCount = edge.data?.properties?.length || 0;
+            const phantomW = 300;
+            const phantomH = Math.max(160, 80 + propCount * 32);
+            phantomNodes.push({ id: phantomId, width: phantomW, height: phantomH });
+            phantomEdgeIds.add(edge.id);
+            // Split into two edges through the phantom node
+            elkEdges.push({ id: `${edge.id}_a`, sources: [edge.source], targets: [phantomId] });
+            elkEdges.push({ id: `${edge.id}_b`, sources: [phantomId], targets: [edge.target] });
+        } else {
+            elkEdges.push({ id: edge.id, sources: [edge.source], targets: [edge.target] });
+        }
+    }
+
     // Build a clean graph for ELK — only pass id, width, height.
     // Never pass reactive Vue Flow objects to ELK.
     const graph = {
         id: 'root',
         layoutOptions: opts,
-        children: nodes.map((node) => {
-            const size = estimateNodeSize(node);
-            return { id: node.id, width: size.width, height: size.height };
-        }),
-        edges: edges.map((edge) => ({
-            id: edge.id,
-            sources: [edge.source],
-            targets: [edge.target],
-        })),
+        children: [
+            ...nodes.map((node) => {
+                const size = estimateNodeSize(node);
+                return { id: node.id, width: size.width, height: size.height };
+            }),
+            ...phantomNodes,
+        ],
+        edges: elkEdges,
     };
 
     // Keep a lookup of the original nodes/edges so we can patch them.
@@ -124,7 +149,7 @@ const getLayoutedElements = (nodes, edges, options) => {
     return elk
         .layout(graph)
         .then((layoutedGraph) => {
-            // Build a position map from ELK results
+            // Build a position map from ELK results (skip phantom nodes for output)
             const positionMap = new Map();
             for (const child of layoutedGraph.children) {
                 positionMap.set(child.id, { x: child.x, y: child.y });
@@ -136,21 +161,20 @@ const getLayoutedElements = (nodes, edges, options) => {
                 return { ...node, position: pos || node.position };
             });
 
-            const nodeMap = new Map(layoutedNodes.map((n) => [n.id, n]));
+            // Post-process: resolve any remaining overlaps ELK missed
+            const finalNodes = resolveCollisions(layoutedNodes, { margin: 30 });
 
-            // Track how many edges share the same source-target pair
-            // so we can assign different handle combos to each.
-            const pairCount = new Map();
-
-            const layoutedEdges = edges.map((edge) => {
-                const sourceNode = nodeMap.get(edge.source);
-                const targetNode = nodeMap.get(edge.target);
+            // Recompute handles after collision resolution may have shifted nodes
+            const finalNodeMap = new Map(finalNodes.map((n) => [n.id, n]));
+            const finalPairCount = new Map();
+            const finalEdges = edges.map((edge) => {
+                const sourceNode = finalNodeMap.get(edge.source);
+                const targetNode = finalNodeMap.get(edge.target);
                 if (!sourceNode || !targetNode) return edge;
 
-                // Canonical key for the pair (order-independent)
                 const pairKey = [edge.source, edge.target].sort().join('::');
-                const idx = pairCount.get(pairKey) || 0;
-                pairCount.set(pairKey, idx + 1);
+                const idx = finalPairCount.get(pairKey) || 0;
+                finalPairCount.set(pairKey, idx + 1);
 
                 let handles;
                 if (idx === 0) {
@@ -167,7 +191,7 @@ const getLayoutedElements = (nodes, edges, options) => {
                 return { ...edge, sourceHandle: handles.sourceHandle, targetHandle: handles.targetHandle };
             });
 
-            return { nodes: layoutedNodes, edges: layoutedEdges };
+            return { nodes: finalNodes, edges: finalEdges };
         })
         .catch(console.error);
 };

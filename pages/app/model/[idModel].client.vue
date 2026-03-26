@@ -602,7 +602,9 @@ const saveAllNodePositions = async () => {
 
 const goBack = async () => {
   isSubMenuVisible.value = false
-  await saveAllNodePositions()
+  isFlowReady.value = false
+  // Save positions in background — don't await to avoid visual flash
+  saveAllNodePositions()
   const workspaceId = model.value?.workspaceId || session.value?.session?.activeOrganizationId
   if (workspaceId) {
     await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
@@ -668,13 +670,19 @@ watch(activeTab, async () => {
 
   await nextTick()
   await nextTick()
-  currentFlow.value?.fitView?.({ padding: 0.3 })
+  await nextTick()
+  currentFlow.value?.fitView?.({ padding: 0.4 })
   isChangingTab.value = false
 })
 
 
 
 const reorganize = async () => {
+  // Close sidebar and clear selection before layout
+  isSubMenuVisible.value = false;
+  nodeIdSelected.value = null;
+  edgeIdSelected.value = null;
+
   await nextTick()
   await nextTick() // double tick pour garantir le rendu DOM
   const ns = mcdFlowInstance.getNodes.value;
@@ -687,6 +695,10 @@ const reorganize = async () => {
 
   const { nodes: layoutedNodes, edges: layoutedEdges } = result;
 
+  // Force deselect on the plain objects BEFORE applying to VueFlow
+  for (const n of layoutedNodes) { n.selected = false; n.dragging = false; }
+  for (const e of layoutedEdges) { e.selected = false; }
+
   // Apply to Vue Flow
   mcdFlowInstance.setNodes(layoutedNodes);
   mcdFlowInstance.setEdges(layoutedEdges);
@@ -697,7 +709,6 @@ const reorganize = async () => {
 
   // Persist each node position to DB directly (without going through collaborationStore.updateNode)
   for (const node of layoutedNodes) {
-    node.selected = false;
     $fetch(`/api/models/update`, {
       method: "PUT",
       query: { id: route.params.idModel },
