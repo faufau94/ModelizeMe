@@ -120,22 +120,72 @@ export default function useDragAndDrop() {
           off();
           return;
         }
-      
-        // 2) compute half‐width/height offset
+
+        // 2) compute half‐width/height offset to center under cursor
         const centeredPosition = {
           x: vfNode.position.x - vfNode.dimensions.width / 2,
           y: vfNode.position.y - vfNode.dimensions.height / 2,
         };
         vfNode.position = centeredPosition;
 
-        // 3) resolve collisions with existing nodes
-        const allNodes = mcdStore.flowMCD.getNodes.value;
-        const resolved = resolveCollisions(allNodes, { margin: 20 });
-        const resolvedNode = resolved.find((n) => n.id === newNode.id);
-        const finalPos = resolvedNode?.position || centeredPosition;
+        // 3) Build virtual nodes for association entities on edges
+        const rawNodes = mcdStore.flowMCD?.getNodes;
+        const allNodes = Array.isArray(rawNodes?.value)
+          ? rawNodes.value
+          : (typeof rawNodes === 'function' ? rawNodes() : (Array.isArray(rawNodes) ? rawNodes : []));
 
-        // 4) push final position back into Yjs so everyone stays in sync
-        collaborationStore.updateNode(newNode.id, { position: finalPos });
+        const rawEdges = mcdStore.flowMCD?.getEdges;
+        const allEdges = Array.isArray(rawEdges?.value)
+          ? rawEdges.value
+          : (typeof rawEdges === 'function' ? rawEdges() : (Array.isArray(rawEdges) ? rawEdges : []));
+        const virtualAssocNodes = [];
+        for (const edge of allEdges) {
+          if (!edge.data?.properties?.length && !edge.data?.hasNodeAssociation) continue;
+          const srcNode = mcdStore.flowMCD.findNode(edge.source);
+          const tgtNode = mcdStore.flowMCD.findNode(edge.target);
+          if (!srcNode || !tgtNode) continue;
+          const midX = (srcNode.position.x + tgtNode.position.x) / 2;
+          const midY = (srcNode.position.y + tgtNode.position.y) / 2;
+          virtualAssocNodes.push({
+            id: `_assoc_${edge.id}`,
+            position: { x: midX - 80, y: midY - 40 },
+            dimensions: { width: 160, height: 80 },
+            type: 'customEntityAssociation',
+            _virtual: true,
+          });
+        }
+
+        // 4) resolve collisions including association entities
+        const nodesForCollision = [...allNodes, ...virtualAssocNodes];
+        const resolved = resolveCollisions(nodesForCollision, { margin: 30 });
+
+        // 5) Apply ALL moved positions (not just the new node)
+        const movedNodes = [];
+        for (const rn of resolved) {
+          if (rn._virtual) continue;
+          const original = allNodes.find((n) => n.id === rn.id);
+          if (original && (rn.position.x !== original.position.x || rn.position.y !== original.position.y)) {
+            mcdStore.flowMCD.updateNode(rn.id, { position: rn.position });
+            movedNodes.push(rn);
+          }
+        }
+
+        // 6) Sync full state to Yjs (fresh from VueFlow)
+        if (movedNodes.length > 0) {
+          const rawNodesAfter = mcdStore.flowMCD?.getNodes;
+          const latestNodes = Array.isArray(rawNodesAfter?.value)
+            ? rawNodesAfter.value
+            : (typeof rawNodesAfter === 'function' ? rawNodesAfter() : (Array.isArray(rawNodesAfter) ? rawNodesAfter : []));
+
+          const freshNodes = latestNodes.map((n) => ({
+            ...n, position: { ...n.position },
+            data: { ...n.data },
+            selected: false, dragging: false,
+          }));
+          collaborationStore.setNodes(freshNodes);
+        } else {
+          collaborationStore.updateNode(newNode.id, { position: centeredPosition });
+        }
 
         off();
     });

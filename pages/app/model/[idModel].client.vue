@@ -363,7 +363,7 @@ const mcdGenStore = useMCDGenStore()
 const mldStore = useMLDStore()
 const mpdStore = useMPDStore()
 const {addNode} = mcdStore
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType} = storeToRefs(mcdStore)
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType, isResolvingCollisions} = storeToRefs(mcdStore)
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
 
@@ -546,6 +546,7 @@ const onEdgesDelete = (deletedEdges) => {
 }
 
 const onChange = async (changes) => {
+  if (isResolvingCollisions.value) return
   for (const change of changes) {
     // Only persist position changes when dragging ends
     if (

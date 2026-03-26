@@ -26,8 +26,11 @@ function fallbackNodeSize(node) {
 export function resolveCollisions(nodes, { maxIterations = 50, overlapThreshold = 0.5, margin = 20 } = {}) {
   const boxes = nodes.map((node) => {
     const estimated = fallbackNodeSize(node);
-    const w = node.dimensions?.width ?? estimated.width;
-    const h = node.dimensions?.height ?? estimated.height;
+    const dimW = node.dimensions?.width;
+    const dimH = node.dimensions?.height;
+    // Use rendered dimensions only if they are meaningful (> 0)
+    const w = (dimW && dimW > 0) ? dimW : estimated.width;
+    const h = (dimH && dimH > 0) ? dimH : estimated.height;
     return {
       x: node.position.x - margin,
       y: node.position.y - margin,
