@@ -1,4 +1,4 @@
-import { computed, ref } from "vue";
+import { computed, ref, nextTick } from "vue";
 import { defineStore } from "pinia";
 import { getStraightPath, useVueFlow } from "@vue-flow/core";
 import { v4 as uuidv4 } from "uuid";
@@ -103,14 +103,20 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     //    That triggers collaborationStore.sharedNodes.observe(...) → flowMCD.setNodes(...)
     collaborationStore.addNode(newNode);
 
-    // 2b) Resolve collisions with existing nodes
+    // 2b) Resolve collisions with existing nodes — wait for Vue Flow to register the node
     if (flowMCD.value) {
+      await nextTick();
+      await nextTick();
       const allNodes = flowMCD.value.getNodes.value;
       if (allNodes.length > 1) {
         const resolved = resolveCollisions(allNodes, { margin: 20 });
-        const resolvedNew = resolved.find((n) => n.id === newNode.id);
-        if (resolvedNew) {
-          collaborationStore.updateNode(newNode.id, { position: resolvedNew.position });
+        for (const rn of resolved) {
+          const original = allNodes.find((n) => n.id === rn.id);
+          if (original && (rn.position.x !== original.position.x || rn.position.y !== original.position.y)) {
+            // Sync both VueFlow and Yjs
+            flowMCD.value.updateNode(rn.id, { position: rn.position });
+            collaborationStore.updateNode(rn.id, { position: rn.position });
+          }
         }
       }
     }

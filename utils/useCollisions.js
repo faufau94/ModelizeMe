@@ -3,6 +3,21 @@
  * Iteratively pushes overlapping nodes apart along the smallest overlap axis.
  */
 
+function fallbackNodeSize(node) {
+  const propertyCount = Array.isArray(node?.data?.properties) ? node.data.properties.length : 0;
+  const hasTimestamps = node?.data?.hasTimestamps ? 2 : 0;
+  const hasSoftDeletes = node?.data?.usesSoftDeletes ? 1 : 0;
+  const rowCount = propertyCount + hasTimestamps + hasSoftDeletes;
+  const isAssociation = node?.type === 'customEntityAssociation';
+  const width = isAssociation ? 280 : 340;
+  const baseHeight = isAssociation ? 70 : 80;
+  const rowHeight = isAssociation ? 28 : 32;
+  return {
+    width,
+    height: Math.max(baseHeight + rowCount * rowHeight, isAssociation ? 120 : 160),
+  };
+}
+
 /**
  * @param {import('@vue-flow/core').Node[]} nodes
  * @param {{ maxIterations?: number, overlapThreshold?: number, margin?: number }} options
@@ -10,8 +25,9 @@
  */
 export function resolveCollisions(nodes, { maxIterations = 50, overlapThreshold = 0.5, margin = 20 } = {}) {
   const boxes = nodes.map((node) => {
-    const w = node.dimensions?.width ?? node.width ?? 320;
-    const h = node.dimensions?.height ?? node.height ?? 160;
+    const estimated = fallbackNodeSize(node);
+    const w = node.dimensions?.width ?? estimated.width;
+    const h = node.dimensions?.height ?? estimated.height;
     return {
       x: node.position.x - margin,
       y: node.position.y - margin,

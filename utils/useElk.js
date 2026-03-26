@@ -11,8 +11,8 @@ const estimateNodeSize = (node) => {
     // If Vue Flow has already rendered the node, use its real dimensions + safety margin
     if (node?.dimensions?.width && node?.dimensions?.height) {
         return {
-            width: node.dimensions.width + 40,
-            height: node.dimensions.height + 40,
+            width: node.dimensions.width + 20,
+            height: node.dimensions.height + 20,
         };
     }
 
@@ -50,19 +50,20 @@ const computeElkOptions = (nodes) => {
     return {
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(420, Math.round(maxW * 1.4))),
-        'elk.spacing.nodeNode': String(Math.max(200, Math.round(maxH * 1.1))),
-        'elk.spacing.edgeEdge': '100',
-        'elk.spacing.edgeNode': '200',
-        'elk.spacing.componentComponent': '300',
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(180, Math.round(maxW * 0.6))),
+        'elk.spacing.nodeNode': String(Math.max(80, Math.round(maxH * 0.4))),
+        'elk.spacing.edgeEdge': '40',
+        'elk.spacing.edgeNode': '60',
+        'elk.spacing.componentComponent': '120',
         'elk.edgeRouting': 'ORTHOGONAL',
         'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
         'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
+        'elk.layered.nodePlacement.bk.edgeStraightening': 'IMPROVE_STRAIGHTNESS',
         'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
         'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
         'elk.separateConnectedComponents': 'true',
         'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
-        'elk.padding': '[top=80,left=80,bottom=80,right=80]',
+        'elk.padding': '[top=40,left=40,bottom=40,right=40]',
     };
 };
 
@@ -116,8 +117,8 @@ const getLayoutedElements = (nodes, edges, options) => {
             const phantomId = `phantom_${edge.id}`;
             // Size phantom to match actual association entity content
             const propCount = edge.data?.properties?.length || 0;
-            const phantomW = 300;
-            const phantomH = Math.max(160, 80 + propCount * 32);
+            const phantomW = 200;
+            const phantomH = Math.max(100, 60 + propCount * 28);
             phantomNodes.push({ id: phantomId, width: phantomW, height: phantomH });
             phantomEdgeIds.add(edge.id);
             // Split into two edges through the phantom node
@@ -161,8 +162,16 @@ const getLayoutedElements = (nodes, edges, options) => {
                 return { ...node, position: pos || node.position };
             });
 
-            // Post-process: resolve any remaining overlaps ELK missed
-            const finalNodes = resolveCollisions(layoutedNodes, { margin: 30 });
+            // Build phantom node objects with their ELK positions for collision resolution
+            const phantomLayouted = phantomNodes.map((ph) => {
+                const pos = positionMap.get(ph.id);
+                return { id: ph.id, position: pos || { x: 0, y: 0 }, dimensions: { width: ph.width, height: ph.height }, _phantom: true };
+            });
+
+            // Post-process: resolve overlaps including phantom (association) nodes
+            const allForCollision = [...layoutedNodes, ...phantomLayouted];
+            const resolvedAll = resolveCollisions(allForCollision, { margin: 20 });
+            const finalNodes = resolvedAll.filter((n) => !n._phantom);
 
             // Recompute handles after collision resolution may have shifted nodes
             const finalNodeMap = new Map(finalNodes.map((n) => [n.id, n]));
