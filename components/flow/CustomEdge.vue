@@ -115,7 +115,7 @@ const edgePath = computed(() => {
     targetY: ty,
     sourcePosition: sourcePos,
     targetPosition: targetPos,
-    borderRadius: 12,
+    borderRadius: 6,
   });
 });
 

@@ -97,7 +97,7 @@
     </relationship>
 
     <!-- Un utilisateur peut organiser des événements -->
-    <relationship name="organiser" source="Evenement" target="Utilisateur"
-                  sourceCardinality="1,1" targetCardinality="0,N"/>
+    <!-- <relationship name="organiser" source="Evenement" target="Utilisateur"
+                  sourceCardinality="1,1" targetCardinality="0,N"/> -->
   </relationships>
 </model>

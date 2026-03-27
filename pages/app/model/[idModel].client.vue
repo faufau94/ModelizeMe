@@ -146,9 +146,10 @@
             <TooltipTrigger>
               <Button
                   variant="ghost"
-                  disabled
+                  :disabled="!canUndo"
                   size="sm"
                   class="rounded-md"
+                  @click="collaborationStore.undo()"
               >
                 <Undo2 :size="16"/>
               </Button>
@@ -164,9 +165,10 @@
             <TooltipTrigger>
               <Button
                   variant="ghost"
-                  disabled
+                  :disabled="!canRedo"
                   size="sm"
                   class="rounded-md"
+                  @click="collaborationStore.redo()"
               >
                 <Redo2 :size="16"/>
               </Button>
@@ -340,6 +342,7 @@ import {useCollaborationStore} from '~/stores/collaboration-store.js';
 
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip'
 import {computeElkOptions, getLayoutedElements, estimateNodeSize} from '@/utils/useElk.js';
+import {findFreePosition} from '@/utils/useCollisions.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
@@ -383,7 +386,7 @@ const isRenamingModel = ref(false)
 const showDialogRenameModel = ref(false)
 const isFlowReady = ref(false)
 
-const { activeUsers, remoteCursors } = storeToRefs(collaborationStore)
+const { activeUsers, remoteCursors, canUndo, canRedo } = storeToRefs(collaborationStore)
 
 
 const mcdFlowInstance = useVueFlow('flow-mcd-' + route.params.idModel)
@@ -446,11 +449,12 @@ onMounted(async () => {
   }
 
   // Set initial nodes/edges in Yjs AND VueFlow — always, even if empty
+  // skipTracking=true so initial load is NOT added to undo history
   const initialNodes = model.value?.nodes || [];
   const initialEdges = model.value?.edges || [];
-  collaborationStore.setNodes(initialNodes);
+  collaborationStore.setNodes(initialNodes, true);
   mcdStore.flowMCD.setNodes(initialNodes);
-  collaborationStore.setEdges(initialEdges);
+  collaborationStore.setEdges(initialEdges, true);
   mcdStore.flowMCD.setEdges(initialEdges);
 
   if(model.value) {
@@ -497,7 +501,27 @@ onMounted(async () => {
   collaborationStore.setupCursorTracking();
 })
 
+// ─── Keyboard shortcuts for Undo/Redo ───
+const handleUndoRedoKeydown = (e) => {
+  // Only handle in default (MCD) tab
+  if (activeTab.value !== 'default') return
+  // Skip if user is typing in an input/textarea
+  const tag = e.target?.tagName?.toLowerCase()
+  if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) return
+
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault()
+    collaborationStore.undo()
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    e.preventDefault()
+    collaborationStore.redo()
+  }
+}
+window.addEventListener('keydown', handleUndoRedoKeydown)
+
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleUndoRedoKeydown)
   activeTab.value = 'default'
   isSubMenuVisible.value = false
   nodeIdSelected.value = null
@@ -525,11 +549,18 @@ onUnmounted(() => {
   }
 })
 
+// Edges already handled by onNodesDelete — prevents double Yjs transactions
+const _pendingNodeDeleteEdges = new Set()
+
 const onNodesDelete = (deletedNodes) => {
   if (activeTab.value !== 'default') return
-  for (const node of deletedNodes) {
-    mcdStore.removeNode(route.params.idModel, node.id)
-  }
+  const deletedNodeIds = deletedNodes.map((n) => n.id)
+  const connectedEdgeIds = mcdFlowInstance.getEdges.value
+    .filter((e) => deletedNodeIds.includes(e.source) || deletedNodeIds.includes(e.target))
+    .map((e) => e.id)
+  connectedEdgeIds.forEach(id => _pendingNodeDeleteEdges.add(id))
+  mcdStore.removeElements(route.params.idModel, deletedNodeIds, connectedEdgeIds)
+  nextTick(() => _pendingNodeDeleteEdges.clear())
   isSubMenuVisible.value = false
   nodeIdSelected.value = null
   edgeIdSelected.value = null
@@ -537,25 +568,47 @@ const onNodesDelete = (deletedNodes) => {
 
 const onEdgesDelete = (deletedEdges) => {
   if (activeTab.value !== 'default') return
-  for (const edge of deletedEdges) {
-    mcdStore.removeEdge(route.params.idModel, edge.id)
-  }
+  const edgeIds = deletedEdges.map((e) => e.id).filter(id => !_pendingNodeDeleteEdges.has(id))
+  if (!edgeIds.length) return
+  mcdStore.removeElements(route.params.idModel, [], edgeIds)
   isSubMenuVisible.value = false
   nodeIdSelected.value = null
   edgeIdSelected.value = null
 }
 
+// Track nodes the user is physically dragging — only these get persisted on drag-end.
+// This prevents programmatic position changes (undo/redo, setNodes, observers)
+// from creating spurious Yjs 'local' transactions that wipe the redo stack.
+const _userDraggingNodes = new Set()
+
 const onChange = async (changes) => {
   if (isResolvingCollisions.value) return
   for (const change of changes) {
-    // Only persist position changes when dragging ends
+    if (change.type === 'position' && change.dragging === true) {
+      _userDraggingNodes.add(change.id)
+    }
     if (
       change.type === 'position' &&
       change.dragging === false &&
+      _userDraggingNodes.has(change.id) &&
       change.id.startsWith('dndnode') &&
       activeTab.value === 'default'
     ) {
-      // mcdStore.updateNode already persists to DB + syncs via collaborationStore
+      _userDraggingNodes.delete(change.id)
+      // Resolve collision: nudge THIS node if it overlaps others
+      const draggedNode = mcdFlowInstance.findNode(change.id)
+      if (draggedNode) {
+        const allNodes = mcdFlowInstance.getNodes.value || []
+        const otherNodes = allNodes.filter(n => n.id !== change.id)
+        const size = {
+          width: draggedNode.dimensions?.width || 340,
+          height: draggedNode.dimensions?.height || 160,
+        }
+        const freePos = findFreePosition(draggedNode.position, size, otherNodes, mcdFlowInstance)
+        if (freePos.x !== draggedNode.position.x || freePos.y !== draggedNode.position.y) {
+          draggedNode.position = freePos
+        }
+      }
       await mcdStore.updateNode(route.params.idModel, change.id)
     }
   }
@@ -594,11 +647,14 @@ const rnModel = handleSubmit(async (values) => {
   showDialogRenameModel.value = false
 })
 
-const saveAllNodePositions = async () => {
+const saveAllNodePositions = () => {
   const ns = mcdFlowInstance.getNodes.value;
-  for (const node of ns) {
-    await mcdStore.updateNode(route.params.idModel, node.id);
-  }
+  const es = mcdFlowInstance.getEdges.value;
+  if (!ns.length) return;
+  $fetch('/api/models/sync', {
+    method: 'PUT',
+    body: { id: route.params.idModel, nodes: ns, edges: es }
+  }).catch(() => {});
 };
 
 const goBack = async () => {
@@ -704,9 +760,11 @@ const reorganize = async () => {
   mcdFlowInstance.setNodes(layoutedNodes);
   mcdFlowInstance.setEdges(layoutedEdges);
 
-  // Persist new positions to Yjs (skip individual updateNode to avoid Yjs→VueFlow feedback loop)
-  collaborationStore.setNodes(layoutedNodes);
-  collaborationStore.setEdges(layoutedEdges);
+  // Persist new positions to Yjs in a single transaction (one undo for entire reorganize)
+  collaborationStore.runInTransaction(() => {
+    collaborationStore.setNodes(layoutedNodes);
+    collaborationStore.setEdges(layoutedEdges);
+  });
 
   // Persist each node position to DB directly (without going through collaborationStore.updateNode)
   for (const node of layoutedNodes) {

@@ -50,20 +50,18 @@ const computeElkOptions = (nodes) => {
     return {
         'elk.algorithm': 'layered',
         'elk.direction': 'RIGHT',
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(180, Math.round(maxW * 0.6))),
-        'elk.spacing.nodeNode': String(Math.max(80, Math.round(maxH * 0.4))),
-        'elk.spacing.edgeEdge': '40',
-        'elk.spacing.edgeNode': '60',
-        'elk.spacing.componentComponent': '120',
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(300, Math.round(maxW * 1.0))),
+        'elk.spacing.nodeNode': String(Math.max(160, Math.round(maxH * 0.6))),
+        'elk.spacing.edgeEdge': '60',
+        'elk.spacing.edgeNode': '100',
+        'elk.spacing.componentComponent': '200',
         'elk.edgeRouting': 'ORTHOGONAL',
-        'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-        'elk.layered.nodePlacement.bk.fixedAlignment': 'BALANCED',
-        'elk.layered.nodePlacement.bk.edgeStraightening': 'IMPROVE_STRAIGHTNESS',
+        'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
         'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
         'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
         'elk.separateConnectedComponents': 'true',
         'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
-        'elk.padding': '[top=40,left=40,bottom=40,right=40]',
+        'elk.padding': '[top=60,left=60,bottom=60,right=60]',
     };
 };
 
@@ -115,10 +113,14 @@ const getLayoutedElements = (nodes, edges, options) => {
         const hasAssoc = edge.data?.hasNodeAssociation || (edge.data?.properties?.length > 0);
         if (hasAssoc) {
             const phantomId = `phantom_${edge.id}`;
-            // Size phantom to match actual association entity content
+            // Size phantom to match actual MyCustomEntityAssociation component
+            // Component: min-width 160px, max-width 240px, header ~40px, each row ~28px
             const propCount = edge.data?.properties?.length || 0;
-            const phantomW = 200;
-            const phantomH = Math.max(100, 60 + propCount * 28);
+            const hasTs = edge.data?.hasTimestamps ? 2 : 0;
+            const hasSd = edge.data?.usesSoftDeletes ? 1 : 0;
+            const totalRows = propCount + hasTs + hasSd;
+            const phantomW = 260;
+            const phantomH = Math.max(120, 50 + totalRows * 28);
             phantomNodes.push({ id: phantomId, width: phantomW, height: phantomH });
             phantomEdgeIds.add(edge.id);
             // Split into two edges through the phantom node
@@ -144,9 +146,6 @@ const getLayoutedElements = (nodes, edges, options) => {
         edges: elkEdges,
     };
 
-    // Keep a lookup of the original nodes/edges so we can patch them.
-    const originalNodeMap = new Map(nodes.map((n) => [n.id, n]));
-
     return elk
         .layout(graph)
         .then((layoutedGraph) => {
@@ -170,7 +169,7 @@ const getLayoutedElements = (nodes, edges, options) => {
 
             // Post-process: resolve overlaps including phantom (association) nodes
             const allForCollision = [...layoutedNodes, ...phantomLayouted];
-            const resolvedAll = resolveCollisions(allForCollision, { margin: 20 });
+            const resolvedAll = resolveCollisions(allForCollision, { margin: 60 });
             const finalNodes = resolvedAll.filter((n) => !n._phantom);
 
             // Recompute handles after collision resolution may have shifted nodes

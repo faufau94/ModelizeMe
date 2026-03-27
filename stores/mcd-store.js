@@ -1,10 +1,10 @@
-import { computed, ref, nextTick } from "vue";
+import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import { getStraightPath, useVueFlow } from "@vue-flow/core";
 import { v4 as uuidv4 } from "uuid";
 import { useMLDStore } from "./mld-store.js";
 import { useCollaborationStore } from "~/stores/collaboration-store.js";
-import { resolveCollisions } from "~/utils/useCollisions.js";
+import { findFreePosition } from "~/utils/useCollisions.js";
 
 export const useMCDStore = defineStore("flow-mcd", () => {
   // ─── STORE SINGLETONS ───
@@ -46,91 +46,6 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     return readFlowCollection(flowMCD.value.getEdges);
   }
 
-  function buildVirtualAssociationNodes(nodes, edges) {
-    const virtualAssocNodes = [];
-    for (const edge of edges) {
-      if (!edge.data?.properties?.length && !edge.data?.hasNodeAssociation) continue;
-      const srcNode = flowMCD.value.findNode(edge.source);
-      const tgtNode = flowMCD.value.findNode(edge.target);
-      if (!srcNode || !tgtNode) continue;
-      const midX = (srcNode.position.x + tgtNode.position.x) / 2;
-      const midY = (srcNode.position.y + tgtNode.position.y) / 2;
-      virtualAssocNodes.push({
-        id: `_assoc_${edge.id}`,
-        position: { x: midX - 80, y: midY - 40 },
-        dimensions: { width: 160, height: 80 },
-        type: "customEntityAssociation",
-        _virtual: true,
-      });
-    }
-    return virtualAssocNodes;
-  }
-
-  async function resolveAndSyncCollisions(idModel, movedNodeId = null) {
-    if (!flowMCD.value) return [];
-
-    const allNodes = getFlowNodes();
-    if (allNodes.length <= 1) return [];
-
-    const movedNode = movedNodeId ? flowMCD.value.findNode(movedNodeId) : null;
-    if (movedNode && typeof flowMCD.value.getIntersectingNodes === "function") {
-      const intersections = flowMCD.value.getIntersectingNodes(movedNode) || [];
-      const hasRealIntersection = intersections.some((n) => n.id !== movedNodeId);
-      if (!hasRealIntersection) return [];
-    }
-
-    const allEdges = getFlowEdges();
-    const virtualAssocNodes = buildVirtualAssociationNodes(allNodes, allEdges);
-    const nodesForCollision = [...allNodes, ...virtualAssocNodes];
-    const resolved = resolveCollisions(nodesForCollision, { margin: 30 });
-
-    const movedNodes = [];
-    for (const rn of resolved) {
-      if (rn._virtual) continue;
-      const original = allNodes.find((n) => n.id === rn.id);
-      if (!original) continue;
-      if (rn.position.x === original.position.x && rn.position.y === original.position.y) continue;
-      movedNodes.push(rn);
-    }
-
-    if (movedNodes.length === 0) return [];
-
-    isResolvingCollisions.value = true;
-    try {
-      for (const rn of movedNodes) {
-        flowMCD.value.updateNode(rn.id, { position: rn.position, selected: false, dragging: false });
-      }
-
-      await nextTick();
-
-      const latestNodes = getFlowNodes();
-      const freshNodes = latestNodes.map((n) => ({
-        ...n,
-        position: { ...n.position },
-        data: { ...n.data },
-        selected: false,
-        dragging: false,
-      }));
-      collaborationStore.setNodes(freshNodes);
-
-      for (const rn of movedNodes) {
-        const persistedNode = flowMCD.value.findNode(rn.id);
-        if (!persistedNode) continue;
-        persistedNode.selected = false;
-        persistedNode.dragging = false;
-        $fetch(`/api/models/update`, {
-          method: "PUT",
-          query: { id: idModel },
-          body: { node: persistedNode, type: "node", action: "updateNode" },
-        });
-      }
-    } finally {
-      isResolvingCollisions.value = false;
-    }
-
-    return movedNodes;
-  }
-
   // ─── HELPERS TO GENERATE UNIQUE IDS ───
   function getIdNode() {
     return `dndnode_${uuidv4()}_${uuidv4()}`;
@@ -169,6 +84,13 @@ export const useMCDStore = defineStore("flow-mcd", () => {
         finalPosition = { x: Math.random() * 500, y: Math.random() * 500 };
       }
     }
+    // Avoid overlapping existing nodes
+    const defaultSize = { width: 340, height: 160 };
+    if (finalPosition && flowMCD.value) {
+      const otherNodes = getFlowNodes();
+      finalPosition = findFreePosition(finalPosition, defaultSize, otherNodes, flowMCD.value);
+    }
+
     return {
       id: nodeId,
       type: "customEntity",
@@ -216,15 +138,6 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     //    collaborationStore.addNode also adds to VueFlow directly
     collaborationStore.addNode(newNode);
 
-    // 2b) Resolve collisions — include association entities rendered on edges
-    if (flowMCD.value) {
-      // Wait for Vue Flow to fully register the new node in the DOM
-      await nextTick();
-      await nextTick();
-      await nextTick();
-      await resolveAndSyncCollisions(idModel, newNode.id);
-    }
-
     // 3) Update UI state
     isSubMenuVisible.value = true;
     elementsMenu.value = false;
@@ -232,20 +145,36 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     addNewNode.value = false;
   }
 
-  // ─── REMOVE A NODE: Delete from backend, THEN delete from shared Yjs array ───
+  // ─── REMOVE A NODE + CONNECTED EDGES: single undo transaction ───
   async function removeNode(idModel, idNode) {
-    // 1) Delete from your database
+    // Find connected edges BEFORE removing, so undo restores them together
+    const connectedEdgeIds = getFlowEdges()
+      .filter((e) => e.source === idNode || e.target === idNode)
+      .map((e) => e.id);
+
+    // 1) Delete node from DB
     await $fetch(`/api/models/delete`, {
       method: "DELETE",
       query: { idModel: idModel, idNode: idNode },
-      body: {
-        type: "node",
-        action: "removeNode",
-      },
+      body: { type: "node", action: "removeNode" },
     });
 
-    // 2) Remove from sharedNodes Yjs array; observer will update VueFlow
-    collaborationStore.removeNode(idNode);
+    // 1b) Delete connected edges from DB
+    for (const edgeId of connectedEdgeIds) {
+      $fetch(`/api/models/delete`, {
+        method: "DELETE",
+        query: { idModel: idModel, idEdge: edgeId },
+        body: { type: "edge", action: "removeEdge" },
+      }).catch(() => {});
+    }
+
+    // 2) Remove node + edges from Yjs in ONE transaction = single undo
+    collaborationStore.runInTransaction(() => {
+      collaborationStore.removeNode(idNode);
+      for (const edgeId of connectedEdgeIds) {
+        collaborationStore.removeEdge(edgeId);
+      }
+    });
 
     isSubMenuVisible.value = false;
   }
@@ -256,9 +185,6 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     const node = flowMCD.value.findNode(idNode);
     if (!node) return;
     node.selected = false;
-
-    const movedNodes = await resolveAndSyncCollisions(idModel, idNode);
-    if (movedNodes.length > 0) return;
 
     // 2) Persist to your database
     await $fetch(`/api/models/update`, {
@@ -351,8 +277,35 @@ export const useMCDStore = defineStore("flow-mcd", () => {
       },
     });
 
-    // 2) Remove from Yjs sharedEdges
+    // 2) Remove from Yjs sharedEdges (single transaction)
     collaborationStore.removeEdge(idEdge);
+
+    isSubMenuVisible.value = false;
+  }
+
+  // ─── REMOVE MULTIPLE ELEMENTS (batch for undo grouping) ───
+  async function removeElements(idModel, nodeIds, edgeIds) {
+    // DB deletes
+    for (const nid of nodeIds) {
+      $fetch(`/api/models/delete`, {
+        method: "DELETE",
+        query: { idModel, idNode: nid },
+        body: { type: "node", action: "removeNode" },
+      }).catch(() => {});
+    }
+    for (const eid of edgeIds) {
+      $fetch(`/api/models/delete`, {
+        method: "DELETE",
+        query: { idModel, idEdge: eid },
+        body: { type: "edge", action: "removeEdge" },
+      }).catch(() => {});
+    }
+
+    // Yjs: single transaction = single undo
+    collaborationStore.runInTransaction(() => {
+      for (const nid of nodeIds) collaborationStore.removeNode(nid);
+      for (const eid of edgeIds) collaborationStore.removeEdge(eid);
+    });
 
     isSubMenuVisible.value = false;
   }
@@ -432,11 +385,11 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     removeNode,
     updateNode,
     duplicateNode,
+    removeElements,
 
     updateEdge,
     removeEdge,
     addAssociation,
     determineHandles,
-    resolveAndSyncCollisions,
   };
 });

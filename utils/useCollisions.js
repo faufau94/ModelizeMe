@@ -1,4 +1,63 @@
 /**
+ * Find a free position for a new node that doesn't overlap existing nodes.
+ * Only moves the NEW node — never touches existing nodes.
+ * Also considers association entity boxes rendered at edge midpoints.
+ */
+export function findFreePosition(candidate, size, otherNodes, flowInstance, margin = 30) {
+  const obstacles = [];
+
+  // Collect real nodes
+  for (const node of otherNodes) {
+    const w = node.dimensions?.width || fallbackNodeSize(node).width;
+    const h = node.dimensions?.height || fallbackNodeSize(node).height;
+    obstacles.push({ x: node.position.x, y: node.position.y, w, h });
+  }
+
+  // Collect virtual association nodes from edges
+  if (flowInstance) {
+    const edges = flowInstance.getEdges?.value || [];
+    for (const edge of edges) {
+      if (!edge.data?.properties?.length && !edge.data?.hasNodeAssociation) continue;
+      const src = flowInstance.findNode(edge.source);
+      const tgt = flowInstance.findNode(edge.target);
+      if (!src || !tgt) continue;
+      // Size matches MyCustomEntityAssociation: min-width 160, max-width 240, rows ~28px each
+      const propCount = edge.data?.properties?.length || 0;
+      const hasTs = edge.data?.hasTimestamps ? 2 : 0;
+      const hasSd = edge.data?.usesSoftDeletes ? 1 : 0;
+      const assocW = 240;
+      const assocH = Math.max(100, 50 + (propCount + hasTs + hasSd) * 28);
+      obstacles.push({
+        x: (src.position.x + tgt.position.x) / 2 - assocW / 2,
+        y: (src.position.y + tgt.position.y) / 2 - assocH / 2,
+        w: assocW, h: assocH,
+      });
+    }
+  }
+
+  const overlaps = (pos) => obstacles.some(o =>
+    pos.x < o.x + o.w + margin &&
+    pos.x + size.width + margin > o.x &&
+    pos.y < o.y + o.h + margin &&
+    pos.y + size.height + margin > o.y
+  );
+
+  if (!overlaps(candidate)) return candidate;
+
+  // Spiral outward to find free spot
+  for (let dist = 60; dist < 1200; dist += 60) {
+    for (let angle = 0; angle < 360; angle += 30) {
+      const pos = {
+        x: candidate.x + dist * Math.cos(angle * Math.PI / 180),
+        y: candidate.y + dist * Math.sin(angle * Math.PI / 180),
+      };
+      if (!overlaps(pos)) return pos;
+    }
+  }
+  return { x: candidate.x + 400, y: candidate.y };
+}
+
+/**
  * Collision resolution algorithm adapted from React Flow examples.
  * Iteratively pushes overlapping nodes apart along the smallest overlap axis.
  */
@@ -23,7 +82,7 @@ function fallbackNodeSize(node) {
  * @param {{ maxIterations?: number, overlapThreshold?: number, margin?: number }} options
  * @returns {import('@vue-flow/core').Node[]}
  */
-export function resolveCollisions(nodes, { maxIterations = 50, overlapThreshold = 0.5, margin = 20 } = {}) {
+export function resolveCollisions(nodes, { maxIterations = 80, overlapThreshold = 0.5, margin = 20 } = {}) {
   const boxes = nodes.map((node) => {
     const estimated = fallbackNodeSize(node);
     const dimW = node.dimensions?.width;
