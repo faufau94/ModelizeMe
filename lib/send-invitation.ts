@@ -30,10 +30,36 @@ export async function sendOrganizationInvitation({
   `;
 
   const config = useRuntimeConfig();
+  const isProduction = process.env.NODE_ENV === 'production';
 
+  // 🛠️ EN DEV : MailHog (localhost)
+  if (!isProduction) {
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAILHOG_HOST || 'mailhog',
+      port: 1025,
+      secure: false, // ⚠️ Important pour MailHog
+    });
+
+    try {
+      const info = await transporter.sendMail({
+        from: 'noreply@modelizeme.local',
+        to: email,
+        subject: `Invitation to join ${teamName}`,
+        html,
+      });
+      console.log('✅ [DEV] Email sent via MailHog:', info.messageId);
+      return;
+    } catch (error) {
+      console.error('❌ [DEV] MailHog error:', error);
+      throw error;
+    }
+  }
+
+  // 📧 EN PROD : Service d'email réel
   const transporter = nodemailer.createTransport({
     host: config.mailerHost || process.env.MAILER_HOST,
     port: Number(config.mailerPort || process.env.MAILER_PORT || 587),
+    secure: process.env.MAILER_SECURE === 'true', // TLS en production
     auth: {
       user: config.mailerUser || process.env.MAILER_USER,
       pass: config.mailerPassword || process.env.MAILER_PASSWORD,
@@ -49,8 +75,9 @@ export async function sendOrganizationInvitation({
       subject: `Invitation to join ${teamName} on ModelizeMe`,
       html,
     });
-    console.log("Invitation email sent:", info.messageId);
+    console.log('✅ [PROD] Email sent:', info.messageId);
   } catch (error) {
-    console.error("Error sending invitation email:", error);
+    console.error('❌ [PROD] Email error:', error);
+    throw error;
   }
 }

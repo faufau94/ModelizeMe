@@ -6,7 +6,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 	// Unauthenticated users: block access to /app and /admin
 	if (!session.value) {
 		if (to.path.startsWith("/app") || to.path.startsWith("/admin")) {
-			return await navigateTo("/sign-in");
+			return await navigateTo(`/sign-in?redirect=${encodeURIComponent(to.fullPath)}`);
 		}
 	}
 

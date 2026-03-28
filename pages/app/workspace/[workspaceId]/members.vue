@@ -93,14 +93,14 @@
                 </template>
 
                 <template v-else>
-                  <template v-if="member?.role?.name === 'OWNER'">
+                  <template v-if="member?.role === 'owner'">
                     <Badge variant="secondary" class="bg-amber-100 text-amber-800 hover:bg-amber-100">
                       Owner
                     </Badge>
                   </template>
                   <template v-else>
                     <Badge variant="secondary" class="bg-gray-100 text-gray-800">
-                      {{ member?.role?.name }}
+                      {{ member?.role ? member.role.charAt(0).toUpperCase() + member.role.slice(1).toLowerCase() : '' }}
                     </Badge>
                   </template>
                 </template>

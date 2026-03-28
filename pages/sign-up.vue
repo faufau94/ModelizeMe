@@ -125,7 +125,7 @@
 
           <div class="mt-4 text-center text-sm">
             Vous avez déjà un compte ?
-            <NuxtLink to="/sign-in" class="underline">
+            <NuxtLink :to="route.query.redirect ? `/sign-in?redirect=${route.query.redirect}` : '/sign-in'" class="underline">
               Se connecter
             </NuxtLink>
           </div>
@@ -149,6 +149,7 @@ import {z} from "zod/v4";
 
 import {authClient, signUp} from "~/lib/auth-client.js";
 
+const route = useRoute()
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
@@ -225,15 +226,18 @@ const onSubmit = async (values) => {
     // Wait for session to load
     const { data: session } = await authClient.getSession()
 
-    
+    // Check for redirect parameter (e.g. invitation link)
+    const redirect = route.query.redirect
 
-    // Redirect to dynamic URL
-    const orgId = session?.session?.activeOrganizationId
-    console.log(orgId)
-    if (orgId) {
-      const url = getDashboardUrl(orgId)
-      console.log(url)
-      await navigateTo(url)
+    if (redirect) {
+      await navigateTo(decodeURIComponent(redirect))
+    } else {
+      // Default redirect to dashboard
+      const orgId = session?.session?.activeOrganizationId
+      if (orgId) {
+        const url = getDashboardUrl(orgId)
+        await navigateTo(url)
+      }
     }
   }
 };

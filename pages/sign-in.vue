@@ -94,7 +94,7 @@
 
           <div class="mt-4 text-center text-sm">
             Pas encore de compte ?
-            <NuxtLink to="/sign-up" class="underline">
+            <NuxtLink :to="route.query.redirect ? `/sign-up?redirect=${route.query.redirect}` : '/sign-up'" class="underline">
               S'inscrire
             </NuxtLink>
           </div>
