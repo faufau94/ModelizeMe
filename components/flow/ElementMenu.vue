@@ -662,7 +662,7 @@ const edgeNameInputRef = ref(null);
 
 const route = useRoute();
 const mcdStore = useMCDStore();
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, isSaving} = storeToRefs(mcdStore);
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, isSaving, isNewlyCreated} = storeToRefs(mcdStore);
 const {removeEdge, removeNode} = mcdStore
 
 const nodeData = ref(null);
@@ -686,6 +686,10 @@ const onDrawerEntered = () => {
 watch(
   () => [nodeIdSelected.value, edgeIdSelected.value],
   async ([newNodeId, newEdgeId], old) => {
+    // Only auto-focus when a brand-new node/edge was just created
+    if (!isNewlyCreated.value) return
+    isNewlyCreated.value = false
+
     const [oldNodeId, oldEdgeId] = old ?? [null, null]
     let targetRef = null
     if (newNodeId !== null && newNodeId !== oldNodeId) {

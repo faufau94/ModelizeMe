@@ -28,6 +28,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
   const foreignObjectHeight = ref(100);
   const isSaving = ref(false);
   const isResolvingCollisions = ref(false);
+  const isNewlyCreated = ref(false);
 
   function readFlowCollection(collection) {
     if (Array.isArray(collection?.value)) return collection.value;
@@ -141,6 +142,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     // 3) Update UI state
     isSubMenuVisible.value = true;
     elementsMenu.value = false;
+    isNewlyCreated.value = true;
     nodeIdSelected.value = newNode.id;
     addNewNode.value = false;
   }
@@ -381,6 +383,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     // Update UI state
     isSubMenuVisible.value = true;
     elementsMenu.value = false;
+    isNewlyCreated.value = true;
     nodeIdSelected.value = newNode.id;
     edgeIdSelected.value = null;
     addNewNode.value = false;
@@ -436,6 +439,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     edgeIdSelected,
     isSaving,
     isResolvingCollisions,
+    isNewlyCreated,
 
     getIdNode,
     getIdEdge,

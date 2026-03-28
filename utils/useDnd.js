@@ -28,6 +28,7 @@ export default function useDragAndDrop() {
     elementsMenu,
     nodeIdSelected,
     addNewNode,
+    isNewlyCreated,
   } = storeToRefs(mcdStore);
 
   // 4) mcdStore.createNewNode() factory to generate a fresh node object
@@ -157,6 +158,7 @@ export default function useDragAndDrop() {
     collaborationStore.addNode(newNode);
 
     // f) Mark that the new node is selected in the sidebar
+    isNewlyCreated.value = true;
     nodeIdSelected.value = newNode.id;
     addNewNode.value = false;
   }

@@ -512,6 +512,7 @@ onMounted(async () => {
 
     isSubMenuVisible.value = true
     elementsMenu.value = false
+    mcdStore.isNewlyCreated = true
     edgeIdSelected.value = newEdge.id
     nodeIdSelected.value = null
   })
