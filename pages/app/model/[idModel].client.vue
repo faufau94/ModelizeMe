@@ -9,6 +9,7 @@
         :key="activeTab"
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
+        :connection-radius="50"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="(e) => onDrop(e, route.params.idModel)"
@@ -599,7 +600,12 @@ const onChange = async (changes) => {
   if (isResolvingCollisions.value) return
   // CRITICAL: skip ALL persistence when VueFlow is being updated from Yjs
   // (undo/redo/remote observers). Any 'local' Yjs transaction here would wipe redo.
-  if (collaborationStore.isUndoRedoing || collaborationStore.isSuppressed()) return
+  if (collaborationStore.isUndoRedoing || collaborationStore.isSuppressed()) {
+    // Log to verify we're actually skipping
+    const posChanges = changes.filter(c => c.type === 'position')
+    if (posChanges.length) console.log('[onChange] SKIPPED —', posChanges.length, 'position changes, suppress:', collaborationStore.isSuppressed(), 'undoRedoing:', collaborationStore.isUndoRedoing)
+    return
+  }
   for (const change of changes) {
     if (change.type === 'position' && change.dragging === true) {
       _userDraggingNodes.add(change.id)
@@ -627,7 +633,7 @@ const onChange = async (changes) => {
           draggedNode.position = freePos
         }
       }
-      await mcdStore.updateNode(route.params.idModel, change.id)
+      await mcdStore.updateNodePosition(route.params.idModel, change.id)
     }
   }
 }

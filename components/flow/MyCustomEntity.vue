@@ -28,14 +28,14 @@
              :key="index">
           <div class="flex items-center gap-1 min-w-0">
             <div class="w-4 flex-shrink-0" v-if="field?.isPrimaryKey">
-              <KeyRound :size="12" class="text-amber-500"/>
+              <KeyRound :size="12" class="text-red-500"/>
             </div>
             <div class="w-4 flex-shrink-0" v-else-if="field?.isForeignKey">
               <KeyRound :size="12" class="text-gray-400"/>
             </div>
             <div v-else class="w-4 flex-shrink-0"></div>
 
-            <span :class="{ 'underline decoration-amber-400 decoration-2 underline-offset-2' : field?.isPrimaryKey }"
+            <span :class="{ 'underline decoration-red-400 decoration-2 underline-offset-2' : field?.isPrimaryKey }"
                   class="truncate text-sm font-medium text-gray-700">
               {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
             </span>
@@ -264,7 +264,7 @@ const sourceHandle = ref(0)
 const sourceHandleStyle = computed(() => {
   return {
     backgroundColor: '#6366f1',
-    padding: '6px',
+    padding: '8px',
     opacity: sourceHandle.value,
     border: '2px solid white',
     boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
@@ -304,8 +304,26 @@ const hideHandles = () => {
 
 <style scoped>
 .vue-flow__handle {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
+  transition: width 0.15s ease, height 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vue-flow__handle:hover {
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18), 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Invisible hit area around each handle for easier edge creation */
+.vue-flow__handle::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border-radius: 50%;
 }
 
 .vue-flow__handle-top {

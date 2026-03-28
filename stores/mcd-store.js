@@ -201,6 +201,24 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     collaborationStore.updateNode(idNode, node);
   }
 
+  // Position-only update — not tracked by UndoManager (prevents undo from deleting nodes)
+  async function updateNodePosition(idModel, idNode) {
+    const node = flowMCD.value.findNode(idNode);
+    if (!node) return;
+
+    await $fetch(`/api/models/update`, {
+      method: "PUT",
+      query: { id: idModel },
+      body: {
+        node: node,
+        type: "node",
+        action: "updateNode",
+      },
+    });
+
+    collaborationStore.updateNodePosition(idNode, node);
+  }
+
   // ─── DUPLICATE NODE: Create a copy offset by random amount, then re‐use addNode() ───
   async function duplicateNode(props) {
     const maxOffset = 50;
@@ -384,6 +402,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     addNode,
     removeNode,
     updateNode,
+    updateNodePosition,
     duplicateNode,
     removeElements,
 

@@ -35,7 +35,7 @@
       >
         <div class="flex items-center gap-1 min-w-0">
           <div class="w-3.5 flex-shrink-0" v-if="field?.isPrimaryKey">
-            <KeyRound :size="11" class="text-amber-500"/>
+            <KeyRound :size="11" class="text-red-500"/>
           </div>
           <div class="w-3.5 flex-shrink-0" v-else-if="field?.isForeignKey">
             <KeyRound :size="11" class="text-gray-400"/>
@@ -44,7 +44,7 @@
 
           <span
             class="text-xs text-gray-700 truncate"
-            :class="field?.isPrimaryKey ? 'font-semibold underline decoration-amber-400 decoration-2 underline-offset-2' : 'font-normal'"
+            :class="field?.isPrimaryKey ? 'font-semibold underline decoration-red-400 decoration-2 underline-offset-2' : 'font-normal'"
           >
             {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
           </span>
