@@ -2,6 +2,7 @@
   <Transition
       name="drawer"
       @before-enter="preventBodyScroll"
+      @after-enter="onDrawerEntered"
       @after-leave="restoreBodyScroll"
   >
 
@@ -17,7 +18,7 @@
           <p class="font-bold text-xl">Entité</p>
           <div class="max-w-sm mt-6">
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de l'entité</label>
-            <Input v-model="nodeName" type="text"/>
+            <Input ref="nodeNameInputRef" v-model="nodeName" type="text"/>
           </div>
 
           <div class="w-full flex items-center justify-start gap-x-8">
@@ -300,7 +301,7 @@
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">
               Nom de l'association
             </label>
-            <Input v-model="edgeName"
+            <Input ref="edgeNameInputRef" v-model="edgeName"
                    type="text"
                    placeholder=""/>
           </div>
@@ -605,7 +606,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watch} from "vue";
+import {computed, nextTick, ref, watch} from "vue";
 import {storeToRefs} from "pinia";
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {Input} from '@/components/ui/input';
@@ -656,6 +657,8 @@ onBeforeUnmount(() => {
   restoreBodyScroll();
 });
 const scrollAreaRef = ref(null);
+const nodeNameInputRef = ref(null);
+const edgeNameInputRef = ref(null);
 
 const route = useRoute();
 const mcdStore = useMCDStore();
@@ -664,6 +667,44 @@ const {removeEdge, removeNode} = mcdStore
 
 const nodeData = ref(null);
 const edgeData = ref(null);
+
+// Auto-focus the name input — handles both fresh open and already-open drawer
+const _pendingFocusRef = ref(null)
+
+const focusInput = (inputRef) => {
+  const el = inputRef.value?.$el ?? inputRef.value
+  el?.focus({ preventScroll: true })
+}
+
+const onDrawerEntered = () => {
+  if (_pendingFocusRef.value) {
+    focusInput(_pendingFocusRef.value)
+    _pendingFocusRef.value = null
+  }
+}
+
+watch(
+  () => [nodeIdSelected.value, edgeIdSelected.value],
+  async ([newNodeId, newEdgeId], old) => {
+    const [oldNodeId, oldEdgeId] = old ?? [null, null]
+    let targetRef = null
+    if (newNodeId !== null && newNodeId !== oldNodeId) {
+      targetRef = nodeNameInputRef
+    } else if (newEdgeId !== null && newEdgeId !== oldEdgeId) {
+      targetRef = edgeNameInputRef
+    }
+    if (!targetRef) return
+
+    if (isSubMenuVisible.value) {
+      // Drawer already open — input is in DOM, just wait for reactivity update
+      await nextTick()
+      focusInput(targetRef)
+    } else {
+      // Drawer about to open — defer until transition ends
+      _pendingFocusRef.value = targetRef
+    }
+  }
+)
 
 // Re-read node/edge from VueFlow when selection changes OR after undo/redo.
 // Watch the VueFlow nodes/edges arrays directly so refs stay fresh after setNodes.
