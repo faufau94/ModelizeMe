@@ -448,13 +448,15 @@ onMounted(async () => {
     return navigateTo(`/app/workspace/${session.value?.session?.activeOrganizationId}/dashboard`)
   }
 
-  // Set initial nodes/edges in Yjs AND VueFlow — always, even if empty
-  // skipTracking=true so initial load is NOT added to undo history
+  // Set initial nodes/edges in Yjs AND VueFlow.
+  // Use skipTracking=true (origin='init') so UndoManager ignores the initial load.
+  // Future edits will be tracked as deltas from this base state.
   const initialNodes = model.value?.nodes || [];
   const initialEdges = model.value?.edges || [];
   collaborationStore.setNodes(initialNodes, true);
-  mcdStore.flowMCD.setNodes(initialNodes);
   collaborationStore.setEdges(initialEdges, true);
+  collaborationStore.clearUndoHistory();
+  mcdStore.flowMCD.setNodes(initialNodes);
   mcdStore.flowMCD.setEdges(initialEdges);
 
   if(model.value) {
@@ -467,6 +469,13 @@ onMounted(async () => {
     const newEdge = mcdStore.createNewEdge(params)
     // Use shared edges instead of directly adding to flow
     collaborationStore.addEdge(newEdge)
+
+    // Persist new edge to DB
+    $fetch(`/api/models/update`, {
+      method: 'PUT',
+      query: { id: route.params.idModel },
+      body: { edge: newEdge, type: 'edge', action: 'addEdge' },
+    }).catch(() => {})
 
     isSubMenuVisible.value = true
     elementsMenu.value = false
@@ -554,6 +563,8 @@ const _pendingNodeDeleteEdges = new Set()
 
 const onNodesDelete = (deletedNodes) => {
   if (activeTab.value !== 'default') return
+  // Skip delete events triggered by undo/redo or Yjs observer — state is handled there
+  if (collaborationStore.isUndoRedoing || collaborationStore.isSuppressed()) return
   const deletedNodeIds = deletedNodes.map((n) => n.id)
   const connectedEdgeIds = mcdFlowInstance.getEdges.value
     .filter((e) => deletedNodeIds.includes(e.source) || deletedNodeIds.includes(e.target))
@@ -568,6 +579,8 @@ const onNodesDelete = (deletedNodes) => {
 
 const onEdgesDelete = (deletedEdges) => {
   if (activeTab.value !== 'default') return
+  // Skip delete events triggered by undo/redo or Yjs observer
+  if (collaborationStore.isUndoRedoing || collaborationStore.isSuppressed()) return
   const edgeIds = deletedEdges.map((e) => e.id).filter(id => !_pendingNodeDeleteEdges.has(id))
   if (!edgeIds.length) return
   mcdStore.removeElements(route.params.idModel, [], edgeIds)
@@ -582,27 +595,32 @@ const onEdgesDelete = (deletedEdges) => {
 const _userDraggingNodes = new Set()
 
 const onChange = async (changes) => {
+  if (activeTab.value !== 'default') return
   if (isResolvingCollisions.value) return
+  // CRITICAL: skip ALL persistence when VueFlow is being updated from Yjs
+  // (undo/redo/remote observers). Any 'local' Yjs transaction here would wipe redo.
+  if (collaborationStore.isUndoRedoing || collaborationStore.isSuppressed()) return
   for (const change of changes) {
     if (change.type === 'position' && change.dragging === true) {
       _userDraggingNodes.add(change.id)
     }
+    // Only persist when the user PHYSICALLY dropped a node they were dragging.
+    // Ignore all programmatic position changes (undo/redo, setNodes, observers).
     if (
       change.type === 'position' &&
       change.dragging === false &&
       _userDraggingNodes.has(change.id) &&
-      change.id.startsWith('dndnode') &&
-      activeTab.value === 'default'
+      change.id.startsWith('dndnode')
     ) {
       _userDraggingNodes.delete(change.id)
-      // Resolve collision: nudge THIS node if it overlaps others
       const draggedNode = mcdFlowInstance.findNode(change.id)
       if (draggedNode) {
         const allNodes = mcdFlowInstance.getNodes.value || []
         const otherNodes = allNodes.filter(n => n.id !== change.id)
+        const estimated = estimateNodeSize(draggedNode)
         const size = {
-          width: draggedNode.dimensions?.width || 340,
-          height: draggedNode.dimensions?.height || 160,
+          width: draggedNode.dimensions?.width || estimated.width,
+          height: draggedNode.dimensions?.height || estimated.height,
         }
         const freePos = findFreePosition(draggedNode.position, size, otherNodes, mcdFlowInstance)
         if (freePos.x !== draggedNode.position.x || freePos.y !== draggedNode.position.y) {
@@ -752,32 +770,21 @@ const reorganize = async () => {
 
   const { nodes: layoutedNodes, edges: layoutedEdges } = result;
 
-  // Force deselect on the plain objects BEFORE applying to VueFlow
+  // Force deselect on the plain objects BEFORE applying
   for (const n of layoutedNodes) { n.selected = false; n.dragging = false; }
   for (const e of layoutedEdges) { e.selected = false; }
 
-  // Apply to Vue Flow
-  mcdFlowInstance.setNodes(layoutedNodes);
-  mcdFlowInstance.setEdges(layoutedEdges);
-
-  // Persist new positions to Yjs in a single transaction (one undo for entire reorganize)
+  // Persist to Yjs (single undo) — runInTransaction also syncs VueFlow
   collaborationStore.runInTransaction(() => {
     collaborationStore.setNodes(layoutedNodes);
     collaborationStore.setEdges(layoutedEdges);
   });
 
-  // Persist each node position to DB directly (without going through collaborationStore.updateNode)
-  for (const node of layoutedNodes) {
-    $fetch(`/api/models/update`, {
-      method: "PUT",
-      query: { id: route.params.idModel },
-      body: {
-        node: node,
-        type: "node",
-        action: "updateNode",
-      },
-    });
-  }
+  // Persist to DB via bulk sync (single request instead of N individual updates)
+  $fetch('/api/models/sync', {
+    method: 'PUT',
+    body: { id: route.params.idModel, nodes: layoutedNodes, edges: layoutedEdges }
+  }).catch(() => {});
 
   await nextTick();
   mcdFlowInstance.fitView({ padding: 0.4 });
@@ -809,8 +816,6 @@ const exportToSQL = async (database) => {
       method: "GET",
       query: {id: route.params.idModel},
     });
-    console.log('getMCDModel', getMCDModel)
-
     const {nodesMLD, edgesMLD} = mldStore.generateMLD(getMCDModel['nodes'],getMCDModel['edges'])
 
     const newTitle = getMCDModel?.name?.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_') +
@@ -819,8 +824,6 @@ const exportToSQL = async (database) => {
       method: 'POST',
       body: { title: newTitle, database: database , nodes: nodesMLD, edges: edgesMLD },
     });
-
-    console.log('response', response)
 
 
   try {

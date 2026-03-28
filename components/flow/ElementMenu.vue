@@ -605,7 +605,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watchEffect, watch} from "vue";
+import {computed, ref, watch} from "vue";
 import {storeToRefs} from "pinia";
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {Input} from '@/components/ui/input';
@@ -665,10 +665,21 @@ const {removeEdge, removeNode} = mcdStore
 const nodeData = ref(null);
 const edgeData = ref(null);
 
-watchEffect(() => {
-  nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value);
-  edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value);
-});
+// Re-read node/edge from VueFlow when selection changes OR after undo/redo.
+// Watch the VueFlow nodes/edges arrays directly so refs stay fresh after setNodes.
+watch(
+  () => [
+    nodeIdSelected.value,
+    edgeIdSelected.value,
+    mcdStore?.flowMCD?.getNodes?.value,
+    mcdStore?.flowMCD?.getEdges?.value,
+  ],
+  () => {
+    nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value) ?? null;
+    edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value) ?? null;
+  },
+  { immediate: true }
+);
 
 
 const updateNode = async () => {
@@ -695,9 +706,6 @@ const removeNodeById = async () => {
   await removeNode(route.params.idModel, nodeIdSelected.value)
 }
 
-const updateEdgeName = (newName) => {
-  mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, {name: newName});
-};
 
 const addFieldAssociation = () => {
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
@@ -740,16 +748,6 @@ const removeFieldAssociation = (id) => {
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
     edge.data.properties = edge.data.properties.filter(property => property.id !== id);
   });
-};
-
-function onEnd(event) {
-  console.log('Dragged', event);
-}
-
-const isExpanded = ref(true);
-
-const toggleSidebar = () => {
-  isExpanded.value = !isExpanded.value;
 };
 
 const nodeName = computed({
@@ -866,19 +864,7 @@ const type = [
   "Json",
 ];
 
-const open = ref(false)
-const value = ref('')
-
-let selected = ref(type[0]);
-let query = ref("");
-
-let filteredProperty = computed(() =>
-    query.value === ""
-        ? type
-        : type.filter((person) =>
-            person.toLowerCase().replace(/\s+/g, "").includes(query.value.toLowerCase().replace(/\s+/g, ""))
-        )
-);
+const filteredProperty = computed(() => type);
 
 
 </script>

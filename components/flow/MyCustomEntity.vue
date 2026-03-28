@@ -212,15 +212,6 @@ const headerColorClass = computed(() => {
   }
 })
 
-const badgeColorClass = computed(() => {
-  switch (modelType.value) {
-    case 'mcd': return 'text-blue-400';
-    case 'mld': return 'text-emerald-400';
-    case 'mpd': return 'text-purple-400';
-    default: return 'text-gray-400';
-  }
-})
-
 watch(() => nodeIdSelected.value === props.id, (newVal) => {
   if (isReadOnly.value) return;
   if (newVal) {

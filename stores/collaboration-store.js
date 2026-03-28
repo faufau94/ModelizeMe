@@ -23,7 +23,11 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   const canRedo         = ref(false)
   const isUndoRedoing   = ref(false)  // true while undo/redo is in progress
   let dbSyncTimer       = null        // debounce timer for DB sync after undo/redo
-  let undoRedoResetTimer = null       // debounce timer for isUndoRedoing flag
+  let _insideTransaction = false      // true when inside runInTransaction
+  // Counter: >0 means VueFlow is being updated from Yjs observer (undo/redo/remote).
+  // The page's onChange must skip when this is >0 to avoid creating 'local' transactions
+  // that would wipe the redo stack.
+  let _suppressOnChange = 0
 
   // ─── REACTIVE ACCESSORS ───
   // these computed() functions turn Y.Array → plain JS array
@@ -70,31 +74,50 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
     // 5) when sharedNodes changes from REMOTE users or undo/redo, update VueFlow
     //    Skip 'local' origin to avoid resetting positions during/after drag.
-    //    Read toArray() directly — Vue computed won't detect Y.Array internal mutations.
+    //    Also skip 'init' origin (initial load handled explicitly in page).
+    //    We increment _suppressOnChange BEFORE touching VueFlow and decrement after
+    //    two nextTick cycles, so the page's onChange handler can skip position-change
+    //    events that result from this observer (preventing redo-stack wipe).
     sharedNodes.value.observe((event, transaction) => {
       if (!mcdStore.flowMCD) return
-      if (transaction.origin === 'local') return
+      if (transaction.origin === 'local' || transaction.origin === 'init') return
+      _suppressOnChange++
       const nodes = sharedNodes.value.toArray()
+      const nodeIds = new Set(nodes.map(n => n.id))
       mcdStore.flowMCD.setNodes(nodes)
-      // Force VueFlow to detect deep data changes (renames, properties, etc.)
       nextTick(() => {
         for (const n of nodes) {
           if (n.data && n.id) mcdStore.flowMCD.updateNodeData(n.id, { ...n.data })
         }
+        // Remove edges that reference deleted nodes (e.g. after undo of addNode)
+        const currentEdges = mcdStore.flowMCD.getEdges?.value || []
+        const orphanEdgeIds = currentEdges
+          .filter(e => !nodeIds.has(e.source) || !nodeIds.has(e.target))
+          .map(e => e.id)
+        if (orphanEdgeIds.length) mcdStore.flowMCD.removeEdges(orphanEdgeIds)
+        if (isUndoRedoing.value) syncToDb()
+        // Decrement after enough ticks for VueFlow change events to fully settle
+        nextTick(() => { nextTick(() => { nextTick(() => {
+          _suppressOnChange = Math.max(0, _suppressOnChange - 1)
+        }) }) })
       })
     })
 
-    // 6) similarly for edges — skip local changes
+    // 6) similarly for edges — skip local & init changes
     sharedEdges.value.observe((event, transaction) => {
       if (!mcdStore.flowMCD) return
-      if (transaction.origin === 'local') return
+      if (transaction.origin === 'local' || transaction.origin === 'init') return
+      _suppressOnChange++
       const edges = sharedEdges.value.toArray()
       mcdStore.flowMCD.setEdges(edges)
-      // Force VueFlow to detect deep data changes (cardinalities, properties, etc.)
       nextTick(() => {
         for (const e of edges) {
           if (e.data && e.id) mcdStore.flowMCD.updateEdgeData(e.id, { ...e.data })
         }
+        if (isUndoRedoing.value) syncToDb()
+        nextTick(() => { nextTick(() => { nextTick(() => {
+          _suppressOnChange = Math.max(0, _suppressOnChange - 1)
+        }) }) })
       })
     })
 
@@ -116,30 +139,14 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     }
 
     undoManager.value.on('stack-item-added', updateUndoRedoState)
-    undoManager.value.on('stack-item-popped', () => {
-      updateUndoRedoState()
-      // Resync DB after undo/redo (debounced to avoid race conditions)
-      if (currentModelId.value) {
-        clearTimeout(dbSyncTimer)
-        dbSyncTimer = setTimeout(() => {
-          $fetch('/api/models/sync', {
-            method: 'PUT',
-            body: {
-              id: currentModelId.value,
-              nodes: sharedNodes.value?.toArray() ?? [],
-              edges: sharedEdges.value?.toArray() ?? []
-            }
-          }).catch(() => {})
-        }, 1000)
-      }
-    })
+    undoManager.value.on('stack-item-popped', updateUndoRedoState)
 
     // 8) track connection status
     provider.value.on('status', ({ status }) => {
       isConnected.value = (status === 'connected')
     })
 
-    // 8) track awareness changes for remote cursors / user list
+    // 9) track awareness changes for remote cursors / user list
     awareness.on('change', () => {
       const states = Array.from(awareness.getStates().entries())
       remoteCursors.value = states
@@ -158,17 +165,40 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
   }
 
+  // ─── DB SYNC (debounced) ───
+  function syncToDb() {
+    if (!currentModelId.value) return
+    clearTimeout(dbSyncTimer)
+    dbSyncTimer = setTimeout(() => {
+      $fetch('/api/models/sync', {
+        method: 'PUT',
+        body: {
+          id: currentModelId.value,
+          nodes: sharedNodes.value?.toArray() ?? [],
+          edges: sharedEdges.value?.toArray() ?? []
+        }
+      }).catch(() => {})
+    }, 1000)
+  }
+
   // ─── NODE CRUD ───
-  // All local mutations use origin='local' so the observer skips them
+  // All local mutations use origin='local' so the observer skips them.
+  // When inside runInTransaction, do NOT touch VueFlow directly — the Yjs
+  // observer will handle it after the transaction commits (for undo coherence).
   function addNode(node) {
-    const mcdStore = useMCDStore()
-    // Always add directly to VueFlow immediately (no waiting for Yjs sync)
-    if (mcdStore.flowMCD) mcdStore.flowMCD.addNodes([ node ])
-    // Also persist in Yjs for collaboration
+    if (!_insideTransaction) {
+      const mcdStore = useMCDStore()
+      if (mcdStore.flowMCD) mcdStore.flowMCD.addNodes([ node ])
+    }
     if (!sharedNodes.value) return
-    ydoc.value.transact(() => {
-      sharedNodes.value.push([ node ])
-    }, 'local')
+    const plain = JSON.parse(JSON.stringify(node))
+    if (_insideTransaction) {
+      sharedNodes.value.push([ plain ])
+    } else {
+      ydoc.value.transact(() => {
+        sharedNodes.value.push([ plain ])
+      }, 'local')
+    }
   }
 
   function updateNode(nodeId, newData) {
@@ -176,37 +206,56 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     const arr = sharedNodes.value.toArray()
     const idx = arr.findIndex(n => n.id === nodeId)
     if (idx === -1) return
-    const merged = { ...arr[idx], ...newData }
+    // Deep-clone to strip Vue reactivity proxies before storing in Yjs
+    const merged = JSON.parse(JSON.stringify({ ...arr[idx], ...newData }))
 
-    ydoc.value.transact(() => {
+    if (_insideTransaction) {
       sharedNodes.value.delete(idx, 1)
       sharedNodes.value.insert(idx, [merged])
-    }, 'local')
+    } else {
+      ydoc.value.transact(() => {
+        sharedNodes.value.delete(idx, 1)
+        sharedNodes.value.insert(idx, [merged])
+      }, 'local')
+    }
   }
 
   function removeNode(nodeId) {
-    const mcdStore = useMCDStore()
-    if (mcdStore.flowMCD) mcdStore.flowMCD.removeNodes([ nodeId ])
+    // Only touch VueFlow directly when NOT inside a transaction.
+    // Inside a transaction, undo/redo relies on Yjs observer to restore state.
+    if (!_insideTransaction) {
+      const mcdStore = useMCDStore()
+      if (mcdStore.flowMCD) mcdStore.flowMCD.removeNodes([ nodeId ])
+    }
     if (!sharedNodes.value) return
     const arr = sharedNodes.value.toArray()
     const idx = arr.findIndex(n => n.id === nodeId)
     if (idx >= 0) {
-      ydoc.value.transact(() => {
+      if (_insideTransaction) {
         sharedNodes.value.delete(idx, 1)
-      }, 'local')
+      } else {
+        ydoc.value.transact(() => {
+          sharedNodes.value.delete(idx, 1)
+        }, 'local')
+      }
     }
   }
 
   // ─── EDGE CRUD ───
   function addEdge(edge) {
-    const mcdStore = useMCDStore()
-    // Always add directly to VueFlow immediately
-    if (mcdStore.flowMCD) mcdStore.flowMCD.addEdges([ edge ])
-    // Also persist in Yjs for collaboration
+    if (!_insideTransaction) {
+      const mcdStore = useMCDStore()
+      if (mcdStore.flowMCD) mcdStore.flowMCD.addEdges([ edge ])
+    }
     if (!sharedEdges.value) return
-    ydoc.value.transact(() => {
-      sharedEdges.value.push([ edge ])
-    }, 'local')
+    const plain = JSON.parse(JSON.stringify(edge))
+    if (_insideTransaction) {
+      sharedEdges.value.push([ plain ])
+    } else {
+      ydoc.value.transact(() => {
+        sharedEdges.value.push([ plain ])
+      }, 'local')
+    }
   }
 
   function updateEdge(edgeId, newData) {
@@ -214,23 +263,35 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     const arr = sharedEdges.value.toArray()
     const idx = arr.findIndex(e => e.id === edgeId)
     if (idx === -1) return
-    const merged = { ...arr[idx], ...newData }
-    ydoc.value.transact(() => {
+    // Deep-clone to strip Vue reactivity proxies before storing in Yjs
+    const merged = JSON.parse(JSON.stringify({ ...arr[idx], ...newData }))
+    if (_insideTransaction) {
       sharedEdges.value.delete(idx, 1)
       sharedEdges.value.insert(idx, [ merged ])
-    }, 'local')
+    } else {
+      ydoc.value.transact(() => {
+        sharedEdges.value.delete(idx, 1)
+        sharedEdges.value.insert(idx, [ merged ])
+      }, 'local')
+    }
   }
 
   function removeEdge(edgeId) {
-    const mcdStore = useMCDStore()
-    if (mcdStore.flowMCD) mcdStore.flowMCD.removeEdges([ edgeId ])
+    if (!_insideTransaction) {
+      const mcdStore = useMCDStore()
+      if (mcdStore.flowMCD) mcdStore.flowMCD.removeEdges([ edgeId ])
+    }
     if (!sharedEdges.value) return
     const arr = sharedEdges.value.toArray()
     const idx = arr.findIndex(e => e.id === edgeId)
     if (idx >= 0) {
-      ydoc.value.transact(() => {
+      if (_insideTransaction) {
         sharedEdges.value.delete(idx, 1)
-      }, 'local')
+      } else {
+        ydoc.value.transact(() => {
+          sharedEdges.value.delete(idx, 1)
+        }, 'local')
+      }
     }
   }
 
@@ -238,16 +299,18 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   // skipTracking=true uses 'init' origin so UndoManager ignores it
   function setNodes(newNodes, skipTracking = false) {
     if (!sharedNodes.value) return
+    const plain = JSON.parse(JSON.stringify(newNodes))
     ydoc.value.transact(() => {
       sharedNodes.value.delete(0, sharedNodes.value.length)
-      sharedNodes.value.push(newNodes)
+      sharedNodes.value.push(plain)
     }, skipTracking ? 'init' : 'local')
   }
   function setEdges(newEdges, skipTracking = false) {
     if (!sharedEdges.value) return
+    const plain = JSON.parse(JSON.stringify(newEdges))
     ydoc.value.transact(() => {
       sharedEdges.value.delete(0, sharedEdges.value.length)
-      sharedEdges.value.push(newEdges)
+      sharedEdges.value.push(plain)
     }, skipTracking ? 'init' : 'local')
   }
 
@@ -256,17 +319,17 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     if (!provider.value) return
     const flowContainer = document.querySelector('.dndflow')
     if (!flowContainer) return
-    
+
     // Get the Vue Flow instance from MCD store
     const mcdStore = useMCDStore()
     if (!mcdStore.flowMCD) return
-    
+
     // Convert screen coordinates to flow coordinates
     const flowPosition = mcdStore.flowMCD.screenToFlowCoordinate({
       x: event.clientX,
       y: event.clientY
     })
-    
+
     provider.value.awareness.setLocalStateField('user', {
       ...provider.value.awareness.getLocalState()?.user,
       cursor: flowPosition
@@ -297,36 +360,65 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   }
 
   // ─── UNDO / REDO ───
+  function clearUndoHistory() {
+    if (!undoManager.value) return
+    undoManager.value.clear()
+    canUndo.value = false
+    canRedo.value = false
+  }
+
   function undo() {
     if (!undoManager.value?.canUndo()) return
     isUndoRedoing.value = true
-    clearTimeout(undoRedoResetTimer)
+    _suppressOnChange++
     undoManager.value.undo()
-    canUndo.value = undoManager.value.canUndo() ?? false
-    canRedo.value = undoManager.value.canRedo() ?? false
-    // Use a debounced timer — VueFlow emits position changes asynchronously
-    // after Yjs observer fires setNodes/setEdges, which can take many ticks.
-    undoRedoResetTimer = setTimeout(() => {
+    // The observer fires synchronously and increments _suppressOnChange too.
+    // Wait for VueFlow change events to fully settle before clearing flags.
+    // Use 5 ticks: observer setNodes(1) → updateNodeData(2) → VueFlow emits(3,4) → safe(5)
+    nextTick(() => { nextTick(() => { nextTick(() => { nextTick(() => { nextTick(() => {
+      _suppressOnChange = Math.max(0, _suppressOnChange - 1)
       isUndoRedoing.value = false
-    }, 300)
+    }) }) }) }) })
   }
 
   function redo() {
     if (!undoManager.value?.canRedo()) return
     isUndoRedoing.value = true
-    clearTimeout(undoRedoResetTimer)
+    _suppressOnChange++
     undoManager.value.redo()
-    canUndo.value = undoManager.value.canUndo() ?? false
-    canRedo.value = undoManager.value.canRedo() ?? false
-    undoRedoResetTimer = setTimeout(() => {
+    nextTick(() => { nextTick(() => { nextTick(() => { nextTick(() => { nextTick(() => {
+      _suppressOnChange = Math.max(0, _suppressOnChange - 1)
       isUndoRedoing.value = false
-    }, 300)
+    }) }) }) }) })
   }
 
-  // Run multiple Yjs mutations as a single undoable transaction
+  // Run multiple Yjs mutations as a single undoable transaction.
+  // Inside this, CRUD functions skip direct VueFlow calls — the Yjs observer
+  // handles VueFlow sync after the transaction, ensuring undo restores everything.
   function runInTransaction(fn) {
     if (!ydoc.value) return fn()
-    ydoc.value.transact(() => { fn() }, 'local')
+    _insideTransaction = true
+    _suppressOnChange++
+    try {
+      ydoc.value.transact(() => { fn() }, 'local')
+    } finally {
+      _insideTransaction = false
+    }
+    // The Yjs observer won't fire for 'local' origin, so sync VueFlow manually.
+    // This runs while _suppressOnChange > 0, so the page's onChange won't persist.
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) {
+      mcdStore.flowMCD.setNodes(sharedNodes.value?.toArray() ?? [])
+      mcdStore.flowMCD.setEdges(sharedEdges.value?.toArray() ?? [])
+    }
+    nextTick(() => { nextTick(() => { nextTick(() => {
+      _suppressOnChange = Math.max(0, _suppressOnChange - 1)
+    }) }) })
+  }
+
+  // Expose suppression state for the page's onChange handler
+  function isSuppressed() {
+    return _suppressOnChange > 0
   }
 
   // ─── CLEANUP ───
@@ -337,8 +429,8 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     }
     clearTimeout(dbSyncTimer)
     dbSyncTimer = null
-    clearTimeout(undoRedoResetTimer)
-    undoRedoResetTimer = null
+    _insideTransaction = false
+    _suppressOnChange = 0
     undoManager.value = null
     canUndo.value = false
     canRedo.value = false
@@ -400,6 +492,9 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     updateCursor,
     undo,
     redo,
-    runInTransaction
+    runInTransaction,
+    syncToDb,
+    clearUndoHistory,
+    isSuppressed
   }
 })
