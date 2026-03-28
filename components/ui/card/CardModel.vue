@@ -120,17 +120,20 @@
           <TooltipProvider v-for="viewer in props.viewers.slice(0, 3)" :key="viewer.userId">
             <Tooltip>
               <TooltipTrigger as-child>
-                <Avatar class="w-6 h-6 border-2 border-white shadow-sm ring-2 ring-green-400">
-                  <AvatarImage v-if="viewer.userImage" :src="viewer.userImage" :alt="viewer.userName" />
-                  <AvatarFallback class="text-[9px] bg-green-50 text-green-700">{{ viewer.userName?.substring(0, 2).toUpperCase() || '?' }}</AvatarFallback>
-                </Avatar>
+                <div class="relative">
+                  <Avatar class="w-6 h-6 border-2 bg-white border-white shadow-sm ring-2 ring-primary-400">
+                    <AvatarImage v-if="viewer.userImage" :src="viewer.userImage" :alt="viewer.userName" />
+                    <AvatarFallback class="text-[9px]  text-gray-500">{{ viewer.userName?.substring(0, 2).toUpperCase() || '?' }}</AvatarFallback>
+                  </Avatar>
+                  <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-[1.5px] border-white rounded-full"></span>
+                </div>
               </TooltipTrigger>
               <TooltipContent class="bg-gray-900 text-white text-xs">
                 <p>{{ viewer.userName }} - en ligne</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <span v-if="props.viewers.length > 3" class="text-[10px] text-green-600 font-medium ml-1">+{{ props.viewers.length - 3 }}</span>
+          <span v-if="props.viewers.length > 3" class="text-[10px] text-primary-500 font-medium ml-1">+{{ props.viewers.length - 3 }}</span>
         </div>
         <div v-else></div>
         <p class="text-[11px] text-muted-foreground">

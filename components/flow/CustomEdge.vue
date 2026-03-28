@@ -59,7 +59,7 @@
         class="nodrag nopan"
       >
         <div @click="onclick">
-          <MyCustomEntityAssociation :data="data" :selected="props.selected" />
+          <MyCustomEntityAssociation :data="data" :selected="props.selected" :edgeId="props.id" />
         </div>
       </div>
     </EdgeLabelRenderer>
