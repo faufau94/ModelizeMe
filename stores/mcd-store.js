@@ -344,6 +344,50 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     edgeIdSelected.value = edge.id;
   }
 
+  // ─── ADD NODE + EDGE ON EDGE DROP ───
+  async function addNodeAndEdge(idModel, position, sourceNodeId, sourceHandleId) {
+    addNewNode.value = true;
+
+    const newNode = createNewNode(position);
+
+    const edgeParams = {
+      source: sourceNodeId,
+      target: newNode.id,
+      sourceHandle: sourceHandleId || null,
+      targetHandle: null,
+    };
+    const newEdge = createNewEdge(edgeParams);
+
+    // Persist node to DB
+    await $fetch(`/api/models/update`, {
+      method: "PUT",
+      query: { id: idModel },
+      body: { node: newNode, type: "node" },
+    });
+
+    // Persist edge to DB
+    await $fetch(`/api/models/update`, {
+      method: "PUT",
+      query: { id: idModel },
+      body: { edge: newEdge, type: "edge", action: "addEdge" },
+    });
+
+    // Push both into Yjs in a single transaction (single undo)
+    collaborationStore.runInTransaction(() => {
+      collaborationStore.addNode(newNode);
+      collaborationStore.addEdge(newEdge);
+    });
+
+    // Update UI state
+    isSubMenuVisible.value = true;
+    elementsMenu.value = false;
+    nodeIdSelected.value = newNode.id;
+    edgeIdSelected.value = null;
+    addNewNode.value = false;
+
+    return { node: newNode, edge: newEdge };
+  }
+
   // ─── DETERMINE PROPER HANDLES FOR AN EDGE ───
   function determineHandles(nodeA, nodeB, nodeC) {
     const handles = { sourceHandle: "s4", targetHandle: "s1" };
@@ -408,6 +452,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
 
     updateEdge,
     removeEdge,
+    addNodeAndEdge,
     addAssociation,
     determineHandles,
   };

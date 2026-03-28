@@ -466,7 +466,39 @@ onMounted(async () => {
     });
   }
 
+  // ─── Track connection start for "add node on edge drop" ───
+  const _connectStartParams = ref(null)
+
+  mcdStore.flowMCD.onConnectStart(({ event, nodeId, handleId, handleType }) => {
+    _connectStartParams.value = { nodeId, handleId, handleType }
+  })
+
+  mcdStore.flowMCD.onConnectEnd((event) => {
+    if (!_connectStartParams.value) return
+    const startParams = _connectStartParams.value
+    _connectStartParams.value = null
+
+    // Only act when the edge was dropped on the empty pane (not on a valid handle)
+    const targetEl = event?.target
+    if (!targetEl) return
+    const isPane = targetEl.classList.contains('vue-flow__pane')
+    if (!isPane) return
+
+    // Get the drop position in flow coordinates
+    const { clientX, clientY } = 'changedTouches' in event ? event.changedTouches[0] : event
+    const position = mcdFlowInstance.screenToFlowCoordinate({ x: clientX, y: clientY })
+
+    // Create a new node + edge at the drop position
+    mcdStore.addNodeAndEdge(
+      route.params.idModel,
+      position,
+      startParams.nodeId,
+      startParams.handleId
+    )
+  })
+
   mcdStore.flowMCD.onConnect((params) => {
+    _connectStartParams.value = null
     const newEdge = mcdStore.createNewEdge(params)
     // Use shared edges instead of directly adding to flow
     collaborationStore.addEdge(newEdge)
