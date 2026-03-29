@@ -73,7 +73,7 @@
           </div>
         </div>
 
-        <!-- Timestamp fields (dimmed) — only in default and MLD views -->
+        <!-- Timestamp fields (dimmed) - only in default and MLD views -->
         <template v-if="props?.data?.hasTimestamps">
           <div class="flex justify-between items-center gap-4 py-1 px-1">
             <div class="flex items-center gap-1">

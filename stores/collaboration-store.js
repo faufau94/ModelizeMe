@@ -113,7 +113,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       })
     })
 
-    // 6) similarly for edges — skip local & init changes
+    // 6) similarly for edges - skip local & init changes
     _rawEdges.observe((event, transaction) => {
       if (!mcdStore.flowMCD) return
       if (transaction.origin === 'local' || transaction.origin === 'init') return
@@ -142,13 +142,13 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       else if (origin === provider.value) originStr = 'WebsocketProvider'
       else if (typeof origin === 'object' && origin?.constructor?.name) originStr = origin.constructor.name
       else originStr = String(origin)
-      console.log('[Y.Doc] afterTransaction — origin:', originStr,
+      console.log('[Y.Doc] afterTransaction - origin:', originStr,
         'changed:', transaction.changed.size,
         'isUndoRedoing:', isUndoRedoing.value,
         'origin===undoMgr:', origin === _rawUndoManager)
     })
 
-    // 7) Setup UndoManager — tracks only 'local' origin transactions
+    // 7) Setup UndoManager - tracks only 'local' origin transactions
     //    Undo/redo transactions have origin = undoManager instance (not 'local'),
     //    so observers will fire and resync VueFlow automatically.
     // CRITICAL: use _rawNodes/_rawEdges (not Vue-proxied refs) so the UndoManager's
@@ -169,7 +169,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     }
 
     _rawUndoManager.on('stack-item-added', (event) => {
-      console.warn('[UndoManager] stack-item-added — type:', event.type,
+      console.warn('[UndoManager] stack-item-added - type:', event.type,
         'undoing:', _rawUndoManager.undoing,
         'redoing:', _rawUndoManager.redoing,
         'undoStack:', _rawUndoManager.undoStack.length,
@@ -178,7 +178,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       updateUndoRedoState()
     })
     _rawUndoManager.on('stack-item-popped', (event) => {
-      console.log('[UndoManager] stack-item-popped — type:', event.type,
+      console.log('[UndoManager] stack-item-popped - type:', event.type,
         'undoing:', _rawUndoManager.undoing,
         'redoing:', _rawUndoManager.redoing,
         'undoStack:', _rawUndoManager.undoStack.length,
@@ -228,7 +228,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
   // ─── NODE CRUD ───
   // All local mutations use origin='local' so the observer skips them.
-  // When inside runInTransaction, do NOT touch VueFlow directly — the Yjs
+  // When inside runInTransaction, do NOT touch VueFlow directly - the Yjs
   // observer will handle it after the transaction commits (for undo coherence).
   function addNode(node) {
     if (!_insideTransaction) {
@@ -264,7 +264,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     }
   }
 
-  // Position-only update — uses 'position' origin so UndoManager does NOT track it.
+  // Position-only update - uses 'position' origin so UndoManager does NOT track it.
   // This prevents "undo of drag" from deleting the node entirely (delete+insert issue).
   function updateNodePosition(nodeId, newData) {
     if (!_rawNodes) return
@@ -424,18 +424,18 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
   function undo() {
     if (!_rawUndoManager?.canUndo()) return
-    console.log('[undo] BEFORE — undoStack:', _rawUndoManager.undoStack.length,
+    console.log('[undo] BEFORE - undoStack:', _rawUndoManager.undoStack.length,
       'redoStack:', _rawUndoManager.redoStack.length, 'suppress:', _suppressOnChange)
     isUndoRedoing.value = true
     _suppressOnChange++
     const result = _rawUndoManager.undo()
-    console.log('[undo] AFTER — result:', result,
+    console.log('[undo] AFTER - result:', result,
       'undoStack:', _rawUndoManager.undoStack.length,
       'redoStack:', _rawUndoManager.redoStack.length,
       'canRedo:', _rawUndoManager.canRedo(),
       'suppress:', _suppressOnChange)
     nextTick(() => { nextTick(() => { nextTick(() => { nextTick(() => { nextTick(() => {
-      console.log('[undo] SETTLED — suppress:', _suppressOnChange,
+      console.log('[undo] SETTLED - suppress:', _suppressOnChange,
         'canUndo:', canUndo.value, 'canRedo:', canRedo.value,
         'undoStack:', _rawUndoManager?.undoStack.length,
         'redoStack:', _rawUndoManager?.redoStack.length)
@@ -446,12 +446,12 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
   function redo() {
     if (!_rawUndoManager?.canRedo()) return
-    console.log('[redo] BEFORE — undoStack:', _rawUndoManager.undoStack.length,
+    console.log('[redo] BEFORE - undoStack:', _rawUndoManager.undoStack.length,
       'redoStack:', _rawUndoManager.redoStack.length)
     isUndoRedoing.value = true
     _suppressOnChange++
     _rawUndoManager.redo()
-    console.log('[redo] AFTER — undoStack:', _rawUndoManager.undoStack.length,
+    console.log('[redo] AFTER - undoStack:', _rawUndoManager.undoStack.length,
       'redoStack:', _rawUndoManager.redoStack.length,
       'canRedo:', canRedo.value)
     nextTick(() => { nextTick(() => { nextTick(() => { nextTick(() => { nextTick(() => {
@@ -461,7 +461,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   }
 
   // Run multiple Yjs mutations as a single undoable transaction.
-  // Inside this, CRUD functions skip direct VueFlow calls — the Yjs observer
+  // Inside this, CRUD functions skip direct VueFlow calls - the Yjs observer
   // handles VueFlow sync after the transaction, ensuring undo restores everything.
   function runInTransaction(fn) {
     if (!_rawDoc) return fn()

@@ -1,5 +1,5 @@
 # =============================================
-#  ModelizeMe — Docker Compose
+#  ModelizeMe - Docker Compose
 # =============================================
 #  Services: app, websocket, mysql, redis, phpmyadmin
 #

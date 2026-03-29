@@ -69,13 +69,19 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from "@vue-flow/core";
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSimpleBezierPath, getStraightPath } from "@vue-flow/core";
 import { storeToRefs } from "pinia";
 import { useMCDStore } from "~/stores/mcd-store.js";
 import { getEdgeParams } from '~/utils/useFloatingEdge.js';
 
 const mcdStore = useMCDStore();
-const { activeTab, nodeIdSelected, isSubMenuVisible, edgeIdSelected } = storeToRefs(mcdStore);
+const { activeTab, nodeIdSelected, isSubMenuVisible, edgeIdSelected, edgePathStyle } = storeToRefs(mcdStore);
+
+const pathFunctions: Record<string, typeof getBezierPath> = {
+  bezier: getBezierPath,
+  simpleBezier: getSimpleBezierPath,
+  straight: getStraightPath,
+};
 
 const props = defineProps({
   id: String,
@@ -95,9 +101,14 @@ const props = defineProps({
 
 const modelType = computed(() => props.data?.modelType ?? 'default');
 
-const edgeParams = computed(() => getEdgeParams(props.sourceNode, props.targetNode));
+const isLoopback = computed(() => props.sourceNode?.id === props.targetNode?.id);
 
-// Disable animated dash — we use our own selection color instead
+const edgeParams = computed(() => {
+  if (isLoopback.value) return null;
+  return getEdgeParams(props.sourceNode, props.targetNode);
+});
+
+// Disable animated dash - we use our own selection color instead
 watchEffect(() => {
   const flow = mcdStore.flowMCD as any;
   if (props.id && flow) {
@@ -106,16 +117,51 @@ watchEffect(() => {
   }
 });
 
+// Loopback arc path: loops above the node (Merise-style)
+// Uses a cubic bezier that goes up and to the right, placing the association table
+// well above and to the right of the node for clear readability.
+const loopbackData = computed(() => {
+  if (!isLoopback.value) return null;
+  const node = props.sourceNode;
+  const pos = node.computedPosition || node.position;
+  const w = node.dimensions?.width ?? 320;
+  const h = node.dimensions?.height ?? 100;
+
+  // Start from right side (top third), end at top side (right third)
+  const sx = pos.x + w;
+  const sy = pos.y + h * 0.3;
+  const tx = pos.x + w * 0.7;
+  const ty = pos.y;
+
+  // Control points: swing out far to the upper-right
+  const cpOffset = Math.max(120, w * 0.5);
+  const cp1x = sx + cpOffset;
+  const cp1y = sy - cpOffset;
+  const cp2x = tx + cpOffset;
+  const cp2y = ty - cpOffset;
+
+  const path = `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx} ${ty}`;
+
+  // Midpoint of the bezier (approximate: average of control points)
+  const midX = (sx + cp1x + cp2x + tx) / 4;
+  const midY = (sy + cp1y + cp2y + ty) / 4;
+
+  return { path, midX, midY, sx, sy, tx, ty };
+});
+
 const edgePath = computed(() => {
+  if (isLoopback.value && loopbackData.value) {
+    return [loopbackData.value.path, loopbackData.value.midX, loopbackData.value.midY];
+  }
   const { sx, sy, tx, ty, sourcePos, targetPos } = edgeParams.value;
-  return getSmoothStepPath({
+  const fn = pathFunctions[edgePathStyle.value] || getBezierPath;
+  return fn({
     sourceX: sx,
     sourceY: sy,
     targetX: tx,
     targetY: ty,
     sourcePosition: sourcePos,
     targetPosition: targetPos,
-    borderRadius: 6,
   });
 });
 
@@ -165,6 +211,7 @@ const targetCardinality = computed<string | null>(() => props.data?.targetCardin
 const offset = 32;
 
 const sourceLabelX = computed(() => {
+  if (isLoopback.value && loopbackData.value) return loopbackData.value.sx + offset;
   const { sx, sourcePos } = edgeParams.value;
   if (sourcePos === 'left') return sx - offset;
   if (sourcePos === 'right') return sx + offset;
@@ -172,6 +219,7 @@ const sourceLabelX = computed(() => {
 });
 
 const sourceLabelY = computed(() => {
+  if (isLoopback.value && loopbackData.value) return loopbackData.value.sy - offset;
   const { sy, sourcePos } = edgeParams.value;
   if (sourcePos === 'top') return sy - offset;
   if (sourcePos === 'bottom') return sy + offset;
@@ -179,6 +227,7 @@ const sourceLabelY = computed(() => {
 });
 
 const targetLabelX = computed(() => {
+  if (isLoopback.value && loopbackData.value) return loopbackData.value.tx + offset;
   const { tx, targetPos } = edgeParams.value;
   if (targetPos === 'left') return tx - offset;
   if (targetPos === 'right') return tx + offset;
@@ -186,6 +235,7 @@ const targetLabelX = computed(() => {
 });
 
 const targetLabelY = computed(() => {
+  if (isLoopback.value && loopbackData.value) return loopbackData.value.ty - offset;
   const { ty, targetPos } = edgeParams.value;
   if (targetPos === 'top') return ty - offset;
   if (targetPos === 'bottom') return ty + offset;

@@ -1,5 +1,5 @@
 # ============================================
-# WebSocket Server — minimal y-websocket image
+# WebSocket Server - minimal y-websocket image
 # ============================================
 FROM node:22-alpine
 

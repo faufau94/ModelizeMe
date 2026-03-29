@@ -16,7 +16,7 @@ export function useTeam() {
 
   const queryClient = useQueryClient()
 
-  // // — LIST —
+  // // - LIST -
   // const {
   //   data: teams,
   //   isLoading: isLoadingTeams,
@@ -32,7 +32,7 @@ export function useTeam() {
   //   enabled: computed(() => !!selectedWorkspaceId.value),
   // })
 
-  // — READ SELECTED —
+  // - READ SELECTED -
   const {
     data: selectedTeam,
     isLoading: isLoadingSelectedTeam,
@@ -49,7 +49,7 @@ export function useTeam() {
     placeholderData: (prev) => prev ?? undefined,
   })
 
-  // — CREATE A TEAM —
+  // - CREATE A TEAM -
   const createTeamMutation = useMutation({
     mutationFn: async (payload: Partial<Team>) => {
       const name = payload.name as string
@@ -69,7 +69,7 @@ export function useTeam() {
   })
   const createTeam = (data: Partial<Team>) => createTeamMutation.mutateAsync(data)
 
-  // — UPDATE —
+  // - UPDATE -
   const updateTeamMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Team> }) => {
       return await authClient.organization.updateTeam({
@@ -82,7 +82,7 @@ export function useTeam() {
   const updateTeam = (id: string, data: Partial<Team>) =>
     updateTeamMutation.mutateAsync({ id, data })
 
-  // — DELETE —
+  // - DELETE -
   const deleteTeamMutation = useMutation({
     mutationFn: async (id: string) =>
       await authClient.organization.removeTeam({
@@ -96,7 +96,7 @@ export function useTeam() {
   }
 
 
-  // — ADD TEAM MEMBER —
+  // - ADD TEAM MEMBER -
   const addTeamMemberMutation = useMutation({
     mutationFn: async ({ teamId, userId }: { teamId: string; userId: string }) =>
       await authClient.organization.addTeamMember({
@@ -110,7 +110,7 @@ export function useTeam() {
   const addTeamMember = (teamId: string, userId: string) =>
     addTeamMemberMutation.mutateAsync({ teamId, userId })
 
-    // — REMOVE TEAM MEMBER —
+    // - REMOVE TEAM MEMBER -
     const removeTeamMemberMutation = useMutation({
       mutationFn: async ({ teamId, userId }: { teamId: string; userId: string }) =>
       // get server url 'api/team-members/remove'
@@ -125,7 +125,7 @@ export function useTeam() {
     const removeTeamMember = (teamId: string, userId: string) =>
       removeTeamMemberMutation.mutateAsync({ teamId, userId })
 
-  // — RENAME THE TEAM —
+  // - RENAME THE TEAM -
   const renameTeamMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) =>
       await authClient.organization.updateTeam({

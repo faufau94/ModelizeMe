@@ -20,7 +20,7 @@ while [ $RETRIES -lt $MAX_RETRIES ]; do
     break
   fi
   RETRIES=$((RETRIES + 1))
-  echo "   Attempt $RETRIES/$MAX_RETRIES — retrying in ${RETRY_INTERVAL}s..."
+  echo "   Attempt $RETRIES/$MAX_RETRIES - retrying in ${RETRY_INTERVAL}s..."
   sleep $RETRY_INTERVAL
 done
 

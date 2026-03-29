@@ -22,6 +22,26 @@
       <MiniMap/>
       <Controls/>
 
+      <!-- Ternary selection mode banner -->
+      <Panel v-if="isTernaryMode" position="top-center" class="z-50">
+        <div class="bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 10 10" class="text-indigo-200"><polygon points="5,0 10,5 5,10 0,5" fill="currentColor"/></svg>
+            <span class="text-sm font-medium">
+              Relation ternaire - Cliquez sur {{ 3 - ternarySelectedNodes.length }} entité{{ (3 - ternarySelectedNodes.length) > 1 ? 's' : '' }}
+            </span>
+          </div>
+          <div v-if="ternarySelectedNodes.length > 0" class="flex gap-1">
+            <span v-for="nId in ternarySelectedNodes" :key="nId" class="bg-indigo-500 text-xs px-2 py-0.5 rounded-full">
+              {{ getNodeName(nId) }}
+            </span>
+          </div>
+          <button @click="cancelTernaryMode" class="ml-2 text-indigo-200 hover:text-white text-sm underline">
+            Annuler
+          </button>
+        </div>
+      </Panel>
+
       <!-- Unified top toolbar -->
       <Panel position="top-left" class="bg-white/95 backdrop-blur-sm z-40 px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-1 border border-gray-100">
         <TooltipProvider>
@@ -39,13 +59,22 @@
 
         <Separator orientation="vertical" class="h-5 bg-gray-200"/>
 
-        <Dialog>
-          <DialogTrigger as-child>
-            <Button @click="showDialogRenameModel = true; setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-gray-700 hover:bg-gray-100 max-w-[180px] truncate">
-              {{ model?.name.length > 20 ? model?.name.substring(0, 20) + '...' : model?.name }}
-            </Button>
-          </DialogTrigger>
-          <DialogContent class="sm:max-w-[425px]" v-if="showDialogRenameModel">
+        <Dialog v-model:open="showDialogRenameModel">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <DialogTrigger as-child>
+                  <Button @click="setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-gray-700 hover:bg-gray-100 max-w-[400px] min-w-0 overflow-hidden">
+                    <span class="truncate block">{{ model?.name }}</span>
+                  </Button>
+                </DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent class="bg-gray-900 text-white text-xs">
+                <p>{{ model?.name }}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <DialogContent class="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Renommer le modèle</DialogTitle>
             </DialogHeader>
@@ -58,22 +87,19 @@
                     <Input type="text" v-bind="componentField" />
                   </FormControl>
                   <FormMessage />
-                  <FormControl class="float-right">
-                    <DialogFooter>
-
-                    <DialogClose as-child>
-                      <Button type="button" variant="secondary">
-                        Annuler
-                      </Button>
-                    </DialogClose>
-                    <Button type="submit" :disabled="isRenamingModel">
-                      <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
-                      {{ isRenamingModel ? 'Changement...' : 'Renommer' }}
-                    </Button>
-                    </DialogFooter>
-                  </FormControl>
                 </FormItem>
               </FormField>
+              <DialogFooter class="mt-4">
+                <DialogClose as-child>
+                  <Button type="button" variant="secondary">
+                    Annuler
+                  </Button>
+                </DialogClose>
+                <Button type="submit" :disabled="isRenamingModel">
+                  <Loader2 v-if="isRenamingModel" class="w-4 h-4 mr-2 animate-spin"/>
+                  {{ isRenamingModel ? 'Changement...' : 'Renommer' }}
+                </Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
@@ -101,6 +127,39 @@
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        <Popover v-model:open="isEdgeStylePopoverOpen">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <PopoverTrigger as-child>
+                  <Button variant="ghost" size="sm" class="rounded-md">
+                    <Workflow :size="16"/>
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent class="bg-gray-900 text-white text-xs">
+                <p>Style des connecteurs</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <PopoverContent side="bottom" align="center" class="w-52 p-2">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 mb-2">Style des connecteurs</p>
+            <div class="space-y-0.5">
+              <button
+                v-for="opt in edgeStyleOptions" :key="opt.value"
+                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors"
+                :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'"
+                @click="edgePathStyle = opt.value; isEdgeStylePopoverOpen = false"
+              >
+                <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0">
+                  <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                {{ opt.label }}
+              </button>
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <PricingDialog />
       </Panel>
@@ -276,6 +335,8 @@
         </Tabs>
       </Panel>
 
+
+
       <DropzoneBackground
           v-if="activeTab === 'default'"
           :style="{
@@ -327,16 +388,17 @@ import {MiniMap} from "@vue-flow/minimap";
 import {Controls} from "@vue-flow/controls";
 import CustomEntity from "~/components/flow/MyCustomEntity.vue";
 import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation.vue";
+import CustomEntityTernary from "~/components/flow/MyCustomEntityTernary.vue";
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {useMCDGenStore} from "~/stores/mcd-gen-store.js";
 import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {ArrowLeft, Check, Loader2, PanelTop, Redo2, Undo2, WandSparkles} from "lucide-vue-next";
+import {ArrowLeft, Check, Loader2, PanelTop, Redo2, Undo2, WandSparkles, Workflow} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
-import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
+import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,} from '@/components/ui/dialog'
 import {Tabs, TabsList, TabsTrigger} from '@/components/ui/tabs'
 import {FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form'
 import {useCollaborationStore} from '~/stores/collaboration-store.js';
@@ -367,15 +429,55 @@ const mcdGenStore = useMCDGenStore()
 const mldStore = useMLDStore()
 const mpdStore = useMPDStore()
 const {addNode} = mcdStore
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType, isResolvingCollisions} = storeToRefs(mcdStore)
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType, isResolvingCollisions, isTernaryMode, ternarySelectedNodes, edgePathStyle} = storeToRefs(mcdStore)
+
+const edgeStyleOptions = [
+  { value: 'bezier', label: 'Courbe', preview: 'M 0 10 C 8 0, 16 0, 24 10' },
+  { value: 'simpleBezier', label: 'Courbe douce', preview: 'M 0 10 Q 12 0 24 10' },
+  { value: 'straight', label: 'Droit', preview: 'M 0 6 L 24 6' },
+]
+
+const isEdgeStylePopoverOpen = ref(false)
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
+
+// Ternary mode helpers
+const getNodeName = (nodeId) => {
+  const node = mcdStore.flowMCD?.findNode(nodeId)
+  return node?.data?.name || 'Sans nom'
+}
+
+const cancelTernaryMode = () => {
+  isTernaryMode.value = false
+  ternarySelectedNodes.value = []
+}
+
+const handleTernaryNodeClick = async (nodeId) => {
+  if (!isTernaryMode.value) return false
+  const node = mcdStore.flowMCD?.findNode(nodeId)
+  if (!node || node.type !== 'customEntity') return false
+
+  const idx = ternarySelectedNodes.value.indexOf(nodeId)
+  if (idx >= 0) {
+    ternarySelectedNodes.value.splice(idx, 1)
+  } else {
+    ternarySelectedNodes.value.push(nodeId)
+  }
+
+  if (ternarySelectedNodes.value.length === 3) {
+    await mcdStore.addTernaryRelation(route.params.idModel, [...ternarySelectedNodes.value])
+    isTernaryMode.value = false
+    ternarySelectedNodes.value = []
+  }
+  return true
+}
 
 const collaborationStore = useCollaborationStore();
 
 const nodeTypes = {
   customEntity: markRaw(CustomEntity),
   customEntityAssociation: markRaw(CustomEntityAssociation),
+  ternaryEntity: markRaw(CustomEntityTernary),
 }
 
 const edgeTypes = {
@@ -517,8 +619,12 @@ onMounted(async () => {
     nodeIdSelected.value = null
   })
 
-  mcdStore.flowMCD.onNodeClick((e) => {
+  mcdStore.flowMCD.onNodeClick(async (e) => {
     if (activeTab.value === 'default') {
+      // Intercept clicks during ternary selection mode
+      const handled = await handleTernaryNodeClick(e.node.id)
+      if (handled) return
+
       edgeIdSelected.value = null
       isSubMenuVisible.value = true
       nodeIdSelected.value = e.node.id
@@ -592,12 +698,12 @@ onUnmounted(() => {
   }
 })
 
-// Edges already handled by onNodesDelete — prevents double Yjs transactions
+// Edges already handled by onNodesDelete - prevents double Yjs transactions
 const _pendingNodeDeleteEdges = new Set()
 
 const onNodesDelete = (deletedNodes) => {
   if (activeTab.value !== 'default') return
-  // Skip delete events triggered by undo/redo or Yjs observer — state is handled there
+  // Skip delete events triggered by undo/redo or Yjs observer - state is handled there
   if (collaborationStore.isUndoRedoing || collaborationStore.isSuppressed()) return
   const deletedNodeIds = deletedNodes.map((n) => n.id)
   const connectedEdgeIds = mcdFlowInstance.getEdges.value
@@ -623,7 +729,7 @@ const onEdgesDelete = (deletedEdges) => {
   edgeIdSelected.value = null
 }
 
-// Track nodes the user is physically dragging — only these get persisted on drag-end.
+// Track nodes the user is physically dragging - only these get persisted on drag-end.
 // This prevents programmatic position changes (undo/redo, setNodes, observers)
 // from creating spurious Yjs 'local' transactions that wipe the redo stack.
 const _userDraggingNodes = new Set()
@@ -636,7 +742,7 @@ const onChange = async (changes) => {
   if (collaborationStore.isUndoRedoing || collaborationStore.isSuppressed()) {
     // Log to verify we're actually skipping
     const posChanges = changes.filter(c => c.type === 'position')
-    if (posChanges.length) console.log('[onChange] SKIPPED —', posChanges.length, 'position changes, suppress:', collaborationStore.isSuppressed(), 'undoRedoing:', collaborationStore.isUndoRedoing)
+    if (posChanges.length) console.log('[onChange] SKIPPED -', posChanges.length, 'position changes, suppress:', collaborationStore.isSuppressed(), 'undoRedoing:', collaborationStore.isUndoRedoing)
     return
   }
   for (const change of changes) {
@@ -717,7 +823,7 @@ const saveAllNodePositions = () => {
 const goBack = async () => {
   isSubMenuVisible.value = false
   isFlowReady.value = false
-  // Save positions in background — don't await to avoid visual flash
+  // Save positions in background - don't await to avoid visual flash
   saveAllNodePositions()
   const workspaceId = model.value?.workspaceId || session.value?.session?.activeOrganizationId
   if (workspaceId) {
@@ -813,7 +919,7 @@ const reorganize = async () => {
   for (const n of layoutedNodes) { n.selected = false; n.dragging = false; }
   for (const e of layoutedEdges) { e.selected = false; }
 
-  // Persist to Yjs (single undo) — runInTransaction also syncs VueFlow
+  // Persist to Yjs (single undo) - runInTransaction also syncs VueFlow
   collaborationStore.runInTransaction(() => {
     collaborationStore.setNodes(layoutedNodes);
     collaborationStore.setEdges(layoutedEdges);

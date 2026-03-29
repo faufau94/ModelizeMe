@@ -1,6 +1,6 @@
 /**
  * Find a free position for a new node that doesn't overlap existing nodes.
- * Only moves the NEW node — never touches existing nodes.
+ * Only moves the NEW node - never touches existing nodes.
  * Also considers association entity boxes rendered at edge midpoints.
  */
 export function findFreePosition(candidate, size, otherNodes, flowInstance, margin = 30) {

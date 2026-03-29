@@ -13,7 +13,7 @@ wss.on("connection", (ws, req) => {
   const url = new URL(req.url || "", `http://${host}:${port}`);
   const token = url.searchParams.get("token");
 
-  // Basic token validation — reject connections without a valid token
+  // Basic token validation - reject connections without a valid token
   if (!token) {
     ws.close(4001, "Authentication required");
     return;

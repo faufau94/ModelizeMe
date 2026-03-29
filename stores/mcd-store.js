@@ -30,6 +30,13 @@ export const useMCDStore = defineStore("flow-mcd", () => {
   const isResolvingCollisions = ref(false);
   const isNewlyCreated = ref(false);
 
+  // Ternary relation selection mode
+  const isTernaryMode = ref(false);
+  const ternarySelectedNodes = ref([]);
+
+  // Edge path style: 'bezier' | 'straight' | 'simpleBezier'
+  const edgePathStyle = ref('bezier');
+
   function readFlowCollection(collection) {
     if (Array.isArray(collection?.value)) return collection.value;
     if (typeof collection === "function") return collection() || [];
@@ -203,7 +210,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     collaborationStore.updateNode(idNode, node);
   }
 
-  // Position-only update — not tracked by UndoManager (prevents undo from deleting nodes)
+  // Position-only update - not tracked by UndoManager (prevents undo from deleting nodes)
   async function updateNodePosition(idModel, idNode) {
     const node = flowMCD.value.findNode(idNode);
     if (!node) return;
@@ -424,6 +431,75 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     return handles;
   }
 
+  // ─── ADD TERNARY RELATION (3 entities + 1 central association node + 3 edges) ───
+  async function addTernaryRelation(idModel, nodeIds, name = '') {
+    if (!nodeIds || nodeIds.length !== 3) return null;
+
+    const nodes = nodeIds.map((id) => flowMCD.value.findNode(id)).filter(Boolean);
+    if (nodes.length !== 3) return null;
+
+    // Compute centroid position for the central node
+    const cx = nodes.reduce((s, n) => s + (n.position?.x ?? 0), 0) / 3;
+    const cy = nodes.reduce((s, n) => s + (n.position?.y ?? 0), 0) / 3;
+
+    // Create the ternary association node
+    const ternaryNode = {
+      id: getIdNode(),
+      type: 'ternaryEntity',
+      position: { x: cx, y: cy },
+      draggable: true,
+      selected: false,
+      data: {
+        name: name || '',
+        hasTimestamps: true,
+        usesSoftDeletes: false,
+        properties: [],
+      },
+    };
+
+    // Create 3 edges from each entity to the central node
+    const newEdges = nodes.map((node) => {
+      return createNewEdge({
+        source: node.id,
+        target: ternaryNode.id,
+        sourceHandle: 's4',
+        targetHandle: 's1',
+      });
+    });
+
+    // Set default cardinalities
+    newEdges.forEach((e) => {
+      e.data.sourceCardinality = '0,N';
+      e.data.targetCardinality = '0,N';
+    });
+
+    // Persist to DB
+    await $fetch(`/api/models/update`, {
+      method: 'PUT',
+      query: { id: idModel },
+      body: { node: ternaryNode, type: 'node' },
+    });
+
+    for (const edge of newEdges) {
+      await $fetch(`/api/models/update`, {
+        method: 'PUT',
+        query: { id: idModel },
+        body: { edge, type: 'edge', action: 'addEdge' },
+      });
+    }
+
+    // Push into Yjs in a single transaction
+    collaborationStore.runInTransaction(() => {
+      collaborationStore.addNode(ternaryNode);
+      newEdges.forEach((e) => collaborationStore.addEdge(e));
+    });
+
+    isSubMenuVisible.value = true;
+    nodeIdSelected.value = ternaryNode.id;
+
+    return { node: ternaryNode, edges: newEdges };
+  }
+
   return {
     // Expose reactive state and methods for components to use
     flowMCD,
@@ -440,6 +516,9 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     isSaving,
     isResolvingCollisions,
     isNewlyCreated,
+    isTernaryMode,
+    ternarySelectedNodes,
+    edgePathStyle,
 
     getIdNode,
     getIdEdge,
@@ -458,6 +537,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     removeEdge,
     addNodeAndEdge,
     addAssociation,
+    addTernaryRelation,
     determineHandles,
   };
 });

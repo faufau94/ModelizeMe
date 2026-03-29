@@ -20,7 +20,18 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
-import { Position, getSmoothStepPath, connectionExists, useVueFlow } from '@vue-flow/core';
+import { Position, getBezierPath, getSimpleBezierPath, getStraightPath, connectionExists, useVueFlow } from '@vue-flow/core';
+import { useMCDStore } from '~/stores/mcd-store.js';
+import { storeToRefs } from 'pinia';
+
+const mcdStore = useMCDStore();
+const { edgePathStyle } = storeToRefs(mcdStore);
+
+const pathFunctions = {
+  bezier: getBezierPath,
+  simpleBezier: getSimpleBezierPath,
+  straight: getStraightPath,
+};
 
 const props = defineProps({
   fromNode: Object,
@@ -46,7 +57,6 @@ watch([() => props.toX, () => props.toY], (_, __, onCleanup) => {
 
   const closestResult = getNodes.value.reduce(
     (res, n) => {
-      if (n.id === connectionStartHandle.value?.nodeId) return res;
       const pos = n.computedPosition || n.position;
       if (!pos || !n.dimensions) return res;
       const dx = props.toX - (pos.x + n.dimensions.width / 2);
@@ -71,7 +81,7 @@ watch([() => props.toX, () => props.toY], (_, __, onCleanup) => {
   canSnap.value = closestResult.distance < SNAP_DISTANCE;
 
   const handleType = connectionStartHandle.value.type === 'source' ? 'target' : 'source';
-  // All our handles are "source" type — find any handle on the target node
+  // All our handles are "source" type - find any handle on the target node
   const handles = closestResult.node.handleBounds?.[handleType]
     || closestResult.node.handleBounds?.source
     || [];
@@ -168,7 +178,8 @@ const params = computed(() => {
 const edgePath = computed(() => {
   if (!params.value) return '';
   const { sx, sy, sourcePos } = params.value;
-  const [path] = getSmoothStepPath({
+  const fn = pathFunctions[edgePathStyle.value] || getBezierPath;
+  const [path] = fn({
     sourceX: sx,
     sourceY: sy,
     sourcePosition: sourcePos,

@@ -108,7 +108,7 @@ export const useMLDStore = defineStore("flow-mld", () => {
         else if (srcMax === "N" && tgtMax === "1") insertForeignKey(targetNode, makeFk(sourceNode));
         else if (srcMax === "1" && tgtMax === "1") insertForeignKey(targetNode, makeFk(sourceNode));
 
-        // Strip cardinalities — FK replaces them in MLD
+        // Strip cardinalities - FK replaces them in MLD
         mldEdges.push({
           ...JSON.parse(JSON.stringify(edge)),
           type: "customEdge",

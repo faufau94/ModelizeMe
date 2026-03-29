@@ -245,7 +245,7 @@ export const useMPDStore = defineStore("flow-mpd", () => {
         }
 
         edgeCopy.type = "customEdge";
-        // Strip cardinalities — FK constraints replace them in MPD
+        // Strip cardinalities - FK constraints replace them in MPD
         edgeCopy.data.sourceCardinality = "";
         edgeCopy.data.targetCardinality = "";
         mpdEdges.push(edgeCopy);

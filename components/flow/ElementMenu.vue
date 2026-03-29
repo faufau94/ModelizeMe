@@ -15,7 +15,7 @@
 
       <div v-if="nodeIdSelected !== null" class="px-5 py-10 flex flex-col justify-between items-center h-full">
         <div class="w-full">
-          <p class="font-bold text-xl">Entité</p>
+          <p class="font-bold text-xl">{{ nodeData?.type === 'ternaryEntity' ? 'Association ternaire' : 'Entité' }}</p>
           <div class="max-w-sm mt-6">
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de l'entité</label>
             <Input ref="nodeNameInputRef" v-model="nodeName" type="text"/>
@@ -196,6 +196,13 @@
             </ScrollArea>
 
 
+          </div>
+
+          <!-- Ternary relation button -->
+          <div class="mt-4 pt-4 border-t border-gray-100 w-full">
+            <Button variant="outline" class="w-full" @click="startTernaryMode">
+              Créer une relation ternaire
+            </Button>
           </div>
         </div>
 
@@ -603,6 +610,7 @@
 
   </Transition>
 
+
 </template>
 
 <script setup lang="ts">
@@ -663,12 +671,18 @@ const edgeNameInputRef = ref(null);
 const route = useRoute();
 const mcdStore = useMCDStore();
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, isSaving, isNewlyCreated} = storeToRefs(mcdStore);
-const {removeEdge, removeNode} = mcdStore
+const {removeEdge, removeNode, addTernaryRelation} = mcdStore
+
+const startTernaryMode = () => {
+  mcdStore.isTernaryMode = true
+  mcdStore.ternarySelectedNodes = []
+  isSubMenuVisible.value = false
+}
 
 const nodeData = ref(null);
 const edgeData = ref(null);
 
-// Auto-focus the name input — handles both fresh open and already-open drawer
+// Auto-focus the name input - handles both fresh open and already-open drawer
 const _pendingFocusRef = ref(null)
 
 const focusInput = (inputRef) => {
@@ -700,11 +714,11 @@ watch(
     if (!targetRef) return
 
     if (isSubMenuVisible.value) {
-      // Drawer already open — input is in DOM, just wait for reactivity update
+      // Drawer already open - input is in DOM, just wait for reactivity update
       await nextTick()
       focusInput(targetRef)
     } else {
-      // Drawer about to open — defer until transition ends
+      // Drawer about to open - defer until transition ends
       _pendingFocusRef.value = targetRef
     }
   }

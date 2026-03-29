@@ -131,7 +131,7 @@ const getLayoutedElements = (nodes, edges, options) => {
         }
     }
 
-    // Build a clean graph for ELK — only pass id, width, height.
+    // Build a clean graph for ELK - only pass id, width, height.
     // Never pass reactive Vue Flow objects to ELK.
     const graph = {
         id: 'root',

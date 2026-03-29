@@ -1,5 +1,5 @@
 # ============================================
-# Stage 1: Builder — install all deps & build
+# Stage 1: Builder - install all deps & build
 # ============================================
 FROM node:22-slim AS builder
 
@@ -38,7 +38,7 @@ COPY prisma ./prisma/
 RUN npx prisma generate
 
 # ============================================
-# Stage 3: Runner — minimal production image
+# Stage 3: Runner - minimal production image
 # ============================================
 FROM node:22-slim AS runner
 

@@ -2,7 +2,7 @@
 
 // export async function useWorkspaceNavigation() {
 
-//   // — SELECTED WORKSPACE —
+//   // - SELECTED WORKSPACE -
 //   const goToDashboard = async () => {
 //     const { data: session } = await useSession(useFetch)
 //     console.log(session)
