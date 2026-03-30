@@ -848,8 +848,14 @@ watch(
   }
 )
 
-// Re-read node/edge from VueFlow when selection changes OR after undo/redo.
-// Watch the VueFlow nodes/edges arrays directly so refs stay fresh after setNodes.
+// Snapshot of node/edge data at selection time — used as inverse for undo.
+// Only captured on selection change or after explicit save, NOT on every
+// VueFlow state change (which would overwrite the snapshot after undo/redo).
+let _snapshotNodeData = null
+let _snapshotEdgeData = null
+
+// Keep nodeData/edgeData refs in sync with VueFlow state (needed for UI bindings).
+// Watch nodes/edges arrays so refs stay fresh after setNodes (e.g. after undo).
 watch(
   () => [
     nodeIdSelected.value,
@@ -860,6 +866,19 @@ watch(
   () => {
     nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value) ?? null;
     edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value) ?? null;
+  },
+  { immediate: true }
+);
+
+// Capture snapshots ONLY when the selected node/edge changes (not on every state update).
+// This prevents undo/redo from overwriting the inverse data.
+watch(
+  () => [nodeIdSelected.value, edgeIdSelected.value],
+  () => {
+    nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value) ?? null;
+    edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value) ?? null;
+    _snapshotNodeData = nodeData.value?.data ? JSON.parse(JSON.stringify(nodeData.value.data)) : null
+    _snapshotEdgeData = edgeData.value?.data ? JSON.parse(JSON.stringify(edgeData.value.data)) : null
     showAdvanced.value = false;
     showAdvancedEdge.value = false;
   },
@@ -869,13 +888,17 @@ watch(
 
 const updateNode = async () => {
   isSaving.value = true;
-  await mcdStore.updateNode(route.params.idModel, nodeData.value.id)
+  await mcdStore.updateNode(route.params.idModel, nodeData.value.id, _snapshotNodeData)
+  // Update snapshot to current state after save (for subsequent edits)
+  _snapshotNodeData = nodeData.value?.data ? JSON.parse(JSON.stringify(nodeData.value.data)) : null
   isSaving.value = false;
 };
 
 const updateEdge = async () => {
   isSaving.value = true;
-  await mcdStore.updateEdge(route.params.idModel, edgeIdSelected.value)
+  await mcdStore.updateEdge(route.params.idModel, edgeIdSelected.value, _snapshotEdgeData)
+  // Update snapshot to current state after save
+  _snapshotEdgeData = edgeData.value?.data ? JSON.parse(JSON.stringify(edgeData.value.data)) : null
   isSaving.value = false;
 };
 
@@ -1022,6 +1045,15 @@ const checkIfTwoNRelation = computed(() => {
   const src = sourceCardinality.value?.split(',')[1] ?? '';
   const tgt = targetCardinality.value?.split(',')[1] ?? '';
   return src === 'N' && tgt === 'N';
+});
+
+// Sync hasNodeAssociation flag when cardinality changes to/from N:N
+watch(checkIfTwoNRelation, (isNN) => {
+  if (!edgeIdSelected.value) return;
+  const edge = mcdStore.flowMCD?.findEdge(edgeIdSelected.value);
+  if (edge?.data && edge.data.hasNodeAssociation !== isNN) {
+    edge.data.hasNodeAssociation = isNN;
+  }
 });
 
 const type = [

@@ -1,5 +1,6 @@
 import prisma from "~/lib/prisma";
 import { requireModelAccess } from "~/server/utils/auth";
+import { buildModelState } from "~/server/utils/event-engine";
 import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
@@ -16,5 +17,8 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 404, message: "Modèle non trouvé" });
   }
 
-  return model;
+  // Reconstruct state from events (falls back to model.nodes/edges if no events exist)
+  const state = await buildModelState(modelId);
+
+  return { ...model, nodes: state.nodes, edges: state.edges };
 });

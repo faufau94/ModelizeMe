@@ -34,6 +34,7 @@ model User {
   galeries       Galery[]
   annotations    Annotation[]
   teammembers    TeamMember[]
+  modelEvents    ModelEvent[]
 
   @@unique([email])
   @@map("user")
@@ -193,6 +194,10 @@ model Model {
   // Nouvelles annotations
   annotations Annotation[]
 
+  // Event sourcing
+  events    ModelEvent[]
+  snapshots ModelSnapshot[]
+
   @@index([workspaceId, teamId])
   @@index([authorId])
   @@map("models")
@@ -238,4 +243,36 @@ model Annotation {
   updatedAt DateTime @updatedAt
 
   @@map("annotations")
+}
+
+// ─── EVENT SOURCING ───
+
+model ModelEvent {
+  id        Int      @id @default(autoincrement())
+  modelId   String
+  model     Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  type      String   @db.VarChar(64)
+  payload   Json
+  inverse   Json?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  sessionId String?  @db.VarChar(128)
+  undoable  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([modelId, id])
+  @@map("model_events")
+}
+
+model ModelSnapshot {
+  id          Int      @id @default(autoincrement())
+  modelId     String
+  model       Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  nodes       Json
+  edges       Json
+  eventCursor Int
+  createdAt   DateTime @default(now())
+
+  @@index([modelId, eventCursor])
+  @@map("model_snapshots")
 }

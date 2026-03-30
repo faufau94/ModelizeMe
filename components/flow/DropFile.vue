@@ -114,6 +114,7 @@ import { AlertCircle } from 'lucide-vue-next'
 import { UploadIcon, FileIcon, XIcon } from 'lucide-vue-next'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {useCollaborationStore} from "~/stores/collaboration-store.js";
+import {useUndoRedoStore} from "~/stores/undo-redo-store.js";
 
 
 defineProps({
@@ -166,7 +167,7 @@ const handleFile = async () => {
         // treats this as the new baseline, then clear undo history.
         collaborationStore.setNodes(layouted.nodes, true);
         collaborationStore.setEdges(layouted.edges, true);
-        collaborationStore.clearUndoHistory();
+        useUndoRedoStore().clear();
 
         mcdStore.flowMCD.setNodes(layouted.nodes);
         mcdStore.flowMCD.setEdges(layouted.edges);

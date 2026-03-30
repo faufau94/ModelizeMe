@@ -1,5 +1,6 @@
 import prisma from "~/lib/prisma"
 import { requireAuth, requireOrgMembership } from "~/server/utils/auth"
+import { buildModelState } from "~/server/utils/event-engine"
 import { z } from "zod"
 
 const schema = z.object({
@@ -24,13 +25,16 @@ export default defineEventHandler(async (event) => {
     await requireOrgMembership(event, targetWorkspaceId)
   }
 
+  // Use reconstructed state (snapshot + events) instead of raw columns
+  const state = await buildModelState(modelId)
+
   const duplicate = await prisma.model.create({
     data: {
       name: `${original.name} (copie)`,
       description: original.description,
       type: original.type,
-      nodes: original.nodes,
-      edges: original.edges,
+      nodes: state.nodes,
+      edges: state.edges,
       workspaceId: destinationWorkspaceId,
       authorId: user.id,
     },

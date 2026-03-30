@@ -4,7 +4,9 @@ import { getStraightPath, useVueFlow } from "@vue-flow/core";
 import { v4 as uuidv4 } from "uuid";
 import { useMLDStore } from "./mld-store.js";
 import { useCollaborationStore } from "~/stores/collaboration-store.js";
+import { useUndoRedoStore } from "~/stores/undo-redo-store.js";
 import { findFreePosition } from "~/utils/useCollisions.js";
+import { applyEvent } from "~/utils/applyEvent.js";
 
 export const useMCDStore = defineStore("flow-mcd", () => {
   // ─── STORE SINGLETONS ───
@@ -52,6 +54,137 @@ export const useMCDStore = defineStore("flow-mcd", () => {
   function getFlowEdges() {
     if (!flowMCD.value) return [];
     return readFlowCollection(flowMCD.value.getEdges);
+  }
+
+  // ─── EMIT EVENT: single path for all mutations ───
+  // Sends events to server, applies locally via Yjs, and pushes to undo stack
+  async function emitEvent(idModel, events) {
+    const undoRedoStore = useUndoRedoStore()
+
+    // 1. Persist events on server (also does double-write to Model.nodes/edges)
+    const result = await $fetch('/api/models/events', {
+      method: 'POST',
+      body: { modelId: idModel, events }
+    })
+
+    // 2. Apply events locally via Yjs for real-time collaboration sync
+    for (const evt of events) {
+      applyEventToYjs(evt)
+    }
+
+    // 3. Push to undo stack
+    const undoableEvents = events.filter(e => e.undoable && e.inverse)
+    if (undoableEvents.length === 1) {
+      undoRedoStore.pushUndoable(undoableEvents[0])
+    } else if (undoableEvents.length > 1) {
+      undoRedoStore.pushUndoableBatch(undoableEvents)
+    }
+
+    return result
+  }
+
+  // Apply a single event to VueFlow + Yjs shared arrays.
+  // IMPORTANT: Yjs observers skip 'local' transactions, so we MUST also
+  // update VueFlow directly for local changes (including undo/redo).
+  function applyEventToYjs(evt) {
+    switch (evt.type) {
+      case 'TABLE_ADDED':
+      case 'TABLE_DUPLICATED':
+        if (evt.payload.node) {
+          collaborationStore.addNode(evt.payload.node)
+          // addNode in collaboration-store already calls flowMCD.addNodes
+        }
+        break
+
+      case 'TABLE_DELETED':
+        if (evt.payload.nodeId) {
+          collaborationStore.removeNode(evt.payload.nodeId)
+          // removeNode in collaboration-store already calls flowMCD.removeNodes
+        }
+        break
+
+      case 'TABLE_MOVED':
+        if (evt.payload.nodeId && flowMCD.value) {
+          const node = flowMCD.value.findNode(evt.payload.nodeId)
+          if (node) {
+            const newPos = { x: evt.payload.x, y: evt.payload.y }
+            // Update VueFlow directly so UI reflects the change
+            flowMCD.value.updateNode(evt.payload.nodeId, { position: newPos })
+            // Sync to Yjs for collaboration
+            collaborationStore.updateNodePosition(evt.payload.nodeId, {
+              ...node,
+              position: newPos
+            })
+          }
+        }
+        break
+
+      case 'TABLE_UPDATED':
+        if (evt.payload.nodeId && flowMCD.value) {
+          const node = flowMCD.value.findNode(evt.payload.nodeId)
+          if (node) {
+            // Full replacement of data — not a shallow merge.
+            // The event payload contains the COMPLETE data snapshot for this state.
+            const newData = { ...evt.payload.data }
+            // Update VueFlow directly
+            flowMCD.value.updateNodeData(evt.payload.nodeId, newData, { replace: true })
+            // Sync to Yjs for collaboration
+            collaborationStore.updateNode(evt.payload.nodeId, {
+              ...node,
+              data: newData
+            })
+          }
+        }
+        break
+
+      case 'RELATION_ADDED':
+        if (evt.payload.edge) {
+          collaborationStore.addEdge(evt.payload.edge)
+          // addEdge in collaboration-store already calls flowMCD.addEdges
+        }
+        break
+
+      case 'RELATION_DELETED':
+        if (evt.payload.edgeId) {
+          collaborationStore.removeEdge(evt.payload.edgeId)
+          // removeEdge in collaboration-store already calls flowMCD.removeEdges
+        }
+        break
+
+      case 'RELATION_UPDATED':
+        if (evt.payload.edgeId && flowMCD.value) {
+          const edge = flowMCD.value.findEdge(evt.payload.edgeId)
+          if (edge) {
+            // Full replacement of data for undo correctness
+            const newData = { ...evt.payload.data }
+            // Update VueFlow directly
+            flowMCD.value.updateEdgeData(evt.payload.edgeId, newData, { replace: true })
+            // Sync to Yjs for collaboration
+            collaborationStore.updateEdge(evt.payload.edgeId, {
+              ...edge,
+              data: newData
+            })
+          }
+        }
+        break
+
+      case 'LAYOUT_APPLIED':
+      case 'BATCH_POSITIONS':
+        if (evt.payload.positions && flowMCD.value) {
+          const currentNodes = getFlowNodes()
+          const posMap = new Map(evt.payload.positions.map(p => [p.id, { x: p.x, y: p.y }]))
+          const updatedNodes = currentNodes.map(n => {
+            const pos = posMap.get(n.id)
+            return pos ? { ...n, position: pos } : n
+          })
+          collaborationStore.setNodes(updatedNodes, true)
+          flowMCD.value.setNodes(updatedNodes)
+        }
+        break
+
+      default:
+        break
+    }
   }
 
   // ─── HELPERS TO GENERATE UNIQUE IDS ───
@@ -124,29 +257,19 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     };
   }
 
-  // ─── ADD A NODE: Persist to backend, THEN push into Yjs shared array ───
+  // ─── ADD A NODE ───
   async function addNode(idModel, duplicatedNode = null) {
     addNewNode.value = true;
 
-    // Create newNode if not duplicating an existing one
-    let newNode =
-      duplicatedNode !== null ? duplicatedNode : createNewNode();
+    let newNode = duplicatedNode !== null ? duplicatedNode : createNewNode();
 
-    // 1) Persist this new node to your own database
-    await $fetch(`/api/models/update`, {
-      method: "PUT",
-      query: { id: idModel },
-      body: {
-        node: newNode,
-        type: "node",
-      },
-    });
+    await emitEvent(idModel, [{
+      type: 'TABLE_ADDED',
+      payload: { node: newNode },
+      inverse: { type: 'TABLE_DELETED', payload: { nodeId: newNode.id } },
+      undoable: true
+    }])
 
-    // 2) Push the new node into the sharedNodes Yjs array.
-    //    collaborationStore.addNode also adds to VueFlow directly
-    collaborationStore.addNode(newNode);
-
-    // 3) Update UI state
     isSubMenuVisible.value = true;
     elementsMenu.value = false;
     isNewlyCreated.value = true;
@@ -154,78 +277,71 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     addNewNode.value = false;
   }
 
-  // ─── REMOVE A NODE + CONNECTED EDGES: single undo transaction ───
+  // ─── REMOVE A NODE + CONNECTED EDGES ───
   async function removeNode(idModel, idNode) {
-    // Find connected edges BEFORE removing, so undo restores them together
-    const connectedEdgeIds = getFlowEdges()
+    // Capture full node + connected edges BEFORE removing (needed for undo inverse)
+    const node = flowMCD.value?.findNode(idNode)
+    const connectedEdges = getFlowEdges()
       .filter((e) => e.source === idNode || e.target === idNode)
-      .map((e) => e.id);
 
-    // 1) Delete node from DB
-    await $fetch(`/api/models/delete`, {
-      method: "DELETE",
-      query: { idModel: idModel, idNode: idNode },
-      body: { type: "node", action: "removeNode" },
-    });
+    // Build batch: TABLE_DELETED + N × RELATION_DELETED
+    const events = []
 
-    // 1b) Delete connected edges from DB
-    for (const edgeId of connectedEdgeIds) {
-      $fetch(`/api/models/delete`, {
-        method: "DELETE",
-        query: { idModel: idModel, idEdge: edgeId },
-        body: { type: "edge", action: "removeEdge" },
-      }).catch(() => {});
+    // Edge deletions first (so inverse restores them before the node)
+    for (const edge of connectedEdges) {
+      events.push({
+        type: 'RELATION_DELETED',
+        payload: { edgeId: edge.id },
+        inverse: { type: 'RELATION_ADDED', payload: { edge: { ...edge, selected: false } } },
+        undoable: true
+      })
     }
 
-    // 2) Remove node + edges from Yjs in ONE transaction = single undo
-    collaborationStore.runInTransaction(() => {
-      collaborationStore.removeNode(idNode);
-      for (const edgeId of connectedEdgeIds) {
-        collaborationStore.removeEdge(edgeId);
-      }
-    });
+    events.push({
+      type: 'TABLE_DELETED',
+      payload: { nodeId: idNode },
+      inverse: node
+        ? { type: 'TABLE_ADDED', payload: { node: { ...node, selected: false, dragging: false } } }
+        : null,
+      undoable: true
+    })
+
+    await emitEvent(idModel, events)
 
     isSubMenuVisible.value = false;
   }
 
-  // ─── UPDATE A NODE: Persist new data, THEN update shared Yjs array ───
-  async function updateNode(idModel, idNode) {
-    // 1) Grab the current node from Vue Flow
+  // ─── UPDATE A NODE ───
+  // previousData: snapshot of node.data BEFORE the UI mutation (for undo inverse)
+  // Callers MUST capture previousData before modifying the node in the UI.
+  async function updateNode(idModel, idNode, previousData = null) {
     const node = flowMCD.value.findNode(idNode);
     if (!node) return;
-    node.selected = false;
 
-    // 2) Persist to your database
-    await $fetch(`/api/models/update`, {
-      method: "PUT",
-      query: { id: idModel },
-      body: {
-        node: node,
-        type: "node",
-        action: "updateNode",
-      },
-    });
-
-    // 3) Update the node in sharedNodes Yjs array
-    collaborationStore.updateNode(idNode, node);
+    await emitEvent(idModel, [{
+      type: 'TABLE_UPDATED',
+      payload: { nodeId: idNode, data: { ...node.data } },
+      inverse: previousData
+        ? { type: 'TABLE_UPDATED', payload: { nodeId: idNode, data: previousData } }
+        : null,
+      undoable: !!previousData
+    }])
   }
 
-  // Position-only update - not tracked by UndoManager (prevents undo from deleting nodes)
-  async function updateNodePosition(idModel, idNode) {
+  // ─── UPDATE NODE POSITION (drag-end) ───
+  // originalPos = { x, y } captured at drag-start for undo support
+  async function updateNodePosition(idModel, idNode, originalPos = null) {
     const node = flowMCD.value.findNode(idNode);
     if (!node) return;
 
-    await $fetch(`/api/models/update`, {
-      method: "PUT",
-      query: { id: idModel },
-      body: {
-        node: node,
-        type: "node",
-        action: "updateNode",
-      },
-    });
-
-    collaborationStore.updateNodePosition(idNode, node);
+    await emitEvent(idModel, [{
+      type: 'TABLE_MOVED',
+      payload: { nodeId: idNode, x: node.position.x, y: node.position.y },
+      inverse: originalPos
+        ? { type: 'TABLE_MOVED', payload: { nodeId: idNode, x: originalPos.x, y: originalPos.y } }
+        : null,
+      undoable: !!originalPos
+    }])
   }
 
   // ─── DUPLICATE NODE: Create a copy offset by random amount, then re‐use addNode() ───
@@ -273,82 +389,101 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     };
   }
 
-  // ─── UPDATE AN EDGE: Persist + update Yjs sharedEdges array ───
-  async function updateEdge(idModel, idEdge) {
+  // ─── UPDATE AN EDGE ───
+  // previousData: snapshot of edge.data BEFORE the UI mutation (for undo inverse)
+  async function updateEdge(idModel, idEdge, previousData = null) {
     const edge = flowMCD.value.findEdge(idEdge);
-    edge.selected = false;
-    edge.animated = false;
+    if (!edge) return;
 
-    // 1) Persist to your database
-    await $fetch(`/api/models/update`, {
-      method: "PUT",
-      query: { id: idModel },
-      body: {
-        edge: edge,
-        type: "edge",
-        action: "updateEdge",
-      },
-    });
-
-    // 2) Update in sharedEdges Yjs array
-    collaborationStore.updateEdge(idEdge, edge);
+    await emitEvent(idModel, [{
+      type: 'RELATION_UPDATED',
+      payload: { edgeId: idEdge, data: { ...edge.data } },
+      inverse: previousData
+        ? { type: 'RELATION_UPDATED', payload: { edgeId: idEdge, data: previousData } }
+        : null,
+      undoable: !!previousData
+    }])
   }
 
-  // ─── REMOVE AN EDGE: Delete in DB, THEN remove from sharedEdges array ───
+  // ─── REMOVE AN EDGE ───
   async function removeEdge(idModel, idEdge) {
-    // 1) Delete from your database
-    await $fetch(`/api/models/delete`, {
-      method: "DELETE",
-      query: { idModel: idModel, idEdge: idEdge },
-      body: {
-        type: "edge",
-        action: "removeEdge",
-      },
-    });
+    const edge = flowMCD.value?.findEdge(idEdge)
 
-    // 2) Remove from Yjs sharedEdges (single transaction)
-    collaborationStore.removeEdge(idEdge);
+    await emitEvent(idModel, [{
+      type: 'RELATION_DELETED',
+      payload: { edgeId: idEdge },
+      inverse: edge
+        ? { type: 'RELATION_ADDED', payload: { edge: { ...edge, selected: false } } }
+        : null,
+      undoable: true
+    }])
 
     isSubMenuVisible.value = false;
   }
 
-  // ─── REMOVE MULTIPLE ELEMENTS (batch for undo grouping) ───
+  // ─── REMOVE MULTIPLE ELEMENTS (batch) ───
   async function removeElements(idModel, nodeIds, edgeIds) {
-    // DB deletes
-    for (const nid of nodeIds) {
-      $fetch(`/api/models/delete`, {
-        method: "DELETE",
-        query: { idModel, idNode: nid },
-        body: { type: "node", action: "removeNode" },
-      }).catch(() => {});
-    }
+    const events = []
+
+    // Capture full edges for undo inverse
     for (const eid of edgeIds) {
-      $fetch(`/api/models/delete`, {
-        method: "DELETE",
-        query: { idModel, idEdge: eid },
-        body: { type: "edge", action: "removeEdge" },
-      }).catch(() => {});
+      const edge = flowMCD.value?.findEdge(eid)
+      events.push({
+        type: 'RELATION_DELETED',
+        payload: { edgeId: eid },
+        inverse: edge
+          ? { type: 'RELATION_ADDED', payload: { edge: { ...edge, selected: false } } }
+          : null,
+        undoable: true
+      })
     }
 
-    // Yjs: single transaction = single undo
-    collaborationStore.runInTransaction(() => {
-      for (const nid of nodeIds) collaborationStore.removeNode(nid);
-      for (const eid of edgeIds) collaborationStore.removeEdge(eid);
-    });
+    // Capture full nodes for undo inverse
+    for (const nid of nodeIds) {
+      const node = flowMCD.value?.findNode(nid)
+      // Also capture edges connected to this node (not already in edgeIds)
+      const connectedEdges = getFlowEdges()
+        .filter((e) => (e.source === nid || e.target === nid) && !edgeIds.includes(e.id))
+      for (const edge of connectedEdges) {
+        events.push({
+          type: 'RELATION_DELETED',
+          payload: { edgeId: edge.id },
+          inverse: { type: 'RELATION_ADDED', payload: { edge: { ...edge, selected: false } } },
+          undoable: true
+        })
+      }
+      events.push({
+        type: 'TABLE_DELETED',
+        payload: { nodeId: nid },
+        inverse: node
+          ? { type: 'TABLE_ADDED', payload: { node: { ...node, selected: false, dragging: false } } }
+          : null,
+        undoable: true
+      })
+    }
+
+    await emitEvent(idModel, events)
 
     isSubMenuVisible.value = false;
   }
 
   // ─── ADD ASSOCIATION FIELD TO A SELECTED EDGE ───
-  function addAssociation() {
+  async function addAssociation(idModel) {
     const edge = flowMCD.value.findEdge(edgeIdSelected.value);
-    // Recompute SVG path center (not strictly needed here, but kept for reference)
-    getStraightPath(edge);
+    if (!edge) return;
+
+    const previousData = JSON.parse(JSON.stringify(edge.data || {}))
+
     // Locally update the VueFlow edge data
     flowMCD.value.updateEdgeData(edge.id, { hasNodeAssociation: true });
 
-    // Persist that data change into Yjs
-    collaborationStore.updateEdge(edge.id, flowMCD.value.findEdge(edge.id));
+    // Persist via event
+    await emitEvent(idModel, [{
+      type: 'RELATION_UPDATED',
+      payload: { edgeId: edge.id, data: { ...edge.data, hasNodeAssociation: true } },
+      inverse: { type: 'RELATION_UPDATED', payload: { edgeId: edge.id, data: previousData } },
+      undoable: true
+    }])
 
     isSubMenuVisible.value = true;
     elementsMenu.value = false;
@@ -360,36 +495,28 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     addNewNode.value = true;
 
     const newNode = createNewNode(position);
-
-    const edgeParams = {
+    const newEdge = createNewEdge({
       source: sourceNodeId,
       target: newNode.id,
       sourceHandle: sourceHandleId || null,
       targetHandle: null,
-    };
-    const newEdge = createNewEdge(edgeParams);
-
-    // Persist node to DB
-    await $fetch(`/api/models/update`, {
-      method: "PUT",
-      query: { id: idModel },
-      body: { node: newNode, type: "node" },
     });
 
-    // Persist edge to DB
-    await $fetch(`/api/models/update`, {
-      method: "PUT",
-      query: { id: idModel },
-      body: { edge: newEdge, type: "edge", action: "addEdge" },
-    });
+    await emitEvent(idModel, [
+      {
+        type: 'TABLE_ADDED',
+        payload: { node: newNode },
+        inverse: { type: 'TABLE_DELETED', payload: { nodeId: newNode.id } },
+        undoable: true
+      },
+      {
+        type: 'RELATION_ADDED',
+        payload: { edge: newEdge },
+        inverse: { type: 'RELATION_DELETED', payload: { edgeId: newEdge.id } },
+        undoable: true
+      }
+    ])
 
-    // Push both into Yjs in a single transaction (single undo)
-    collaborationStore.runInTransaction(() => {
-      collaborationStore.addNode(newNode);
-      collaborationStore.addEdge(newEdge);
-    });
-
-    // Update UI state
     isSubMenuVisible.value = true;
     elementsMenu.value = false;
     isNewlyCreated.value = true;
@@ -444,7 +571,6 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     const cx = nodes.reduce((s, n) => s + (n.position?.x ?? 0), 0) / 3;
     const cy = nodes.reduce((s, n) => s + (n.position?.y ?? 0), 0) / 3;
 
-    // Create the ternary association node
     const ternaryNode = {
       id: getIdNode(),
       type: 'ternaryEntity',
@@ -459,42 +585,35 @@ export const useMCDStore = defineStore("flow-mcd", () => {
       },
     };
 
-    // Create 3 edges from each entity to the central node
     const newEdges = nodes.map((node) => {
-      return createNewEdge({
+      const e = createNewEdge({
         source: node.id,
         target: ternaryNode.id,
         sourceHandle: 's4',
         targetHandle: null,
       });
-    });
-
-    // Set default cardinalities
-    newEdges.forEach((e) => {
       e.data.sourceCardinality = '0,N';
       e.data.targetCardinality = '0,N';
+      return e;
     });
 
-    // Persist to DB
-    await $fetch(`/api/models/update`, {
-      method: 'PUT',
-      query: { id: idModel },
-      body: { node: ternaryNode, type: 'node' },
-    });
+    // Build batch: TABLE_ADDED + 3 × RELATION_ADDED
+    const events = [
+      {
+        type: 'TABLE_ADDED',
+        payload: { node: ternaryNode },
+        inverse: { type: 'TABLE_DELETED', payload: { nodeId: ternaryNode.id } },
+        undoable: true
+      },
+      ...newEdges.map((edge) => ({
+        type: 'RELATION_ADDED',
+        payload: { edge },
+        inverse: { type: 'RELATION_DELETED', payload: { edgeId: edge.id } },
+        undoable: true
+      }))
+    ]
 
-    for (const edge of newEdges) {
-      await $fetch(`/api/models/update`, {
-        method: 'PUT',
-        query: { id: idModel },
-        body: { edge, type: 'edge', action: 'addEdge' },
-      });
-    }
-
-    // Push into Yjs in a single transaction
-    collaborationStore.runInTransaction(() => {
-      collaborationStore.addNode(ternaryNode);
-      newEdges.forEach((e) => collaborationStore.addEdge(e));
-    });
+    await emitEvent(idModel, events)
 
     isSubMenuVisible.value = true;
     nodeIdSelected.value = ternaryNode.id;
@@ -543,13 +662,12 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     newEdge.data.targetCardinality = '1,1';
     newEdge.data.loopbackSide = freeSide;
 
-    await $fetch(`/api/models/update`, {
-      method: 'PUT',
-      query: { id: idModel },
-      body: { edge: newEdge, type: 'edge', action: 'addEdge' },
-    });
-
-    collaborationStore.addEdge(newEdge);
+    await emitEvent(idModel, [{
+      type: 'RELATION_ADDED',
+      payload: { edge: newEdge },
+      inverse: { type: 'RELATION_DELETED', payload: { edgeId: newEdge.id } },
+      undoable: true
+    }])
 
     isSubMenuVisible.value = true;
     elementsMenu.value = false;
@@ -558,6 +676,26 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     nodeIdSelected.value = null;
 
     return newEdge;
+  }
+
+  // ─── ADD A SINGLE EDGE (used by onConnect in the page) ───
+  async function addEdge(idModel, params) {
+    const newEdge = createNewEdge(params)
+
+    await emitEvent(idModel, [{
+      type: 'RELATION_ADDED',
+      payload: { edge: newEdge },
+      inverse: { type: 'RELATION_DELETED', payload: { edgeId: newEdge.id } },
+      undoable: true
+    }])
+
+    isSubMenuVisible.value = true;
+    elementsMenu.value = false;
+    isNewlyCreated.value = true;
+    edgeIdSelected.value = newEdge.id;
+    nodeIdSelected.value = null;
+
+    return newEdge
   }
 
   return {
@@ -585,6 +723,10 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     setFlowInstance,
     createNewNode,
     createNewEdge,
+    readFlowCollection,
+    getFlowNodes,
+    getFlowEdges,
+    emitEvent,
 
     addNode,
     removeNode,
@@ -593,6 +735,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     duplicateNode,
     removeElements,
 
+    addEdge,
     updateEdge,
     removeEdge,
     addNodeAndEdge,

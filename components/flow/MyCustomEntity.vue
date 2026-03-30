@@ -232,21 +232,23 @@ const getNodeSoftDeletes = computed(() => {
 const setNodeTimestamps = async value => {
   let nodeData = mcdStore?.flowMCD?.findNode(props.id);
   if (nodeData) {
+    const prevData = JSON.parse(JSON.stringify(nodeData.data))
     nodeData.data.hasTimestamps = value
-    await updateNode()
+    await updateNode(prevData)
   }
 }
 const setNodeSoftDeletes = async value => {
   let nodeData = mcdStore?.flowMCD?.findNode(props.id);
   if (nodeData) {
+    const prevData = JSON.parse(JSON.stringify(nodeData.data))
     nodeData.data.usesSoftDeletes = value
-    await updateNode()
+    await updateNode(prevData)
   }
 }
 
-const updateNode = async () => {
+const updateNode = async (previousData = null) => {
   isSaving.value = true;
-  await mcdStore.updateNode(route.params.idModel, props?.id)
+  await mcdStore.updateNode(route.params.idModel, props?.id, previousData)
   isSaving.value = false;
 };
 

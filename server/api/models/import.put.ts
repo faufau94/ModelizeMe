@@ -1,5 +1,6 @@
 import prisma from "~/lib/prisma";
 import { requireModelAccess } from "~/server/utils/auth";
+import { buildModelState, maybeCreateSnapshot } from "~/server/utils/event-engine";
 import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
@@ -13,33 +14,43 @@ export default defineEventHandler(async (event) => {
   }
 
   const modelId = idSchema.parse(body.modelId);
-  await requireModelAccess(event, modelId);
+  const { session } = await requireModelAccess(event, modelId);
 
-  const existingModel = await prisma.model.findUnique({
-    where: { id: modelId },
-  });
-
-  if (!existingModel) {
-    throw createError({ statusCode: 404, message: "Modèle introuvable" });
-  }
-
-  const existingNodes = (existingModel.nodes as any[]) || [];
-  const existingEdges = (existingModel.edges as any[]) || [];
+  // Use reconstructed state for accurate limit checks
+  const currentState = await buildModelState(modelId);
   const newNodes = Array.isArray(body.nodes) ? body.nodes : [];
   const newEdges = Array.isArray(body.edges) ? body.edges : [];
 
-  if (existingNodes.length + newNodes.length > 500) {
+  if (currentState.nodes.length + newNodes.length > 500) {
     throw createError({ statusCode: 400, message: "Limite de 500 nœuds dépassée" });
   }
-  if (existingEdges.length + newEdges.length > 1000) {
+  if (currentState.edges.length + newEdges.length > 1000) {
     throw createError({ statusCode: 400, message: "Limite de 1000 arêtes dépassée" });
   }
 
-  return await prisma.model.update({
-    where: { id: modelId },
+  // Insert MODEL_IMPORTED event
+  const modelEvent = await prisma.modelEvent.create({
     data: {
-      nodes: [...existingNodes, ...newNodes],
-      edges: [...existingEdges, ...newEdges],
+      modelId,
+      type: "MODEL_IMPORTED",
+      payload: { nodes: newNodes, edges: newEdges },
+      inverse: null,
+      userId: session.user.id,
+      undoable: false,
     },
   });
+
+  // Double-write: update Model.nodes/edges for backward compatibility
+  const mergedNodes = [...currentState.nodes, ...newNodes];
+  const mergedEdges = [...currentState.edges, ...newEdges];
+
+  const updated = await prisma.model.update({
+    where: { id: modelId },
+    data: { nodes: mergedNodes, edges: mergedEdges },
+  });
+
+  // Async snapshot
+  maybeCreateSnapshot(modelId, modelEvent.id).catch(() => {});
+
+  return updated;
 });

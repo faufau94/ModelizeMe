@@ -1,3 +1,5 @@
+// DEPRECATED — replaced by POST /api/models/events (event sourcing)
+// Kept for backward compatibility during migration. Will be removed after Phase 5.
 import prisma from "~/lib/prisma";
 import { requireModelAccess } from "~/server/utils/auth";
 import { z } from "zod";
