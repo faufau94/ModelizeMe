@@ -123,11 +123,36 @@ export const useConvertToFlowElements = () => {
                 targetCardinality: rel.getAttribute("targetCardinality") || "0,N",
                 hasTimestamps: rel.getAttribute("timestamps") !== "false",
                 usesSoftDeletes: rel.getAttribute("softDeletes") === "true",
+                isCIF: rel.getAttribute("isCIF") === "true",
+                loopbackSide: rel.getAttribute("loopbackSide") || null,
                 properties: relProps,
             });
         }
 
-        return { entities, relationships };
+        // Parse ternary associations
+        const ternaryAssociations = [];
+        const ternaryElements = xmlDoc.getElementsByTagName("ternary-association");
+        for (let i = 0; i < ternaryElements.length; i++) {
+            const ternary = ternaryElements[i];
+            const cifEntity = ternary.getAttribute("cif") || null;
+            const participantElements = ternary.getElementsByTagName("participant");
+            const participants = [];
+            for (let j = 0; j < participantElements.length; j++) {
+                const p = participantElements[j];
+                const entityName = p.getAttribute("entity");
+                participants.push({
+                    entity: entityName,
+                    cardinality: p.getAttribute("cardinality") || "0,N",
+                    isCIF: cifEntity !== null && entityName === cifEntity,
+                });
+            }
+            ternaryAssociations.push({
+                name: ternary.getAttribute("name") || "",
+                participants,
+            });
+        }
+
+        return { entities, relationships, ternaryAssociations };
     }
 
     function parseLegacyXML(xmlDoc) {
@@ -322,6 +347,8 @@ export const useConvertToFlowElements = () => {
                         properties: rel.properties || [],
                         hasTimestamps: rel.hasTimestamps !== false,
                         usesSoftDeletes: rel.usesSoftDeletes || false,
+                        isCIF: rel.isCIF || false,
+                        loopbackSide: rel.loopbackSide || null,
                     },
                 });
             }
@@ -369,7 +396,58 @@ export const useConvertToFlowElements = () => {
                 nodeMap
             );
         }
-        const layouted = await getLayoutedElements(nodes, edges);
+
+        // Create ternary entity nodes and their connecting edges
+        const ternaryNodes = [];
+        const ternaryEdges = [];
+        if (parsed.ternaryAssociations && parsed.ternaryAssociations.length > 0) {
+            for (const ta of parsed.ternaryAssociations) {
+                const ternaryId = `dndnode_${uuidv4()}_${uuidv4()}`;
+                ternaryNodes.push({
+                    id: ternaryId,
+                    type: 'ternaryEntity',
+                    position: { x: Math.random() * 600, y: Math.random() * 400 },
+                    draggable: true,
+                    selected: false,
+                    data: {
+                        name: ta.name,
+                        hasTimestamps: false,
+                        usesSoftDeletes: false,
+                        properties: [],
+                    },
+                });
+                for (const participant of ta.participants) {
+                    const entityId = nodeMap[participant.entity];
+                    if (entityId) {
+                        ternaryEdges.push({
+                            id: `dndedge_${uuidv4()}_${uuidv4()}`,
+                            source: entityId,
+                            target: ternaryId,
+                            sourceHandle: 's4',
+                            targetHandle: null,
+                            type: 'customEdge',
+                            updatable: true,
+                            selectable: true,
+                            label: '',
+                            data: {
+                                name: '',
+                                sourceCardinality: participant.cardinality,
+                                targetCardinality: '1,1',
+                                properties: [],
+                                hasTimestamps: false,
+                                usesSoftDeletes: false,
+                                isCIF: participant.isCIF || false,
+                                loopbackSide: null,
+                            },
+                        });
+                    }
+                }
+            }
+        }
+
+        const allNodes = [...nodes, ...ternaryNodes];
+        const allEdges = [...edges, ...ternaryEdges];
+        const layouted = await getLayoutedElements(allNodes, allEdges);
         await saveNodesAndEdgesToDatabase(layouted.nodes, layouted.edges, modelId);
         return { nodes: layouted.nodes, edges: layouted.edges };
     }

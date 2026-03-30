@@ -8,12 +8,8 @@
     style="border-radius: 14px; min-width: 160px; max-width: 240px;"
     v-bind="$attrs"
   >
-    <!-- Diamond icon + name header -->
+    <!-- Name header -->
     <div class="flex items-center justify-center gap-1.5 px-4 pt-3 pb-2 border-b border-gray-100">
-      <!-- Diamond shape (SVG) to signal "association" -->
-      <svg width="10" height="10" viewBox="0 0 10 10" class="flex-shrink-0" :class="isSelected ? 'text-indigo-500' : 'text-gray-400'">
-        <polygon points="5,0 10,5 5,10 0,5" fill="currentColor"/>
-      </svg>
       <h3
         v-if="props.data?.name"
         class="text-xs font-semibold text-center text-gray-700 tracking-wide uppercase truncate"
@@ -22,7 +18,7 @@
         {{ props.data.name }}
       </h3>
       <h3 v-else class="text-xs font-semibold text-center text-gray-400 tracking-wide uppercase italic">
-        Association
+        Sans nom
       </h3>
     </div>
 

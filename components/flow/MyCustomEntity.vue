@@ -212,7 +212,7 @@ const headerColorClass = computed(() => {
   }
 })
 
-watch(() => nodeIdSelected.value === props.id, (newVal) => {
+watch(isSelected, (newVal) => {
   if (isReadOnly.value) return;
   if (newVal) {
     showHandles();
@@ -247,14 +247,6 @@ const setNodeSoftDeletes = async value => {
 const updateNode = async () => {
   isSaving.value = true;
   await mcdStore.updateNode(route.params.idModel, props?.id)
-
-  mcdStore?.flowMCD.updateNodeData(props?.id, (node) => {
-    let data = props?.data
-    node.data = {
-      ...node.data,
-      data
-    }
-  });
   isSaving.value = false;
 };
 
@@ -291,11 +283,8 @@ const showHandles = () => {
 
 const hideHandles = () => {
   if (isReadOnly.value) return
-  setTimeout(() => {
-    if (isNodeHovered.value) isNodeShown.value = false
-    isNodeHovered.value = false
-  }, 3000)
-
+  isNodeShown.value = false
+  isNodeHovered.value = false
   sourceHandle.value = 0
 }
 

@@ -64,7 +64,7 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <DialogTrigger as-child>
-                  <Button @click="setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-gray-700 hover:bg-gray-100 max-w-[400px] min-w-0 overflow-hidden">
+                  <Button @click="setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-gray-700 hover:bg-gray-100 min-w-[100px] max-w-[120px] overflow-hidden">
                     <span class="truncate block">{{ model?.name }}</span>
                   </Button>
                 </DialogTrigger>
@@ -527,6 +527,9 @@ collaborationStore.initialize(
 onMounted(async () => {
 
   // Always start with a clean slate to avoid stale data from previous models
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
+  isSubMenuVisible.value = false
   mcdStore.flowMCD.setNodes([]);
   mcdStore.flowMCD.setEdges([]);
 
@@ -554,8 +557,15 @@ onMounted(async () => {
   // Set initial nodes/edges in Yjs AND VueFlow.
   // Use skipTracking=true (origin='init') so UndoManager ignores the initial load.
   // Future edits will be tracked as deltas from this base state.
-  const initialNodes = model.value?.nodes || [];
-  const initialEdges = model.value?.edges || [];
+  // Strip stale selected/dragging state from DB data
+  const initialNodes = (model.value?.nodes || []).map(n => {
+    const { selected, dragging, ...rest } = n
+    return rest
+  });
+  const initialEdges = (model.value?.edges || []).map(e => {
+    const { selected, ...rest } = e
+    return rest
+  });
   collaborationStore.setNodes(initialNodes, true);
   collaborationStore.setEdges(initialEdges, true);
   collaborationStore.clearUndoHistory();
@@ -601,6 +611,8 @@ onMounted(async () => {
 
   mcdStore.flowMCD.onConnect((params) => {
     _connectStartParams.value = null
+    // Prevent self-loops via drag & drop — use the ElementMenu instead
+    if (params.source === params.target) return
     const newEdge = mcdStore.createNewEdge(params)
     // Use shared edges instead of directly adding to flow
     collaborationStore.addEdge(newEdge)
@@ -821,6 +833,9 @@ const saveAllNodePositions = () => {
 };
 
 const goBack = async () => {
+  // Deselect everything before leaving
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
   isSubMenuVisible.value = false
   isFlowReady.value = false
   // Save positions in background - don't await to avoid visual flash

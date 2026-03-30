@@ -1,63 +1,99 @@
 <template>
   <div
-    class="relative cursor-pointer transition-all duration-200"
-    :class="isSelected ? 'drop-shadow-lg' : 'drop-shadow-md hover:drop-shadow-lg'"
-    @mouseover="showHandles"
-    @mousedown="showHandles"
-    @mouseout="hideHandles"
+    ref="content"
+    class="bg-white z-40 relative cursor-pointer transition-all duration-200"
+    :class="isSelected
+      ? 'ring-2 ring-indigo-400 ring-offset-2 shadow-lg'
+      : 'shadow-md hover:shadow-lg border border-gray-200'"
+    style="border-radius: 14px; min-width: 160px; max-width: 240px;"
     v-bind="$attrs"
   >
-    <!-- Diamond shape via rotated square -->
-    <div
-      class="bg-white border-2 transition-colors duration-200"
-      :class="isSelected ? 'border-indigo-400' : 'border-gray-300'"
-      :style="{
-        width: '120px',
-        height: '120px',
-        transform: 'rotate(45deg)',
-        borderRadius: '8px',
-      }"
-    >
-      <!-- Counter-rotate content so text stays horizontal -->
-      <div
-        class="flex flex-col items-center justify-center w-full h-full"
-        style="transform: rotate(-45deg)"
+    <!-- Name header -->
+    <div class="flex items-center justify-center gap-1.5 px-4 pt-3 pb-2 border-b border-gray-100">
+      <h3
+        v-if="props.data?.name"
+        class="text-xs font-semibold text-center text-gray-700 tracking-wide uppercase truncate"
+        :class="isSelected ? 'text-indigo-600' : ''"
       >
-        <svg width="12" height="12" viewBox="0 0 10 10" class="mb-1" :class="isSelected ? 'text-indigo-500' : 'text-gray-400'">
-          <polygon points="5,0 10,5 5,10 0,5" fill="currentColor"/>
-        </svg>
-        <h3
-          v-if="props.data?.name"
-          class="text-xs font-semibold text-center text-gray-700 tracking-wide uppercase truncate max-w-[90px]"
-          :class="isSelected ? 'text-indigo-600' : ''"
-        >
-          {{ props.data.name }}
-        </h3>
-        <h3 v-else class="text-xs font-semibold text-center text-gray-400 tracking-wide uppercase italic">
-          Association
-        </h3>
-        <p v-if="fieldCount > 0" class="text-[10px] text-gray-400 mt-0.5">
-          {{ fieldCount }} champ{{ fieldCount > 1 ? 's' : '' }}
-        </p>
+        {{ props.data.name }}
+      </h3>
+      <h3 v-else class="text-xs font-semibold text-center text-gray-400 tracking-wide uppercase italic">
+        Sans nom
+      </h3>
+    </div>
+
+    <!-- Fields -->
+    <div v-if="props.data?.properties?.length" class="px-3 py-2 space-y-0.5">
+      <div
+        v-for="(field, index) in props.data.properties"
+        :key="index"
+        class="flex items-center justify-between gap-3 py-0.5 px-1 rounded hover:bg-gray-50 transition-colors"
+      >
+        <div class="flex items-center gap-1 min-w-0">
+          <div class="w-3.5 flex-shrink-0" v-if="field?.isPrimaryKey">
+            <KeyRound :size="11" class="text-red-500"/>
+          </div>
+          <div class="w-3.5 flex-shrink-0" v-else-if="field?.isForeignKey">
+            <KeyRound :size="11" class="text-gray-400"/>
+          </div>
+          <div v-else class="w-3.5 flex-shrink-0"></div>
+
+          <span
+            class="text-xs text-gray-700 truncate"
+            :class="field?.isPrimaryKey ? 'font-semibold underline decoration-red-400 decoration-2 underline-offset-2' : 'font-normal'"
+          >
+            {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
+          </span>
+        </div>
+
+        <span class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded flex-shrink-0 border border-gray-100">
+          {{ field?.typeName }}
+        </span>
+      </div>
+
+      <!-- Timestamps -->
+      <div v-if="props.data?.hasTimestamps" class="flex items-center justify-between gap-3 py-0.5 px-1">
+        <span class="text-xs text-gray-300 italic w-3.5 inline-block"></span>
+        <span class="text-xs text-gray-300 italic flex-1">created_at</span>
+        <span class="text-xs text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">Timestamp</span>
+      </div>
+      <div v-if="props.data?.hasTimestamps" class="flex items-center justify-between gap-3 py-0.5 px-1">
+        <span class="text-xs text-gray-300 italic w-3.5 inline-block"></span>
+        <span class="text-xs text-gray-300 italic flex-1">updated_at</span>
+        <span class="text-xs text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">Timestamp</span>
+      </div>
+      <div v-if="props.data?.usesSoftDeletes" class="flex items-center justify-between gap-3 py-0.5 px-1">
+        <span class="text-xs text-gray-300 italic w-3.5 inline-block"></span>
+        <span class="text-xs text-gray-300 italic flex-1">deleted_at</span>
+        <span class="text-xs text-gray-300 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">Timestamp</span>
       </div>
     </div>
 
-    <!-- Handles (positioned relative to diamond tips) -->
-    <Handle id="s1" type="source" :position="Position.Left" :style="handleStyle" style="top: 50%"/>
-    <Handle id="s2" type="source" :position="Position.Top" :style="handleStyle" style="left: 50%"/>
-    <Handle id="s3" type="source" :position="Position.Bottom" :style="handleStyle" style="left: 50%"/>
-    <Handle id="s4" type="source" :position="Position.Right" :style="handleStyle" style="top: 50%"/>
+    <!-- Empty state -->
+    <div v-else class="px-3 py-2">
+      <p class="text-xs text-gray-300 italic text-center">Aucun champ</p>
+    </div>
+
+    <!-- CIF indicator -->
+    <div v-if="hasCIF" class="flex items-center justify-center px-3 pb-2">
+      <span class="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-300 rounded px-2 py-0.5">
+        CIF
+      </span>
+    </div>
+
+    <div class="pb-1"></div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { Handle, Position } from '@vue-flow/core';
 import { computed, ref } from 'vue';
 import { useMCDStore } from '~/stores/mcd-store.js';
+import { KeyRound } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
 
 const mcdStore = useMCDStore();
 const { nodeIdSelected } = storeToRefs(mcdStore);
+const content = ref(null);
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -66,28 +102,13 @@ const props = defineProps({
 });
 
 const isSelected = computed(() => props.selected || nodeIdSelected.value === props.id);
-const fieldCount = computed(() => props.data?.properties?.length ?? 0);
 
-const handleOpacity = ref(0);
-
-const handleStyle = computed(() => ({
-  backgroundColor: '#6366f1',
-  padding: '6px',
-  opacity: handleOpacity.value,
-  border: '2px solid white',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-  transition: 'opacity 0.2s ease',
-}));
-
-const showHandles = () => { handleOpacity.value = 1; };
-const hideHandles = () => {
-  setTimeout(() => { handleOpacity.value = 0; }, 3000);
-};
+// Check if any connected edge has CIF
+const hasCIF = computed(() => {
+  if (!mcdStore.flowMCD) return false;
+  const edges = mcdStore.flowMCD.getEdges?.value ?? [];
+  return edges.some(
+    (e) => (e.source === props.id || e.target === props.id) && e.data?.isCIF
+  );
+});
 </script>
-
-<style scoped>
-.vue-flow__handle {
-  width: 8px;
-  height: 8px;
-}
-</style>

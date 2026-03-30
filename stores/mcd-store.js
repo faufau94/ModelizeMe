@@ -266,6 +266,8 @@ export const useMCDStore = defineStore("flow-mcd", () => {
         targetCardinality: "",
         hasTimestamps: true,
         usesSoftDeletes: false,
+        isCIF: false,
+        loopbackSide: null,
         properties: [],
       },
     };
@@ -463,7 +465,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
         source: node.id,
         target: ternaryNode.id,
         sourceHandle: 's4',
-        targetHandle: 's1',
+        targetHandle: null,
       });
     });
 
@@ -498,6 +500,64 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     nodeIdSelected.value = ternaryNode.id;
 
     return { node: ternaryNode, edges: newEdges };
+  }
+
+  // ─── GET LOOPBACK EDGES FOR A NODE ───
+  function getLoopbackEdges(nodeId) {
+    return getFlowEdges().filter((e) => e.source === nodeId && e.target === nodeId);
+  }
+
+  // ─── GET TERNARY RELATIONS INVOLVING A NODE ───
+  function getTernaryRelations(nodeId) {
+    // A node participates in a ternary relation if it has an edge to a ternaryEntity node
+    const edges = getFlowEdges().filter(
+      (e) => (e.source === nodeId || e.target === nodeId)
+    );
+    const ternaryNodeIds = new Set();
+    for (const e of edges) {
+      const otherId = e.source === nodeId ? e.target : e.source;
+      const otherNode = flowMCD.value?.findNode(otherId);
+      if (otherNode?.type === 'ternaryEntity') ternaryNodeIds.add(otherId);
+    }
+    return ternaryNodeIds.size;
+  }
+
+  // Available sides for loopback edges (order: right, bottom, left, top)
+  const LOOPBACK_SIDES = ['right', 'bottom', 'left', 'top'];
+
+  // ─── ADD A SELF-REFERENCING (LOOPBACK) EDGE FROM THE ELEMENT MENU ───
+  async function addLoopbackEdge(idModel, nodeId) {
+    // Determine which sides are already used
+    const existing = getLoopbackEdges(nodeId);
+    const usedSides = existing.map((e) => e.data?.loopbackSide).filter(Boolean);
+    const freeSide = LOOPBACK_SIDES.find((s) => !usedSides.includes(s));
+    if (!freeSide) return null; // Max 4 loopback edges
+
+    const newEdge = createNewEdge({
+      source: nodeId,
+      target: nodeId,
+      sourceHandle: null,
+      targetHandle: null,
+    });
+    newEdge.data.sourceCardinality = '1,1';
+    newEdge.data.targetCardinality = '1,1';
+    newEdge.data.loopbackSide = freeSide;
+
+    await $fetch(`/api/models/update`, {
+      method: 'PUT',
+      query: { id: idModel },
+      body: { edge: newEdge, type: 'edge', action: 'addEdge' },
+    });
+
+    collaborationStore.addEdge(newEdge);
+
+    isSubMenuVisible.value = true;
+    elementsMenu.value = false;
+    isNewlyCreated.value = true;
+    edgeIdSelected.value = newEdge.id;
+    nodeIdSelected.value = null;
+
+    return newEdge;
   }
 
   return {
@@ -538,6 +598,10 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     addNodeAndEdge,
     addAssociation,
     addTernaryRelation,
+    addLoopbackEdge,
+    getLoopbackEdges,
+    getTernaryRelations,
+    LOOPBACK_SIDES,
     determineHandles,
   };
 });

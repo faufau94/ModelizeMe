@@ -198,11 +198,61 @@
 
           </div>
 
-          <!-- Ternary relation button -->
+          <!-- Advanced actions: loopback edge + ternary relation -->
           <div class="mt-4 pt-4 border-t border-gray-100 w-full">
-            <Button variant="outline" class="w-full" @click="startTernaryMode">
-              Créer une relation ternaire
+            <Button
+              variant="ghost"
+              size="sm"
+              class="px-0 h-auto text-xs text-gray-400 hover:text-gray-600 hover:bg-transparent mb-2 gap-1.5"
+              @click="showAdvanced = !showAdvanced"
+            >
+              <ChevronRight
+                :class="['w-3 h-3 transition-transform duration-200', showAdvanced ? 'rotate-90' : '']"
+              />
+              Actions avancées
             </Button>
+            <Transition name="add-field">
+              <div v-if="showAdvanced" class="flex flex-col gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="w-full justify-start text-gray-500 border border-dashed border-gray-200 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50"
+                  :class="{ 'opacity-50 cursor-not-allowed': !canAddLoopback }"
+                  :disabled="!canAddLoopback"
+                  @click="createLoopbackEdge"
+                >
+                  <svg class="w-4 h-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M14 8 C18 8, 18 14, 14 14" stroke-linecap="round"/>
+                    <path d="M14 8 L14 14" />
+                    <polyline points="11,12 14,14 14,16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="flex-1 text-left">Auto-relation (réflexive)</span>
+                  <span v-if="loopbackCount > 0" class="ml-auto inline-flex items-center justify-center rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold min-w-[18px] h-[18px] px-1">
+                    {{ loopbackCount }}
+                  </span>
+                  <span v-if="!canAddLoopback" class="ml-1 text-[10px] text-gray-400">(max)</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="w-full justify-start text-gray-500 border border-dashed border-gray-200 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50"
+                  @click="startTernaryMode"
+                >
+                  <svg class="w-4 h-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <circle cx="10" cy="4" r="2.5"/>
+                    <circle cx="3.5" cy="15" r="2.5"/>
+                    <circle cx="16.5" cy="15" r="2.5"/>
+                    <line x1="10" y1="6.5" x2="5" y2="13"/>
+                    <line x1="10" y1="6.5" x2="15" y2="13"/>
+                    <line x1="5" y1="13" x2="15" y2="13"/>
+                  </svg>
+                  <span class="flex-1 text-left">Relation ternaire</span>
+                  <span v-if="ternaryCount > 0" class="ml-auto inline-flex items-center justify-center rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold min-w-[18px] h-[18px] px-1">
+                    {{ ternaryCount }}
+                  </span>
+                </Button>
+              </div>
+            </Transition>
           </div>
         </div>
 
@@ -301,7 +351,6 @@
             </div>
           </div>
           <hr>
-
 
           <p class="font-bold text-xl mt-10">Association</p>
           <div class="max-w-sm mt-6">
@@ -567,6 +616,39 @@
             -->
           </div>
 
+          <!-- Advanced actions: CIF for ternary edges -->
+          <div v-if="isTernaryEdgeSelected" class="mt-4 pt-4 border-t border-gray-100 w-full">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="px-0 h-auto text-xs text-gray-400 hover:text-gray-600 hover:bg-transparent mb-2 gap-1.5"
+              @click="showAdvancedEdge = !showAdvancedEdge"
+            >
+              <ChevronRight
+                :class="['w-3 h-3 transition-transform duration-200', showAdvancedEdge ? 'rotate-90' : '']"
+              />
+              Actions avancées
+            </Button>
+            <Transition name="add-field">
+              <div v-if="showAdvancedEdge" class="flex flex-col gap-2">
+                <div class="items-top flex gap-x-2 px-2 py-2 rounded border border-dashed border-gray-200">
+                  <Checkbox id="field-cif" v-model:checked="edgeCIF"/>
+                  <div class="grid gap-1.5 leading-none">
+                    <label
+                        for="field-cif"
+                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Contrainte d'Intégrité Fonctionnelle (CIF)
+                    </label>
+                    <p class="text-xs text-gray-400">
+                      Indique une dépendance fonctionnelle dans cette relation ternaire
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
         </div>
 
         <div class="flex flex-col w-full md:flex-row justify-between items-center gap-4">
@@ -639,6 +721,7 @@ import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandL
 import {
   Check,
   ChevronsUpDown,
+  ChevronRight,
   CirclePlus,
   Loader2,
   Trash2,
@@ -671,13 +754,54 @@ const edgeNameInputRef = ref(null);
 const route = useRoute();
 const mcdStore = useMCDStore();
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, isSaving, isNewlyCreated} = storeToRefs(mcdStore);
-const {removeEdge, removeNode, addTernaryRelation} = mcdStore
+const {removeEdge, removeNode, addTernaryRelation, getLoopbackEdges, getTernaryRelations, LOOPBACK_SIDES} = mcdStore
 
 const startTernaryMode = () => {
   mcdStore.isTernaryMode = true
   mcdStore.ternarySelectedNodes = []
   isSubMenuVisible.value = false
 }
+
+const showAdvanced = ref(false)
+const showAdvancedEdge = ref(false)
+
+const loopbackCount = computed(() => {
+  if (!nodeIdSelected.value) return 0;
+  return getLoopbackEdges(nodeIdSelected.value).length;
+});
+
+const ternaryCount = computed(() => {
+  if (!nodeIdSelected.value) return 0;
+  return getTernaryRelations(nodeIdSelected.value);
+});
+
+const canAddLoopback = computed(() => loopbackCount.value < LOOPBACK_SIDES.length);
+
+const createLoopbackEdge = async () => {
+  if (!nodeIdSelected.value || !canAddLoopback.value) return
+  await mcdStore.addLoopbackEdge(route.params.idModel, nodeIdSelected.value)
+}
+
+// CIF (Contrainte d'Intégrité Fonctionnelle) for ternary edges
+const isTernaryEdgeSelected = computed(() => {
+  if (!edgeIdSelected.value) return false;
+  const edge = mcdStore.flowMCD?.findEdge(edgeIdSelected.value);
+  if (!edge) return false;
+  const sourceNode = mcdStore.flowMCD?.findNode(edge.source);
+  const targetNode = mcdStore.flowMCD?.findNode(edge.target);
+  return sourceNode?.type === 'ternaryEntity' || targetNode?.type === 'ternaryEntity';
+});
+
+const edgeCIF = computed({
+  get() {
+    return edgeData?.value?.data?.isCIF ?? false;
+  },
+  set(value) {
+    if (edgeData?.value?.data) {
+      edgeData.value.data.isCIF = value;
+    }
+  },
+});
 
 const nodeData = ref(null);
 const edgeData = ref(null);
@@ -736,6 +860,8 @@ watch(
   () => {
     nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value) ?? null;
     edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value) ?? null;
+    showAdvanced.value = false;
+    showAdvancedEdge.value = false;
   },
   { immediate: true }
 );
@@ -744,10 +870,6 @@ watch(
 const updateNode = async () => {
   isSaving.value = true;
   await mcdStore.updateNode(route.params.idModel, nodeData.value.id)
-
-  mcdStore?.flowMCD.updateNodeData(nodeData.value.id, (node) => {
-    node.data = nodeData.value.data;
-  });
   isSaving.value = false;
 };
 

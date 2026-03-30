@@ -15,7 +15,7 @@ function getNodeCenter(node) {
 // Function to get handle coordinates based on position
 function getHandleCoordsByPosition(node, handlePosition) {
     // Access the 'source' handles from handleBounds
-    const handle = node.handleBounds.source.find(
+    const handle = node.handleBounds?.source?.find(
         (h) => h.position === handlePosition,
     );
 

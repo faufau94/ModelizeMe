@@ -48,8 +48,8 @@
       </div>
     </EdgeLabelRenderer>
 
-    <!-- Association table at edge midpoint (editable view only) -->
-    <EdgeLabelRenderer v-if="activeTab === 'default'">
+    <!-- Association table at edge midpoint (editable view only, not for ternary edges) -->
+    <EdgeLabelRenderer v-if="activeTab === 'default' && !isTernaryEdge">
       <div
         :style="{
           pointerEvents: 'all',
@@ -61,6 +61,19 @@
         <div @click="onclick">
           <MyCustomEntityAssociation :data="data" :selected="props.selected" :edgeId="props.id" />
         </div>
+      </div>
+    </EdgeLabelRenderer>
+
+    <!-- CIF badge on ternary edges -->
+    <EdgeLabelRenderer v-if="isTernaryEdge && props.data?.isCIF">
+      <div
+        :style="{
+          pointerEvents: 'none',
+          position: 'absolute',
+          transform: `translate(-50%, -50%) translate(${edgePath[1]}px, ${edgePath[2]}px)`,
+        }"
+      >
+        <div class="cif-badge">CIF</div>
       </div>
     </EdgeLabelRenderer>
   </g>
@@ -101,6 +114,11 @@ const props = defineProps({
 
 const modelType = computed(() => props.data?.modelType ?? 'default');
 
+// Ternary edges connect to a ternaryEntity node — they should not display an association table
+const isTernaryEdge = computed(() => {
+  return props.sourceNode?.type === 'ternaryEntity' || props.targetNode?.type === 'ternaryEntity';
+});
+
 const isLoopback = computed(() => props.sourceNode?.id === props.targetNode?.id);
 
 const edgeParams = computed(() => {
@@ -117,36 +135,69 @@ watchEffect(() => {
   }
 });
 
-// Loopback arc path: loops above the node (Merise-style)
-// Uses a cubic bezier that goes up and to the right, placing the association table
-// well above and to the right of the node for clear readability.
+// Loopback arc path: a clean D-shaped arc on the assigned side of the node.
+// Supports 4 sides: right (default), bottom, left, top.
 const loopbackData = computed(() => {
   if (!isLoopback.value) return null;
   const node = props.sourceNode;
   const pos = node.computedPosition || node.position;
   const w = node.dimensions?.width ?? 320;
   const h = node.dimensions?.height ?? 100;
+  const side = props.data?.loopbackSide || 'right';
 
-  // Start from right side (top third), end at top side (right third)
-  const sx = pos.x + w;
-  const sy = pos.y + h * 0.3;
-  const tx = pos.x + w * 0.7;
-  const ty = pos.y;
+  let sx: number, sy: number, tx: number, ty: number;
+  let cp1x: number, cp1y: number, cp2x: number, cp2y: number;
+  let bulge: number;
 
-  // Control points: swing out far to the upper-right
-  const cpOffset = Math.max(120, w * 0.5);
-  const cp1x = sx + cpOffset;
-  const cp1y = sy - cpOffset;
-  const cp2x = tx + cpOffset;
-  const cp2y = ty - cpOffset;
+  switch (side) {
+    case 'right': {
+      bulge = Math.max(70, w * 0.45);
+      sx = pos.x + w; sy = pos.y + h * 0.3;
+      tx = pos.x + w; ty = pos.y + h * 0.7;
+      cp1x = sx + bulge; cp1y = sy - bulge * 0.25;
+      cp2x = tx + bulge; cp2y = ty + bulge * 0.25;
+      break;
+    }
+    case 'left': {
+      bulge = Math.max(70, w * 0.45);
+      sx = pos.x; sy = pos.y + h * 0.3;
+      tx = pos.x; ty = pos.y + h * 0.7;
+      cp1x = sx - bulge; cp1y = sy - bulge * 0.25;
+      cp2x = tx - bulge; cp2y = ty + bulge * 0.25;
+      break;
+    }
+    case 'top': {
+      bulge = Math.max(70, h * 0.6);
+      sx = pos.x + w * 0.3; sy = pos.y;
+      tx = pos.x + w * 0.7; ty = pos.y;
+      cp1x = sx - bulge * 0.25; cp1y = sy - bulge;
+      cp2x = tx + bulge * 0.25; cp2y = ty - bulge;
+      break;
+    }
+    case 'bottom': {
+      bulge = Math.max(70, h * 0.6);
+      sx = pos.x + w * 0.3; sy = pos.y + h;
+      tx = pos.x + w * 0.7; ty = pos.y + h;
+      cp1x = sx - bulge * 0.25; cp1y = sy + bulge;
+      cp2x = tx + bulge * 0.25; cp2y = ty + bulge;
+      break;
+    }
+    default: {
+      bulge = Math.max(70, w * 0.45);
+      sx = pos.x + w; sy = pos.y + h * 0.3;
+      tx = pos.x + w; ty = pos.y + h * 0.7;
+      cp1x = sx + bulge; cp1y = sy - bulge * 0.25;
+      cp2x = tx + bulge; cp2y = ty + bulge * 0.25;
+    }
+  }
 
   const path = `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx} ${ty}`;
 
-  // Midpoint of the bezier (approximate: average of control points)
+  // Label at the apex of the arc
   const midX = (sx + cp1x + cp2x + tx) / 4;
   const midY = (sy + cp1y + cp2y + ty) / 4;
 
-  return { path, midX, midY, sx, sy, tx, ty };
+  return { path, midX, midY, sx, sy, tx, ty, side };
 });
 
 const edgePath = computed(() => {
@@ -211,7 +262,12 @@ const targetCardinality = computed<string | null>(() => props.data?.targetCardin
 const offset = 32;
 
 const sourceLabelX = computed(() => {
-  if (isLoopback.value && loopbackData.value) return loopbackData.value.sx + offset;
+  if (isLoopback.value && loopbackData.value) {
+    const d = loopbackData.value;
+    if (d.side === 'left') return d.sx - offset;
+    if (d.side === 'top' || d.side === 'bottom') return d.sx;
+    return d.sx + offset;
+  }
   const { sx, sourcePos } = edgeParams.value;
   if (sourcePos === 'left') return sx - offset;
   if (sourcePos === 'right') return sx + offset;
@@ -219,7 +275,12 @@ const sourceLabelX = computed(() => {
 });
 
 const sourceLabelY = computed(() => {
-  if (isLoopback.value && loopbackData.value) return loopbackData.value.sy - offset;
+  if (isLoopback.value && loopbackData.value) {
+    const d = loopbackData.value;
+    if (d.side === 'top') return d.sy - offset;
+    if (d.side === 'bottom') return d.sy + offset;
+    return d.sy;
+  }
   const { sy, sourcePos } = edgeParams.value;
   if (sourcePos === 'top') return sy - offset;
   if (sourcePos === 'bottom') return sy + offset;
@@ -227,7 +288,12 @@ const sourceLabelY = computed(() => {
 });
 
 const targetLabelX = computed(() => {
-  if (isLoopback.value && loopbackData.value) return loopbackData.value.tx + offset;
+  if (isLoopback.value && loopbackData.value) {
+    const d = loopbackData.value;
+    if (d.side === 'left') return d.tx - offset;
+    if (d.side === 'top' || d.side === 'bottom') return d.tx;
+    return d.tx + offset;
+  }
   const { tx, targetPos } = edgeParams.value;
   if (targetPos === 'left') return tx - offset;
   if (targetPos === 'right') return tx + offset;
@@ -235,7 +301,12 @@ const targetLabelX = computed(() => {
 });
 
 const targetLabelY = computed(() => {
-  if (isLoopback.value && loopbackData.value) return loopbackData.value.ty - offset;
+  if (isLoopback.value && loopbackData.value) {
+    const d = loopbackData.value;
+    if (d.side === 'top') return d.ty - offset;
+    if (d.side === 'bottom') return d.ty + offset;
+    return d.ty;
+  }
   const { ty, targetPos } = edgeParams.value;
   if (targetPos === 'top') return ty - offset;
   if (targetPos === 'bottom') return ty + offset;
@@ -278,5 +349,18 @@ const targetLabelY = computed(() => {
   color: #7c3aed;
   background: #f5f3ff;
   border-color: #c4b5fd;
+}
+
+.cif-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1.5px solid #fbbf24;
+  padding: 1px 6px;
+  border-radius: 4px;
+  line-height: 1.4;
+  text-transform: uppercase;
 }
 </style>

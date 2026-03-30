@@ -26,3 +26,5 @@ logs
 # Keep the generated Prisma Client + query engine out of version control
 prisma/generated/
 ANALYSE-PROJET.md
+
+vscode/

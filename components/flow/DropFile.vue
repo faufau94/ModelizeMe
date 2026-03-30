@@ -113,6 +113,7 @@ import { AlertCircle } from 'lucide-vue-next'
 
 import { UploadIcon, FileIcon, XIcon } from 'lucide-vue-next'
 import {useMCDStore} from "~/stores/mcd-store.js";
+import {useCollaborationStore} from "~/stores/collaboration-store.js";
 
 
 defineProps({
@@ -126,6 +127,7 @@ const route = useRoute()
 
 const { convertSQLToFlowElements, convertXMLToFlowElements, convertJSONToFlowElements } = useConvertToFlowElements();
 const mcdStore = useMCDStore()
+const collaborationStore = useCollaborationStore()
 
 const isDragging = ref(false)
 const file = ref(null)
@@ -159,6 +161,12 @@ const handleFile = async () => {
           [...existingNodes, ...nodes],
           [...existingEdges, ...edges]
         )
+
+        // Sync to Yjs with skipTracking=true (origin='init') so UndoManager
+        // treats this as the new baseline, then clear undo history.
+        collaborationStore.setNodes(layouted.nodes, true);
+        collaborationStore.setEdges(layouted.edges, true);
+        collaborationStore.clearUndoHistory();
 
         mcdStore.flowMCD.setNodes(layouted.nodes);
         mcdStore.flowMCD.setEdges(layouted.edges);
