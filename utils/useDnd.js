@@ -22,13 +22,9 @@ export default function useDragAndDrop() {
   const collaborationStore = useCollaborationStore();
 
   // 3) we extract only the refs we need from mcdStore
-  //    - isSubMenuVisible, elementsMenu, nodeIdSelected, addNewNode
   const {
     isSubMenuVisible,
     elementsMenu,
-    nodeIdSelected,
-    addNewNode,
-    isNewlyCreated,
   } = storeToRefs(mcdStore);
 
   // 4) mcdStore.createNewNode() factory to generate a fresh node object
@@ -88,32 +84,23 @@ export default function useDragAndDrop() {
 
   /**
    * Handles the actual drop event on the VueFlow container.
-   * Steps:
-   *   1) Convert screen coords to flow coords,
-   *   2) Create a new node object,
-   *   3) Persist to your backend,
-   *   4) Push into Yjs shared array via collaborationStore,
-   *   5) Let Yjs observer update VueFlow state automatically,
-   *   6) Select the new node and finish.
+   * Converts screen coords → flow coords, creates a node, persists via event sourcing,
+   * then adjusts position once VueFlow renders it.
    */
   async function onDrop(event, idModel) {
-    // a) Show loading UI in the sub‐menu
-    addNewNode.value = true;
-
-    // b) Compute the new node's position inside the VueFlow canvas
+    // a) Compute the new node's position inside the VueFlow canvas
     const position = mcdStore.flowMCD.screenToFlowCoordinate({
       x: event.clientX,
       y: event.clientY,
     });
 
-    // c) Build a fresh node object
+    // b) Build a fresh node object
     const newNode = createNewNode(position);
 
-    /**
-     * We want to center the node under the cursor once VueFlow actually
-     * renders it. So we listen for onNodesInitialized, and then offset
-     * by half the node's width/height.
-     */
+    // c) Persist via event sourcing (handles server + Yjs + undo stack)
+    await mcdStore.addNode(idModel, newNode);
+
+    // d) Center the node under cursor once VueFlow knows its dimensions
     const { off } = mcdStore.flowMCD.onNodesInitialized(() => {
         const vfNode = mcdStore.flowMCD.findNode(newNode.id);
         if (!vfNode) { off(); return; }
@@ -135,32 +122,11 @@ export default function useDragAndDrop() {
         );
         vfNode.position = freePos;
 
+        // Persist adjusted position (non-undoable, cosmetic adjustment)
         collaborationStore.updateNode(newNode.id, { position: freePos });
+        mcdStore.updateNodePosition(idModel, newNode.id, null);
         off();
     });
-      
-
-    // d) Persist the new node to your own API
-    await $fetch(`/api/models/update`, {
-      method: 'PUT',
-      query: { id: idModel },
-      body: {
-        node: newNode,
-        type: 'node',
-        action: 'addNode',
-      },
-    });
-
-    // e) Push the node into the shared Yjs array.
-    //    That triggers the Yjs observer in collaborationStore, which does:
-    //       mcdStore.flowMCD.setNodes(collaborationStore.nodes)
-    //    → VueFlow renders the new node automatically.
-    collaborationStore.addNode(newNode);
-
-    // f) Mark that the new node is selected in the sidebar
-    isNewlyCreated.value = true;
-    nodeIdSelected.value = newNode.id;
-    addNewNode.value = false;
   }
 
   return {
