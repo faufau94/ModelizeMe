@@ -44,9 +44,10 @@ export function findFreePosition(candidate, size, otherNodes, flowInstance, marg
 
   if (!overlaps(candidate)) return candidate;
 
-  // Spiral outward to find free spot
-  for (let dist = 60; dist < 1200; dist += 60) {
-    for (let angle = 0; angle < 360; angle += 30) {
+  // Spiral outward to find free spot — step scales with node size
+  const step = Math.max(40, Math.min(size.width, size.height) * 0.5);
+  for (let dist = step; dist < 1200; dist += step) {
+    for (let angle = 0; angle < 360; angle += 20) {
       const pos = {
         x: candidate.x + dist * Math.cos(angle * Math.PI / 180),
         y: candidate.y + dist * Math.sin(angle * Math.PI / 180),

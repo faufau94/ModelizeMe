@@ -1,5 +1,4 @@
 import ELK from 'elkjs/lib/elk.bundled';
-import { resolveCollisions } from './useCollisions.js';
 
 const elk = new ELK();
 
@@ -22,14 +21,21 @@ const estimateNodeSize = (node) => {
     const hasSoftDeletes = node?.data?.usesSoftDeletes ? 1 : 0;
     const rowCount = propertyCount + hasTimestamps + hasSoftDeletes;
     const isAssociation = node?.type === 'customEntityAssociation';
+    const isTernary = node?.type === 'ternaryEntity';
 
-    const width = isAssociation ? 280 : 340;
-    const baseHeight = isAssociation ? 70 : 80;
-    const rowHeight = isAssociation ? 28 : 32;
+    if (isAssociation || isTernary) {
+        const width = 250;
+        const baseHeight = isTernary ? 110 : 70;  // Ternary: extra space for CIF badge
+        const rowHeight = 28;
+        return {
+            width,
+            height: Math.max(baseHeight + rowCount * rowHeight, 120),
+        };
+    }
 
     return {
-        width: width,
-        height: Math.max(baseHeight + rowCount * rowHeight, isAssociation ? 120 : 160),
+        width: 340,
+        height: Math.max(80 + rowCount * 32, 160),
     };
 };
 
@@ -38,7 +44,7 @@ const estimateNodeSize = (node) => {
  * Spacing is derived from the tallest/widest node so nothing overlaps,
  * including the association entity boxes that sit at edge midpoints.
  */
-const computeElkOptions = (nodes) => {
+const computeElkOptions = (nodes, direction = 'RIGHT') => {
     let maxW = 0;
     let maxH = 0;
     for (const node of (nodes || [])) {
@@ -49,19 +55,18 @@ const computeElkOptions = (nodes) => {
 
     return {
         'elk.algorithm': 'layered',
-        'elk.direction': 'RIGHT',
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(300, Math.round(maxW * 1.0))),
-        'elk.spacing.nodeNode': String(Math.max(160, Math.round(maxH * 0.6))),
-        'elk.spacing.edgeEdge': '60',
-        'elk.spacing.edgeNode': '100',
-        'elk.spacing.componentComponent': '200',
-        'elk.edgeRouting': 'ORTHOGONAL',
+        'elk.direction': direction,
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(250, Math.round(maxW * 0.7))),
+        'elk.spacing.nodeNode': String(Math.max(120, Math.round(maxH * 0.45))),
+        'elk.spacing.edgeEdge': '40',
+        'elk.spacing.edgeNode': '80',
+        'elk.spacing.componentComponent': '150',
+        'elk.edgeRouting': 'SPLINES',
         'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
         'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
-        'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
         'elk.separateConnectedComponents': 'true',
         'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
-        'elk.padding': '[top=60,left=60,bottom=60,right=60]',
+        'elk.padding': '[top=80,left=80,bottom=80,right=80]',
     };
 };
 
@@ -103,13 +108,23 @@ const determineHandles = (sourceNode, targetNode) => {
 const getLayoutedElements = (nodes, edges, options) => {
     const opts = options || computeElkOptions(nodes);
 
+    // Separate loopback edges (source === target) — ELK layered doesn't handle self-loops
+    const normalEdges = [];
+    const loopbackEdges = [];
+    for (const edge of edges) {
+        if (edge.source === edge.target) {
+            loopbackEdges.push(edge);
+        } else {
+            normalEdges.push(edge);
+        }
+    }
+
     // Inject phantom nodes for association entities so ELK reserves space for them.
     // An edge with data.hasNodeAssociation or non-empty data.properties gets a phantom.
     const phantomNodes = [];
     const elkEdges = [];
-    const phantomEdgeIds = new Set();
 
-    for (const edge of edges) {
+    for (const edge of normalEdges) {
         const hasAssoc = edge.data?.hasNodeAssociation || (edge.data?.properties?.length > 0);
         if (hasAssoc) {
             const phantomId = `phantom_${edge.id}`;
@@ -119,10 +134,9 @@ const getLayoutedElements = (nodes, edges, options) => {
             const hasTs = edge.data?.hasTimestamps ? 2 : 0;
             const hasSd = edge.data?.usesSoftDeletes ? 1 : 0;
             const totalRows = propCount + hasTs + hasSd;
-            const phantomW = 260;
-            const phantomH = Math.max(120, 50 + totalRows * 28);
+            const phantomW = 250;
+            const phantomH = Math.max(100, 48 + totalRows * 28);
             phantomNodes.push({ id: phantomId, width: phantomW, height: phantomH });
-            phantomEdgeIds.add(edge.id);
             // Split into two edges through the phantom node
             elkEdges.push({ id: `${edge.id}_a`, sources: [edge.source], targets: [phantomId] });
             elkEdges.push({ id: `${edge.id}_b`, sources: [phantomId], targets: [edge.target] });
@@ -156,33 +170,23 @@ const getLayoutedElements = (nodes, edges, options) => {
             }
 
             // Apply new positions to the original node objects (preserving all Vue Flow properties)
-            const layoutedNodes = nodes.map((node) => {
+            // ELK guarantees no overlap between its children — no post-processing needed.
+            const finalNodes = nodes.map((node) => {
                 const pos = positionMap.get(node.id);
                 return { ...node, position: pos || node.position };
             });
 
-            // Build phantom node objects with their ELK positions for collision resolution
-            const phantomLayouted = phantomNodes.map((ph) => {
-                const pos = positionMap.get(ph.id);
-                return { id: ph.id, position: pos || { x: 0, y: 0 }, dimensions: { width: ph.width, height: ph.height }, _phantom: true };
-            });
-
-            // Post-process: resolve overlaps including phantom (association) nodes
-            const allForCollision = [...layoutedNodes, ...phantomLayouted];
-            const resolvedAll = resolveCollisions(allForCollision, { margin: 60 });
-            const finalNodes = resolvedAll.filter((n) => !n._phantom);
-
-            // Recompute handles after collision resolution may have shifted nodes
+            // Compute handles based on final node positions
             const finalNodeMap = new Map(finalNodes.map((n) => [n.id, n]));
-            const finalPairCount = new Map();
-            const finalEdges = edges.map((edge) => {
+            const pairCount = new Map();
+            const layoutedEdges = normalEdges.map((edge) => {
                 const sourceNode = finalNodeMap.get(edge.source);
                 const targetNode = finalNodeMap.get(edge.target);
                 if (!sourceNode || !targetNode) return edge;
 
                 const pairKey = [edge.source, edge.target].sort().join('::');
-                const idx = finalPairCount.get(pairKey) || 0;
-                finalPairCount.set(pairKey, idx + 1);
+                const idx = pairCount.get(pairKey) || 0;
+                pairCount.set(pairKey, idx + 1);
 
                 let handles;
                 if (idx === 0) {
@@ -199,9 +203,15 @@ const getLayoutedElements = (nodes, edges, options) => {
                 return { ...edge, sourceHandle: handles.sourceHandle, targetHandle: handles.targetHandle };
             });
 
+            // Re-inject loopback edges unchanged (rendered independently by CustomEdge.vue)
+            const finalEdges = [...layoutedEdges, ...loopbackEdges];
+
             return { nodes: finalNodes, edges: finalEdges };
         })
-        .catch(console.error);
+        .catch((err) => {
+            console.error('ELK layout failed:', err);
+            return null;
+        });
 };
 
 export { getLayoutedElements, computeElkOptions, estimateNodeSize };
