@@ -4,17 +4,31 @@
     <ContextMenuTrigger :disabled="isReadOnly">
     <div class="bg-white shadow-lg rounded-xl w-80 z-40 relative cursor-pointer transition-all duration-200 hover:shadow-xl"
         :class="[
-          isSelected ? 'ring-2 ring-indigo-400 ring-offset-2' : 'border border-gray-200',
+          isConnectHovered ? 'ring-2 ring-primary ring-offset-2 shadow-primary/30 shadow-xl scale-[1.02]'
+            : isConnectTarget ? 'ring-2 ring-primary/60 ring-offset-2 shadow-primary/20 shadow-lg'
+            : isSelected ? 'ring-2 ring-indigo-400 ring-offset-2' : 'border border-gray-200',
           headerColorClass
         ]"
         v-bind="$attrs"
-        @mouseover="showHandles"
+        @mouseover="onMouseOver"
         @mousedown="showHandles"
-        @mouseout="isSelected ? showHandles : hideHandles()">
+        @mouseout="onMouseOut">
+
+      <!-- Drop overlay shown when hovering during a connection drag -->
+      <Transition name="drop-overlay">
+        <div v-if="isConnectHovered"
+          class="absolute inset-0 rounded-xl pointer-events-none z-50 flex items-center justify-center"
+          style="background: hsl(var(--primary) / 0.07); border: 2px dashed hsl(var(--primary));">
+          <span class="flex items-center gap-1.5 text-xs font-semibold text-primary bg-white/90 px-2.5 py-1 rounded-full shadow-sm border border-primary/30">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Relâcher pour connecter
+          </span>
+        </div>
+      </Transition>
 
       <!-- Entity header -->
-      <div class="flex justify-center items-center border-b border-gray-100 rounded-t-xl py-3 px-4 md:px-5"
-           :class="headerBgClass">
+      <div class="flex justify-center items-center border-b border-gray-100 rounded-t-xl py-3 px-4 md:px-5 relative"
+           :class="isConnectHovered ? 'bg-primary/5' : headerBgClass">
         <h3 v-if="props?.data?.name !== ''" class="text-sm font-semibold text-center text-gray-800 tracking-wide uppercase">
           {{ props?.data?.name ?? 'Sans nom' }}
         </h3>
@@ -181,7 +195,7 @@ const props = defineProps({
 
 const mcdStore = useMCDStore()
 const {removeNode, duplicateNode} = mcdStore
-const {activeTab, nodeIdSelected, isSaving} = storeToRefs(mcdStore)
+const {activeTab, nodeIdSelected, isSaving, isConnecting, connectingSourceNodeId, connectHoveredNodeId} = storeToRefs(mcdStore)
 
 const route = useRoute()
 const isNodeShown = ref(false)
@@ -191,6 +205,18 @@ const isNodeHovered = ref(false)
 const modelType = computed(() => props.data?.modelType ?? 'default')
 const isReadOnly = computed(() => modelType.value !== 'default')
 const isSelected = computed(() => props.selected || nodeIdSelected.value === props.id)
+
+// True when user is dragging a connection and this node is a valid target (not the source)
+const isConnectTarget = computed(() =>
+  isConnecting.value &&
+  !isReadOnly.value &&
+  props.id !== connectingSourceNodeId.value
+)
+
+// True when this node is the one currently hovered during a connection drag
+const isConnectHovered = computed(() =>
+  isConnectTarget.value && connectHoveredNodeId.value === props.id
+)
 
 /** Header background color per model type */
 const headerBgClass = computed(() => {
@@ -290,6 +316,20 @@ const hideHandles = () => {
   sourceHandle.value = 0
 }
 
+const onMouseOver = () => {
+  if (!isConnecting.value) showHandles()
+  if (isConnecting.value && isConnectTarget.value) {
+    connectHoveredNodeId.value = props.id
+  }
+}
+
+const onMouseOut = () => {
+  if (!isSelected.value) hideHandles()
+  if (connectHoveredNodeId.value === props.id) {
+    connectHoveredNodeId.value = null
+  }
+}
+
 
 </script>
 
@@ -331,5 +371,15 @@ const hideHandles = () => {
 
 .vue-flow__handle-right {
   right: -15px;
+}
+
+/* Drop overlay transition */
+.drop-overlay-enter-active,
+.drop-overlay-leave-active {
+  transition: opacity 0.12s ease;
+}
+.drop-overlay-enter-from,
+.drop-overlay-leave-to {
+  opacity: 0;
 }
 </style>

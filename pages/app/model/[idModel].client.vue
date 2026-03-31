@@ -430,7 +430,7 @@ const mcdGenStore = useMCDGenStore()
 const mldStore = useMLDStore()
 const mpdStore = useMPDStore()
 const {addNode} = mcdStore
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType, isResolvingCollisions, isTernaryMode, ternarySelectedNodes, edgePathStyle} = storeToRefs(mcdStore)
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType, isResolvingCollisions, isTernaryMode, ternarySelectedNodes, edgePathStyle, isConnecting, connectingSourceNodeId, connectHoveredNodeId} = storeToRefs(mcdStore)
 
 const edgeStyleOptions = [
   { value: 'bezier', label: 'Courbe', preview: 'M 0 10 C 8 0, 16 0, 24 10' },
@@ -586,16 +586,39 @@ onMounted(async () => {
 
   mcdStore.flowMCD.onConnectStart(({ event, nodeId, handleId, handleType }) => {
     _connectStartParams.value = { nodeId, handleId, handleType }
+    isConnecting.value = true
+    connectingSourceNodeId.value = nodeId
   })
 
   mcdStore.flowMCD.onConnectEnd((event) => {
+    isConnecting.value = false
+    connectingSourceNodeId.value = null
+    connectHoveredNodeId.value = null
     if (!_connectStartParams.value) return
     const startParams = _connectStartParams.value
     _connectStartParams.value = null
 
-    // Only act when the edge was dropped on the empty pane (not on a valid handle)
     const targetEl = event?.target
     if (!targetEl) return
+
+    // Check if dropped on a node (or inside a node)
+    const nodeEl = targetEl.closest('.vue-flow__node')
+    if (nodeEl) {
+      // Extract the node id from the data attribute
+      const targetNodeId = nodeEl.getAttribute('data-id')
+      if (targetNodeId && targetNodeId !== startParams.nodeId) {
+        // Auto-connect to the target node (handles will be determined by floating edge logic)
+        mcdStore.addEdge(route.params.idModel, {
+          source: startParams.nodeId,
+          target: targetNodeId,
+          sourceHandle: startParams.handleId,
+          targetHandle: null,
+        })
+        return
+      }
+    }
+
+    // Only act when the edge was dropped on the empty pane (not on a valid handle)
     const isPane = targetEl.classList.contains('vue-flow__pane')
     if (!isPane) return
 
@@ -614,6 +637,9 @@ onMounted(async () => {
 
   mcdStore.flowMCD.onConnect((params) => {
     _connectStartParams.value = null
+    isConnecting.value = false
+    connectingSourceNodeId.value = null
+    connectHoveredNodeId.value = null
     // Prevent self-loops via drag & drop — use the ElementMenu instead
     if (params.source === params.target) return
     mcdStore.addEdge(route.params.idModel, params)

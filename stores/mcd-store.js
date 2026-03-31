@@ -36,6 +36,11 @@ export const useMCDStore = defineStore("flow-mcd", () => {
   const isTernaryMode = ref(false);
   const ternarySelectedNodes = ref([]);
 
+  // Connection drag state — used to highlight valid target nodes
+  const isConnecting = ref(false);
+  const connectingSourceNodeId = ref(null);
+  const connectHoveredNodeId = ref(null);
+
   // Edge path style: 'bezier' | 'straight' | 'simpleBezier'
   const edgePathStyle = ref('bezier');
 
@@ -717,6 +722,9 @@ export const useMCDStore = defineStore("flow-mcd", () => {
     isTernaryMode,
     ternarySelectedNodes,
     edgePathStyle,
+    isConnecting,
+    connectingSourceNodeId,
+    connectHoveredNodeId,
 
     getIdNode,
     getIdEdge,
