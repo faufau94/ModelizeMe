@@ -85,7 +85,7 @@ import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSimpleBezierPath, getStraightPath } from "@vue-flow/core";
 import { storeToRefs } from "pinia";
 import { useMCDStore } from "~/stores/mcd-store.js";
-import { getEdgeParams } from '~/utils/useFloatingEdge.js';
+import { getEdgeParams, getDistributedEdgeParams } from '~/utils/useFloatingEdge.js';
 
 const mcdStore = useMCDStore();
 const { activeTab, nodeIdSelected, isSubMenuVisible, edgeIdSelected, edgePathStyle } = storeToRefs(mcdStore);
@@ -123,7 +123,14 @@ const isLoopback = computed(() => props.sourceNode?.id === props.targetNode?.id)
 
 const edgeParams = computed(() => {
   if (isLoopback.value) return null;
-  return getEdgeParams(props.sourceNode, props.targetNode);
+  const flow = mcdStore.flowMCD as any;
+  if (!flow) return getEdgeParams(props.sourceNode, props.targetNode);
+  const allEdges = flow.getEdges?.value ?? flow.getEdges ?? [];
+  const allNodes = flow.getNodes?.value ?? flow.getNodes ?? [];
+  if (!allEdges.length || !allNodes.length) {
+    return getEdgeParams(props.sourceNode, props.targetNode);
+  }
+  return getDistributedEdgeParams(props.sourceNode, props.targetNode, allEdges, allNodes, props.id);
 });
 
 // Disable animated dash - we use our own selection color instead
