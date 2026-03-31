@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 
 export const useUndoRedoStore = defineStore('undo-redo', () => {
   // Local stacks (in-memory only, not persisted)
   const undoStack = ref([])
   const redoStack = ref([])
+
+  // Flag set during undo/redo operations so watchers (e.g. auto-save) can skip
+  const isUndoRedoing = ref(false)
 
   const canUndo = computed(() => undoStack.value.length > 0)
   const canRedo = computed(() => redoStack.value.length > 0)
@@ -39,19 +42,26 @@ export const useUndoRedoStore = defineStore('undo-redo', () => {
     const entry = undoStack.value.pop()
     if (!entry) return
 
-    if (entry._batch) {
-      // Undo batch: emit all inverses in reverse order
-      const inverseEvents = entry.events
-        .slice()
-        .reverse()
-        .map(e => ({ ...e.inverse, undoable: false }))
-      await emitFn(idModel, inverseEvents)
-    } else {
-      // Undo single event
-      await emitFn(idModel, [{ ...entry.inverse, undoable: false }])
-    }
+    isUndoRedoing.value = true
+    try {
+      if (entry._batch) {
+        // Undo batch: emit all inverses in reverse order
+        const inverseEvents = entry.events
+          .slice()
+          .reverse()
+          .map(e => ({ ...e.inverse, undoable: false }))
+        await emitFn(idModel, inverseEvents)
+      } else {
+        // Undo single event
+        await emitFn(idModel, [{ ...entry.inverse, undoable: false }])
+      }
 
-    redoStack.value.push(entry)
+      redoStack.value.push(entry)
+      // Wait for Vue watchers to flush before clearing the flag
+      await nextTick()
+    } finally {
+      isUndoRedoing.value = false
+    }
   }
 
   /**
@@ -61,25 +71,32 @@ export const useUndoRedoStore = defineStore('undo-redo', () => {
     const entry = redoStack.value.pop()
     if (!entry) return
 
-    if (entry._batch) {
-      // Redo batch: re-emit all original events in order
-      const reEvents = entry.events.map(e => ({
-        type: e.type,
-        payload: e.payload,
-        inverse: e.inverse,
-        undoable: false
-      }))
-      await emitFn(idModel, reEvents)
-    } else {
-      await emitFn(idModel, [{
-        type: entry.type,
-        payload: entry.payload,
-        inverse: entry.inverse,
-        undoable: false
-      }])
-    }
+    isUndoRedoing.value = true
+    try {
+      if (entry._batch) {
+        // Redo batch: re-emit all original events in order
+        const reEvents = entry.events.map(e => ({
+          type: e.type,
+          payload: e.payload,
+          inverse: e.inverse,
+          undoable: false
+        }))
+        await emitFn(idModel, reEvents)
+      } else {
+        await emitFn(idModel, [{
+          type: entry.type,
+          payload: entry.payload,
+          inverse: entry.inverse,
+          undoable: false
+        }])
+      }
 
-    undoStack.value.push(entry)
+      undoStack.value.push(entry)
+      // Wait for Vue watchers to flush before clearing the flag
+      await nextTick()
+    } finally {
+      isUndoRedoing.value = false
+    }
   }
 
   function clear() {
@@ -92,6 +109,7 @@ export const useUndoRedoStore = defineStore('undo-redo', () => {
     redoStack,
     canUndo,
     canRedo,
+    isUndoRedoing,
     pushUndoable,
     pushUndoableBatch,
     undo,

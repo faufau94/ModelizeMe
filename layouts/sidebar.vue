@@ -193,7 +193,7 @@
                             <AlertDialog>
                               <AlertDialogTrigger as-child>
                                 <div @click.stop="showDialogDeleteTeam = true" class="flex items-center w-full">
-                                  <TrashIcon class="mr-2 h-4 w-4" />
+                                  <Trash2 class="mr-2 h-4 w-4" />
                                   <span>Supprimer</span>
                                 </div>
                               </AlertDialogTrigger>
@@ -289,7 +289,7 @@
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem class="text-destructive focus:text-destructive cursor-pointer">
-                        <TrashIcon class="mr-2 h-4 w-4" />
+                        <Trash2 class="mr-2 h-4 w-4" />
                         <span>Supprimer</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -415,7 +415,7 @@ import {
   PencilIcon,
   Settings2,
   SettingsIcon,
-  TrashIcon,
+  Trash2,
   UserIcon,
   UsersRound,
   Users,
