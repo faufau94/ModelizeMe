@@ -119,12 +119,41 @@ const getLayoutedElements = (nodes, edges, options) => {
         }
     }
 
+    // Separate ternary entity nodes — they will be positioned post-layout
+    // at the barycenter of their connected entities, not by ELK's layered algo
+    const ternaryNodeIds = new Set();
+    const regularNodes = [];
+    for (const node of nodes) {
+        if (node.type === 'ternaryEntity') {
+            ternaryNodeIds.add(node.id);
+        } else {
+            regularNodes.push(node);
+        }
+    }
+
+    // Separate ternary edges from normal edges
+    const ternaryEdgesByNode = new Map(); // ternaryNodeId → [edge, ...]
+    const nonTernaryEdges = [];
+    for (const edge of normalEdges) {
+        if (ternaryNodeIds.has(edge.target)) {
+            const list = ternaryEdgesByNode.get(edge.target) || [];
+            list.push(edge);
+            ternaryEdgesByNode.set(edge.target, list);
+        } else if (ternaryNodeIds.has(edge.source)) {
+            const list = ternaryEdgesByNode.get(edge.source) || [];
+            list.push(edge);
+            ternaryEdgesByNode.set(edge.source, list);
+        } else {
+            nonTernaryEdges.push(edge);
+        }
+    }
+
     // Inject phantom nodes for association entities so ELK reserves space for them.
     // An edge with data.hasNodeAssociation or non-empty data.properties gets a phantom.
     const phantomNodes = [];
     const elkEdges = [];
 
-    for (const edge of normalEdges) {
+    for (const edge of nonTernaryEdges) {
         const hasAssoc = edge.data?.hasNodeAssociation || (edge.data?.properties?.length > 0);
         if (hasAssoc) {
             const phantomId = `phantom_${edge.id}`;
@@ -146,12 +175,12 @@ const getLayoutedElements = (nodes, edges, options) => {
     }
 
     // Build a clean graph for ELK - only pass id, width, height.
-    // Never pass reactive Vue Flow objects to ELK.
+    // Never pass reactive Vue Flow objects to ELK. Ternary nodes excluded.
     const graph = {
         id: 'root',
         layoutOptions: opts,
         children: [
-            ...nodes.map((node) => {
+            ...regularNodes.map((node) => {
                 const size = estimateNodeSize(node);
                 return { id: node.id, width: size.width, height: size.height };
             }),
@@ -165,21 +194,95 @@ const getLayoutedElements = (nodes, edges, options) => {
         .then((layoutedGraph) => {
             // Build a position map from ELK results (skip phantom nodes for output)
             const positionMap = new Map();
+            const sizeMap = new Map();
             for (const child of layoutedGraph.children) {
                 positionMap.set(child.id, { x: child.x, y: child.y });
+                sizeMap.set(child.id, { width: child.width, height: child.height });
             }
 
-            // Apply new positions to the original node objects (preserving all Vue Flow properties)
+            // Apply new positions to regular nodes (preserving all Vue Flow properties)
             // ELK guarantees no overlap between its children — no post-processing needed.
-            const finalNodes = nodes.map((node) => {
+            const layoutedRegularNodes = regularNodes.map((node) => {
                 const pos = positionMap.get(node.id);
                 return { ...node, position: pos || node.position };
             });
 
+            // Position ternary nodes at the barycenter of their connected entities,
+            // then nudge away from any overlapping node via spiral search
+            const allPositionedNodes = [...layoutedRegularNodes];
+            for (const node of nodes) {
+                if (!ternaryNodeIds.has(node.id)) continue;
+
+                const connectedEdges = ternaryEdgesByNode.get(node.id) || [];
+                const connectedPositions = [];
+                for (const edge of connectedEdges) {
+                    const otherId = edge.source === node.id ? edge.target : edge.source;
+                    const pos = positionMap.get(otherId);
+                    if (pos) connectedPositions.push(pos);
+                }
+
+                let barycenter;
+                if (connectedPositions.length > 0) {
+                    barycenter = {
+                        x: connectedPositions.reduce((s, p) => s + p.x, 0) / connectedPositions.length,
+                        y: connectedPositions.reduce((s, p) => s + p.y, 0) / connectedPositions.length,
+                    };
+                } else {
+                    barycenter = node.position || { x: 0, y: 0 };
+                }
+
+                // Spiral search to avoid overlap with already-positioned nodes
+                const ternarySize = estimateNodeSize(node);
+                const margin = 40;
+                const overlaps = (pos) => {
+                    for (const other of allPositionedNodes) {
+                        const otherSize = sizeMap.get(other.id) || estimateNodeSize(other);
+                        const ox = other.position.x;
+                        const oy = other.position.y;
+                        if (
+                            pos.x < ox + otherSize.width + margin &&
+                            pos.x + ternarySize.width + margin > ox &&
+                            pos.y < oy + otherSize.height + margin &&
+                            pos.y + ternarySize.height + margin > oy
+                        ) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
+                let finalPos = barycenter;
+                if (overlaps(finalPos)) {
+                    const step = Math.max(40, Math.min(ternarySize.width, ternarySize.height) * 0.5);
+                    let found = false;
+                    for (let dist = step; dist < 1200 && !found; dist += step) {
+                        for (let angle = 0; angle < 360 && !found; angle += 20) {
+                            const candidate = {
+                                x: barycenter.x + dist * Math.cos(angle * Math.PI / 180),
+                                y: barycenter.y + dist * Math.sin(angle * Math.PI / 180),
+                            };
+                            if (!overlaps(candidate)) {
+                                finalPos = candidate;
+                                found = true;
+                            }
+                        }
+                    }
+                }
+
+                const positioned = { ...node, position: finalPos };
+                allPositionedNodes.push(positioned);
+                positionMap.set(node.id, finalPos);
+                sizeMap.set(node.id, ternarySize);
+            }
+
             // Compute handles based on final node positions
-            const finalNodeMap = new Map(finalNodes.map((n) => [n.id, n]));
+            const finalNodeMap = new Map(allPositionedNodes.map((n) => [n.id, n]));
             const pairCount = new Map();
-            const layoutedEdges = normalEdges.map((edge) => {
+            const allNormalEdges = [...nonTernaryEdges];
+            for (const edgeList of ternaryEdgesByNode.values()) {
+                allNormalEdges.push(...edgeList);
+            }
+            const layoutedEdges = allNormalEdges.map((edge) => {
                 const sourceNode = finalNodeMap.get(edge.source);
                 const targetNode = finalNodeMap.get(edge.target);
                 if (!sourceNode || !targetNode) return edge;
@@ -206,7 +309,7 @@ const getLayoutedElements = (nodes, edges, options) => {
             // Re-inject loopback edges unchanged (rendered independently by CustomEdge.vue)
             const finalEdges = [...layoutedEdges, ...loopbackEdges];
 
-            return { nodes: finalNodes, edges: finalEdges };
+            return { nodes: allPositionedNodes, edges: finalEdges };
         })
         .catch((err) => {
             console.error('ELK layout failed:', err);
