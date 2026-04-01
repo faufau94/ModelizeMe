@@ -1,5 +1,5 @@
 <template>
-  <div class="px-6 py-6 lg:px-8">
+  <div class="px-6 py-6 lg:px-8 max-w-5xl mx-auto w-full">
     <!-- Action bar -->
     <div class="flex items-center justify-end mb-6">
       <Button @click="showAddMemberDialog = true" size="sm">
@@ -14,25 +14,25 @@
         <Table>
           <TableHeader>
             <TableRow class="hover:bg-transparent">
-              <TableHead class="h-11">Utilisateur</TableHead>
-              <TableHead class="h-11">Rôle</TableHead>
-              <TableHead v-if="getIsOwner" class="h-11 text-right">Actions</TableHead>
+              <TableHead class="h-12 px-4">Utilisateur</TableHead>
+              <TableHead class="h-12 px-4">Rôle</TableHead>
+              <TableHead v-if="getIsOwner" class="h-12 px-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody v-if="selectedWorkspace?.members?.length > 0">
             <TableRow v-for="member in selectedWorkspace?.members" :key="member.user.id" class="hover:bg-muted/50">
-              <TableCell>
-                <div class="flex items-center gap-3">
-                  <Avatar class="h-8 w-8">
+              <TableCell class="py-4 px-4">
+                <div class="flex items-center gap-4">
+                  <Avatar class="h-9 w-9">
                     {{ member?.user?.name?.charAt(0).toUpperCase() }}
                   </Avatar>
-                  <div>
-                    <p class="text-sm font-medium leading-tight">{{ member?.user?.first_name }} {{ member?.user?.name }}</p>
+                  <div class="space-y-0.5">
+                    <p class="text-sm font-medium">{{ member?.user?.first_name }} {{ member?.user?.name }}</p>
                     <p class="text-xs text-muted-foreground">{{ member?.user?.email }}</p>
                   </div>
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell class="py-4 px-4">
                 <template v-if="getIsOwner">
                   <DropdownMenu>
                     <DropdownMenuTrigger as-child>
@@ -67,7 +67,7 @@
                   </Badge>
                 </template>
               </TableCell>
-              <TableCell class="text-right">
+              <TableCell class="py-4 px-4 text-right">
                 <Button
                   v-if="getIsOwner && member?.role !== 'owner'"
                   @click="confirmRemoveMember(member.id)"

@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-screen w-full bg-background overflow-hidden">
     <!-- Organization Sidebar (icon rail) -->
-    <div class="w-14 border-r border-border bg-muted/30 flex-col items-center hidden md:flex py-3 gap-2">
+    <div class="w-14 border-r border-border/50 bg-muted/30 flex-col items-center hidden md:flex py-3 gap-2">
       <div class="flex flex-col items-center gap-2 w-full px-2 flex-1">
         <WorkspacesSidebar />
         <AddWorkspaceDialog :isOnlyIcon="true"/>
@@ -9,9 +9,9 @@
     </div>
 
     <!-- Navigation Sidebar -->
-    <div class="w-60 border-r border-border bg-muted/20 flex-col hidden md:flex">
+    <div class="w-60 border-r border-border/50 bg-muted/20 flex-col hidden md:flex">
       <!-- Workspace header -->
-      <div class="h-14 flex items-center px-4 border-b border-border">
+      <div class="h-14 flex items-center px-4 border-b border-border/50">
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="flex items-center justify-center h-7 w-7 rounded-lg bg-primary text-primary-foreground text-xs font-semibold shrink-0">
             {{ selectedWorkspace?.name?.charAt(0).toUpperCase() }}
@@ -80,133 +80,143 @@
             <CreateTeamDialog />
           </div>
 
-          <div class="space-y-0.5">
-            <div v-for="team in selectedWorkspace?.teams" :key="team.id" class="group relative">
-              <NuxtLink
-                :to="goToThisWorkspaceUrl('team/'+ team?.id)"
-                class="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors"
+          <div class="flex flex-col gap-1.5">
+            <NuxtLink
+              v-for="team in selectedWorkspace?.teams" :key="team.id"
+              :to="goToThisWorkspaceUrl('team/'+ team.id)"
+              class="no-underline"
+            >
+              <Item
+                variant="outline"
+                size="sm"
                 :class="route.path === goToThisWorkspaceUrl('team/'+ team.id)
-                  ? 'bg-accent text-accent-foreground'
-                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
+                  ? 'bg-accent border-accent'
+                  : 'bg-white dark:bg-background hover:bg-accent/50'"
               >
-                <div class="w-2.5 h-2.5 rounded-full shrink-0" :class="teamColorClass(team?.color)"></div>
-                <div class="flex-1 min-w-0">
-                  <span class="font-medium truncate block">{{ team.name }}</span>
-                  <div class="flex items-center gap-3 mt-0.5">
-                    <span class="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Users class="h-3 w-3" />{{ team?.members?.length || 0 }}
+                <div class="w-3.5 h-3.5 rounded-full shrink-0" :class="teamColorClass(team?.color)"></div>
+                <ItemContent>
+                  <ItemTitle class="text-sm">{{ team.name }}</ItemTitle>
+                  <ItemDescription class="text-[11px]">
+                    <span class="flex items-center gap-3">
+                      <span class="flex items-center gap-1">
+                        <Users class="h-3 w-3" />{{ team?.members?.length || 0 }}
+                      </span>
+                      <span class="flex items-center gap-1">
+                        <PanelTopIcon class="h-3 w-3" />{{ team.models?.length || 0 }}
+                      </span>
                     </span>
-                    <span class="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <PanelTopIcon class="h-3 w-3" />{{ team.models?.length || 0 }}
-                    </span>
-                  </div>
-                </div>
-              </NuxtLink>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button class="absolute right-1.5 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-accent cursor-pointer">
-                    <MoreHorizontalIcon class="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" class="w-48">
-                          <DropdownMenuItem class="cursor-pointer" @click.stop="openManageTeamDialog(team.id)">
-                            <Users class="mr-2 h-4 w-4" />
-                            <span>Gérer l'équipe</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem class="cursor-pointer">
-                            <AlertDialog v-model:open="showDialogRenameTeam">
-                              <AlertDialogTrigger as-child>
-                                <div @click.stop="showDialogRenameTeam = true" class="flex items-center w-full">
-                                  <PencilIcon class="mr-2 h-4 w-4" />
-                                  <span>Renommer</span>
-                                </div>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Renommer l'équipe</AlertDialogTitle>
-                                </AlertDialogHeader>
-                                <Form
-                                    v-slot="{ handleSubmit }"
-                                    :initial-values="{ name: team.name }"
-                                    :validation-schema="formSchema"
-                                >
-                                  <form @submit="handleSubmit($event, (formValues) => rnTeam({ ...formValues, teamId: team.id }))">
-                                    <FormField v-slot="{ componentField }" name="name">
-                                      <FormItem>
-                                        <FormLabel>Nom</FormLabel>
-                                        <FormControl>
-                                          <Input type="text" v-bind="componentField"/>
-                                        </FormControl>
-                                        <FormMessage />
-                                        <FormControl class="float-right">
-                                          <Button type="submit" :disabled="isRenamingTeam">
-                                            <Loader2 v-if="isRenamingTeam" class="w-4 h-4 mr-2 animate-spin"/>
-                                            {{ isRenamingTeam ? 'Renommage...' : 'Renommer' }}
-                                          </Button>
-                                          <Button type="button" variant="secondary" @click.stop="showDialogRenameTeam = false">
-                                            Annuler
-                                          </Button>
-                                        </FormControl>
-                                      </FormItem>
-                                    </FormField>
-                                  </form>
-                                </Form>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </DropdownMenuItem>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <div class="flex items-center w-full">
-                                <Paintbrush class="mr-2 h-4 w-4" />
-                                <span>Changer la couleur</span>
+                  </ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        class="opacity-0 group-hover/item:opacity-100 transition-opacity p-1 rounded-md hover:bg-accent cursor-pointer"
+                        @click.prevent.stop
+                      >
+                        <MoreHorizontalIcon class="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" class="w-48">
+                      <DropdownMenuItem class="cursor-pointer" @click.stop="openManageTeamDialog(team.id)">
+                        <Users class="mr-2 h-4 w-4" />
+                        <span>Gérer l'équipe</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem class="cursor-pointer">
+                        <AlertDialog v-model:open="showDialogRenameTeam">
+                          <AlertDialogTrigger as-child>
+                            <div @click.stop="showDialogRenameTeam = true" class="flex items-center w-full">
+                              <PencilIcon class="mr-2 h-4 w-4" />
+                              <span>Renommer</span>
+                            </div>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Renommer l'équipe</AlertDialogTitle>
+                            </AlertDialogHeader>
+                            <Form
+                                v-slot="{ handleSubmit }"
+                                :initial-values="{ name: team.name }"
+                                :validation-schema="formSchema"
+                            >
+                              <form @submit="handleSubmit($event, (formValues) => rnTeam({ ...formValues, teamId: team.id }))">
+                                <FormField v-slot="{ componentField }" name="name">
+                                  <FormItem>
+                                    <FormLabel>Nom</FormLabel>
+                                    <FormControl>
+                                      <Input type="text" v-bind="componentField"/>
+                                    </FormControl>
+                                    <FormMessage />
+                                    <FormControl class="float-right">
+                                      <Button type="submit" :disabled="isRenamingTeam">
+                                        <Loader2 v-if="isRenamingTeam" class="w-4 h-4 mr-2 animate-spin"/>
+                                        {{ isRenamingTeam ? 'Renommage...' : 'Renommer' }}
+                                      </Button>
+                                      <Button type="button" variant="secondary" @click.stop="showDialogRenameTeam = false">
+                                        Annuler
+                                      </Button>
+                                    </FormControl>
+                                  </FormItem>
+                                </FormField>
+                              </form>
+                            </Form>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuItem>
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger>
+                          <div class="flex items-center w-full">
+                            <Paintbrush class="mr-2 h-4 w-4" />
+                            <span>Changer la couleur</span>
+                          </div>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuPortal>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem
+                                class="cursor-pointer"
+                                v-for="color in colors"
+                                @click.stop="updateTeamColor(team.id, color)"
+                                :key="color"
+                            >
+                              <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full" :class="teamColorClass(color)"></div>
+                                {{ color.charAt(0).toUpperCase() + color.slice(1) }}
                               </div>
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuPortal>
-                              <DropdownMenuSubContent>
-                                <DropdownMenuItem
-                                    class="cursor-pointer"
-                                    v-for="color in colors"
-                                    @click.stop="updateTeamColor(team.id, color)"
-                                    :key="color"
-                                >
-                                  <div class="flex items-center gap-2">
-                                    <div class="w-3 h-3 rounded-full" :class="teamColorClass(color)"></div>
-                                    {{ color.charAt(0).toUpperCase() + color.slice(1) }}
-                                  </div>
-                                </DropdownMenuItem>
-                              </DropdownMenuSubContent>
-                            </DropdownMenuPortal>
-                          </DropdownMenuSub>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive">
-                            <AlertDialog>
-                              <AlertDialogTrigger as-child>
-                                <div @click.stop="showDialogDeleteTeam = true" class="flex items-center w-full">
-                                  <Trash2 class="mr-2 h-4 w-4" />
-                                  <span>Supprimer</span>
-                                </div>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent v-if="showDialogDeleteTeam">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Voulez-vous supprimer cette équipe ?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Cette action est irréversible et supprimera définitivement cette équipe.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                  <Button variant="destructive" @click.stop="removeTeam(team.id)" :disabled="isDeletingTeam">
-                                    <Loader2 v-if="isDeletingTeam" class="w-4 h-4 mr-2 animate-spin"/>
-                                    {{ isDeletingTeam ? 'Suppression...' : 'Supprimer' }}
-                                  </Button>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-            </div>
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuPortal>
+                      </DropdownMenuSub>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive">
+                        <AlertDialog>
+                          <AlertDialogTrigger as-child>
+                            <div @click.stop="showDialogDeleteTeam = true" class="flex items-center w-full">
+                              <Trash2 class="mr-2 h-4 w-4" />
+                              <span>Supprimer</span>
+                            </div>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent v-if="showDialogDeleteTeam">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Voulez-vous supprimer cette équipe ?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Cette action est irréversible et supprimera définitivement cette équipe.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <Button variant="destructive" @click.stop="removeTeam(team.id)" :disabled="isDeletingTeam">
+                                <Loader2 v-if="isDeletingTeam" class="w-4 h-4 mr-2 animate-spin"/>
+                                {{ isDeletingTeam ? 'Suppression...' : 'Supprimer' }}
+                              </Button>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </ItemActions>
+              </Item>
+            </NuxtLink>
           </div>
         </div>
       </nav>
@@ -218,7 +228,7 @@
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top bar -->
-      <header class="h-14 px-6 flex items-center border-b border-border shrink-0 relative">
+      <header class="h-14 px-6 flex items-center border-b border-border/50 shrink-0 relative">
         <!-- Mobile menu trigger -->
         <Sheet v-model:open="isMobileSheetOpen">
           <SheetTrigger asChild>
@@ -408,6 +418,13 @@ import CreateTeamDialog from '@/components/teams/CreateTeamDialog.vue'
 import InviteMembersDialog from '@/components/workspace/InviteMembersDialog.vue'
 import ManageTeamDialog from '@/components/teams/ManageTeamDialog.vue'
 import { teamColorClass } from "~/utils";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from '@/components/ui/item'
 
 import {
   Check,

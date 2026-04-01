@@ -1,5 +1,5 @@
 <template>
-  <div class="px-6 py-6 lg:px-8">
+  <div class="px-6 py-6 lg:px-8 max-w-5xl mx-auto w-full">
     <div class="max-w-2xl mx-auto space-y-6">
       <!-- General Settings -->
       <Form v-slot="{ handleSubmit }" :initial-values="initialValues" :validation-schema="formSchema" as="">

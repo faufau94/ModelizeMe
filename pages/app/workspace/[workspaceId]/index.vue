@@ -1,5 +1,5 @@
 <template>
-  <div class="px-6 py-6 lg:px-8">
+  <div class="px-6 py-6 lg:px-8 max-w-5xl mx-auto w-full">
     <!-- Stats cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
       <div class="rounded-xl border border-border bg-card p-4">
