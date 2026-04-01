@@ -21,7 +21,7 @@
               >
                 <div class="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar>
-                    <AvatarImage :src="member.avatar" :alt="member.name"/>
+                    <AvatarImage v-if="member.avatar" :src="member.avatar" :alt="member.name"/>
                     <AvatarFallback>{{ getInitials(member.name) }}</AvatarFallback>
                   </Avatar>
                   <div class="flex-1 min-w-0">
@@ -70,7 +70,7 @@
               >
                 <div class="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar>
-                    <AvatarImage :src="member.avatar" :alt="member.name"/>
+                    <AvatarImage v-if="member.avatar" :src="member.avatar" :alt="member.name"/>
                     <AvatarFallback>{{ getInitials(member.name) }}</AvatarFallback>
                   </Avatar>
                   <div class="flex-1 min-w-0">
