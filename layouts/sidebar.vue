@@ -227,7 +227,7 @@
     </div>
     
     <!-- Mobile Navigation -->
-    <Sheet>
+    <Sheet v-model:open="isMobileSheetOpen">
       <SheetTrigger asChild>
         <Button variant="outline" size="icon" class="absolute left-4 top-4 md:hidden transition-all duration-200 hover:bg-accent">
           <MenuIcon class="h-5 w-5" />
@@ -242,17 +242,56 @@
         <!-- Mobile Navigation Menu -->
         <ScrollArea class="h-[calc(100vh-8.5rem)]">
           <nav class="py-3">
+            <!-- Workspace Switcher (Mobile) -->
+            <div class="px-3 mb-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                  <Button variant="outline" class="w-full justify-between h-11">
+                    <div class="flex items-center gap-2">
+                      <div class="flex items-center justify-center h-6 w-6 rounded-md bg-primary text-primary-foreground text-xs font-medium">
+                        {{ selectedWorkspace?.name?.charAt(0).toUpperCase() }}
+                      </div>
+                      <span class="font-medium truncate">{{ selectedWorkspace?.name }}</span>
+                    </div>
+                    <ChevronsUpDown class="h-4 w-4 text-muted-foreground shrink-0" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent class="w-64" align="start">
+                  <DropdownMenuLabel class="text-xs text-muted-foreground">Espaces de travail</DropdownMenuLabel>
+                  <DropdownMenuItem
+                    v-for="workspace in workspaces"
+                    :key="workspace.id"
+                    @click="closeMobileSheet(); switchWorkspace(workspace.id)"
+                    class="cursor-pointer gap-2 p-2"
+                  >
+                    <div class="flex items-center justify-center h-6 w-6 rounded-sm border text-xs font-medium shrink-0">
+                      {{ workspace.name?.charAt(0).toUpperCase() }}
+                    </div>
+                    <span class="truncate">{{ workspace.name }}</span>
+                    <Check v-if="workspace.id === selectedWorkspace?.id" class="ml-auto h-4 w-4 text-primary shrink-0" />
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem class="cursor-pointer gap-2 p-2" @click="closeMobileSheet(); isAddWorkspaceDialogOpen = true">
+                    <div class="flex items-center justify-center h-6 w-6 rounded-sm border bg-transparent shrink-0">
+                      <Plus class="h-3.5 w-3.5" />
+                    </div>
+                    <span class="font-medium text-muted-foreground">Ajouter un espace de travail</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
             <div class="px-3 mb-2">
               <div class="space-y-1">
-                <Button @click="goToModelsPage" :variant="route.path.split('/').pop() === 'dashboard' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
+                <Button @click="closeMobileSheet(); goToModelsPage()" :variant="route.path.split('/').pop() === 'dashboard' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
                   <PanelTopIcon class="mr-2 h-4 w-4" />
                   <span class="font-medium">Modèles</span>
                 </Button>
-                <Button @click="goToMembersPage" :variant="route.path.split('/').pop() === 'members' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
+                <Button @click="closeMobileSheet(); goToMembersPage()" :variant="route.path.split('/').pop() === 'members' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
                   <UsersRound class="mr-2 h-4 w-4" />
                   <span class="font-medium">Membres</span>
                 </Button>
-                <Button v-if="data?.user?.id === selectedWorkspace?.ownerId" @click="goToSettingsPage" :variant="route.path.split('/').pop() === 'settings' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
+                <Button v-if="getIsOwner" @click="closeMobileSheet(); goToSettingsPage()" :variant="route.path.split('/').pop() === 'settings' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
                   <Settings2 class="mr-2 h-4 w-4" />
                   <span class="font-medium">Paramètres</span>
                 </Button>
@@ -268,32 +307,28 @@
               
               <div class="mt-2 space-y-1">
                 <!-- Teams dynamiques -->
-                <div v-for="team in selectedWorkspace?.teams" :key="team.id" class="flex items-center group rounded-md hover:bg-accent transition-all duration-200">
-                  <Button variant="ghost" class="flex-1 justify-start hover:bg-transparent" asChild>
-                    <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team.id)" class="flex items-center gap-2">
-                      <Circle :color="team.color" :fill="team.color" class="h-3 w-3 drop-shadow-sm" />
-                      <span class="font-medium">{{ team.name }}</span>
-                    </NuxtLink>
-                  </Button>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" class="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <MoreHorizontalIcon class="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem class="cursor-pointer">
-                        <PencilIcon class="mr-2 h-4 w-4" />
-                        <span>Renommer</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem class="text-destructive focus:text-destructive cursor-pointer">
-                        <Trash2 class="mr-2 h-4 w-4" />
-                        <span>Supprimer</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <div v-for="team in selectedWorkspace?.teams" :key="team.id" class="group rounded-md hover:bg-accent transition-all duration-200">
+                  <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team.id)" @click="closeMobileSheet()" class="flex items-center gap-3 w-full px-3 py-2">
+                    <div class="flex flex-col">
+                      <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full" :class="teamColorClass(team?.color)"></div>
+                        <div class="font-medium truncate">{{ team.name }}</div>
+                      </div>
+                      <div class="flex">
+                        <div class="w-5"></div>
+                        <div class="flex items-center gap-4 mt-1">
+                          <div class="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Users class="h-3 w-3" />
+                            <span>{{ team?.members?.length || 0 }}</span>
+                          </div>
+                          <div class="flex items-center gap-1 text-xs text-muted-foreground">
+                            <PanelTopIcon class="h-3 w-3" />
+                            <span>{{ team.models?.length || 0 }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </NuxtLink>
                 </div>
               </div>
             </div>
@@ -301,34 +336,26 @@
         </ScrollArea>
       </SheetContent>
     </Sheet>
+
+    <!-- Mobile: standalone dialogs (rendered outside Sheet) -->
+    <AddWorkspaceDialog v-model:open="isAddWorkspaceDialogOpen" :isOnlyIcon="false" class="hidden" />
     
     <!-- Main Content -->
     <div class="flex-1 overflow-auto">
       <header class="h-16 px-6 flex items-center">
         <!-- <h1 class="text-lg font-semibold text-foreground md:ml-0 ml-12">Vue d'ensemble</h1> -->
         <div class="ml-auto flex items-center space-x-3">
-          <InviteMembersDialog />
+          <!-- Invite Members: icon-only on mobile, full on desktop -->
+          <Button
+            size="icon"
+            class="md:hidden items-center gap-2 transition-colors bg-transparent text-black hover:bg-gray-100 hover:text-black border border-gray-300"
+            @click="isInviteDialogOpen = true"
+          >
+            <UserRoundPlus class="w-4 h-4" />
+          </Button>
+          <InviteMembersDialog v-model:open="isInviteDialogOpen" />
 
-          <Select>
-            <SelectTrigger class="w-36 transition-all duration-200 hover:bg-accent bg-white">
-              <div class="flex items-center justify-center gap-2">
-                <Globe class="h-4 w-4" />
-                <SelectValue placeholder="Language" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem class="cursor-pointer" value="english">
-                  English
-                </SelectItem>
-                <SelectItem class="cursor-pointer" value="French">
-                  French
-                </SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-
-          <!-- User Account Dropdown (Updated) -->
+          <!-- User Account Dropdown -->
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" class="relative h-8 w-8 rounded-full transition-all duration-200 hover:bg-accent hover:ring-2 hover:ring-ring hover:ring-offset-2">
@@ -362,6 +389,26 @@
                   <SettingsIcon class="mr-2 h-4 w-4" />
                   <span>Paramètres</span>
                 </DropdownMenuItem>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <div class="flex items-center w-full">
+                      <Languages class="mr-2 h-4 w-4" />
+                      <span>Langue</span>
+                    </div>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem class="cursor-pointer" @click="selectedLanguage = 'English'">
+                        <Check v-if="selectedLanguage === 'English'" class="mr-2 h-4 w-4" />
+                        <span :class="selectedLanguage !== 'English' ? 'ml-6' : ''">English</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem class="cursor-pointer" @click="selectedLanguage = 'French'">
+                        <Check v-if="selectedLanguage === 'French'" class="mr-2 h-4 w-4" />
+                        <span :class="selectedLanguage !== 'French' ? 'ml-6' : ''">Français</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive">
@@ -403,9 +450,12 @@ import ManageTeamDialog from '@/components/teams/ManageTeamDialog.vue'
 import { teamColorClass } from "~/utils";
 
 import {
+  Check,
+  ChevronsUpDown,
   Circle,
   CreditCardIcon,
   Globe,
+  Languages,
   Loader2,
   LogOutIcon,
   MenuIcon,
@@ -413,10 +463,12 @@ import {
   Paintbrush,
   PanelTopIcon,
   PencilIcon,
+  Plus,
   Settings2,
   SettingsIcon,
   Trash2,
   UserIcon,
+  UserRoundPlus,
   UsersRound,
   Users,
   PlusIcon
@@ -433,7 +485,8 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  DropdownMenuPortal
 } from '@/components/ui/dropdown-menu'
 import {Avatar} from '@/components/ui/avatar'
 import {ScrollArea} from '@/components/ui/scroll-area'
@@ -454,7 +507,7 @@ import {toast} from 'vue-sonner';
 import {z} from "zod/v4";
 import {authClient, useSession} from '~/lib/auth-client';
 import {NuxtLink} from '#components';
-import {DropdownMenuPortal} from "~/components/ui/dropdown-menu";
+
 
 
 const route = useRoute()
@@ -462,7 +515,15 @@ const { data } = await useSession(useFetch);
 
 const copiedWorkspaceLink = ref(false)
 
-const { selectedWorkspace, copyWorkspaceLink, goToThisWorkspaceUrl, getIsOwner } = useWorkspace()
+const { selectedWorkspace, copyWorkspaceLink, goToThisWorkspaceUrl, getIsOwner, workspaces, switchWorkspace } = useWorkspace()
+const isInviteDialogOpen = ref(false)
+const selectedLanguage = ref('French')
+const isMobileSheetOpen = ref(false)
+const isAddWorkspaceDialogOpen = ref(false)
+
+const closeMobileSheet = () => {
+  isMobileSheetOpen.value = false
+}
  const { renameTeam, deleteTeam, updateTeam } = useTeam()
 
 const copyLink = async () => {

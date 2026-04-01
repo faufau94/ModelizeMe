@@ -95,7 +95,7 @@ import {useMember} from "~/composables/api/useMember";
 
 const { selectedWorkspaceId } = useWorkspace()
 const { addMember } = useMember()
-const isDialogOpen = ref(false)
+const isDialogOpen = defineModel('open', { default: false })
 const isLoading = ref(false)
 const formRef = ref<any>(null)
 

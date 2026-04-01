@@ -131,7 +131,7 @@ import { useSession, authClient } from '~/lib/auth-client'
 
 defineProps({ isOnlyIcon: Boolean })
 const { addWorkspace, switchWorkspace } = useWorkspace()
-const isDialogOpen = ref(false)
+const isDialogOpen = defineModel('open', { default: false })
 const isLoading = ref(false)
 const stepIndex = ref(1)
 const { data } = await useSession(useFetch)
