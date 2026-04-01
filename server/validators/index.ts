@@ -78,12 +78,19 @@ export const editUserSchema = z.object({
 // ─── Generator ───
 export const generateSchema = z.object({
   title: z.string().min(1).max(200),
-  framework: z.string().min(1),
-  database: z.string().min(1),
-  orm: z.string().min(1),
+  description: z.string().max(1000).optional(),
+  framework: z.enum(["django", "laravel", "nuxt"]),
+  database: z.enum(["postgresql", "mysql", "sqlite"]),
+  orm: z.enum(["django_orm", "sqlalchemy", "eloquent", "prisma", "typeorm", "doctrine"]),
   nodes: z.array(z.record(z.unknown())),
   edges: z.array(z.record(z.unknown())),
 });
+
+export const projectNameSchema = z
+  .string()
+  .min(1)
+  .max(100)
+  .regex(/^[a-zA-Z0-9_-]+$/, "Nom de projet invalide");
 
 export const generateFileSchema = z.object({
   title: z.string().optional(),

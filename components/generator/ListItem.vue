@@ -1,56 +1,51 @@
 <template>
-  <div class="py-6">
-    <div class="max-w-6xl">
-      <h2 class="text-xl mb-6 font-semibold">Sélectionnez une option</h2>
+  <div class="py-6 px-1">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-lg mb-5 font-semibold">Sélectionnez une option</h2>
 
       <FormField v-slot="{ componentField }" :name="name">
         <FormItem class="space-y-3">
-
           <FormControl>
-            <!-- RadioGroup avec modelValue et update:modelValue pour la sélection -->
-            <RadioGroup :modelValue="selectedOption" @update:modelValue="selectOption" v-bind="componentField"
-                        class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              <!-- Utilisation d'un label pour rendre la carte entière cliquable -->
-              <label v-for="item in stepDatas.options" :key="item.id">
+            <RadioGroup
+                :modelValue="selectedOption"
+                @update:modelValue="selectOption"
+                v-bind="componentField"
+                class="grid gap-4 grid-cols-1 sm:grid-cols-2"
+            >
+              <label v-for="item in stepDatas.options" :key="item.value">
                 <div
-                    class="border rounded-xl relative h-28"
+                    class="border rounded-xl relative transition-all duration-150 bg-white dark:bg-card shadow-sm"
                     :class="[
-                    selectedOption === item.value ? 'border-black' : 'border-gray-200',  // Contrôle immédiat de la bordure
-                    item.hasOwnProperty('comingSoon') && item.comingSoon
-                      ? 'opacity-40 cursor-default pointer-events-none'
-                      : 'cursor-pointer hover:bg-gray-50 transition-all duration-150',
-                  ]"
+                      selectedOption === item.value
+                        ? 'border-primary ring-2 ring-primary/20'
+                        : 'border-border hover:border-primary/40 hover:shadow-md',
+                      item.comingSoon
+                        ? 'opacity-40 cursor-default pointer-events-none'
+                        : 'cursor-pointer',
+                    ]"
                 >
-                  <div class="p-4">
-                    <div class="flex items-start justify-between gap-x-4">
-                      <!-- Avatar et contenu principal -->
-                      <div class="flex gap-x-4">
-                        <Avatar class="h-14 w-14 bg-white border shadow-sm">
-                          <AvatarImage class="p-2" :src="`/logos/${item.logoName}.svg`" alt="@radix-vue"/>
-                          <AvatarFallback>{{ item.logoName.charAt(0) }}</AvatarFallback>
+                  <div class="p-5">
+                    <div class="flex items-start justify-between gap-x-3">
+                      <div class="flex gap-x-3 items-start">
+                        <Avatar class="h-10 w-10 shrink-0 bg-background border">
+                          <AvatarImage class="p-1.5" :src="`/logos/${item.logoName}.svg`" :alt="item.name"/>
+                          <AvatarFallback>{{ item.logoName.charAt(0).toUpperCase() }}</AvatarFallback>
                         </Avatar>
 
-                        <div>
-                          <div class="flex gap-x-4">
-                            <h1 class="text-md font-semibold">
-                              {{ item.name }}
-                            </h1>
-                            <Badge
-                                variant="secondary"
-                                v-if="item.hasOwnProperty('comingSoon') && item.comingSoon"
-                            >
-                              À venir...
+                        <div class="min-w-0">
+                          <div class="flex items-center gap-x-2">
+                            <h3 class="text-sm font-semibold">{{ item.name }}</h3>
+                            <Badge variant="secondary" v-if="item.comingSoon">
+                              À venir
                             </Badge>
                           </div>
-                          <p class="text-gray-600 text-sm mt-2">{{ item.description }}</p>
+                          <p class="text-muted-foreground text-sm mt-1.5 leading-relaxed">{{ item.description }}</p>
                         </div>
                       </div>
 
-                      <div>
-                        <FormControl>
-                          <RadioGroupItem :value="item.value"/>
-                        </FormControl>
-                      </div>
+                      <FormControl>
+                        <RadioGroupItem :value="item.value" class="shrink-0 mt-0.5"/>
+                      </FormControl>
                     </div>
                   </div>
                 </div>
@@ -64,13 +59,11 @@
   </div>
 </template>
 
-
 <script setup>
-import {defineProps, ref} from 'vue'
 import {Badge} from '@/components/ui/badge'
 import {Avatar, AvatarFallback, AvatarImage} from '@/components/ui/avatar'
 import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group'
-import {FormField, FormItem, FormLabel, FormControl, FormMessage} from '@/components/ui/form'
+import {FormField, FormItem, FormControl, FormMessage} from '@/components/ui/form'
 import {useCodeGeneratorStore} from '@/stores/generator-store.js'
 
 defineProps({
@@ -80,8 +73,6 @@ defineProps({
 
 const codeGeneratorStore = useCodeGeneratorStore()
 const {stepIndex, datas} = storeToRefs(codeGeneratorStore)
-
-//const selectedOption = ref('')
 
 const selectOption = (value) => {
   switch (stepIndex.value) {
@@ -94,10 +85,7 @@ const selectOption = (value) => {
     case 4:
       datas.value.database = value
       break
-    default:
-      break
   }
-  selectedOption.value = value
 }
 
 const selectedOption = computed(() => {
@@ -113,17 +101,3 @@ const selectedOption = computed(() => {
   }
 })
 </script>
-
-<style scoped>
-@media (min-width: 640px) {
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-</style>

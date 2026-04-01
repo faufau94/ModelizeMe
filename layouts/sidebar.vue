@@ -9,14 +9,17 @@
     </div>
 
     <!-- Navigation Sidebar -->
-    <div class="w-60 border-r border-border/50 bg-muted/20 flex-col hidden md:flex">
+    <div
+      class="border-r border-border/50 bg-muted/20 flex-col hidden md:flex transition-all duration-200"
+      :class="isSidebarCollapsed ? 'w-14' : 'w-60'"
+    >
       <!-- Workspace header -->
-      <div class="h-14 flex items-center px-4 border-b border-border/50">
+      <div class="h-14 flex items-center border-b border-border/50" :class="isSidebarCollapsed ? 'justify-center px-2' : 'px-4'">
         <div class="flex items-center gap-2.5 min-w-0">
           <div class="flex items-center justify-center h-7 w-7 rounded-lg bg-primary text-primary-foreground text-xs font-semibold shrink-0">
             {{ selectedWorkspace?.name?.charAt(0).toUpperCase() }}
           </div>
-          <div class="min-w-0">
+          <div v-if="!isSidebarCollapsed" class="min-w-0">
             <p class="text-sm font-semibold truncate leading-tight">{{ selectedWorkspace?.name }}</p>
             <p class="text-[11px] text-muted-foreground leading-tight">Workspace</p>
           </div>
@@ -24,57 +27,36 @@
       </div>
 
       <!-- Navigation -->
-      <nav class="flex-1 overflow-y-auto px-3 py-3">
+      <nav class="flex-1 overflow-y-auto py-3" :class="isSidebarCollapsed ? 'px-1.5' : 'px-3'">
         <!-- Main nav -->
         <div class="space-y-0.5">
-          <button
-            @click="goToDashboardPage"
-            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
-            :class="isCurrentPage('')
-              ? 'bg-accent text-accent-foreground'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
-          >
-            <LayoutDashboard class="h-4 w-4 shrink-0" />
-            Dashboard
-          </button>
-
-          <button
-            @click="goToModelsPage"
-            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
-            :class="isCurrentPage('models')
-              ? 'bg-accent text-accent-foreground'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
-          >
-            <PanelTopIcon class="h-4 w-4 shrink-0" />
-            Modèles
-          </button>
-
-          <button
-            @click="goToMembersPage"
-            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
-            :class="isCurrentPage('members')
-              ? 'bg-accent text-accent-foreground'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
-          >
-            <UsersRound class="h-4 w-4 shrink-0" />
-            Membres
-          </button>
-
-          <button
-            v-if="getIsOwner"
-            @click="goToSettingsPage"
-            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
-            :class="isCurrentPage('settings')
-              ? 'bg-accent text-accent-foreground'
-              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
-          >
-            <Settings2 class="h-4 w-4 shrink-0" />
-            Paramètres
-          </button>
+          <TooltipProvider :delay-duration="300" :disable-hoverable-content="true">
+            <Tooltip v-for="item in navItems" :key="item.page">
+              <TooltipTrigger asChild>
+                <button
+                  v-if="!item.ownerOnly || getIsOwner"
+                  @click="item.action"
+                  class="w-full flex items-center gap-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+                  :class="[
+                    item.isActive
+                      ? 'bg-accent text-accent-foreground'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground',
+                    isSidebarCollapsed ? 'justify-center px-2' : 'px-2.5'
+                  ]"
+                >
+                  <component :is="item.icon" class="h-4 w-4 shrink-0" />
+                  <span v-if="!isSidebarCollapsed">{{ item.label }}</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent v-if="isSidebarCollapsed" side="right">
+                {{ item.label }}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         <!-- Teams section -->
-        <div class="mt-6">
+        <div class="mt-6" v-if="!isSidebarCollapsed">
           <div class="flex items-center justify-between px-2.5 mb-2">
             <span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Équipes</span>
             <CreateTeamDialog />
@@ -220,6 +202,8 @@
           </div>
         </div>
       </nav>
+
+
     </div>
 
     <!-- Mobile: standalone dialogs (rendered outside Sheet) -->
@@ -229,6 +213,15 @@
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top bar -->
       <header class="h-14 px-6 flex items-center border-b border-border/50 shrink-0 relative">
+        <!-- Collapse sidebar toggle -->
+        <button
+          @click="toggleSidebar()"
+          class="hidden md:flex p-1.5 rounded-md text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground transition-colors cursor-pointer mr-2"
+        >
+          <PanelLeftClose v-if="!isSidebarCollapsed" class="h-4 w-4" />
+          <PanelLeftOpen v-else class="h-4 w-4" />
+        </button>
+
         <!-- Mobile menu trigger -->
         <Sheet v-model:open="isMobileSheetOpen">
           <SheetTrigger asChild>
@@ -290,6 +283,10 @@
                   <Button @click="closeMobileSheet(); goToMembersPage()" :variant="isCurrentPage('members') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
                     <UsersRound class="mr-2 h-4 w-4" />
                     Membres
+                  </Button>
+                  <Button @click="closeMobileSheet(); goToGeneratorPage()" :variant="isGeneratorPage ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
+                    <CodeXml class="mr-2 h-4 w-4" />
+                    Génération de code
                   </Button>
                   <Button v-if="getIsOwner" @click="closeMobileSheet(); goToSettingsPage()" :variant="isCurrentPage('settings') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
                     <Settings2 class="mr-2 h-4 w-4" />
@@ -429,6 +426,7 @@ import {
 import {
   Check,
   ChevronsUpDown,
+  CodeXml,
   CreditCardIcon,
   Languages,
   LayoutDashboard,
@@ -437,6 +435,8 @@ import {
   MenuIcon,
   MoreHorizontalIcon,
   Paintbrush,
+  PanelLeftClose,
+  PanelLeftOpen,
   PanelTopIcon,
   PencilIcon,
   Plus,
@@ -466,6 +466,7 @@ import {
 import {Avatar} from '@/components/ui/avatar'
 import {ScrollArea} from '@/components/ui/scroll-area'
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet'
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip'
 import {toast} from 'vue-sonner';
 import {z} from "zod/v4";
 import {authClient, useSession} from '~/lib/auth-client';
@@ -489,7 +490,10 @@ const currentPageTitle = computed(() => {
     models: 'Modèles',
     members: 'Membres',
     settings: 'Paramètres',
+    generator: 'Génération de code',
   }
+  // Generator pages
+  if (route.path.includes('/generator')) return 'Génération de code'
   // If page matches a workspaceId (index page), it's the dashboard
   if (page === route.params.workspaceId) return 'Dashboard'
   return titles[page || ''] || selectedWorkspace.value?.name || ''
@@ -502,6 +506,19 @@ const isInviteDialogOpen = ref(false)
 const selectedLanguage = ref('French')
 const isMobileSheetOpen = ref(false)
 const isAddWorkspaceDialogOpen = ref(false)
+const isSidebarCollapsed = ref(false)
+
+function toggleSidebar() {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+const navItems = computed(() => [
+  { page: '', label: 'Dashboard', icon: LayoutDashboard, action: goToDashboardPage, isActive: isCurrentPage(''), ownerOnly: false },
+  { page: 'models', label: 'Modèles', icon: PanelTopIcon, action: goToModelsPage, isActive: isCurrentPage('models'), ownerOnly: false },
+  { page: 'members', label: 'Membres', icon: UsersRound, action: goToMembersPage, isActive: isCurrentPage('members'), ownerOnly: false },
+  { page: 'generator', label: 'Génération de code', icon: CodeXml, action: goToGeneratorPage, isActive: isGeneratorPage.value, ownerOnly: false },
+  { page: 'settings', label: 'Paramètres', icon: Settings2, action: goToSettingsPage, isActive: isCurrentPage('settings'), ownerOnly: true },
+])
 
 const closeMobileSheet = () => {
   isMobileSheetOpen.value = false
@@ -539,6 +556,13 @@ const goToSettingsPage = async () => {
   const url = goToThisWorkspaceUrl('settings')
   await navigateTo(url)
 }
+
+const goToGeneratorPage = async () => {
+  const url = goToThisWorkspaceUrl('generator')
+  await navigateTo(url)
+}
+
+const isGeneratorPage = computed(() => route.path.includes('/generator'))
 
 const isCurrentPage = (page: string) => {
   const path = route.path.replace(/\/$/, '') // Remove trailing slash
