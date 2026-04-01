@@ -4,7 +4,8 @@
       <DialogTrigger as-child>
         <Button
           size="lg"
-          class="hidden md:flex items-center gap-2 transition-colors px-4 bg-white text-black hover:bg-gray-100 hover:text-black border border-gray-300"
+          class="hidden md:flex items-center gap-2 transition-colors px-4"
+          variant="outline"
           aria-live="polite"
         >
           <Plus class="w-4 h-4" />

@@ -1,124 +1,114 @@
 <template>
   <div class="flex h-screen w-full bg-background overflow-hidden">
-    <!-- Organization Sidebar -->
-    <div class="w-16 border-r border-border bg-card flex flex-col items-center hidden md:flex py-4">
-      <div class="flex flex-col items-center space-y-4 w-full px-2">
-        <!-- Organization Logo -->
-        
-        <!-- Organization Selector - No Popover -->
+    <!-- Organization Sidebar (icon rail) -->
+    <div class="w-14 border-r border-border bg-muted/30 flex-col items-center hidden md:flex py-3 gap-2">
+      <div class="flex flex-col items-center gap-2 w-full px-2 flex-1">
         <WorkspacesSidebar />
-        
-        <!-- Add Organization Button -->
         <AddWorkspaceDialog :isOnlyIcon="true"/>
       </div>
     </div>
 
     <!-- Navigation Sidebar -->
-    <div class="w-64 border-r border-border bg-card flex flex-col hidden md:flex">
-      <!-- Logo -->
-      <div class="flex justify-center py-6">
-        <span class="text-xl font-bold ml-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">ModelizeMe</span>
+    <div class="w-60 border-r border-border bg-muted/20 flex-col hidden md:flex">
+      <!-- Workspace header -->
+      <div class="h-14 flex items-center px-4 border-b border-border">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="flex items-center justify-center h-7 w-7 rounded-lg bg-primary text-primary-foreground text-xs font-semibold shrink-0">
+            {{ selectedWorkspace?.name?.charAt(0).toUpperCase() }}
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-semibold truncate leading-tight">{{ selectedWorkspace?.name }}</p>
+            <p class="text-[11px] text-muted-foreground leading-tight">Workspace</p>
+          </div>
+        </div>
       </div>
-      
-      <!-- Navigation Sidebar -->
-      <SidebarProvider>
-        <Sidebar side="left" variant="sidebar" collapsible="none">
-          <SidebarHeader class="px-3">
-            <!-- Main Navigation -->
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  @click="goToModelsPage"
-                  :isActive="route.path.split('/').pop() === 'dashboard'"
-                  class="py-5 cursor-pointer transition-all duration-200 hover:bg-accent hover:text-accent-foreground rounded-md"
-                  :class="{ 'bg-accent text-accent-foreground': route.path.split('/').pop() === 'dashboard' }"
-                >
-                  <PanelTopIcon class="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                  <span class="font-medium">Modèles</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  @click="goToMembersPage"
-                  :isActive="route.path.split('/').pop() === 'members'"
-                  class="py-5 cursor-pointer transition-all duration-200 hover:bg-accent hover:text-accent-foreground rounded-md"
-                  :class="{ 'bg-accent text-accent-foreground': route.path.split('/').pop() === 'members' }"
-                >
-                  <UsersRound class="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                  <span class="font-medium">Membres</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto px-3 py-3">
+        <!-- Main nav -->
+        <div class="space-y-0.5">
+          <button
+            @click="goToDashboardPage"
+            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+            :class="isCurrentPage('')
+              ? 'bg-accent text-accent-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
+          >
+            <LayoutDashboard class="h-4 w-4 shrink-0" />
+            Dashboard
+          </button>
 
-              <SidebarMenuItem v-if="getIsOwner">
-                <SidebarMenuButton 
-                  @click="goToSettingsPage" 
-                  :isActive="route.path.split('/').pop() === 'settings'"
-                  class="py-5 cursor-pointer transition-all duration-200 hover:bg-accent hover:text-accent-foreground rounded-md"
-                  :class="{ 'bg-accent text-accent-foreground': route.path.split('/').pop() === 'settings' }"
-                >
-                  <Settings2 class="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                  <span class="font-medium">Paramètres</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarHeader>
+          <button
+            @click="goToModelsPage"
+            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+            :class="isCurrentPage('dashboard')
+              ? 'bg-accent text-accent-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
+          >
+            <PanelTopIcon class="h-4 w-4 shrink-0" />
+            Modèles
+          </button>
 
-            <SidebarContent>
-              <!-- Teams List -->
-              <SidebarGroup>
-                <div class="flex items-center justify-between px-3 py-2">
-                  <SidebarGroupLabel class="text-xs font-semibold text-muted-foreground uppercase tracking-wider p-0">
-                    Équipes
-                  </SidebarGroupLabel>
-                  <SidebarGroupAction class="transition-opacity duration-200 hover:opacity-100 opacity-70">
-                    <CreateTeamDialog />
-                  </SidebarGroupAction>
+          <button
+            @click="goToMembersPage"
+            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+            :class="isCurrentPage('members')
+              ? 'bg-accent text-accent-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
+          >
+            <UsersRound class="h-4 w-4 shrink-0" />
+            Membres
+          </button>
+
+          <button
+            v-if="getIsOwner"
+            @click="goToSettingsPage"
+            class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+            :class="isCurrentPage('settings')
+              ? 'bg-accent text-accent-foreground'
+              : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
+          >
+            <Settings2 class="h-4 w-4 shrink-0" />
+            Paramètres
+          </button>
+        </div>
+
+        <!-- Teams section -->
+        <div class="mt-6">
+          <div class="flex items-center justify-between px-2.5 mb-2">
+            <span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Équipes</span>
+            <CreateTeamDialog />
+          </div>
+
+          <div class="space-y-0.5">
+            <div v-for="team in selectedWorkspace?.teams" :key="team.id" class="group relative">
+              <NuxtLink
+                :to="goToThisWorkspaceUrl('team/'+ team?.id)"
+                class="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors"
+                :class="route.path === goToThisWorkspaceUrl('team/'+ team.id)
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
+              >
+                <div class="w-2.5 h-2.5 rounded-full shrink-0" :class="teamColorClass(team?.color)"></div>
+                <div class="flex-1 min-w-0">
+                  <span class="font-medium truncate block">{{ team.name }}</span>
+                  <div class="flex items-center gap-3 mt-0.5">
+                    <span class="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Users class="h-3 w-3" />{{ team?.members?.length || 0 }}
+                    </span>
+                    <span class="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <PanelTopIcon class="h-3 w-3" />{{ team.models?.length || 0 }}
+                    </span>
+                  </div>
                 </div>
+              </NuxtLink>
 
-                <SidebarGroupContent class="px-2">
-                  <SidebarMenu>
-                    <SidebarMenuItem v-for="team in selectedWorkspace?.teams" :key="team.id" class="group">
-                      <SidebarMenuButton
-                          asChild
-                          :isActive="route.path === goToThisWorkspaceUrl('team/'+ team.id)"
-                          class="py-6 transition-all duration-200 hover:bg-accent hover:text-accent-foreground rounded-md"
-                          :class="{ 'bg-accent text-accent-foreground': route.path === goToThisWorkspaceUrl('team/'+ team.id) }"
-                      >
-                        <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team?.id)" class="flex items-center gap-3 w-full">
-                          <div class="flex flex-col">
-                            <div class="flex items-center gap-2">
-                              <div class="transition-transform duration-200 group-hover:scale-110">
-                                <div class="w-3 h-3 rounded-full" :class="teamColorClass(team?.color)"></div>
-                              </div>
-                              <div class="font-medium truncate">
-                                {{ team.name }}
-                              </div>
-                            </div>
-                            <div class="flex">
-                              <div class="w-5"></div>
-                              <div class="flex items-center gap-4 mt-1">
-                                <div class="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Users class="h-3 w-3" />
-                                  <span>{{ team?.members?.length || 0 }}</span>
-                                </div>
-                                <div class="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <PanelTopIcon class="h-3 w-3" />
-                                  <span>{{ team.models?.length || 0 }}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                          </div>
-                        </NuxtLink>
-                      </SidebarMenuButton>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-gray-300 rounded-sm">
-                            <MoreHorizontalIcon class="h-6 w-6" />
-                          </SidebarMenuAction>
-                        </DropdownMenuTrigger>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button class="absolute right-1.5 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-accent cursor-pointer">
+                    <MoreHorizontalIcon class="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" class="w-48">
                           <DropdownMenuItem class="cursor-pointer" @click.stop="openManageTeamDialog(team.id)">
                             <Users class="mr-2 h-4 w-4" />
@@ -216,185 +206,157 @@
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </SidebarContent>
-
-        </Sidebar>
-      </SidebarProvider>
-    </div>
-    
-    <!-- Mobile Navigation -->
-    <Sheet v-model:open="isMobileSheetOpen">
-      <SheetTrigger asChild>
-        <Button variant="outline" size="icon" class="absolute left-4 top-4 md:hidden transition-all duration-200 hover:bg-accent">
-          <MenuIcon class="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" class="w-72 p-0">
-        <!-- Logo -->
-        <div class="flex justify-center py-6 border-b border-border">
-          <span class="text-xl font-bold ml-2 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">ModelizeMe</span>
+            </div>
+          </div>
         </div>
-        
-        <!-- Mobile Navigation Menu -->
-        <ScrollArea class="h-[calc(100vh-8.5rem)]">
-          <nav class="py-3">
-            <!-- Workspace Switcher (Mobile) -->
-            <div class="px-3 mb-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger as-child>
-                  <Button variant="outline" class="w-full justify-between h-11">
-                    <div class="flex items-center gap-2">
-                      <div class="flex items-center justify-center h-6 w-6 rounded-md bg-primary text-primary-foreground text-xs font-medium">
-                        {{ selectedWorkspace?.name?.charAt(0).toUpperCase() }}
-                      </div>
-                      <span class="font-medium truncate">{{ selectedWorkspace?.name }}</span>
-                    </div>
-                    <ChevronsUpDown class="h-4 w-4 text-muted-foreground shrink-0" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent class="w-64" align="start">
-                  <DropdownMenuLabel class="text-xs text-muted-foreground">Espaces de travail</DropdownMenuLabel>
-                  <DropdownMenuItem
-                    v-for="workspace in workspaces"
-                    :key="workspace.id"
-                    @click="closeMobileSheet(); switchWorkspace(workspace.id)"
-                    class="cursor-pointer gap-2 p-2"
-                  >
-                    <div class="flex items-center justify-center h-6 w-6 rounded-sm border text-xs font-medium shrink-0">
-                      {{ workspace.name?.charAt(0).toUpperCase() }}
-                    </div>
-                    <span class="truncate">{{ workspace.name }}</span>
-                    <Check v-if="workspace.id === selectedWorkspace?.id" class="ml-auto h-4 w-4 text-primary shrink-0" />
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem class="cursor-pointer gap-2 p-2" @click="closeMobileSheet(); isAddWorkspaceDialogOpen = true">
-                    <div class="flex items-center justify-center h-6 w-6 rounded-sm border bg-transparent shrink-0">
-                      <Plus class="h-3.5 w-3.5" />
-                    </div>
-                    <span class="font-medium text-muted-foreground">Ajouter un espace de travail</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            <div class="px-3 mb-2">
-              <div class="space-y-1">
-                <Button @click="closeMobileSheet(); goToModelsPage()" :variant="route.path.split('/').pop() === 'dashboard' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
-                  <PanelTopIcon class="mr-2 h-4 w-4" />
-                  <span class="font-medium">Modèles</span>
-                </Button>
-                <Button @click="closeMobileSheet(); goToMembersPage()" :variant="route.path.split('/').pop() === 'members' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
-                  <UsersRound class="mr-2 h-4 w-4" />
-                  <span class="font-medium">Membres</span>
-                </Button>
-                <Button v-if="getIsOwner" @click="closeMobileSheet(); goToSettingsPage()" :variant="route.path.split('/').pop() === 'settings' ? 'secondary' : 'ghost'" class="w-full justify-start transition-all duration-200 hover:bg-accent">
-                  <Settings2 class="mr-2 h-4 w-4" />
-                  <span class="font-medium">Paramètres</span>
-                </Button>
-              </div>
-            </div>
-            
-            <!-- Teams Section with Simple List -->
-            <div class="px-3 mb-2 mt-6">
-              <div class="flex items-center justify-between px-3 mb-2">
-                <h3 class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Équipes</h3>
-                <CreateTeamDialog />
-              </div>
-              
-              <div class="mt-2 space-y-1">
-                <!-- Teams dynamiques -->
-                <div v-for="team in selectedWorkspace?.teams" :key="team.id" class="group rounded-md hover:bg-accent transition-all duration-200">
-                  <NuxtLink :to="goToThisWorkspaceUrl('team/'+ team.id)" @click="closeMobileSheet()" class="flex items-center gap-3 w-full px-3 py-2">
-                    <div class="flex flex-col">
-                      <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full" :class="teamColorClass(team?.color)"></div>
-                        <div class="font-medium truncate">{{ team.name }}</div>
-                      </div>
-                      <div class="flex">
-                        <div class="w-5"></div>
-                        <div class="flex items-center gap-4 mt-1">
-                          <div class="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Users class="h-3 w-3" />
-                            <span>{{ team?.members?.length || 0 }}</span>
-                          </div>
-                          <div class="flex items-center gap-1 text-xs text-muted-foreground">
-                            <PanelTopIcon class="h-3 w-3" />
-                            <span>{{ team.models?.length || 0 }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </NuxtLink>
-                </div>
-              </div>
-            </div>
-          </nav>
-        </ScrollArea>
-      </SheetContent>
-    </Sheet>
+      </nav>
+    </div>
 
     <!-- Mobile: standalone dialogs (rendered outside Sheet) -->
     <AddWorkspaceDialog v-model:open="isAddWorkspaceDialogOpen" :isOnlyIcon="false" class="hidden" />
     
     <!-- Main Content -->
-    <div class="flex-1 overflow-auto">
-      <header class="h-16 px-6 flex items-center">
-        <!-- <h1 class="text-lg font-semibold text-foreground md:ml-0 ml-12">Vue d'ensemble</h1> -->
-        <div class="ml-auto flex items-center space-x-3">
-          <!-- Invite Members: icon-only on mobile, full on desktop -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Top bar -->
+      <header class="h-14 px-6 flex items-center border-b border-border shrink-0 relative">
+        <!-- Mobile menu trigger -->
+        <Sheet v-model:open="isMobileSheetOpen">
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" class="md:hidden mr-2 h-8 w-8">
+              <MenuIcon class="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" class="w-72 p-0">
+            <!-- Mobile nav content -->
+            <div class="flex items-center gap-2.5 px-4 py-4 border-b border-border">
+              <div class="flex items-center justify-center h-7 w-7 rounded-lg bg-primary text-primary-foreground text-xs font-semibold">
+                {{ selectedWorkspace?.name?.charAt(0).toUpperCase() }}
+              </div>
+              <span class="text-sm font-semibold truncate">{{ selectedWorkspace?.name }}</span>
+            </div>
+            <ScrollArea class="h-[calc(100vh-8rem)]">
+              <nav class="px-3 py-3">
+                <!-- Workspace Switcher (Mobile) -->
+                <div class="mb-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="outline" class="w-full justify-between h-9 text-sm">
+                        <span class="truncate">Changer de workspace</span>
+                        <ChevronsUpDown class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent class="w-64" align="start">
+                      <DropdownMenuLabel class="text-xs text-muted-foreground">Espaces de travail</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        v-for="workspace in workspaces"
+                        :key="workspace.id"
+                        @click="closeMobileSheet(); switchWorkspace(workspace.id)"
+                        class="cursor-pointer gap-2 p-2"
+                      >
+                        <div class="flex items-center justify-center h-5 w-5 rounded-md border text-[10px] font-medium shrink-0">
+                          {{ workspace.name?.charAt(0).toUpperCase() }}
+                        </div>
+                        <span class="truncate text-sm">{{ workspace.name }}</span>
+                        <Check v-if="workspace.id === selectedWorkspace?.id" class="ml-auto h-3.5 w-3.5 text-primary shrink-0" />
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem class="cursor-pointer gap-2 p-2" @click="closeMobileSheet(); isAddWorkspaceDialogOpen = true">
+                        <Plus class="h-3.5 w-3.5" />
+                        <span class="text-sm text-muted-foreground">Ajouter un workspace</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <div class="space-y-0.5">
+                  <Button @click="closeMobileSheet(); goToDashboardPage()" :variant="isCurrentPage('') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
+                    <LayoutDashboard class="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Button>
+                  <Button @click="closeMobileSheet(); goToModelsPage()" :variant="isCurrentPage('dashboard') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
+                    <PanelTopIcon class="mr-2 h-4 w-4" />
+                    Modèles
+                  </Button>
+                  <Button @click="closeMobileSheet(); goToMembersPage()" :variant="isCurrentPage('members') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
+                    <UsersRound class="mr-2 h-4 w-4" />
+                    Membres
+                  </Button>
+                  <Button v-if="getIsOwner" @click="closeMobileSheet(); goToSettingsPage()" :variant="isCurrentPage('settings') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
+                    <Settings2 class="mr-2 h-4 w-4" />
+                    Paramètres
+                  </Button>
+                </div>
+
+                <!-- Teams Mobile -->
+                <div class="mt-5">
+                  <div class="flex items-center justify-between px-2 mb-2">
+                    <span class="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Équipes</span>
+                    <CreateTeamDialog />
+                  </div>
+                  <div class="space-y-0.5">
+                    <NuxtLink
+                      v-for="team in selectedWorkspace?.teams" :key="team.id"
+                      :to="goToThisWorkspaceUrl('team/'+ team.id)"
+                      @click="closeMobileSheet()"
+                      class="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors hover:bg-accent/50"
+                    >
+                      <div class="w-2.5 h-2.5 rounded-full" :class="teamColorClass(team?.color)"></div>
+                      <span class="truncate font-medium">{{ team.name }}</span>
+                    </NuxtLink>
+                  </div>
+                </div>
+              </nav>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+
+        <!-- Page title (centered) -->
+        <div class="absolute left-1/2 -translate-x-1/2 hidden md:block">
+          <h1 class="text-sm font-medium text-foreground truncate">{{ currentPageTitle }}</h1>
+        </div>
+
+        <div class="ml-auto flex items-center gap-2">
+          <!-- Invite button -->
+          <InviteMembersDialog v-model:open="isInviteDialogOpen" />
           <Button
             size="icon"
-            class="md:hidden items-center gap-2 transition-colors bg-transparent text-black hover:bg-gray-100 hover:text-black border border-gray-300"
+            variant="ghost"
+            class="md:hidden h-8 w-8"
             @click="isInviteDialogOpen = true"
           >
             <UserRoundPlus class="w-4 h-4" />
           </Button>
-          <InviteMembersDialog v-model:open="isInviteDialogOpen" />
 
-          <!-- User Account Dropdown -->
+          <!-- User dropdown -->
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" class="relative h-8 w-8 rounded-full transition-all duration-200 hover:bg-accent hover:ring-2 hover:ring-ring hover:ring-offset-2">
+              <Button variant="ghost" class="relative h-8 w-8 rounded-full">
                 <Avatar class="h-8 w-8">
-                  {{ data?.user?.name?.charAt(0).toUpperCase()  }}
+                  {{ data?.user?.name?.charAt(0).toUpperCase() }}
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-56" align="end">
               <DropdownMenuLabel class="font-normal">
                 <div class="flex flex-col space-y-1">
-                  <p class="text-sm font-medium leading-none">
-                    {{ data?.user?.name  }}
-                  </p>
-                  <p class="text-xs leading-none text-muted-foreground">
-                    {{ data?.user?.email  }}
-                  </p>
+                  <p class="text-sm font-medium leading-none">{{ data?.user?.name }}</p>
+                  <p class="text-xs leading-none text-muted-foreground">{{ data?.user?.email }}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem class="cursor-pointer">
                   <UserIcon class="mr-2 h-4 w-4" />
-                  <span>Profil</span>
+                  <span>Mon compte</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem class="cursor-pointer">
                   <CreditCardIcon class="mr-2 h-4 w-4" />
                   <span>Facturation</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem class="cursor-pointer">
-                  <SettingsIcon class="mr-2 h-4 w-4" />
-                  <span>Paramètres</span>
-                </DropdownMenuItem>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
-                    <div class="flex items-center w-full">
-                      <Languages class="mr-2 h-4 w-4" />
-                      <span>Langue</span>
-                    </div>
+                    <Languages class="mr-2 h-4 w-4" />
+                    <span>Langue</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
                     <DropdownMenuSubContent>
@@ -411,11 +373,9 @@
                 </DropdownMenuSub>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive">
-                <NuxtLink class="flex items-center w-full" @click.prevent="signOut">
-                  <LogOutIcon class="mr-2 h-4 w-4" />
-                  <span>Se déconnecter</span>
-                </NuxtLink>
+              <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive" @click="signOut">
+                <LogOutIcon class="mr-2 h-4 w-4" />
+                <span>Se déconnecter</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -423,7 +383,7 @@
       </header>
       
       <!-- Main Content -->
-      <main>
+      <main class="flex-1 overflow-auto">
         <slot></slot>
       </main>
     </div>
@@ -439,7 +399,7 @@
 
 <script setup lang="ts">
 
-import {ref} from 'vue';
+import {ref, computed} from 'vue';
 import {useWorkspace} from '@/composables/api/useWorkspace';
 import {useTeam} from '@/composables/api/useTeam';
 import WorkspacesSidebar from '@/components/WorkspacesSidebar.vue'
@@ -452,10 +412,9 @@ import { teamColorClass } from "~/utils";
 import {
   Check,
   ChevronsUpDown,
-  Circle,
   CreditCardIcon,
-  Globe,
   Languages,
+  LayoutDashboard,
   Loader2,
   LogOutIcon,
   MenuIcon,
@@ -471,7 +430,6 @@ import {
   UserRoundPlus,
   UsersRound,
   Users,
-  PlusIcon
 } from 'lucide-vue-next'
 
 import {Button} from '@/components/ui/button'
@@ -491,18 +449,6 @@ import {
 import {Avatar} from '@/components/ui/avatar'
 import {ScrollArea} from '@/components/ui/scroll-area'
 import {Sheet, SheetContent, SheetTrigger} from '@/components/ui/sheet'
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select'
 import {toast} from 'vue-sonner';
 import {z} from "zod/v4";
 import {authClient, useSession} from '~/lib/auth-client';
@@ -512,6 +458,24 @@ import {NuxtLink} from '#components';
 
 const route = useRoute()
 const { data } = await useSession(useFetch);
+
+const currentPageTitle = computed(() => {
+  const segments = route.path.split('/')
+  const page = segments.pop()
+  // Check if we're on a team page
+  if (segments[segments.length - 1] === 'team') {
+    const team = selectedWorkspace.value?.teams?.find(t => t.id === page)
+    return team?.name || 'Équipe'
+  }
+  const titles: Record<string, string> = {
+    dashboard: 'Modèles',
+    members: 'Membres',
+    settings: 'Paramètres',
+  }
+  // If page matches a workspaceId (index page), it's the dashboard
+  if (page === route.params.workspaceId) return 'Dashboard'
+  return titles[page || ''] || selectedWorkspace.value?.name || ''
+})
 
 const copiedWorkspaceLink = ref(false)
 
@@ -543,6 +507,11 @@ const goToMembersPage = async () => {
   await navigateTo(url)
 }
 
+const goToDashboardPage = async () => {
+  const url = goToThisWorkspaceUrl('')
+  await navigateTo(url)
+}
+
 const goToModelsPage = async () => {
   const url = goToThisWorkspaceUrl('dashboard')
   await navigateTo(url)
@@ -551,6 +520,16 @@ const goToModelsPage = async () => {
 const goToSettingsPage = async () => {
   const url = goToThisWorkspaceUrl('settings')
   await navigateTo(url)
+}
+
+const isCurrentPage = (page: string) => {
+  const path = route.path.replace(/\/$/, '') // Remove trailing slash
+  if (page === '') {
+    // Dashboard = index page of the workspace
+    const workspaceBase = `/app/workspace/${route.params.workspaceId}`
+    return path === workspaceBase
+  }
+  return path.endsWith(`/${page}`)
 }
 
 const showDialogDeleteTeam = ref(false)

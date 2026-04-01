@@ -21,13 +21,10 @@
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
         <DropdownMenuItem>
-          Profil
+          Mon compte
         </DropdownMenuItem>
         <DropdownMenuItem>
           Facturation
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          Paramètres
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />

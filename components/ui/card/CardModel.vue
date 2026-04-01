@@ -1,7 +1,7 @@
 <template>
   <Card 
     @click="handleCardClick" 
-    class="relative group cursor-pointer border hover:border-primary/50 hover:shadow-lg transition-all duration-300 bg-white"
+    class="relative group cursor-pointer border hover:border-primary/50 hover:shadow-md transition-all duration-200 bg-card"
     :class="{ 'ring-2 ring-primary border-primary': isSelected }"
   >
     <div
@@ -17,7 +17,7 @@
     </div>
     <CardHeader class="flex flex-row items-start justify-between gap-4 space-y-0 pb-3 pt-5 px-5">
       <div class="space-y-1 flex-1">
-        <CardTitle class="text-xl font-semibold leading-tight tracking-tight text-gray-900">
+        <CardTitle class="text-lg font-semibold leading-tight tracking-tight">
           {{ props.model.name.length > 25 ? props.model.name.substring(0, 25) + '...' : props.model.name }}
         </CardTitle>
       </div>
@@ -25,7 +25,7 @@
 
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button @click.stop="" variant="ghost" size="icon" class="h-8 w-8 text-gray-500 hover:text-gray-900 hover:bg-gray-100">
+            <Button @click.stop="" variant="ghost" size="icon" class="h-8 w-8 text-muted-foreground hover:text-foreground">
               <EllipsisVertical class="h-4 w-4"/>
             </Button>
           </DropdownMenuTrigger>
@@ -121,14 +121,14 @@
             <Tooltip>
               <TooltipTrigger as-child>
                 <div class="relative">
-                  <Avatar class="w-6 h-6 border-2 bg-white border-white shadow-sm ring-2 ring-primary-400">
+                  <Avatar class="w-6 h-6 border-2 bg-card border-card shadow-sm ring-2 ring-primary/40">
                     <AvatarImage v-if="viewer.userImage" :src="viewer.userImage" :alt="viewer.userName" />
-                    <AvatarFallback class="text-[9px]  text-gray-500">{{ viewer.userName?.substring(0, 2).toUpperCase() || '?' }}</AvatarFallback>
+                    <AvatarFallback class="text-[9px] text-muted-foreground">{{ viewer.userName?.substring(0, 2).toUpperCase() || '?' }}</AvatarFallback>
                   </Avatar>
                   <span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 border-[1.5px] border-white rounded-full"></span>
                 </div>
               </TooltipTrigger>
-              <TooltipContent class="bg-gray-900 text-white text-xs">
+              <TooltipContent class="text-xs">
                 <p>{{ viewer.userName }} - en ligne</p>
               </TooltipContent>
             </Tooltip>

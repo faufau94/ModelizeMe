@@ -1,26 +1,29 @@
 <template>
-  <div class="w-full max-w-6xl mx-auto px-4 py-8">
+  <div class="w-full">
     <ClientOnly>
       <div v-if="isLoadingModels" class="flex justify-center mt-32 items-center">
         <Loader2 :size="30" class="animate-spin"/>
       </div>
       <div v-else>
         <div v-if="isModelsFetched && (models === null || models.length === 0)">
-          <div class="flex flex-col items-center justify-center h-[80vh]">
-            <div class="text-center space-y-4">
-              <h3 class="text-2xl font-bold tracking-tight">Aucun modèle</h3>
-              <p class="text-muted-foreground text-sm max-w-sm mx-auto">Vous n'avez encore pas créé de modèles. Commencez par en ajouter un pour structurer vos données.</p>
-               <div class="pt-2">
-                 <CreateModelDialog/>
-               </div>
+          <div class="flex flex-col items-center justify-center py-24">
+            <div class="rounded-full bg-muted p-4 mb-4">
+              <PanelTop class="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 class="text-lg font-semibold tracking-tight">Aucun modèle</h3>
+            <p class="text-muted-foreground text-sm max-w-sm mx-auto text-center mt-1">Vous n'avez encore pas créé de modèles. Commencez par en ajouter un pour structurer vos données.</p>
+            <div class="pt-4">
+              <CreateModelDialog/>
             </div>
           </div>
         </div>
         <div v-else>
-          <div class="flex items-center justify-between mb-6">
-            <div>
-              <h1 class="text-2xl font-bold tracking-tight">Modèles</h1>
-              <p class="text-sm text-muted-foreground mt-1">{{ models?.length }} modèle(s) dans ce workspace</p>
+          <div class="flex items-center justify-between mb-5">
+            <div class="relative w-full max-w-sm">
+              <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle..." class="pl-10"/>
+              <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
+                <SearchIcon class="size-4 text-muted-foreground"/>
+              </span>
             </div>
             <div class="flex items-center gap-2">
               <Button
@@ -32,14 +35,6 @@
                 Tout sélectionner ({{ models?.length }})
               </Button>
               <CreateModelDialog/>
-            </div>
-          </div>
-          <div class="mb-6">
-            <div class="relative w-full max-w-sm">
-              <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle..." class="pl-10 bg-white"/>
-              <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
-                <SearchIcon class="size-4 text-muted-foreground"/>
-              </span>
             </div>
           </div>
           
@@ -90,7 +85,7 @@
 
 <script setup>
 import {computed, ref, watch, onMounted, onUnmounted} from 'vue';
-import { Search as SearchIcon, Loader2, Trash2, X } from 'lucide-vue-next'
+import { Search as SearchIcon, Loader2, Trash2, X, PanelTop } from 'lucide-vue-next'
 import CardModel from "@/components/ui/card/CardModel.vue";
 import {toast} from "vue-sonner";
 
