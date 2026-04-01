@@ -160,7 +160,7 @@ import {Textarea} from '@/components/ui/textarea'
 import {toast} from 'vue-sonner'
 import {useMLDStore} from "~/stores/mld-store.js";
 import {toTypedSchema} from '@vee-validate/zod';
-import * as z from 'zod';
+import * as z from 'zod/v4';
 
 import {ref} from 'vue'
 import {
