@@ -43,11 +43,11 @@
       </Panel>
 
       <!-- Unified top toolbar -->
-      <Panel position="top-left" class="bg-white/95 backdrop-blur-sm z-40 px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-1 border border-gray-100">
+      <Panel position="top-left" class="bg-white/95 backdrop-blur-sm z-40 px-2 md:px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-0.5 md:space-x-1 border border-gray-100 max-w-[calc(100vw-1rem)] md:max-w-none overflow-x-auto">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button @click="goBack" variant="ghost" size="sm" class="rounded-md hover:bg-gray-100">
+              <Button @click="goBack" variant="ghost" size="sm" class="rounded-md hover:bg-gray-100 flex-shrink-0">
                 <ArrowLeft :size="18"/>
               </Button>
             </TooltipTrigger>
@@ -57,15 +57,15 @@
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
+        <Separator orientation="vertical" class="h-5 bg-gray-200 flex-shrink-0"/>
 
         <Dialog v-model:open="showDialogRenameModel">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger as-child>
                 <DialogTrigger as-child>
-                  <Button @click="setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-gray-700 hover:bg-gray-100 min-w-[100px] max-w-[120px] overflow-hidden">
-                    <span class="truncate block">{{ model?.name }}</span>
+                  <Button @click="setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-gray-700 hover:bg-gray-100 min-w-[60px] md:min-w-[100px] max-w-[80px] md:max-w-[120px] overflow-hidden flex-shrink-0">
+                    <span class="truncate block text-xs md:text-sm">{{ model?.name }}</span>
                   </Button>
                 </DialogTrigger>
               </TooltipTrigger>
@@ -104,69 +104,100 @@
           </DialogContent>
         </Dialog>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
+        <Separator orientation="vertical" class="h-5 bg-gray-200 flex-shrink-0"/>
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <CreateGaleryTemplate />
-            </TooltipTrigger>
-            <TooltipContent class="bg-gray-900 text-white text-xs">
-              <p>Sauvegarder comme template</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger>
-              <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :import-items="importItems" :export-items="exportItems" />
-            </TooltipTrigger>
-            <TooltipContent class="bg-gray-900 text-white text-xs">
-              <p>Import / Export</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <Popover v-model:open="isEdgeStylePopoverOpen">
+        <!-- Hidden on mobile to save space, visible on md+ -->
+        <div class="hidden md:flex items-center space-x-0.5">
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger as-child>
-                <PopoverTrigger as-child>
-                  <Button variant="ghost" size="sm" class="rounded-md">
-                    <Workflow :size="16"/>
-                  </Button>
-                </PopoverTrigger>
+              <TooltipTrigger>
+                <CreateGaleryTemplate />
               </TooltipTrigger>
               <TooltipContent class="bg-gray-900 text-white text-xs">
-                <p>Style des connecteurs</p>
+                <p>Sauvegarder comme template</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <PopoverContent side="bottom" align="center" class="w-52 p-2">
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 mb-2">Style des connecteurs</p>
-            <div class="space-y-0.5">
-              <button
-                v-for="opt in edgeStyleOptions" :key="opt.value"
-                class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors"
-                :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'"
-                @click="edgePathStyle = opt.value; isEdgeStylePopoverOpen = false"
-              >
-                <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0">
-                  <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                </svg>
-                {{ opt.label }}
-              </button>
-            </div>
-          </PopoverContent>
-        </Popover>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :import-items="importItems" :export-items="exportItems" />
+              </TooltipTrigger>
+              <TooltipContent class="bg-gray-900 text-white text-xs">
+                <p>Import / Export</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <Popover v-model:open="isEdgeStylePopoverOpen">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <PopoverTrigger as-child>
+                    <Button variant="ghost" size="sm" class="rounded-md">
+                      <Workflow :size="16"/>
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-gray-900 text-white text-xs">
+                  <p>Style des connecteurs</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <PopoverContent side="bottom" align="center" class="w-52 p-2">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 mb-2">Style des connecteurs</p>
+              <div class="space-y-0.5">
+                <button
+                  v-for="opt in edgeStyleOptions" :key="opt.value"
+                  class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors"
+                  :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'"
+                  @click="edgePathStyle = opt.value; isEdgeStylePopoverOpen = false"
+                >
+                  <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0">
+                    <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                  </svg>
+                  {{ opt.label }}
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <!-- Mobile-only: show export/style buttons inline but smaller -->
+        <div class="flex md:hidden items-center space-x-0.5 flex-shrink-0">
+          <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :import-items="importItems" :export-items="exportItems" />
+          <Popover v-model:open="isEdgeStylePopoverMobileOpen">
+            <PopoverTrigger as-child>
+              <Button variant="ghost" size="sm" class="rounded-md h-8 w-8 p-0">
+                <Workflow :size="14"/>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent side="bottom" align="start" class="w-52 p-2">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 mb-2">Style des connecteurs</p>
+              <div class="space-y-0.5">
+                <button
+                  v-for="opt in edgeStyleOptions" :key="opt.value"
+                  class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors"
+                  :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'"
+                  @click="edgePathStyle = opt.value; isEdgeStylePopoverMobileOpen = false"
+                >
+                  <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0">
+                    <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                  </svg>
+                  {{ opt.label }}
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
         <PricingDialog />
       </Panel>
 
       <!-- Center toolbar: MCD actions + save status -->
       <Panel v-if="activeTab === 'default'" position="top-center"
-             class="bg-white/95 backdrop-blur-sm z-40 px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-1 border border-gray-100">
+             class="bg-white/95 backdrop-blur-sm z-40 px-2 md:px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-0.5 md:space-x-1 border border-gray-100 max-w-[calc(100vw-1rem)] md:max-w-none">
 
         <div v-if="addNewNode" class="flex items-center gap-2 px-2 text-amber-600 transition-all duration-200">
           <Loader2 :size="16" class="animate-spin"/>
@@ -262,16 +293,16 @@
 
         <Separator orientation="vertical" class="h-5 bg-gray-200"/>
 
-        <div class="pl-1">
+        <div class="pl-1 hidden sm:block">
           <ActiveUsersAvatars :activeUsers="activeUsers" :maxVisible="3" />
         </div>
 
       </Panel>
 
       <!-- Tab switcher: MCD / MLD / MPD -->
-      <Panel position="top-right" class="bg-white/95 backdrop-blur-sm mr-10 z-40 shadow-md flex items-center rounded-lg border border-gray-100">
+      <Panel position="top-right" class="bg-white/95 backdrop-blur-sm mr-1 md:mr-10 z-40 shadow-md flex items-center rounded-lg border border-gray-100">
         <Tabs default-value="default" v-model="activeTab" class="w-full">
-          <TabsList class="grid grid-cols-4">
+          <TabsList class="grid grid-cols-4 text-xs md:text-sm">
 
             <TooltipProvider>
               <Tooltip>
@@ -441,6 +472,7 @@ const edgeStyleOptions = [
 ]
 
 const isEdgeStylePopoverOpen = ref(false)
+const isEdgeStylePopoverMobileOpen = ref(false)
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
 
@@ -1089,6 +1121,23 @@ const exportItems = [
   border-radius: 50%;
   border: 2px solid white;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive panel positioning: stack vertically on mobile */
+@media screen and (max-width: 639px) {
+  .vue-flow__panel.top-left {
+    max-width: 55%;
+  }
+  .vue-flow__panel.top-center {
+    left: auto;
+    right: auto;
+    transform: none;
+    top: 52px;
+  }
+  .vue-flow__panel.top-right {
+    top: 4px;
+    right: 4px;
+  }
 }
 
 .remote-cursor-name {

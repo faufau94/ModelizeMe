@@ -9,11 +9,11 @@
     <div v-if="isSubMenuVisible"
          key="submenu"
 
-         class="absolute overflow-hidden z-40 md:w-[570px] px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
+         class="absolute overflow-hidden z-40 w-full sm:w-[400px] md:w-[570px] px-3 md:px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
 
     >
 
-      <div v-if="nodeIdSelected !== null" class="px-5 py-10 flex flex-col justify-between items-center h-full">
+      <div v-if="nodeIdSelected !== null" class="px-3 md:px-5 py-6 md:py-10 flex flex-col justify-between items-center h-full">
         <div class="w-full">
           <!-- Header bar: title + delete + close -->
           <div class="flex items-center justify-between mb-6">
@@ -50,7 +50,7 @@
             <Input ref="nodeNameInputRef" v-model="nodeName" type="text"/>
           </div>
 
-          <div class="w-full flex items-center justify-start gap-x-8">
+          <div class="w-full flex flex-col sm:flex-row items-start sm:items-center justify-start gap-y-2 sm:gap-y-0 gap-x-4 md:gap-x-8">
             <div class="items-top flex gap-x-2 mt-5">
               <Checkbox id="field-timestamp" v-model:checked="nodeTimestamps"/>
               <div class="grid gap-1.5 leading-none">
@@ -88,7 +88,7 @@
             </div>
           </div>
           <div class="mt-6 space-y-2">
-            <ScrollArea ref="scrollAreaRef" class="h-[400px] pr-4 ">
+            <ScrollArea ref="scrollAreaRef" class="h-[calc(100vh-400px)] sm:h-[400px] pr-2 md:pr-4">
 
               <draggable
                   v-if="nodeData && nodeData.data?.properties"
@@ -98,7 +98,7 @@
               >
                 <template #item="{element}">
 
-                  <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full">
+                  <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full">
 
                     <div class="w-14 h-14 flex justify-center items-center"
                          v-if="!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété'">
@@ -286,7 +286,7 @@
         </div>
       </div>
 
-      <div v-else-if="edgeIdSelected !== null" class="px-5 py-10 flex flex-col justify-between items-center h-full">
+      <div v-else-if="edgeIdSelected !== null" class="px-3 md:px-5 py-6 md:py-10 flex flex-col justify-between items-center h-full">
 
         <div class="w-full">
           <!-- Header bar: title + delete + close -->
@@ -422,7 +422,7 @@
 
 
             <div class="mt-6 space-y-2">
-              <ScrollArea ref="scrollAreaRef" class="h-[250px] pr-4 ">
+              <ScrollArea ref="scrollAreaRef" class="h-[calc(100vh-500px)] sm:h-[250px] pr-2 md:pr-4">
 
                 <draggable
                     v-if="edgeData && edgeData.data?.properties"
@@ -432,7 +432,7 @@
                 >
                   <template #item="{element}">
 
-                    <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full">
+                    <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full">
 
                       <div class="w-14 h-14 flex justify-center items-center"
                            v-if="!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété'">
