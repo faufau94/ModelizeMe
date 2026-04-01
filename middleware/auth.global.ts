@@ -14,14 +14,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 	if (session.value) {
 		if (to.path === "/" || to.path === "/sign-in" || to.path === "/sign-up") {
 			return await navigateTo(
-				`/app/workspace/${session.value.session?.activeOrganizationId}/dashboard`
+				`/app/workspace/${session.value.session?.activeOrganizationId}`
 			);
 		}
 
 		// Non-admin users: block access to /admin routes
 		if (to.path.startsWith("/admin") && session.value.user?.role !== "admin") {
 			return await navigateTo(
-				`/app/workspace/${session.value.session?.activeOrganizationId}/dashboard`
+				`/app/workspace/${session.value.session?.activeOrganizationId}`
 			);
 		}
 	}

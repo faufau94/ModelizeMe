@@ -7,7 +7,7 @@
 //     const { data: session } = await useSession(useFetch)
 //     console.log(session)
 //     if (session?.value?.activeOrganizationId) {
-//       return `/app/workspace/${session?.value?.activeOrganizationId}/dashboard`
+//       return `/app/workspace/${session?.value?.activeOrganizationId}`
 //     }
 //     return '/' // fallback if no active organization
 //   }

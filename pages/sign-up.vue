@@ -235,7 +235,7 @@ const onSubmit = async (values) => {
       // Default redirect to dashboard
       const orgId = session?.session?.activeOrganizationId
       if (orgId) {
-        const url = getDashboardUrl(orgId)
+        const url = `/app/workspace/${orgId}`
         await navigateTo(url)
       }
     }

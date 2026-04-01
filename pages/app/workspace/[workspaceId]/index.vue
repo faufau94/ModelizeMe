@@ -44,7 +44,7 @@
     <div class="mb-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-sm font-semibold">Modèles récents</h2>
-        <NuxtLink :to="goToThisWorkspaceUrl('dashboard')" class="text-xs text-muted-foreground hover:text-foreground transition-colors">
+        <NuxtLink :to="goToThisWorkspaceUrl('models')" class="text-xs text-muted-foreground hover:text-foreground transition-colors">
           Voir tout →
         </NuxtLink>
       </div>

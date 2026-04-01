@@ -138,7 +138,7 @@ const inviteEmail = ref('')
 const inviteRole = ref('viewer')
 
 
-const { selectedWorkspace, selectedWorkspaceId, updateWorkspace, deleteWorkspace, workspaces } = useWorkspace()
+const { selectedWorkspace, selectedWorkspaceId, updateWorkspace, deleteWorkspace, workspaces, goToThisWorkspaceUrl } = useWorkspace()
 
 // const workspace = ref({
 //   name: selectedWorkspace.value?.name,
@@ -206,7 +206,7 @@ const removeWorkspace = async () => {
     toast.success('Workspace deleted successfully')
     // redirect to the latest workspace by using the created at date
     const latestWorkspace = [...workspaces.value].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0]
-    await navigateTo(`/app/workspace/${latestWorkspace.id}/dashboard`)
+    await navigateTo(goToThisWorkspaceUrl('', latestWorkspace.id))
   }
 }
 </script>

@@ -585,10 +585,10 @@ onMounted(async () => {
         ? "Vous n'avez pas accès à ce modèle."
         : "Modèle introuvable."
       )
-      return navigateTo(`/app/workspace/${session.value?.session?.activeOrganizationId}/dashboard`)
+      return navigateTo(`/app/workspace/${session.value?.session?.activeOrganizationId}`)
     }
     toast.error("Une erreur est survenue lors du chargement du modèle.")
-    return navigateTo(`/app/workspace/${session.value?.session?.activeOrganizationId}/dashboard`)
+    return navigateTo(`/app/workspace/${session.value?.session?.activeOrganizationId}`)
   }
 
   // Set initial nodes/edges in Yjs AND VueFlow.
@@ -886,7 +886,7 @@ const goBack = async () => {
   saveAllNodePositions()
   const workspaceId = model.value?.workspaceId || session.value?.session?.activeOrganizationId
   if (workspaceId) {
-    await navigateTo(`/app/workspace/${workspaceId}/dashboard`)
+    await navigateTo(`/app/workspace/${workspaceId}`)
   } else {
     router.back()
   }

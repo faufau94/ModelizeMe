@@ -102,7 +102,7 @@ const acceptInvitation = async () => {
     console.log('res', res)
     const orgId = res.data.invitation.organizationId
     if (orgId) {
-      await navigateTo(`/app/workspace/${orgId}/dashboard`)
+      await navigateTo(`/app/workspace/${orgId}`)
     } else {
       message.value = {
         type: 'error',

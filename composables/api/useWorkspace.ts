@@ -131,7 +131,7 @@ export const useWorkspace = () => {
   const switchWorkspace = async (organizationId: string) => {
     await authClient.organization.setActive({ organizationId: organizationId })
     await queryClient.invalidateQueries({ queryKey: ['workspaces'] })
-    await navigateTo(`/app/workspace/${organizationId}/dashboard`)
+    await navigateTo(goToThisWorkspaceUrl('', organizationId))
   }
 
   // // GET WORKSPACE ROLES (Organization Roles)
@@ -175,8 +175,9 @@ export const useWorkspace = () => {
   }
 
   // Go to Workspace URL
-  const goToThisWorkspaceUrl = (addToUrl: string) => {
-    return `/app/workspace/${selectedWorkspaceId.value}/${addToUrl}`
+  const goToThisWorkspaceUrl = (addToUrl?: string, workspaceId?: string) => {
+    const id = workspaceId ?? selectedWorkspaceId.value
+    return addToUrl ? `/app/workspace/${id}/${addToUrl}` : `/app/workspace/${id}`
   }
 
   // Add activeMember as a reactive query

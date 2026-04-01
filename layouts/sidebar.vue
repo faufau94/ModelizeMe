@@ -41,7 +41,7 @@
           <button
             @click="goToModelsPage"
             class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
-            :class="isCurrentPage('dashboard')
+            :class="isCurrentPage('models')
               ? 'bg-accent text-accent-foreground'
               : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'"
           >
@@ -273,7 +273,7 @@
                     <LayoutDashboard class="mr-2 h-4 w-4" />
                     Dashboard
                   </Button>
-                  <Button @click="closeMobileSheet(); goToModelsPage()" :variant="isCurrentPage('dashboard') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
+                  <Button @click="closeMobileSheet(); goToModelsPage()" :variant="isCurrentPage('models') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
                     <PanelTopIcon class="mr-2 h-4 w-4" />
                     Modèles
                   </Button>
@@ -468,7 +468,8 @@ const currentPageTitle = computed(() => {
     return team?.name || 'Équipe'
   }
   const titles: Record<string, string> = {
-    dashboard: 'Modèles',
+    dashboard: 'Dashboard',
+    models: 'Modèles',
     members: 'Membres',
     settings: 'Paramètres',
   }
@@ -513,7 +514,7 @@ const goToDashboardPage = async () => {
 }
 
 const goToModelsPage = async () => {
-  const url = goToThisWorkspaceUrl('dashboard')
+  const url = goToThisWorkspaceUrl('models')
   await navigateTo(url)
 }
 
@@ -526,7 +527,7 @@ const isCurrentPage = (page: string) => {
   const path = route.path.replace(/\/$/, '') // Remove trailing slash
   if (page === '') {
     // Dashboard = index page of the workspace
-    const workspaceBase = `/app/workspace/${route.params.workspaceId}`
+    const workspaceBase = goToThisWorkspaceUrl('')
     return path === workspaceBase
   }
   return path.endsWith(`/${page}`)
