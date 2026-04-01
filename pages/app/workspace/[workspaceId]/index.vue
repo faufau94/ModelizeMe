@@ -2,48 +2,38 @@
   <div class="px-6 py-6 lg:px-8 max-w-5xl mx-auto w-full">
     <!-- Stats cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-      <NuxtLink :to="goToThisWorkspaceUrl('models')" class="rounded-xl border border-border bg-card p-4 hover:border-primary/40 transition-colors cursor-pointer group">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="rounded-md bg-primary/10 p-1.5">
-            <PanelTopIcon class="h-4 w-4 text-primary" />
-          </div>
-          <p class="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Modèles</p>
+      <NuxtLink :to="goToThisWorkspaceUrl('models')" class="rounded-xl border border-border bg-card p-5 hover:border-primary/40 transition-colors cursor-pointer group">
+        <div class="flex items-center gap-2 mb-3">
+          <PanelTopIcon class="h-4 w-4 text-muted-foreground" />
+          <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Modèles</p>
         </div>
-        <p class="text-2xl font-bold">{{ models?.length || 0 }}</p>
+        <p class="text-3xl font-bold">{{ models?.length || 0 }}</p>
       </NuxtLink>
-      <div class="rounded-xl border border-border bg-card p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="rounded-md bg-primary/10 p-1.5">
-            <UsersRound class="h-4 w-4 text-primary" />
-          </div>
-          <p class="text-xs font-medium text-muted-foreground">Équipes</p>
+      <div class="rounded-xl border border-border bg-card p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <UsersRound class="h-4 w-4 text-muted-foreground" />
+          <p class="text-sm font-medium text-muted-foreground">Équipes</p>
         </div>
-        <p class="text-2xl font-bold">{{ selectedWorkspace?.teams?.length || 0 }}</p>
+        <p class="text-3xl font-bold">{{ selectedWorkspace?.teams?.length || 0 }}</p>
       </div>
-      <NuxtLink :to="goToThisWorkspaceUrl('members')" class="rounded-xl border border-border bg-card p-4 hover:border-primary/40 transition-colors cursor-pointer group">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="rounded-md bg-primary/10 p-1.5">
-            <Users class="h-4 w-4 text-primary" />
-          </div>
-          <p class="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Membres</p>
+      <NuxtLink :to="goToThisWorkspaceUrl('members')" class="rounded-xl border border-border bg-card p-5 hover:border-primary/40 transition-colors cursor-pointer group">
+        <div class="flex items-center gap-2 mb-3">
+          <Users class="h-4 w-4 text-muted-foreground" />
+          <p class="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">Membres</p>
         </div>
-        <p class="text-2xl font-bold">{{ selectedWorkspace?.members?.length || 0 }}</p>
+        <p class="text-3xl font-bold">{{ selectedWorkspace?.members?.length || 0 }}</p>
       </NuxtLink>
-      <NuxtLink v-if="lastModifiedModel" :to="`/app/model/${lastModifiedModel.id}`" class="rounded-xl border border-border bg-card p-4 hover:border-primary/40 transition-colors cursor-pointer group">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="rounded-md bg-primary/10 p-1.5">
-            <Clock class="h-4 w-4 text-primary" />
-          </div>
-          <p class="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">Dernier modifié</p>
+      <div v-if="lastModifiedModel" class="rounded-xl border border-border bg-card p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <Clock class="h-4 w-4 text-muted-foreground" />
+          <p class="text-sm font-medium text-muted-foreground">Dernier modifié</p>
         </div>
-        <p class="text-sm font-medium mt-1 truncate">{{ lastModifiedModel.name || '—' }}</p>
-      </NuxtLink>
-      <div v-else class="rounded-xl border border-border bg-card p-4">
-        <div class="flex items-center gap-2 mb-2">
-          <div class="rounded-md bg-primary/10 p-1.5">
-            <Clock class="h-4 w-4 text-primary" />
-          </div>
-          <p class="text-xs font-medium text-muted-foreground">Dernier modifié</p>
+        <NuxtLink :to="`/app/model/${lastModifiedModel.id}`" class="text-md font-medium mt-3 truncate block hover:text-primary transition-colors" :title="lastModifiedModel.name">{{ lastModifiedModel.name || '—' }}</NuxtLink>
+      </div>
+      <div v-else class="rounded-xl border border-border bg-card p-5">
+        <div class="flex items-center gap-2 mb-3">
+          <Clock class="h-4 w-4 text-muted-foreground" />
+          <p class="text-sm font-medium text-muted-foreground">Dernier modifié</p>
         </div>
         <p class="text-sm font-medium mt-1 truncate">—</p>
       </div>
