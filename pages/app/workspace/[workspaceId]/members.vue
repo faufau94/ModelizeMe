@@ -1,8 +1,14 @@
 <template>
   <div class="px-6 py-6 lg:px-8 max-w-5xl mx-auto w-full">
     <!-- Action bar -->
-    <div class="flex items-center justify-end mb-6">
-      <Button @click="showAddMemberDialog = true" size="sm">
+    <div class="flex items-center justify-between mb-5">
+      <div class="relative w-full max-w-sm">
+        <Input v-model="searchTerm" type="text" placeholder="Rechercher un membre..." class="bg-white pl-10" />
+        <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
+          <SearchIcon class="size-4 text-muted-foreground" />
+        </span>
+      </div>
+      <Button @click="showAddMemberDialog = true">
         <PlusIcon class="w-4 h-4 mr-2" />
         Ajouter
       </Button>
@@ -19,8 +25,8 @@
               <TableHead v-if="getIsOwner" class="h-12 px-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody v-if="selectedWorkspace?.members?.length > 0">
-            <TableRow v-for="member in selectedWorkspace?.members" :key="member.user.id" class="hover:bg-muted/50">
+          <TableBody v-if="filteredMembers?.length > 0">
+            <TableRow v-for="member in filteredMembers" :key="member.user.id" class="hover:bg-muted/50">
               <TableCell class="py-4 px-4">
                 <div class="flex items-center gap-4">
                   <Avatar class="h-9 w-9">
@@ -148,12 +154,12 @@
 
 // Replace useAuth with useSession from better-auth
 import {useSession} from '~/lib/auth-client'
-import {ref} from 'vue'
+import {ref, computed} from 'vue'
 import {useWorkspace} from '@/composables/api/useWorkspace'
 import {useMember} from '@/composables/api/useMember'
 
 // UI components and icons
-import {ChevronDownIcon, PlusIcon, Trash2} from 'lucide-vue-next'
+import {ChevronDownIcon, PlusIcon, Search as SearchIcon, Trash2} from 'lucide-vue-next'
 import {Button} from '@/components/ui/button'
 import {Input} from '@/components/ui/input'
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow} from '@/components/ui/table'
@@ -189,12 +195,24 @@ const { addMember, updateMember, deleteMember } = useMember()
 
 // Local state
 const copied = ref(false)
+const searchTerm = ref('')
 const showAddMemberDialog = ref(false)
 const newMemberEmail = ref('')
 const memberToRemove = ref<number|null>(null)
 
 // Available roles
 const availableRoles = ['Admin', 'Member']
+
+const filteredMembers = computed(() => {
+  const members = selectedWorkspace.value?.members || []
+  if (!searchTerm.value) return members
+  const search = searchTerm.value.toLowerCase()
+  return members.filter(m =>
+    m.user?.name?.toLowerCase().includes(search) ||
+    m.user?.first_name?.toLowerCase().includes(search) ||
+    m.user?.email?.toLowerCase().includes(search)
+  )
+})
 
 
 // Change member role
