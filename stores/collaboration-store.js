@@ -49,10 +49,14 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     ydoc.value = _rawDoc
 
     // 2) open a websocket to your Yjs server with auth token
+    // Token must be passed via `params` (not in serverUrl) so the URL is
+    // correctly built as: ws://host:port/flow-<id>?token=xxx
+    // Otherwise the room name ends up after a query string, breaking routing.
     provider.value = new WebsocketProvider(
-      `${wsUrl}?token=${sessionToken || ''}`,
+      wsUrl,
       'flow-' + flowId, // room name
-      _rawDoc
+      _rawDoc,
+      { params: { token: sessionToken || '' } }
     )
 
     // 3) create or retrieve two shared arrays
