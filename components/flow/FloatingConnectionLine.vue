@@ -20,7 +20,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
-import { Position, getBezierPath, getSimpleBezierPath, getStraightPath, connectionExists, useVueFlow } from '@vue-flow/core';
+import { Position, getBezierPath, getSimpleBezierPath, getStraightPath, getSmoothStepPath, connectionExists, useVueFlow } from '@vue-flow/core';
 import { useMCDStore } from '~/stores/mcd-store.js';
 import { storeToRefs } from 'pinia';
 
@@ -31,6 +31,8 @@ const pathFunctions = {
   bezier: getBezierPath,
   simpleBezier: getSimpleBezierPath,
   straight: getStraightPath,
+  smoothstep: (params) => getSmoothStepPath(params),
+  smoothstepSharp: (params) => getSmoothStepPath({ ...params, borderRadius: 0 }),
 };
 
 const props = defineProps({

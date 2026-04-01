@@ -82,7 +82,7 @@
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
-import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSimpleBezierPath, getStraightPath } from "@vue-flow/core";
+import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSimpleBezierPath, getStraightPath, getSmoothStepPath } from "@vue-flow/core";
 import { storeToRefs } from "pinia";
 import { useMCDStore } from "~/stores/mcd-store.js";
 import { getEdgeParams, getDistributedEdgeParams } from '~/utils/useFloatingEdge.js';
@@ -94,6 +94,8 @@ const pathFunctions: Record<string, typeof getBezierPath> = {
   bezier: getBezierPath,
   simpleBezier: getSimpleBezierPath,
   straight: getStraightPath,
+  smoothstep: (params) => getSmoothStepPath(params),
+  smoothstepSharp: (params) => getSmoothStepPath({ ...params, borderRadius: 0 }),
 };
 
 const props = defineProps({

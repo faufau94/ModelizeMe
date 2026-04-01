@@ -7,6 +7,7 @@ export const idSchema = z.string().min(1, "ID requis");
 export const createModelSchema = z.object({
   title: z.string().min(2, "Titre trop court").max(100, "Titre trop long"),
   selectedWorkspaceId: z.string().min(1, "Workspace requis"),
+  teamId: z.string().optional(),
 });
 
 export const updateModelSchema = z.object({

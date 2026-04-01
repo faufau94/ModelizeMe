@@ -4,7 +4,7 @@ import { createModelSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { title, selectedWorkspaceId } = createModelSchema.parse(body);
+  const { title, selectedWorkspaceId, teamId } = createModelSchema.parse(body);
 
   const { session } = await requireOrgMembership(event, selectedWorkspaceId);
 
@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
       name: title,
       author: { connect: { id: session.user.id } },
       workspace: { connect: { id: selectedWorkspaceId } },
+      ...(teamId ? { team: { connect: { id: teamId } } } : {}),
     },
   });
 

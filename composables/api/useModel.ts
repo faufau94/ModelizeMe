@@ -57,7 +57,11 @@ export const useModel = () => {
     mutationFn: async (payload: any) =>
       await $fetch('/api/models/create', { 
         method: 'POST', 
-        body: {...payload, selectedWorkspaceId: selectedWorkspaceId.value}
+        body: {
+          ...payload,
+          selectedWorkspaceId: selectedWorkspaceId.value,
+          ...(teamId.value ? { teamId: teamId.value } : {}),
+        }
       }),
     onSuccess: () => queryClient.invalidateQueries(['models']),
   })

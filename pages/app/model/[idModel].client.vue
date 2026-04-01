@@ -433,6 +433,8 @@ const {addNode} = mcdStore
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, elementsMenu, addNewNode, activeTab, edgeType, isResolvingCollisions, isTernaryMode, ternarySelectedNodes, edgePathStyle, isConnecting, connectingSourceNodeId, connectHoveredNodeId} = storeToRefs(mcdStore)
 
 const edgeStyleOptions = [
+  { value: 'smoothstep', label: 'Angle droit', preview: 'M 0 10 L 12 10 L 12 2 L 24 2' },
+  { value: 'smoothstepSharp', label: 'Angle droit (net)', preview: 'M 0 10 L 12 10 L 12 2 L 24 2' },
   { value: 'bezier', label: 'Courbe', preview: 'M 0 10 C 8 0, 16 0, 24 10' },
   { value: 'simpleBezier', label: 'Courbe douce', preview: 'M 0 10 Q 12 0 24 10' },
   { value: 'straight', label: 'Droit', preview: 'M 0 6 L 24 6' },

@@ -41,8 +41,8 @@ export const useMCDStore = defineStore("flow-mcd", () => {
   const connectingSourceNodeId = ref(null);
   const connectHoveredNodeId = ref(null);
 
-  // Edge path style: 'bezier' | 'straight' | 'simpleBezier'
-  const edgePathStyle = ref('bezier');
+  // Edge path style: 'bezier' | 'straight' | 'simpleBezier' | 'smoothstep'
+  const edgePathStyle = ref('smoothstep');
 
   function readFlowCollection(collection) {
     if (Array.isArray(collection?.value)) return collection.value;
