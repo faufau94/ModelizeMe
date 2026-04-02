@@ -66,38 +66,19 @@ import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group'
 import {FormField, FormItem, FormControl, FormMessage} from '@/components/ui/form'
 import {useCodeGeneratorStore} from '@/stores/generator-store.js'
 
-defineProps({
+const props = defineProps({
   stepDatas: Object,
   name: String,
 })
 
 const codeGeneratorStore = useCodeGeneratorStore()
-const {stepIndex, datas} = storeToRefs(codeGeneratorStore)
+const { datas } = storeToRefs(codeGeneratorStore)
 
 const selectOption = (value) => {
-  switch (stepIndex.value) {
-    case 2:
-      datas.value.framework = value
-      break
-    case 3:
-      datas.value.orm = value
-      break
-    case 4:
-      datas.value.database = value
-      break
-  }
+  datas.value[props.name] = value
 }
 
 const selectedOption = computed(() => {
-  switch (stepIndex.value) {
-    case 2:
-      return datas.value.framework
-    case 3:
-      return datas.value.orm
-    case 4:
-      return datas.value.database
-    default:
-      return ''
-  }
+  return datas.value[props.name] ?? ''
 })
 </script>

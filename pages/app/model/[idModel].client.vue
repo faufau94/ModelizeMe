@@ -466,7 +466,7 @@ import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 import {useModel} from '@/composables/api/useModel'
 import {authClient} from '~/lib/auth-client'
 import ActiveUsersAvatars from '@/components/ActiveUsersAvatars.vue'
-import { useScreenshot } from '@/composables/useScreenshot';
+import { useExportImport } from '@/composables/useExportImport';
 import {toast} from "vue-sonner";
 
 const route = useRoute()
@@ -923,6 +923,8 @@ const isChangingTab = ref(false)
 
 const currentFlow = ref(mcdStore.flowMCD)
 
+const { importItems, exportItems } = useExportImport(currentFlow, model)
+
 const hasNoNodes = computed(() => {
   // Use the local VueFlow instance ref directly for proper reactivity tracking
   return mcdFlowInstance.getNodes.value.length === 0
@@ -1018,102 +1020,7 @@ const flowToScreenPosition = (flowPosition) => {
 }
 
 
-const handleExport = (type) => {
-  const flowElement = currentFlow.value.vueFlowRef;
 
-  if (flowElement) {
-    const { exportAsImage } = useScreenshot();
-    exportAsImage(flowElement, type, model.value?.name);
-  } else {
-    console.warn('Current flow element not found');
-  }
-}
-
-const exportToSQL = async (database) => {
-
-    const getMCDModel = await $fetch("/api/models/read", {
-      method: "GET",
-      query: {id: route.params.idModel},
-    });
-    const {nodesMLD, edgesMLD} = mldStore.generateMLD(getMCDModel['nodes'],getMCDModel['edges'])
-
-    const newTitle = getMCDModel?.name?.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_') +
-      `_${Date.now()}_${crypto.randomUUID()}`;
-    const response = await $fetch('/api/generator/generate-file', {
-      method: 'POST',
-      body: { title: newTitle, database: database , nodes: nodesMLD, edges: edgesMLD },
-    });
-
-
-  try {
-    // Créer une URL Object pour le blob
-    const blob = new Blob([response], {type: 'application/x-sql'});
-    const url = window.URL.createObjectURL(blob);
-
-    // Créer un élément <a> pour télécharger le fichier
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${newTitle}.sql`; // Nom du fichier à télécharger
-
-    // Ajouter le lien au document et simuler un clic
-    document.body.appendChild(a);
-    a.click();
-
-    // Nettoyer le document
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    toast.success('Export SQL généré avec succès !')
-  } catch (e) {
-      toast.error('Une erreur est survenue lors de l\'export SQL.')
-  }
-
-
-}
-
-const exportToJSON = async () => {
-  try {
-    const getMCDModel = await $fetch("/api/models/read", {
-      method: "GET",
-      query: {id: route.params.idModel},
-    });
-
-    const dataForExport = {
-      nodes: getMCDModel.nodes,
-      edges: getMCDModel.edges
-    };
-
-    const blob = new Blob([JSON.stringify(dataForExport, null, 2)], {type: 'application/json'});
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    const newTitle = getMCDModel?.name?.toLowerCase().replace(/[^a-zA-Z0-9_]/g, '_') || 'model';
-    a.download = `${newTitle}.json`;
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    toast.success('Export JSON généré avec succès !');
-  } catch (e) {
-    toast.error('Une erreur est survenue lors de l\'export JSON.');
-  }
-}
-
-const importItems = [
-  { title: 'Importer un fichier XML' },
-  { title: 'Importer un fichier SQL' },
-  { title: 'Importer un fichier JSON' },
-];
-
-const exportItems = [
-  { title: 'Exporter en PNG', action: () => handleExport('png') },
-  { title: 'Exporter en JPEG', action: () => handleExport('jpeg') },
-  { title: 'Exporter en JSON', action: () => exportToJSON() },
-    // Exporter en SQL
-  { title: 'Exporter en SQL (MySQL)', action: () => exportToSQL('mysql') },
-  { title: 'Exporter en SQL (PostgreSQL)', action: () => exportToSQL('pgsql') },
-];
 </script>
 
 <style>

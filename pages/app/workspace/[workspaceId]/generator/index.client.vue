@@ -10,7 +10,7 @@
             @submit="(e) => {
               e.preventDefault()
               validate()
-              if (stepIndex === steps.length && meta.valid) {
+              if (stepIndex === STEPS.length && meta.valid) {
                 onSubmit(values)
               }
             }"
@@ -18,14 +18,14 @@
           <!-- Stepper header -->
           <div class="flex w-full items-start gap-2">
             <StepperItem
-                v-for="step in steps"
+                v-for="step in STEPS"
                 :key="step.step"
                 v-slot="{ state }"
                 class="relative flex w-full flex-col items-center justify-center"
                 :step="step.step"
             >
               <StepperSeparator
-                  v-if="step.step !== steps[steps.length - 1].step"
+                  v-if="step.step !== STEPS[STEPS.length - 1].step"
                   class="absolute left-[calc(50%+20px)] right-[calc(-50%+10px)] top-5 block h-0.5 shrink-0 rounded-full bg-muted group-data-[state=completed]:bg-primary"
               />
 
@@ -106,18 +106,18 @@
 
             <!-- Step 2: Framework -->
             <template v-if="stepIndex === 2">
-              <ListItem :name="steps[1].type" :step-datas="steps.find(step => step.step === stepIndex)"/>
+              <ListItem :name="STEPS[1].field" :step-datas="STEPS.find(step => step.step === stepIndex)"/>
             </template>
 
             <!-- Step 3: ORM -->
             <template v-if="stepIndex === 3">
-              <ListItem :name="steps[2].type"
-                        :step-datas="{ ...steps.find(step => step.step === stepIndex), options: steps[2].options(datas.framework) }"/>
+              <ListItem :name="STEPS[2].field"
+                        :step-datas="{ ...STEPS.find(step => step.step === stepIndex), options: ormOptions }"/>
             </template>
 
             <!-- Step 4: Database -->
             <template v-if="stepIndex === 4">
-              <ListItem :name="steps[3].type" :step-datas="steps.find(step => step.step === stepIndex)"/>
+              <ListItem :name="STEPS[3].field" :step-datas="STEPS.find(step => step.step === stepIndex)"/>
             </template>
           </div>
 
@@ -128,7 +128,7 @@
               Précédent
             </Button>
             <div class="flex items-center gap-3">
-              <Button v-if="stepIndex !== steps.length" :type="meta.valid ? 'button' : 'submit'"
+              <Button v-if="stepIndex !== STEPS.length" :type="meta.valid ? 'button' : 'submit'"
                       :disabled="isNextDisabled"
                       size="sm"
                       @click="meta.valid && nextStep()">
@@ -136,7 +136,7 @@
                 <ChevronRight class="w-4 h-4 ml-1"/>
               </Button>
               <Button
-                  v-if="stepIndex === steps.length"
+                  v-if="stepIndex === STEPS.length"
                   :disabled="isGenerating"
                   size="sm"
                   type="submit"
@@ -154,7 +154,7 @@
 </template>
 
 <script setup>
-import {useCodeGeneratorStore} from "@/stores/generator-store.js";
+import {useCodeGeneratorStore, STEPS} from "@/stores/generator-store.js";
 import {storeToRefs} from "pinia";
 import {Check, ChevronLeft, ChevronRight, CirclePlay, Loader2} from 'lucide-vue-next'
 import {Textarea} from '@/components/ui/textarea'
@@ -184,7 +184,7 @@ definePageMeta({
 const route = useRoute()
 const mldStore = useMLDStore()
 const codeGeneratorStore = useCodeGeneratorStore()
-const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
+const {stepIndex, datas, ormOptions} = storeToRefs(codeGeneratorStore)
 
 const models = ref(null)
 const isGenerating = ref(false)
@@ -206,7 +206,7 @@ onMounted(async () => {
 onUnmounted(() => {
   models.value = null
   stepIndex.value = 1
-  datas.value = {title: '', description: '', modelId: '', framework: '', database: '', orm: ''}
+  datas.value = { title: '', description: '', modelId: '', framework: '', database: '', orm: '' }
 })
 
 const formSchema = [
