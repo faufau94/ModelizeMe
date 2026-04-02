@@ -20,17 +20,35 @@ export const useMLDStore = defineStore("flow-mld", () => {
   async function generateMLD(nodes, edges) {
     if (!nodes?.length) return { nodesMLD: [], edgesMLD: [] };
 
+    // Track which nodes were originally ternary entities (before type conversion)
+    const ternaryNodeIds = new Set();
+
     const nodesMap = new Map();
     for (const node of nodes) {
       const copy = JSON.parse(JSON.stringify(node));
       copy.draggable = false;
       copy.selectable = false;
       copy.data.modelType = "mld";
+      // Convert ternary entities → regular entities (they become junction tables in MLD)
+      if (copy.type === 'ternaryEntity') {
+        ternaryNodeIds.add(copy.id);
+        copy.type = 'customEntity';
+        copy.data.isAssociation = true;
+      }
       nodesMap.set(copy.id, copy);
     }
 
     const mldEdges = [];
     const extraNodes = [];
+
+    // Reusable edge template for MLD edges (no cardinalities)
+    const makeMldEdge = () => ({
+      type: "customEdge",
+      markerEnd: MarkerType.ArrowClosed,
+      selectable: false,
+      updatable: false,
+      data: { name: "", modelType: "mld", sourceCardinality: "", targetCardinality: "", properties: [] },
+    });
 
     for (const edge of edges) {
       const srcMax = (edge.data?.sourceCardinality || "").split(",")[1]?.trim();
@@ -40,62 +58,91 @@ export const useMLDStore = defineStore("flow-mld", () => {
       const targetNode = nodesMap.get(edge.target);
       if (!sourceNode || !targetNode) continue;
 
-      if (srcMax === "N" && tgtMax === "N") {
-        // N:N → junction table
-        const junctionId = `dndnode_${uuidv4()}_${uuidv4()}`;
-        extraNodes.push({
-          id: junctionId,
-          type: "customEntity",
-          position: { x: 0, y: 0 },
-          draggable: false,
-          selectable: false,
-          data: {
-            name: `${sourceNode.data.name}_${targetNode.data.name}`,
-            modelType: "mld",
-            isAssociation: true,
-            hasTimestamps: edge.data?.hasTimestamps ?? true,
-            usesSoftDeletes: edge.data?.usesSoftDeletes ?? false,
-            properties: [
-              {
-                id: uuidv4(),
-                propertyName: `${sourceNode.data.name.toLowerCase()}_id`,
-                typeName: "Big Integer",
-                isPrimaryKey: true,
-                autoIncrement: false,
-                isForeignKey: true,
-                foreignTable: sourceNode.data.name,
-                isNullable: false,
-              },
-              {
-                id: uuidv4(),
-                propertyName: `${targetNode.data.name.toLowerCase()}_id`,
-                typeName: "Big Integer",
-                isPrimaryKey: true,
-                autoIncrement: false,
-                isForeignKey: true,
-                foreignTable: targetNode.data.name,
-                isNullable: false,
-              },
-              ...(edge.data?.properties || []).map((p) => ({ ...p })),
-            ],
-          },
+      const isReflexive = edge.source === edge.target;
+      const edgeName = edge.data?.name || '';
+      const isTernaryTarget = ternaryNodeIds.has(edge.target);
+      const isTernarySource = ternaryNodeIds.has(edge.source);
+
+      // ── Ternary entity edge: handle BEFORE cardinality checks ──
+      // Ternary edges may have varying cardinalities (0,N/0,N or 0,N/1,1)
+      // depending on import source, so detect by node type instead.
+      if (isTernaryTarget || isTernarySource) {
+        const ternaryNode = isTernaryTarget ? targetNode : sourceNode;
+        const entityNode = isTernaryTarget ? sourceNode : targetNode;
+        insertForeignKey(ternaryNode, {
+          id: uuidv4(),
+          propertyName: `${entityNode.data.name.toLowerCase()}_id`,
+          typeName: "Big Integer",
+          isPrimaryKey: true,
+          autoIncrement: false,
+          isForeignKey: true,
+          foreignTable: entityNode.data.name,
+          isNullable: false,
+        });
+        mldEdges.push({
+          ...makeMldEdge(),
+          id: `dndedge_${uuidv4()}_${uuidv4()}`,
+          source: entityNode.id,
+          target: ternaryNode.id,
+          sourceHandle: "s4",
+          targetHandle: "s1",
         });
 
-        const baseEdge = {
-          type: "customEdge",
-          markerEnd: MarkerType.ArrowClosed,
-          selectable: false,
-          updatable: false,
-          data: { name: "", modelType: "mld", sourceCardinality: "", targetCardinality: "", properties: [] },
-        };
-        mldEdges.push({ ...baseEdge, id: `dndedge_${uuidv4()}_${uuidv4()}`, source: sourceNode.id, target: junctionId, sourceHandle: "s4", targetHandle: "s1" });
-        mldEdges.push({ ...baseEdge, id: `dndedge_${uuidv4()}_${uuidv4()}`, source: junctionId, target: targetNode.id, sourceHandle: "s4", targetHandle: "s1" });
+      } else if (srcMax === "N" && tgtMax === "N") {
+          // ── Regular N:N → junction table ──
+          const junctionId = `dndnode_${uuidv4()}_${uuidv4()}`;
+          const srcName = sourceNode.data.name.toLowerCase();
+          const tgtName = targetNode.data.name.toLowerCase();
+
+          extraNodes.push({
+            id: junctionId,
+            type: "customEntity",
+            position: { x: 0, y: 0 },
+            draggable: false,
+            selectable: false,
+            data: {
+              name: `${sourceNode.data.name}_${targetNode.data.name}`,
+              modelType: "mld",
+              isAssociation: true,
+              hasTimestamps: edge.data?.hasTimestamps ?? true,
+              usesSoftDeletes: edge.data?.usesSoftDeletes ?? false,
+              properties: [
+                {
+                  id: uuidv4(),
+                  // Reflexive N:N fix: disambiguate column names
+                  propertyName: isReflexive ? `${srcName}_source_id` : `${srcName}_id`,
+                  typeName: "Big Integer",
+                  isPrimaryKey: true,
+                  autoIncrement: false,
+                  isForeignKey: true,
+                  foreignTable: sourceNode.data.name,
+                  isNullable: false,
+                },
+                {
+                  id: uuidv4(),
+                  propertyName: isReflexive ? `${tgtName}_cible_id` : `${tgtName}_id`,
+                  typeName: "Big Integer",
+                  isPrimaryKey: true,
+                  autoIncrement: false,
+                  isForeignKey: true,
+                  foreignTable: targetNode.data.name,
+                  isNullable: false,
+                },
+                ...(edge.data?.properties || []).map((p) => ({ ...p })),
+              ],
+            },
+          });
+
+          mldEdges.push({ ...makeMldEdge(), id: `dndedge_${uuidv4()}_${uuidv4()}`, source: sourceNode.id, target: junctionId, sourceHandle: "s4", targetHandle: "s1" });
+          mldEdges.push({ ...makeMldEdge(), id: `dndedge_${uuidv4()}_${uuidv4()}`, source: junctionId, target: targetNode.id, sourceHandle: "s4", targetHandle: "s1" });
 
       } else {
         // 1:N, N:1, 1:1 → add FK
-        const makeFk = (refTable) => ({
+        // Convention: srcMax = max # of sources per target, tgtMax = max # of targets per source
+        // FK goes on the "many" side (the entity that has N of the other)
+        const makeFk = (refTable, customName = null) => ({
           id: uuidv4(),
-          propertyName: `${refTable.data.name.toLowerCase()}_id`,
+          propertyName: customName || `${refTable.data.name.toLowerCase()}_id`,
           typeName: "Big Integer",
           isPrimaryKey: false,
           autoIncrement: false,
@@ -104,9 +151,14 @@ export const useMLDStore = defineStore("flow-mld", () => {
           isNullable: false,
         });
 
-        if (srcMax === "1" && tgtMax === "N") insertForeignKey(sourceNode, makeFk(targetNode));
-        else if (srcMax === "N" && tgtMax === "1") insertForeignKey(targetNode, makeFk(sourceNode));
-        else if (srcMax === "1" && tgtMax === "1") insertForeignKey(targetNode, makeFk(sourceNode));
+        // Reflexive 1:N fix: use relation name for FK to avoid name collision
+        const reflexiveFkName = (isReflexive && edgeName)
+          ? `${edgeName.toLowerCase()}_id`
+          : null;
+
+        if (srcMax === "1" && tgtMax === "N") insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName));
+        else if (srcMax === "N" && tgtMax === "1") insertForeignKey(sourceNode, makeFk(targetNode, reflexiveFkName));
+        else if (srcMax === "1" && tgtMax === "1") insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName));
 
         // Strip cardinalities - FK replaces them in MLD
         mldEdges.push({

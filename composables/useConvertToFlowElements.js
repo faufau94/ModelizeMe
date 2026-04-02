@@ -432,7 +432,7 @@ export const useConvertToFlowElements = () => {
                             data: {
                                 name: '',
                                 sourceCardinality: participant.cardinality,
-                                targetCardinality: '1,1',
+                                targetCardinality: participant.cardinality,
                                 properties: [],
                                 hasTimestamps: false,
                                 usesSoftDeletes: false,
