@@ -956,10 +956,11 @@ watch(activeTab, async () => {
     currentFlow.value = mldStore.flowMLD;
   }
   if (activeTab.value === 'mpd') {
-    const { nodesMPD, edgesMPD } = await mpdStore.generateMPD(
+    const { nodesMLD, edgesMLD } = await mldStore.generateMLD(
       mcdStore.flowMCD.nodes,
       mcdStore.flowMCD.edges
     )
+    const { nodesMPD, edgesMPD } = await mpdStore.generateMPD(nodesMLD, edgesMLD)
     mpdStore.flowMPD.setNodes(nodesMPD)
     mpdStore.flowMPD.setEdges(edgesMPD)
     currentFlow.value = mpdStore.flowMPD;
