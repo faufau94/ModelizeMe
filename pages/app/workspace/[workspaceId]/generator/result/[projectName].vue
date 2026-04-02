@@ -1,27 +1,37 @@
 <template>
-  <div class="flex flex-col justify-center items-center min-h-screen p-6">
-    <div class="w-full max-w-lg space-y-8">
-      <div class="text-center space-y-2">
-        <h1 class="text-2xl font-bold tracking-tight">Projet généré avec succès !</h1>
-        <p class="text-muted-foreground text-sm">
-          Téléchargez le projet ou créez un dépôt distant.
-        </p>
+  <div class="h-full flex flex-col items-center justify-start p-4 sm:p-6 overflow-y-auto">
+    <div class="w-full max-w-md space-y-4">
+
+      <!-- Header -->
+      <div class="text-center space-y-1 pb-2">
+        <div class="flex justify-center mb-3">
+          <div class="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+            <CheckCircle2 class="h-6 w-6 text-green-600 dark:text-green-400"/>
+          </div>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight">Projet généré !</h1>
+        <p class="text-muted-foreground text-base">Téléchargez le projet ou créez un dépôt distant.</p>
       </div>
 
+      <!-- Download -->
       <Card>
-        <CardHeader>
-          <CardTitle class="text-base">Télécharger le projet</CardTitle>
-          <CardDescription>Récupérez le projet complet au format ZIP.</CardDescription>
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold flex items-center gap-2">
+            <Package class="h-5 w-5 text-muted-foreground"/>
+            Télécharger le projet
+          </CardTitle>
+          <CardDescription class="text-sm">Récupérez le projet complet au format ZIP.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button @click="downloadProject" class="w-full" :disabled="isDownloading">
-            <Loader2 v-if="isDownloading" class="w-4 h-4 mr-2 animate-spin"/>
-            <Download v-else class="w-4 h-4 mr-2"/>
+        <CardContent class="pt-0">
+          <Button size="lg" @click="downloadProject" class="w-full text-base" :disabled="isDownloading">
+            <Loader2 v-if="isDownloading" class="w-5 h-5 mr-2 animate-spin"/>
+            <Download v-else class="w-5 h-5 mr-2"/>
             {{ isDownloading ? 'Téléchargement...' : 'Télécharger le ZIP' }}
           </Button>
         </CardContent>
       </Card>
 
+      <!-- Separator -->
       <div class="relative">
         <div class="absolute inset-0 flex items-center">
           <span class="w-full border-t"/>
@@ -31,47 +41,55 @@
         </div>
       </div>
 
+      <!-- Git providers -->
       <Card>
-        <CardHeader>
-          <CardTitle class="text-base">Créer un dépôt</CardTitle>
-          <CardDescription>Poussez le projet sur un service Git.</CardDescription>
+        <CardHeader class="pb-3">
+          <CardTitle class="text-base font-semibold flex items-center gap-2">
+            <GitBranch class="h-5 w-5 text-muted-foreground"/>
+            Créer un dépôt
+          </CardTitle>
+          <CardDescription class="text-sm">Poussez le projet sur un service Git.</CardDescription>
         </CardHeader>
-        <CardContent class="grid grid-cols-2 gap-3">
-          <Button @click="createRepoWithProvider('github')" variant="outline">
-            <Github class="w-4 h-4 mr-2"/>
+        <CardContent class="pt-0 grid grid-cols-2 gap-3">
+          <Button size="lg" @click="createRepoWithProvider('github')" variant="outline" class="w-full text-base">
+            <Github class="w-5 h-5 mr-2"/>
             GitHub
           </Button>
-          <Button @click="createRepoWithProvider('gitlab')" variant="outline">
-            <Gitlab class="w-4 h-4 mr-2"/>
+          <Button size="lg" @click="createRepoWithProvider('gitlab')" variant="outline" class="w-full text-base">
+            <Gitlab class="w-5 h-5 mr-2"/>
             GitLab
           </Button>
         </CardContent>
       </Card>
+
     </div>
   </div>
 </template>
 
 <script setup>
-import {Download, Github, Gitlab, Loader2} from 'lucide-vue-next'
+import {CheckCircle2, Download, GitBranch, Github, Gitlab, Loader2, Package} from 'lucide-vue-next'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Button} from '~/components/ui/button'
+import {authClient} from '~/lib/auth-client'
 
 definePageMeta({
   layout: 'sidebar',
 });
 
 const route = useRoute()
-const {signIn, getSession} = useAuth();
 
 const createRepoWithProvider = async (provider) => {
   try {
-    const session = await getSession();
-    const linkedAccount = session?.user?.accounts?.find(acc => acc.provider === provider);
+    const { data: session } = await authClient.useSession(useFetch)
+    const linkedAccount = session.value?.user?.accounts?.find(acc => acc.provider === provider);
 
     const basePath = `/app/workspace/${route.params.workspaceId}/generator/result`
 
     if (!linkedAccount) {
-      await signIn(provider, {callbackUrl: `${basePath}/create-repo?provider=${provider}&projectName=${route.params.projectName}`});
+      await authClient.signIn.social({
+        provider,
+        callbackURL: `${basePath}/create-repo?provider=${provider}&projectName=${route.params.projectName}`,
+      });
     } else {
       await navigateTo({
         path: `${basePath}/create-repo`,
@@ -115,7 +133,8 @@ const downloadProject = async () => {
 
 const hasTriggeredConfetti = ref(false);
 onMounted(() => {
-  if (hasTriggeredConfetti.value) return
+  if (_confettiTriggered) return
+  _confettiTriggered = true
   hasTriggeredConfetti.value = true
 
   const colors = ["#bb0000", "#0000ee"];
@@ -129,4 +148,9 @@ onMounted(() => {
 
   requestAnimationFrame(frame);
 })
+</script>
+
+<script>
+// Module-level flag: survives component unmount/remount within the same session
+let _confettiTriggered = false
 </script>

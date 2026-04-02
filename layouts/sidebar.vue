@@ -216,7 +216,7 @@
         <!-- Collapse sidebar toggle -->
         <button
           @click="toggleSidebar()"
-          class="hidden md:flex p-1.5 rounded-md text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground transition-colors cursor-pointer mr-2"
+          class="hidden md:flex rounded-md text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground transition-colors cursor-pointer mr-2"
         >
           <PanelLeftClose v-if="!isSidebarCollapsed" class="h-4 w-4" />
           <PanelLeftOpen v-else class="h-4 w-4" />
@@ -226,7 +226,7 @@
         <Sheet v-model:open="isMobileSheetOpen">
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" class="md:hidden mr-2 h-8 w-8">
-              <MenuIcon class="h-5 w-5" />
+              <MenuIcon class="h-4 w-4" />
             </Button>
           </SheetTrigger>
           <SheetContent side="left" class="w-72 p-0">

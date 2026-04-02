@@ -130,6 +130,24 @@
             </Tooltip>
           </TooltipProvider>
 
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    class="rounded-md "
+                    @click="navigateTo({ path: `/app/workspace/${model?.workspaceId}/generator`, query: { modelId: route.params.idModel } })"
+                >
+                  <Code :size="16"/>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent class="bg-gray-900 text-white text-xs">
+                <p>Générer le code</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <Popover v-model:open="isEdgeStylePopoverOpen">
             <TooltipProvider>
               <Tooltip>
@@ -426,7 +444,7 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {ArrowLeft, Check, Loader2, PanelTop, Redo2, Undo2, WandSparkles, Workflow} from "lucide-vue-next";
+import {ArrowLeft, Check, Code, Loader2, PanelTop, Redo2, Undo2, WandSparkles, Workflow} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,} from '@/components/ui/dialog'

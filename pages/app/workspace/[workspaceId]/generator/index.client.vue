@@ -3,6 +3,7 @@
     <Form
         v-slot="{ meta, values, validate }"
         as="" keep-values :validation-schema="toTypedSchema(formSchema[stepIndex - 1])"
+        :initial-values="{ modelId: initialModelId }"
     >
       <Stepper v-slot="{ isNextDisabled, isPrevDisabled, nextStep, prevStep }" v-model="stepIndex" class="block w-full">
         <form
@@ -188,11 +189,18 @@ const {steps, stepIndex, datas} = storeToRefs(codeGeneratorStore)
 const models = ref(null)
 const isGenerating = ref(false)
 
+const initialModelId = route.query.modelId?.toString() || ''
+
 onMounted(async () => {
   models.value = await $fetch('/api/models/list', {
     method: 'GET',
     query: { selectedWorkspaceId: route.params.workspaceId },
   });
+
+  // Pre-select model from query param if valid
+  if (initialModelId && models.value?.some(m => m.id.toString() === initialModelId)) {
+    datas.value.modelId = initialModelId
+  }
 })
 
 onUnmounted(() => {
@@ -247,7 +255,13 @@ async function onSubmit(values) {
       query: {id: values.modelId},
     });
 
-    const {nodesMLD, edgesMLD} = mldStore.generateMLD(getMCDModel['nodes'], getMCDModel['edges'])
+    const {nodesMLD, edgesMLD} = await mldStore.generateMLD(getMCDModel['nodes'], getMCDModel['edges'])
+
+    console.log('Données envoyées au backend :', {
+      ...values,
+      nodes: nodesMLD,
+      edges: edgesMLD
+    });
 
     const response = await $fetch('/api/generator/generate', {
       method: 'POST',
