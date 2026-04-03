@@ -12,9 +12,9 @@
                 v-bind="componentField"
                 class="grid gap-4 grid-cols-1 sm:grid-cols-2"
             >
-              <label v-for="item in stepDatas.options" :key="item.value">
+              <label v-for="item in stepDatas.options" :key="item.value" class="h-full">
                 <div
-                    class="border rounded-xl relative transition-all duration-150 bg-white dark:bg-card shadow-sm"
+                    class="border rounded-xl relative transition-all duration-150 bg-white dark:bg-card shadow-sm h-full"
                     :class="[
                       selectedOption === item.value
                         ? 'border-primary ring-2 ring-primary/20'

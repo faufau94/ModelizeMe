@@ -28,13 +28,14 @@ model User {
   banReason  String?   @db.Text
   banExpires DateTime?
 
-  members        Member[]
-  invitations    Invitation[]
-  authoredModels Model[]      @relation("AuthorModels")
-  galeries       Galery[]
-  annotations    Annotation[]
-  teammembers    TeamMember[]
-  modelEvents    ModelEvent[]
+  members           Member[]
+  invitations      Invitation[]
+  authoredModels   Model[]      @relation("AuthorModels")
+  galeries         Galery[]
+  annotations      Annotation[]
+  teammembers      TeamMember[]
+  modelEvents      ModelEvent[]
+  generatedProjects GeneratedProject[] @relation("AuthorProjects")
 
   @@unique([email])
   @@map("user")
@@ -98,10 +99,11 @@ model Organization {
   logo        String?      @db.Text
   createdAt   DateTime
   metadata    String?      @db.Text
-  members     Member[]
-  invitations Invitation[]
-  teams       Team[]
-  models      Model[]
+  members           Member[]
+  invitations      Invitation[]
+  teams            Team[]
+  models           Model[]
+  generatedProjects GeneratedProject[]
 
   @@unique([slug])
   @@map("organization")
@@ -190,9 +192,10 @@ model Model {
   author   User?   @relation("AuthorModels", fields: [authorId], references: [id], onDelete: SetNull)
 
   // Relations existantes
-  Galery      Galery[]
+  Galery            Galery[]
   // Nouvelles annotations
-  annotations Annotation[]
+  annotations       Annotation[]
+  generatedProjects GeneratedProject[]
 
   // Event sourcing
   events    ModelEvent[]
@@ -243,6 +246,33 @@ model Annotation {
   updatedAt DateTime @updatedAt
 
   @@map("annotations")
+}
+
+// ─── GENERATED PROJECTS ───
+
+model GeneratedProject {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  framework   String   @db.VarChar(50)
+  orm         String   @db.VarChar(50)
+  database    String   @db.VarChar(50)
+
+  modelId     String
+  model       Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+  workspace   Organization @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  authorId    String?
+  author      User?    @relation("AuthorProjects", fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([modelId])
+  @@map("generated_projects")
 }
 
 // ─── EVENT SOURCING ───

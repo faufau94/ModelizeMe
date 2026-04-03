@@ -280,13 +280,13 @@
                     <PanelTopIcon class="mr-2 h-4 w-4" />
                     Modèles
                   </Button>
+                  <Button @click="closeMobileSheet(); goToGeneratorPage()" :variant="isGeneratorPage ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
+                    <FolderCode class="mr-2 h-4 w-4" />
+                    Projets
+                  </Button>
                   <Button @click="closeMobileSheet(); goToMembersPage()" :variant="isCurrentPage('members') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
                     <UsersRound class="mr-2 h-4 w-4" />
                     Membres
-                  </Button>
-                  <Button @click="closeMobileSheet(); goToGeneratorPage()" :variant="isGeneratorPage ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
-                    <CodeXml class="mr-2 h-4 w-4" />
-                    Génération de code
                   </Button>
                   <Button v-if="getIsOwner" @click="closeMobileSheet(); goToSettingsPage()" :variant="isCurrentPage('settings') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
                     <Settings2 class="mr-2 h-4 w-4" />
@@ -426,8 +426,8 @@ import {
 import {
   Check,
   ChevronsUpDown,
-  CodeXml,
   CreditCardIcon,
+  FolderCode,
   Languages,
   LayoutDashboard,
   Loader2,
@@ -490,10 +490,10 @@ const currentPageTitle = computed(() => {
     models: 'Modèles',
     members: 'Membres',
     settings: 'Paramètres',
-    generator: 'Génération de code',
+    generator: 'Projets',
   }
   // Generator pages
-  if (route.path.includes('/generator')) return 'Génération de code'
+  if (route.path.includes('/generator')) return 'Projets'
   // If page matches a workspaceId (index page), it's the dashboard
   if (page === route.params.workspaceId) return 'Dashboard'
   return titles[page || ''] || selectedWorkspace.value?.name || ''
@@ -515,8 +515,8 @@ function toggleSidebar() {
 const navItems = computed(() => [
   { page: '', label: 'Dashboard', icon: LayoutDashboard, action: goToDashboardPage, isActive: isCurrentPage(''), ownerOnly: false },
   { page: 'models', label: 'Modèles', icon: PanelTopIcon, action: goToModelsPage, isActive: isCurrentPage('models'), ownerOnly: false },
+  { page: 'generator', label: 'Projets', icon: FolderCode, action: goToGeneratorPage, isActive: isGeneratorPage.value, ownerOnly: false },
   { page: 'members', label: 'Membres', icon: UsersRound, action: goToMembersPage, isActive: isCurrentPage('members'), ownerOnly: false },
-  { page: 'generator', label: 'Génération de code', icon: CodeXml, action: goToGeneratorPage, isActive: isGeneratorPage.value, ownerOnly: false },
   { page: 'settings', label: 'Paramètres', icon: Settings2, action: goToSettingsPage, isActive: isCurrentPage('settings'), ownerOnly: true },
 ])
 

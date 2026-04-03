@@ -137,7 +137,7 @@
                     variant="ghost"
                     size="sm"
                     class="rounded-md "
-                    @click="navigateTo({ path: `/app/workspace/${model?.workspaceId}/generator`, query: { modelId: route.params.idModel } })"
+                    @click="navigateTo({ path: `/app/workspace/${model?.workspaceId}/generator/new`, query: { modelId: route.params.idModel } })"
                 >
                   <Code :size="16"/>
                 </Button>
