@@ -65,7 +65,6 @@ definePageMeta({
 
 const route = useRoute();
 const router = useRouter();
-const {token} = useAuth();
 
 const formSchema = toTypedSchema(z.object({
   projectName: z.string()
@@ -99,7 +98,6 @@ const onSubmit = form.handleSubmit(async (values) => {
         provider: route.query.provider,
         projectName: values.projectName,
         branchName: values.branchName,
-        token: token.value,
       },
     });
 
@@ -110,7 +108,16 @@ const onSubmit = form.handleSubmit(async (values) => {
     }
   } catch (error) {
     console.error('Erreur création dépôt:', error);
-    toast.error('Erreur lors de la création du dépôt. Réessayez.');
+    const status = error?.response?.status || error?.statusCode;
+    const serverMessage = error?.data?.message || error?.data?.statusMessage;
+
+    if (status === 409) {
+      toast.error(serverMessage || 'Un dépôt avec ce nom existe déjà.');
+    } else if (status === 403) {
+      toast.error(serverMessage || 'Reconnectez votre compte Git.');
+    } else {
+      toast.error(serverMessage || 'Erreur lors de la création du dépôt. Réessayez.');
+    }
     isCreatingRepo.value = false;
   }
 });

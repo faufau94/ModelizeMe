@@ -22,20 +22,24 @@ export const auth = betterAuth({
 			// TODO: implement password reset email
 		},
     },
-    // socialProviders: { 
-    //     google: { 
-    //        clientId: useRuntimeConfig().googleClientId  || "", 
-    //        clientSecret: useRuntimeConfig().googleClientSecret  || "", 
-    //     },
-    //     github: { 
-    //        clientId: useRuntimeConfig().githubClientId  || "", 
-    //        clientSecret: useRuntimeConfig().githubClientSecret  || "", 
-    //     },
-    //     gitlab: { 
-    //        clientId: useRuntimeConfig().gitlabClientId  || "", 
-    //        clientSecret: useRuntimeConfig().gitlabClientSecret  || "", 
-    //     },
-    // },
+    socialProviders: {
+        google: {
+           clientId: process.env.GOOGLE_CLIENT_ID || "",
+           clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+        },
+        github: {
+           clientId: process.env.GITHUB_CLIENT_ID || "",
+           clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+           // Scope 'repo' required to create repos and push code
+           scope: ["user:email", "repo"],
+        },
+        gitlab: {
+           clientId: process.env.GITLAB_CLIENT_ID || "",
+           clientSecret: process.env.GITLAB_CLIENT_SECRET || "",
+           // Scope 'api' required for project creation + commits
+           scope: ["read_user", "api"],
+        },
+    },
     plugins: [
         admin(),
         organization({

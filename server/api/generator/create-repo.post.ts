@@ -1,5 +1,11 @@
 import { requireAuth } from "~/server/utils/auth";
 import { z } from "zod";
+import prisma from "~/lib/prisma";
+import {
+  extractZipEntries,
+  createGitHubRepo,
+  createGitLabRepo,
+} from "~/server/utils/git-providers";
 
 const createRepoSchema = z.object({
   provider: z.enum(["github", "gitlab"]),
@@ -13,47 +19,99 @@ const createRepoSchema = z.object({
     .min(1)
     .max(50)
     .regex(/^[a-zA-Z0-9._/-]+$/, "Nom de branche invalide"),
-  token: z.string().min(1),
 });
 
 export default defineEventHandler(async (event) => {
-  await requireAuth(event);
+  const session = await requireAuth(event);
 
   const body = await readBody(event);
-  const { provider, projectName, branchName, token } =
-    createRepoSchema.parse(body);
+  const { provider, projectName, branchName } = createRepoSchema.parse(body);
 
-  const headers: Record<string, string> = {
-    Authorization:
-      provider === "github" ? `token ${token}` : `Bearer ${token}`,
-  };
+  // Retrieve OAuth access token server-side from the linked account
+  const account = await prisma.account.findFirst({
+    where: {
+      userId: session.user.id,
+      providerId: provider,
+    },
+    select: { accessToken: true },
+  });
 
-  const repoBody =
-    provider === "github"
-      ? { name: projectName, private: true, auto_init: true, default_branch: branchName }
-      : { name: projectName, visibility: "private", default_branch: branchName };
-
-  let response: any;
-
-  switch (provider) {
-    case "github":
-      response = await $fetch("https://api.github.com/user/repos", {
-        method: "POST",
-        body: repoBody,
-        headers: { ...headers, Accept: "application/vnd.github.v3+json" },
-      });
-      break;
-    case "gitlab":
-      response = await $fetch("https://gitlab.com/api/v4/projects", {
-        method: "POST",
-        body: repoBody,
-        headers,
-      });
-      break;
+  if (!account?.accessToken) {
+    throw createError({
+      statusCode: 403,
+      message: `Aucun compte ${provider} lié. Veuillez d'abord connecter votre compte ${provider}.`,
+    });
   }
 
-  return {
-    success: true,
-    repoUrl: response.html_url || response.web_url,
-  };
+  const token = account.accessToken;
+
+  // Download the generated project ZIP from the backend
+  const zipBlob = await $fetch(process.env.URL_BACKEND + "/api/download-project", {
+    method: "POST",
+    body: { projectName },
+    responseType: "arrayBuffer",
+  });
+
+  const zipBuffer = Buffer.from(zipBlob as ArrayBuffer);
+  const files = extractZipEntries(zipBuffer);
+
+  if (!files.length) {
+    throw createError({
+      statusCode: 500,
+      message: "Le projet généré est vide.",
+    });
+  }
+
+  // Strip the top-level directory from file paths if all files share one
+  // e.g. "my-project/src/index.ts" → "src/index.ts"
+  const firstSlash = files[0].path.indexOf("/");
+  if (firstSlash > 0) {
+    const prefix = files[0].path.substring(0, firstSlash + 1);
+    const allSharePrefix = files.every((f) => f.path.startsWith(prefix));
+    if (allSharePrefix) {
+      for (const f of files) {
+        f.path = f.path.substring(prefix.length);
+      }
+    }
+  }
+
+  // Create repo and push files
+  try {
+    let result;
+    switch (provider) {
+      case "github":
+        result = await createGitHubRepo(token, projectName, branchName, files);
+        break;
+      case "gitlab":
+        result = await createGitLabRepo(token, projectName, branchName, files);
+        break;
+    }
+
+    return {
+      success: true,
+      repoUrl: result.repoUrl,
+    };
+  } catch (err: any) {
+    // Handle known API errors with clear messages
+    const status = err?.response?.status || err?.statusCode || 500;
+    const detail = err?.data?.message || err?.data?.error?.message || err?.message || "";
+
+    if (status === 422 || status === 400) {
+      throw createError({
+        statusCode: 409,
+        message: `Un dépôt "${projectName}" existe déjà sur ${provider}. Choisissez un autre nom.`,
+      });
+    }
+    if (status === 401 || status === 403) {
+      throw createError({
+        statusCode: 403,
+        message: `Token ${provider} invalide ou expiré. Reconnectez votre compte ${provider}.`,
+      });
+    }
+
+    throw createError({
+      statusCode: 500,
+      message: `Erreur lors de la création du dépôt : ${detail}`,
+    });
+  }
 });

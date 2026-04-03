@@ -80,12 +80,15 @@ const route = useRoute()
 
 const createRepoWithProvider = async (provider) => {
   try {
-    const { data: session } = await authClient.useSession(useFetch)
-    const linkedAccount = session.value?.user?.accounts?.find(acc => acc.provider === provider);
+    // Check server-side if the user has a linked account for this provider
+    const { linked } = await $fetch('/api/auth/linked-account', {
+      query: { provider },
+    });
 
     const basePath = `/app/workspace/${route.params.workspaceId}/generator/result`
 
-    if (!linkedAccount) {
+    if (!linked) {
+      // Redirect to OAuth flow to link the account
       await authClient.signIn.social({
         provider,
         callbackURL: `${basePath}/create-repo?provider=${provider}&projectName=${route.params.projectName}`,
