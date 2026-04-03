@@ -20,7 +20,7 @@
         @edges-delete="onEdgesDelete"
     >
       <MiniMap/>
-      <Controls/>
+      <Controls :fit-view-params="{ padding: 0.4, includeHiddenNodes: false }"/>
 
       <!-- Ternary selection mode banner -->
       <Panel v-if="isTernaryMode" position="top-center" class="z-50">
@@ -119,95 +119,157 @@
             </Tooltip>
           </TooltipProvider> -->
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :import-items="importItems" :export-items="exportItems" />
-              </TooltipTrigger>
-              <TooltipContent class="bg-gray-900 text-white text-xs">
-                <p>Import / Export</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Dialog v-model:open="isImportDialogOpen">
+            <DropdownMenu>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger as-child>
+                    <DropdownMenuTrigger as-child>
+                      <Button variant="ghost" size="sm" class="rounded-md">
+                        <EllipsisVertical :size="16"/>
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent class="bg-gray-900 text-white text-xs">
+                    <p>Plus d'options</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <DropdownMenuContent class="w-56" align="start">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator/>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    class="rounded-md "
-                    @click="navigateTo({ path: `/app/workspace/${model?.workspaceId}/generator/new`, query: { modelId: route.params.idModel } })"
-                >
-                  <Code :size="16"/>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent class="bg-gray-900 text-white text-xs">
-                <p>Générer le code</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+                <DropdownMenuItem class="cursor-pointer" @click="navigateTo({ path: `/app/workspace/${model?.workspaceId}/generator/new`, query: { modelId: route.params.idModel } })">
+                  <FolderCode :size="16" class="mr-2"/>
+                  Générer le projet...
+                </DropdownMenuItem>
 
-          <Popover v-model:open="isEdgeStylePopoverOpen">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger as-child>
-                  <PopoverTrigger as-child>
-                    <Button variant="ghost" size="sm" class="rounded-md">
-                      <Workflow :size="16"/>
-                    </Button>
-                  </PopoverTrigger>
-                </TooltipTrigger>
-                <TooltipContent class="bg-gray-900 text-white text-xs">
-                  <p>Style des connecteurs</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <PopoverContent side="bottom" align="center" class="w-52 p-2">
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 mb-2">Style des connecteurs</p>
-              <div class="space-y-0.5">
-                <button
-                  v-for="opt in edgeStyleOptions" :key="opt.value"
-                  class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors"
-                  :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'"
-                  @click="edgePathStyle = opt.value; isEdgeStylePopoverOpen = false"
-                >
-                  <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0">
-                    <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                  </svg>
-                  {{ opt.label }}
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+                <DropdownMenuSeparator/>
+
+                <DialogTrigger as-child>
+                  <DropdownMenuItem class="cursor-pointer">
+                    <Upload :size="16" class="mr-2"/>
+                    Importer...
+                  </DropdownMenuItem>
+                </DialogTrigger>
+
+                <DropdownMenuSub v-if="exportItems && exportItems.length > 0">
+                  <DropdownMenuSubTrigger class="cursor-pointer">
+                    <Download :size="16" class="mr-2"/>
+                    <span>Exporter</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        v-for="(item, index) in exportItems"
+                        :key="index"
+                        class="cursor-pointer"
+                        @click="item.action"
+                        :disabled="item.disabled"
+                      >
+                        <span>{{ item.title }}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+
+                <DropdownMenuSeparator/>
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger class="cursor-pointer">
+                    <Workflow :size="16" class="mr-2"/>
+                    <span>Style des connecteurs</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent class="p-1">
+                      <DropdownMenuItem
+                        v-for="opt in edgeStyleOptions" :key="opt.value"
+                        class="cursor-pointer"
+                        :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : ''"
+                        @click="edgePathStyle = opt.value"
+                      >
+                        <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0 mr-2">
+                          <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        {{ opt.label }}
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropFile menu-item="Importer un fichier" @toggle-dialog="isImportDialogOpen = !isImportDialogOpen" />
+          </Dialog>
         </div>
 
-        <!-- Mobile-only: show export/style buttons inline but smaller -->
+        <!-- Mobile-only: 3-dots menu -->
         <div class="flex md:hidden items-center space-x-0.5 flex-shrink-0">
-          <ExportImportDropdown :vueFlowRef="currentFlow.vueFlowRef" :import-items="importItems" :export-items="exportItems" />
-          <Popover v-model:open="isEdgeStylePopoverMobileOpen">
-            <PopoverTrigger as-child>
-              <Button variant="ghost" size="sm" class="rounded-md h-8 w-8 p-0">
-                <Workflow :size="14"/>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent side="bottom" align="start" class="w-52 p-2">
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 mb-2">Style des connecteurs</p>
-              <div class="space-y-0.5">
-                <button
-                  v-for="opt in edgeStyleOptions" :key="opt.value"
-                  class="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors"
-                  :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-700 hover:bg-gray-50'"
-                  @click="edgePathStyle = opt.value; isEdgeStylePopoverMobileOpen = false"
-                >
-                  <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0">
-                    <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                  </svg>
-                  {{ opt.label }}
-                </button>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Dialog v-model:open="isImportDialogOpen">
+            <DropdownMenu dir="ltr">
+              <DropdownMenuTrigger as-child>
+                <Button variant="ghost" size="sm" class="rounded-md h-8 w-8 p-0">
+                  <EllipsisVertical :size="14"/>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent class="w-56" align="start">
+                <DropdownMenuItem class="cursor-pointer" @click="navigateTo({ path: `/app/workspace/${model?.workspaceId}/generator/new`, query: { modelId: route.params.idModel } })">
+                  <FolderCode :size="16" class="mr-2"/>
+                  Générer le projet...
+                </DropdownMenuItem>
+                <DropdownMenuSeparator/>
+
+                <DialogTrigger as-child>
+                  <DropdownMenuItem class="cursor-pointer">
+                    <Upload :size="16" class="mr-2"/>
+                    Importer...
+                  </DropdownMenuItem>
+                </DialogTrigger>
+
+                <DropdownMenuSub v-if="exportItems && exportItems.length > 0">
+                  <DropdownMenuSubTrigger class="cursor-pointer">
+                    <Download :size="16" class="mr-2"/>
+                    <span>Exporter</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem
+                        v-for="(item, index) in exportItems"
+                        :key="index"
+                        class="cursor-pointer"
+                        @click="item.action"
+                        :disabled="item.disabled"
+                      >
+                        <span>{{ item.title }}</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator/>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger class="cursor-pointer">
+                    <Workflow :size="16" class="mr-2"/>
+                    <span>Style des connecteurs</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuPortal>
+                    <DropdownMenuSubContent class="p-1">
+                      <DropdownMenuItem
+                        v-for="opt in edgeStyleOptions" :key="opt.value"
+                        class="cursor-pointer"
+                        :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : ''"
+                        @click="edgePathStyle = opt.value"
+                      >
+                        <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0 mr-2">
+                          <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        {{ opt.label }}
+                      </DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuPortal>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropFile menu-item="Importer un fichier" @toggle-dialog="isImportDialogOpen = !isImportDialogOpen" />
+          </Dialog>
         </div>
 
         <PricingDialog />
@@ -239,7 +301,10 @@
                   size="sm"
                   class="rounded-md hover:bg-blue-50 hover:text-blue-600"
               >
-                <PanelTop :size="16"/>
+                  <span class="relative">
+                    <PanelTop :size="16"/>
+                    <Plus class="absolute -bottom-0.5 -right-0.5 bg-white hover:text-blue-600 text-black rounded-full" style="width: 10px; height: 10px; stroke-width: 3; padding: 1.5px;"/>
+                  </span>
               </Button>
             </TooltipTrigger>
             <TooltipContent class="bg-gray-900 text-white text-xs">
@@ -305,6 +370,26 @@
             </TooltipTrigger>
             <TooltipContent class="bg-gray-900 text-white text-xs">
               <p>Réorganiser</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                  variant="ghost"
+                  size="sm"
+                  class="rounded-md"
+                  @click="currentFlow?.fitView({ padding: 0.4 })"
+              >
+                <Maximize2 :size="16"/>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent class="bg-gray-900 text-white text-xs">
+              <p>Ajuster la vue</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -444,7 +529,7 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {ArrowLeft, Check, Code, Loader2, PanelTop, Redo2, Undo2, WandSparkles, Workflow} from "lucide-vue-next";
+import {ArrowLeft, Check, Download, EllipsisVertical, FolderCode, Loader2, PanelTop, Plus, Redo2, Undo2, Upload, WandSparkles, Workflow, Maximize2} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,} from '@/components/ui/dialog'
@@ -456,7 +541,19 @@ import {useUndoRedoStore} from '~/stores/undo-redo-store.js';
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip'
 import {computeElkOptions, getLayoutedElements, estimateNodeSize} from '@/utils/useElk.js';
 import {findFreePosition, resolveCollisions} from '@/utils/useCollisions.js';
-import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+  DropdownMenuPortal,
+} from '@/components/ui/dropdown-menu'
+import DropFile from "@/components/flow/DropFile.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
 import {z} from "zod/v4";
@@ -489,8 +586,7 @@ const edgeStyleOptions = [
   { value: 'straight', label: 'Droit', preview: 'M 0 6 L 24 6' },
 ]
 
-const isEdgeStylePopoverOpen = ref(false)
-const isEdgeStylePopoverMobileOpen = ref(false)
+const isImportDialogOpen = ref(false)
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
 
@@ -722,7 +818,7 @@ onMounted(async () => {
 
   isFlowReady.value = true
 
-  await nextTick(() => {
+  mcdStore.flowMCD.onNodesInitialized(() => {
     mcdStore.flowMCD.fitView({ padding: 0.4 })
   })
 
@@ -925,7 +1021,7 @@ const isChangingTab = ref(false)
 
 const currentFlow = ref(mcdStore.flowMCD)
 
-const { importItems, exportItems } = useExportImport(currentFlow, model)
+const { exportItems } = useExportImport(currentFlow, model)
 
 const hasNoNodes = computed(() => {
   // Use the local VueFlow instance ref directly for proper reactivity tracking
@@ -971,9 +1067,9 @@ watch(activeTab, async () => {
   }
 
   await nextTick()
-  await nextTick()
-  await nextTick()
-  currentFlow.value?.fitView?.({ padding: 0.4 })
+  currentFlow.value?.onNodesInitialized(() => {
+    currentFlow.value?.fitView?.({ padding: 0.4 })
+  })
   isChangingTab.value = false
 })
 

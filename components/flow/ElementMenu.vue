@@ -295,7 +295,7 @@
             <div class="flex items-center gap-1">
               <AlertDialog>
                 <AlertDialogTrigger as-child>
-                  <Button variant="outline" size="icon" class="h-8 w-8 text-gray-400 hover:text-red-500">
+                  <Button variant="ghost" size="icon" class="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent">
                     <Trash2 :size="16" />
                   </Button>
                 </AlertDialogTrigger>
