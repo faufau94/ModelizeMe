@@ -108,7 +108,7 @@
 
         <!-- Hidden on mobile to save space, visible on md+ -->
         <div class="hidden md:flex items-center space-x-0.5">
-          <TooltipProvider>
+          <!-- <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
                 <CreateGaleryTemplate />
@@ -117,7 +117,7 @@
                 <p>Sauvegarder comme template</p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
+          </TooltipProvider> -->
 
           <TooltipProvider>
             <Tooltip>
