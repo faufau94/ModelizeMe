@@ -580,7 +580,7 @@ export const useMCDStore = defineStore("flow-mcd", () => {
       id: getIdNode(),
       type: 'ternaryEntity',
       position: { x: cx, y: cy },
-      draggable: true,
+      draggable: false,
       selected: false,
       data: {
         name: name || '',

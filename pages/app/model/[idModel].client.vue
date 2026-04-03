@@ -455,7 +455,7 @@ import {useUndoRedoStore} from '~/stores/undo-redo-store.js';
 
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from '@/components/ui/tooltip'
 import {computeElkOptions, getLayoutedElements, estimateNodeSize} from '@/utils/useElk.js';
-import {findFreePosition} from '@/utils/useCollisions.js';
+import {findFreePosition, resolveCollisions} from '@/utils/useCollisions.js';
 import ExportImportDropdown from "@/components/flow/ExportImportDropdown.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
@@ -615,6 +615,8 @@ onMounted(async () => {
   // Strip stale selected/dragging state from DB data
   const initialNodes = (model.value?.nodes || []).map(n => {
     const { selected, dragging, ...rest } = n
+    // Ternary nodes must never be draggable (same behavior as association tables)
+    if (rest.type === 'ternaryEntity') rest.draggable = false
     return rest
   });
   const initialEdges = (model.value?.edges || []).map(e => {
@@ -989,11 +991,18 @@ const reorganize = async () => {
   const es = mcdFlowInstance.getEdges.value;
   if (!ns.length) return;
 
-  const opts = computeElkOptions(ns);
+  const opts = computeElkOptions(ns, es);
   const result = await getLayoutedElements(ns, es, opts);
   if (!result) return;
 
-  const { nodes: layoutedNodes } = result;
+  let { nodes: layoutedNodes } = result;
+
+  // Post-layout collision resolution pass: catch any remaining overlaps
+  // (association tables at edge midpoints, loopback arcs, etc.)
+  layoutedNodes = resolveCollisions(layoutedNodes, {
+    margin: 40,
+    flowInstance: mcdFlowInstance,
+  });
 
   // Force deselect on the plain objects BEFORE applying
   for (const n of layoutedNodes) { n.selected = false; n.dragging = false; }

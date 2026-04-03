@@ -44,7 +44,7 @@ const estimateNodeSize = (node) => {
  * Spacing is derived from the tallest/widest node so nothing overlaps,
  * including the association entity boxes that sit at edge midpoints.
  */
-const computeElkOptions = (nodes, direction = 'RIGHT') => {
+const computeElkOptions = (nodes, edges, direction = 'RIGHT') => {
     let maxW = 0;
     let maxH = 0;
     for (const node of (nodes || [])) {
@@ -53,20 +53,29 @@ const computeElkOptions = (nodes, direction = 'RIGHT') => {
         if (height > maxH) maxH = height;
     }
 
+    // Count loopback edges — they need extra space on the side of their parent node
+    let loopbackCount = 0;
+    for (const edge of (edges || [])) {
+        if (edge.source === edge.target) loopbackCount++;
+    }
+
+    // Extra spacing when loopbacks are present (arcs extend outward from nodes)
+    const loopbackExtra = loopbackCount > 0 ? 100 : 0;
+
     return {
         'elk.algorithm': 'layered',
         'elk.direction': direction,
-        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(250, Math.round(maxW * 0.7))),
-        'elk.spacing.nodeNode': String(Math.max(120, Math.round(maxH * 0.45))),
-        'elk.spacing.edgeEdge': '40',
-        'elk.spacing.edgeNode': '80',
-        'elk.spacing.componentComponent': '150',
+        'elk.layered.spacing.nodeNodeBetweenLayers': String(Math.max(300, Math.round(maxW * 0.85)) + loopbackExtra),
+        'elk.spacing.nodeNode': String(Math.max(150, Math.round(maxH * 0.55))),
+        'elk.spacing.edgeEdge': '50',
+        'elk.spacing.edgeNode': '100',
+        'elk.spacing.componentComponent': '200',
         'elk.edgeRouting': 'SPLINES',
         'elk.layered.nodePlacement.strategy': 'NETWORK_SIMPLEX',
         'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
         'elk.separateConnectedComponents': 'true',
         'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
-        'elk.padding': '[top=80,left=80,bottom=80,right=80]',
+        'elk.padding': '[top=100,left=100,bottom=100,right=100]',
     };
 };
 
@@ -106,7 +115,7 @@ const determineHandles = (sourceNode, targetNode) => {
  * so their association entities don't overlap.
  */
 const getLayoutedElements = (nodes, edges, options) => {
-    const opts = options || computeElkOptions(nodes);
+    const opts = options || computeElkOptions(nodes, edges);
 
     // Separate loopback edges (source === target) — ELK layered doesn't handle self-loops
     const normalEdges = [];
@@ -233,7 +242,7 @@ const getLayoutedElements = (nodes, edges, options) => {
 
                 // Spiral search to avoid overlap with already-positioned nodes
                 const ternarySize = estimateNodeSize(node);
-                const margin = 40;
+                const margin = 60;
                 const overlaps = (pos) => {
                     for (const other of allPositionedNodes) {
                         const otherSize = sizeMap.get(other.id) || estimateNodeSize(other);

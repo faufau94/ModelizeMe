@@ -1,7 +1,7 @@
 <template>
   <div
     ref="content"
-    class="bg-white z-40 relative cursor-pointer transition-all duration-200"
+    class="bg-white z-40 relative cursor-pointer transition-all duration-200 nodrag"
     :class="isSelected
       ? 'ring-2 ring-indigo-400 ring-offset-2 shadow-lg'
       : 'shadow-md hover:shadow-lg border border-gray-200'"

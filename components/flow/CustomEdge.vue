@@ -158,45 +158,48 @@ const loopbackData = computed(() => {
   let cp1x: number, cp1y: number, cp2x: number, cp2y: number;
   let bulge: number;
 
+  // Gap between arc start/end and the node edge for readability
+  const gap = 15;
+
   switch (side) {
     case 'right': {
-      bulge = Math.max(70, w * 0.45);
-      sx = pos.x + w; sy = pos.y + h * 0.3;
-      tx = pos.x + w; ty = pos.y + h * 0.7;
-      cp1x = sx + bulge; cp1y = sy - bulge * 0.25;
-      cp2x = tx + bulge; cp2y = ty + bulge * 0.25;
+      bulge = Math.max(100, w * 0.5);
+      sx = pos.x + w + gap; sy = pos.y + h * 0.25;
+      tx = pos.x + w + gap; ty = pos.y + h * 0.75;
+      cp1x = sx + bulge; cp1y = sy - bulge * 0.3;
+      cp2x = tx + bulge; cp2y = ty + bulge * 0.3;
       break;
     }
     case 'left': {
-      bulge = Math.max(70, w * 0.45);
-      sx = pos.x; sy = pos.y + h * 0.3;
-      tx = pos.x; ty = pos.y + h * 0.7;
-      cp1x = sx - bulge; cp1y = sy - bulge * 0.25;
-      cp2x = tx - bulge; cp2y = ty + bulge * 0.25;
+      bulge = Math.max(100, w * 0.5);
+      sx = pos.x - gap; sy = pos.y + h * 0.25;
+      tx = pos.x - gap; ty = pos.y + h * 0.75;
+      cp1x = sx - bulge; cp1y = sy - bulge * 0.3;
+      cp2x = tx - bulge; cp2y = ty + bulge * 0.3;
       break;
     }
     case 'top': {
-      bulge = Math.max(70, h * 0.6);
-      sx = pos.x + w * 0.3; sy = pos.y;
-      tx = pos.x + w * 0.7; ty = pos.y;
-      cp1x = sx - bulge * 0.25; cp1y = sy - bulge;
-      cp2x = tx + bulge * 0.25; cp2y = ty - bulge;
+      bulge = Math.max(100, h * 0.7);
+      sx = pos.x + w * 0.25; sy = pos.y - gap;
+      tx = pos.x + w * 0.75; ty = pos.y - gap;
+      cp1x = sx - bulge * 0.3; cp1y = sy - bulge;
+      cp2x = tx + bulge * 0.3; cp2y = ty - bulge;
       break;
     }
     case 'bottom': {
-      bulge = Math.max(70, h * 0.6);
-      sx = pos.x + w * 0.3; sy = pos.y + h;
-      tx = pos.x + w * 0.7; ty = pos.y + h;
-      cp1x = sx - bulge * 0.25; cp1y = sy + bulge;
-      cp2x = tx + bulge * 0.25; cp2y = ty + bulge;
+      bulge = Math.max(100, h * 0.7);
+      sx = pos.x + w * 0.25; sy = pos.y + h + gap;
+      tx = pos.x + w * 0.75; ty = pos.y + h + gap;
+      cp1x = sx - bulge * 0.3; cp1y = sy + bulge;
+      cp2x = tx + bulge * 0.3; cp2y = ty + bulge;
       break;
     }
     default: {
-      bulge = Math.max(70, w * 0.45);
-      sx = pos.x + w; sy = pos.y + h * 0.3;
-      tx = pos.x + w; ty = pos.y + h * 0.7;
-      cp1x = sx + bulge; cp1y = sy - bulge * 0.25;
-      cp2x = tx + bulge; cp2y = ty + bulge * 0.25;
+      bulge = Math.max(100, w * 0.5);
+      sx = pos.x + w + gap; sy = pos.y + h * 0.25;
+      tx = pos.x + w + gap; ty = pos.y + h * 0.75;
+      cp1x = sx + bulge; cp1y = sy - bulge * 0.3;
+      cp2x = tx + bulge; cp2y = ty + bulge * 0.3;
     }
   }
 
@@ -268,7 +271,7 @@ const onclick = () => {
 const sourceCardinality = computed<string | null>(() => props.data?.sourceCardinality ?? null);
 const targetCardinality = computed<string | null>(() => props.data?.targetCardinality ?? null);
 
-const offset = 32;
+const offset = 40;
 
 const sourceLabelX = computed(() => {
   if (isLoopback.value && loopbackData.value) {
@@ -325,14 +328,15 @@ const targetLabelY = computed(() => {
 
 <style scoped>
 .cardinality-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #64748b;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  padding: 2px 6px;
-  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  padding: 2px 8px;
+  border-radius: 5px;
   line-height: 1.4;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
 
