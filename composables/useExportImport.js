@@ -1,11 +1,11 @@
 import { toPng, toJpeg, toSvg } from 'html-to-image'
-import { getRectOfNodes, getTransformForBounds } from '@vue-flow/core'
 import { toast } from 'vue-sonner'
 import { useMLDStore } from '~/stores/mld-store.js'
 
-// Output resolution for image exports
-const IMAGE_WIDTH = 1920
-const IMAGE_HEIGHT = 1080
+// Padding around diagram in the output image (in CSS px)
+const IMAGE_PADDING = 40
+// Pixel ratio — multiplies the actual file resolution for sharpness
+const PIXEL_RATIO = 2
 
 /**
  * Composable centralizing all export/import logic for the model editor.
@@ -41,34 +41,68 @@ export function useExportImport(currentFlow, model) {
     const flow = currentFlow.value
     if (!flow) return
 
-    // getNodes can be a computed ref (.value) or a plain reactive array depending on context
     const nodes = Array.isArray(flow.getNodes) ? flow.getNodes : flow.getNodes?.value ?? []
     if (!nodes.length) {
       toast.warning('Aucun nœud à exporter.')
       return
     }
 
-    // Target the inner viewport element, NOT the outer container
     const viewportEl = flow.vueFlowRef?.querySelector('.vue-flow__viewport')
     if (!viewportEl) {
       toast.error('Impossible de trouver le viewport.')
       return
     }
 
-    // Calculate a transform that fits all nodes into the output image
-    const bounds = getRectOfNodes(nodes)
-    const { x, y, zoom } = getTransformForBounds(bounds, IMAGE_WIDTH, IMAGE_HEIGHT, 0.5, 2, 0.1)
+    // Measure the real bounding box of all content from the DOM
+    const { viewport } = flow
+    const vp = viewport.value || { x: 0, y: 0, zoom: 1 }
+    const containerRect = flow.vueFlowRef.getBoundingClientRect()
+    const selectors = '.vue-flow__node, .vue-flow__edge path, .vue-flow__edgelabel-renderer > div'
+    const elements = viewportEl.querySelectorAll(selectors)
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    elements.forEach((el) => {
+      const r = el.getBoundingClientRect()
+      if (r.width === 0 && r.height === 0) return
+      // Screen coords → flow coords: undo viewport translate + zoom
+      const x1 = (r.left - containerRect.left - vp.x) / vp.zoom
+      const y1 = (r.top - containerRect.top - vp.y) / vp.zoom
+      const x2 = x1 + r.width / vp.zoom
+      const y2 = y1 + r.height / vp.zoom
+      if (x1 < minX) minX = x1
+      if (y1 < minY) minY = y1
+      if (x2 > maxX) maxX = x2
+      if (y2 > maxY) maxY = y2
+    })
+
+    const boundsW = maxX - minX
+    const boundsH = maxY - minY
+
+    // Output image: fixed width, height follows diagram aspect ratio
+    const imageWidth = 1920
+    const imageHeight = Math.ceil(imageWidth * (boundsH / boundsW))
+
+    // Zoom to fit the diagram inside the image with padding
+    const zoom = Math.min(
+      (imageWidth - IMAGE_PADDING * 2) / boundsW,
+      (imageHeight - IMAGE_PADDING * 2) / boundsH,
+    )
+
+    // Center the diagram in the image
+    const tx = (imageWidth - boundsW * zoom) / 2 - minX * zoom
+    const ty = (imageHeight - boundsH * zoom) / 2 - minY * zoom
 
     const filter = (node) => !node.classList?.contains('vue-flow__panel')
 
     const baseOptions = {
-      width: IMAGE_WIDTH,
-      height: IMAGE_HEIGHT,
+      width: imageWidth,
+      height: imageHeight,
+      pixelRatio: PIXEL_RATIO,
       filter,
       style: {
-        width: `${IMAGE_WIDTH}px`,
-        height: `${IMAGE_HEIGHT}px`,
-        transform: `translate(${x}px, ${y}px) scale(${zoom})`,
+        width: `${imageWidth}px`,
+        height: `${imageHeight}px`,
+        transform: `translate(${tx}px, ${ty}px) scale(${zoom})`,
       },
     }
 
@@ -79,7 +113,7 @@ export function useExportImport(currentFlow, model) {
       if (type === 'jpeg') {
         dataUrl = await toJpeg(viewportEl, { ...baseOptions, backgroundColor: '#ffffff', quality: 0.95 })
       } else if (type === 'svg') {
-        dataUrl = await toSvg(viewportEl, baseOptions)
+        dataUrl = await toSvg(viewportEl, { ...baseOptions, pixelRatio: 1 })
       } else {
         dataUrl = await toPng(viewportEl, { ...baseOptions, backgroundColor: '#ffffff' })
       }
@@ -152,8 +186,8 @@ export function useExportImport(currentFlow, model) {
 
   const exportItems = [
     { title: 'Exporter en PNG', action: () => exportAsImage('png') },
-    { title: 'Exporter en SVG', action: () => exportAsImage('svg') },
     { title: 'Exporter en JPEG', action: () => exportAsImage('jpeg') },
+    { title: 'Exporter en SVG', action: () => exportAsImage('svg') },
     { title: 'Exporter en JSON', action: () => exportToJSON() },
     { title: 'Exporter en SQL (MySQL)', action: () => exportToSQL('mysql') },
     { title: 'Exporter en SQL (PostgreSQL)', action: () => exportToSQL('pgsql') },

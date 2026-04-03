@@ -7,6 +7,7 @@
       :style="{
         strokeWidth: 14,
         stroke: 'transparent',
+        fill: 'none',
         cursor: 'pointer',
       }"
     />
@@ -242,6 +243,7 @@ const edgeColor = computed(() => {
 const edgeStyle = computed(() => ({
   strokeWidth: props.selected ? 2.5 : 1.8,
   stroke: edgeColor.value,
+  fill: 'none',
   transition: 'stroke 0.15s ease, stroke-width 0.15s ease',
 }));
 
