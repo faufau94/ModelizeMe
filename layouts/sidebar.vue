@@ -289,7 +289,7 @@
                     Membres
                   </Button>
                   <Button v-if="getIsOwner" @click="closeMobileSheet(); goToSettingsPage()" :variant="isCurrentPage('settings') ? 'secondary' : 'ghost'" class="w-full justify-start h-9 text-sm">
-                    <Settings2 class="mr-2 h-4 w-4" />
+                    <Settings class="mr-2 h-4 w-4" />
                     Paramètres
                   </Button>
                 </div>
@@ -344,24 +344,29 @@
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent class="w-56" align="end">
-              <DropdownMenuLabel class="font-normal">
-                <div class="flex flex-col space-y-1">
-                  <p class="text-sm font-medium leading-none">{{ data?.user?.name }}</p>
-                  <p class="text-xs leading-none text-muted-foreground">{{ data?.user?.email }}</p>
-                </div>
+              <DropdownMenuLabel class="font-normal p-0">
+                <button
+                  @click="navigateTo('/app/profile')"
+                  class="flex items-start justify-between w-full px-2 py-1.5 rounded-sm hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <div class="flex flex-col space-y-1">
+                    <p class="text-sm font-medium leading-none">{{ data?.user?.name }}</p>
+                    <p class="text-xs leading-none text-muted-foreground">{{ data?.user?.email }}</p>
+                  </div>
+                  <Settings class="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem class="cursor-pointer">
-                  <UserIcon class="mr-2 h-4 w-4" />
-                  <span>Mon compte</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem class="cursor-pointer">
-                  <CreditCardIcon class="mr-2 h-4 w-4" />
-                  <span>Facturation</span>
+                <DropdownMenuItem class="cursor-pointer" @click="navigateTo('/app/feedback')">
+                  <MessageCircleMore class="mr-2 h-4 w-4" />
+                  <span>Feedback</span>
                 </DropdownMenuItem>
                 <div class="flex items-center justify-between px-2 py-1.5 text-sm">
-                  <span>Thème</span>
+                  <div class="flex items-center gap-2">
+                    <SunMoon class="h-4 w-4" />
+                    <span>Thème</span>
+                  </div>
                   <div class="flex items-center gap-0.5 rounded-md border border-border p-0.5">
                     <button
                       v-for="option in themeOptions"
@@ -400,6 +405,10 @@
                 <LogOutIcon class="mr-2 h-4 w-4" />
                 <span>Se déconnecter</span>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <div class="px-1 py-1">
+                <PricingDialog />
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -430,6 +439,7 @@ import AddWorkspaceDialog from '@/components/workspace/AddWorkspaceDialog.vue'
 import CreateTeamDialog from '@/components/teams/CreateTeamDialog.vue'
 import InviteMembersDialog from '@/components/workspace/InviteMembersDialog.vue'
 import ManageTeamDialog from '@/components/teams/ManageTeamDialog.vue'
+import PricingDialog from '@/components/PricingDialog.vue'
 import { teamColorClass } from "~/utils";
 import {
   Item,
@@ -442,13 +452,14 @@ import {
 import {
   Check,
   ChevronsUpDown,
-  CreditCardIcon,
+  SunMoon,
   FolderCode,
   Languages,
   LayoutDashboard,
   Loader2,
   LogOutIcon,
   MenuIcon,
+  MessageCircleMore,
   Monitor,
   Moon,
   MoreHorizontalIcon,
@@ -458,7 +469,7 @@ import {
   PanelTopIcon,
   PencilIcon,
   Plus,
-  Settings2,
+  Settings,
   SettingsIcon,
   Sun,
   Trash2,
@@ -543,7 +554,7 @@ const navItems = computed(() => [
   { page: 'models', label: 'Modèles', icon: PanelTopIcon, action: goToModelsPage, isActive: isCurrentPage('models'), ownerOnly: false },
   { page: 'generator', label: 'Projets', icon: FolderCode, action: goToGeneratorPage, isActive: isGeneratorPage.value, ownerOnly: false },
   { page: 'members', label: 'Membres', icon: UsersRound, action: goToMembersPage, isActive: isCurrentPage('members'), ownerOnly: false },
-  { page: 'settings', label: 'Paramètres', icon: Settings2, action: goToSettingsPage, isActive: isCurrentPage('settings'), ownerOnly: true },
+  { page: 'settings', label: 'Paramètres', icon: Settings, action: goToSettingsPage, isActive: isCurrentPage('settings'), ownerOnly: true },
 ])
 
 const closeMobileSheet = () => {

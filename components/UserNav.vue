@@ -20,7 +20,7 @@
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem>
+        <DropdownMenuItem class="cursor-pointer" @click="navigateTo('/app/profile')">
           Mon compte
         </DropdownMenuItem>
         <DropdownMenuItem>
