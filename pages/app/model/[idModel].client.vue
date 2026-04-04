@@ -299,11 +299,11 @@
                   @dragstart="onDragStart($event, 'input')"
                   variant="ghost"
                   size="sm"
-                  class="rounded-md hover:bg-blue-50 hover:text-blue-600"
+                  class="group rounded-md hover:bg-accent hover:text-blue-600"
               >
                   <span class="relative">
                     <PanelTop :size="16"/>
-                    <Plus class="absolute -bottom-0.5 -right-0.5 bg-background hover:text-blue-600 text-foreground rounded-full" style="width: 10px; height: 10px; stroke-width: 3; padding: 1.5px;"/>
+                    <Plus class="absolute -bottom-0.5 -right-0.5 bg-background text-foreground group-hover:text-blue-600 rounded-full" style="width: 10px; height: 10px; stroke-width: 3; padding: 1.5px;"/>
                   </span>
               </Button>
             </TooltipTrigger>
