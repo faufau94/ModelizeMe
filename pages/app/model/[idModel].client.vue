@@ -43,11 +43,11 @@
       </Panel>
 
       <!-- Unified top toolbar -->
-      <Panel position="top-left" class="bg-white/95 backdrop-blur-sm z-40 px-2 md:px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-0.5 md:space-x-1 border border-gray-100 max-w-[calc(100vw-1rem)] md:max-w-none overflow-x-auto">
+      <Panel position="top-left" class="bg-white/95 dark:bg-card/95 backdrop-blur-sm z-40 px-2 md:px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-0.5 md:space-x-1 border border-gray-100 dark:border-border max-w-[calc(100vw-1rem)] md:max-w-none overflow-x-auto">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger>
-              <Button @click="goBack" variant="ghost" size="sm" class="rounded-md hover:bg-gray-100 flex-shrink-0">
+              <Button @click="goBack" variant="ghost" size="sm" class="rounded-md hover:bg-accent flex-shrink-0">
                 <ArrowLeft :size="18"/>
               </Button>
             </TooltipTrigger>
@@ -57,14 +57,14 @@
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200 flex-shrink-0"/>
+        <Separator orientation="vertical" class="h-5 bg-border flex-shrink-0"/>
 
         <Dialog v-model:open="showDialogRenameModel">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger as-child>
                 <DialogTrigger as-child>
-                  <Button @click="setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-gray-700 hover:bg-gray-100 min-w-[60px] md:min-w-[100px] max-w-[80px] md:max-w-[120px] overflow-hidden flex-shrink-0">
+                  <Button @click="setValues({name: model.name})" variant="ghost" size="sm" class="rounded-md font-medium text-foreground hover:bg-accent min-w-[60px] md:min-w-[100px] max-w-[80px] md:max-w-[120px] overflow-hidden flex-shrink-0">
                     <span class="truncate block text-xs md:text-sm">{{ model?.name }}</span>
                   </Button>
                 </DialogTrigger>
@@ -104,7 +104,7 @@
           </DialogContent>
         </Dialog>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200 flex-shrink-0"/>
+        <Separator orientation="vertical" class="h-5 bg-border flex-shrink-0"/>
 
         <!-- Hidden on mobile to save space, visible on md+ -->
         <div class="hidden md:flex items-center space-x-0.5">
@@ -185,7 +185,7 @@
                       <DropdownMenuItem
                         v-for="opt in edgeStyleOptions" :key="opt.value"
                         class="cursor-pointer"
-                        :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : ''"
+                        :class="edgePathStyle === opt.value ? 'bg-primary/10 text-primary font-medium' : ''"
                         @click="edgePathStyle = opt.value"
                       >
                         <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0 mr-2">
@@ -255,7 +255,7 @@
                       <DropdownMenuItem
                         v-for="opt in edgeStyleOptions" :key="opt.value"
                         class="cursor-pointer"
-                        :class="edgePathStyle === opt.value ? 'bg-indigo-50 text-indigo-700 font-medium' : ''"
+                        :class="edgePathStyle === opt.value ? 'bg-primary/10 text-primary font-medium' : ''"
                         @click="edgePathStyle = opt.value"
                       >
                         <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0 mr-2">
@@ -277,7 +277,7 @@
 
       <!-- Center toolbar: MCD actions + save status -->
       <Panel v-if="activeTab === 'default'" position="top-center"
-             class="bg-white/95 backdrop-blur-sm z-40 px-2 md:px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-0.5 md:space-x-1 border border-gray-100 max-w-[calc(100vw-1rem)] md:max-w-none">
+             class="bg-white/95 dark:bg-card/95 backdrop-blur-sm z-40 px-2 md:px-3 py-1.5 shadow-md flex items-center rounded-lg space-x-0.5 md:space-x-1 border border-gray-100 dark:border-border max-w-[calc(100vw-1rem)] md:max-w-none">
 
         <div v-if="addNewNode" class="flex items-center gap-2 px-2 text-amber-600 transition-all duration-200">
           <Loader2 :size="16" class="animate-spin"/>
@@ -288,7 +288,7 @@
           <span class="text-xs font-medium">Sauvegardé</span>
         </div>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
+        <Separator orientation="vertical" class="h-5 bg-border"/>
 
         <TooltipProvider>
           <Tooltip>
@@ -303,7 +303,7 @@
               >
                   <span class="relative">
                     <PanelTop :size="16"/>
-                    <Plus class="absolute -bottom-0.5 -right-0.5 bg-white hover:text-blue-600 text-black rounded-full" style="width: 10px; height: 10px; stroke-width: 3; padding: 1.5px;"/>
+                    <Plus class="absolute -bottom-0.5 -right-0.5 bg-background hover:text-blue-600 text-foreground rounded-full" style="width: 10px; height: 10px; stroke-width: 3; padding: 1.5px;"/>
                   </span>
               </Button>
             </TooltipTrigger>
@@ -313,7 +313,7 @@
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
+        <Separator orientation="vertical" class="h-5 bg-border"/>
 
         <TooltipProvider>
           <Tooltip>
@@ -353,7 +353,7 @@
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
+        <Separator orientation="vertical" class="h-5 bg-border"/>
 
         <TooltipProvider>
           <Tooltip>
@@ -374,7 +374,7 @@
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
+        <Separator orientation="vertical" class="h-5 bg-border"/>
         
         <TooltipProvider>
           <Tooltip>
@@ -394,7 +394,7 @@
           </Tooltip>
         </TooltipProvider>
 
-        <Separator orientation="vertical" class="h-5 bg-gray-200"/>
+        <Separator orientation="vertical" class="h-5 bg-border"/>
 
         <div class="pl-1 hidden sm:block">
           <ActiveUsersAvatars :activeUsers="activeUsers" :maxVisible="3" />
@@ -403,7 +403,7 @@
       </Panel>
 
       <!-- Tab switcher: MCD / MLD / MPD -->
-      <Panel position="top-right" class="bg-white/95 backdrop-blur-sm mr-1 md:mr-10 z-40 shadow-md flex items-center rounded-lg border border-gray-100">
+      <Panel position="top-right" class="bg-white/95 dark:bg-card/95 backdrop-blur-sm mr-1 md:mr-10 z-40 shadow-md flex items-center rounded-lg border border-gray-100 dark:border-border">
         <Tabs default-value="default" v-model="activeTab" class="w-full">
           <TabsList class="grid grid-cols-4 text-xs md:text-sm">
 

@@ -22,6 +22,7 @@ export default defineNuxtConfig({
     "nuxt-lucide-icons",
     'dayjs-nuxt',
     '@vee-validate/nuxt',
+    '@nuxtjs/color-mode',
     //'@nuxtjs/i18n'
   ],
 
@@ -83,7 +84,11 @@ export default defineNuxtConfig({
     mailerPassword: process.env.MAILER_PASSWORD,
     mailerFrom: process.env.MAILER_FROM,
   },
-
+  colorMode: {
+    classSuffix: '',
+    preference: 'system',
+    fallback: 'light',
+  },
   shadcn: {
     prefix: '',
     componentDir: './components/ui'

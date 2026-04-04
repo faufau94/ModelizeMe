@@ -26,6 +26,17 @@
         <DropdownMenuItem>
           Facturation
         </DropdownMenuItem>
+        <DropdownMenuItem class="flex items-center justify-between" @click.prevent>
+          <div class="flex items-center gap-2">
+            <LucideSun v-if="isDark" class="h-4 w-4" />
+            <LucideMoon v-else class="h-4 w-4" />
+            <span>Mode sombre</span>
+          </div>
+          <Switch
+            :checked="isDark"
+            @update:checked="colorMode.preference = isDark ? 'light' : 'dark'"
+          />
+        </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuItem>
@@ -47,6 +58,7 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,5 +72,9 @@ import {
 
 import { signOut, useSession } from '~/lib/auth-client';
 const { data } = await useSession(useFetch);
+
+const colorMode = useColorMode();
+console.log('Current color mode:', colorMode.value);
+const isDark = computed(() => colorMode.value === 'dark');
 
 </script>

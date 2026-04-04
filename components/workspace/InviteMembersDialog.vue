@@ -4,7 +4,7 @@
       <DialogTrigger as-child>
         <Button
           size="lg"
-          class="hidden md:flex items-center gap-2 transition-colors px-4 bg-white"
+          class="hidden md:flex items-center gap-2 transition-colors px-4 bg-white dark:bg-card"
           variant="outline"
           aria-live="polite"
         >

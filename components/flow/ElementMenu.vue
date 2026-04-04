@@ -9,7 +9,7 @@
     <div v-if="isSubMenuVisible"
          key="submenu"
 
-         class="absolute overflow-hidden z-40 w-full sm:w-[400px] md:w-[570px] px-3 md:px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
+         class="absolute overflow-hidden z-40 w-full sm:w-[400px] md:w-[570px] px-3 md:px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white dark:bg-card"
 
     >
 
@@ -119,16 +119,16 @@
                     </div>
 
                     <div
-                        class="w-12 h-9 flex justify-center items-center text-gray-300 hover:bg-gray-50 hover:rounded cursor-pointer">
+                        class="w-12 h-9 flex justify-center items-center text-muted-foreground/40 hover:bg-accent/50 hover:rounded cursor-pointer">
                       <GripVertical :size="20" class=" group-hover:visible"/>
                     </div>
 
                     <div class="flex justify-center items-center" :class="[element?.propertyName === 'id' ?
                                     'text-red-500 pointer-events-none ' :
-                                    'text-gray-300 cursor-pointer pointer-events-auto']"
+                                    'text-muted-foreground/40 cursor-pointer pointer-events-auto']"
                          @click="element.isPrimaryKey = !element.isPrimaryKey">
                       <KeyRound :size="20"
-                                :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']"/>
+                                :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-muted-foreground/40']"/>
                     </div>
 
                     <div class="w-full p-1">
@@ -228,11 +228,11 @@
           </div>
 
           <!-- Advanced actions: loopback edge + ternary relation -->
-          <div class="mt-4 pt-4 border-t border-gray-100 w-full">
+          <div class="mt-4 pt-4 border-t border-border w-full">
             <Button
               variant="ghost"
               size="sm"
-              class="px-0 h-auto text-xs text-gray-400 hover:text-gray-600 hover:bg-transparent mb-2 gap-1.5"
+              class="px-0 h-auto text-xs text-muted-foreground hover:text-foreground hover:bg-transparent mb-2 gap-1.5"
               @click="showAdvanced = !showAdvanced"
             >
               <ChevronRight
@@ -245,7 +245,7 @@
                 <Button
                   variant="ghost"
                   size="sm"
-                  class="w-full justify-start text-gray-500 border border-dashed border-gray-200 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50"
+                  class="w-full justify-start text-muted-foreground border border-dashed border-border hover:border-border hover:text-foreground hover:bg-accent/50"
                   :class="{ 'opacity-50 cursor-not-allowed': !canAddLoopback }"
                   :disabled="!canAddLoopback"
                   @click="createLoopbackEdge"
@@ -256,15 +256,15 @@
                     <polyline points="11,12 14,14 14,16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                   <span class="flex-1 text-left">Auto-relation (réflexive)</span>
-                  <span v-if="loopbackCount > 0" class="ml-auto inline-flex items-center justify-center rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold min-w-[18px] h-[18px] px-1">
+                  <span v-if="loopbackCount > 0" class="ml-auto inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-semibold min-w-[18px] h-[18px] px-1">
                     {{ loopbackCount }}
                   </span>
-                  <span v-if="!canAddLoopback" class="ml-1 text-[10px] text-gray-400">(max)</span>
+                  <span v-if="!canAddLoopback" class="ml-1 text-[10px] text-muted-foreground">(max)</span>
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  class="w-full justify-start text-gray-500 border border-dashed border-gray-200 hover:border-gray-300 hover:text-gray-700 hover:bg-gray-50"
+                  class="w-full justify-start text-muted-foreground border border-dashed border-border hover:border-border hover:text-foreground hover:bg-accent/50"
                   @click="startTernaryMode"
                 >
                   <svg class="w-4 h-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
@@ -276,7 +276,7 @@
                     <line x1="5" y1="13" x2="15" y2="13"/>
                   </svg>
                   <span class="flex-1 text-left">Relation ternaire</span>
-                  <span v-if="ternaryCount > 0" class="ml-auto inline-flex items-center justify-center rounded-full bg-gray-100 text-gray-600 text-[10px] font-semibold min-w-[18px] h-[18px] px-1">
+                  <span v-if="ternaryCount > 0" class="ml-auto inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-semibold min-w-[18px] h-[18px] px-1">
                     {{ ternaryCount }}
                   </span>
                 </Button>
@@ -453,16 +453,16 @@
                       </div>
 
                       <div
-                          class="w-12 h-9 flex justify-center items-center text-gray-300 hover:bg-gray-50 hover:rounded cursor-pointer">
+                          class="w-12 h-9 flex justify-center items-center text-muted-foreground/40 hover:bg-accent/50 hover:rounded cursor-pointer">
                         <GripVertical :size="20" class=" group-hover:visible"/>
                       </div>
 
                       <div class="flex justify-center items-center" :class="[element?.propertyName === 'id' ?
                                     'text-red-500 pointer-events-none ' :
-                                    'text-gray-300 cursor-pointer pointer-events-auto']"
+                                    'text-muted-foreground/40 cursor-pointer pointer-events-auto']"
                            @click="element.isPrimaryKey = !element.isPrimaryKey">
                         <KeyRound :size="20"
-                                  :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']"/>
+                                  :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-muted-foreground/40']"/>
                       </div>
 
                       <div class="w-full p-1">
@@ -637,11 +637,11 @@
           </div>
 
           <!-- Advanced actions: CIF for ternary edges -->
-          <div v-if="isTernaryEdgeSelected" class="mt-4 pt-4 border-t border-gray-100 w-full">
+          <div v-if="isTernaryEdgeSelected" class="mt-4 pt-4 border-t border-border w-full">
             <Button
               variant="ghost"
               size="sm"
-              class="px-0 h-auto text-xs text-gray-400 hover:text-gray-600 hover:bg-transparent mb-2 gap-1.5"
+              class="px-0 h-auto text-xs text-muted-foreground hover:text-foreground hover:bg-transparent mb-2 gap-1.5"
               @click="showAdvancedEdge = !showAdvancedEdge"
             >
               <ChevronRight
@@ -651,7 +651,7 @@
             </Button>
             <Transition name="add-field">
               <div v-if="showAdvancedEdge" class="flex flex-col gap-2">
-                <div class="items-top flex gap-x-2 px-2 py-2 rounded border border-dashed border-gray-200">
+                <div class="items-top flex gap-x-2 px-2 py-2 rounded border border-dashed border-border">
                   <Checkbox id="field-cif" v-model:checked="edgeCIF"/>
                   <div class="grid gap-1.5 leading-none">
                     <label

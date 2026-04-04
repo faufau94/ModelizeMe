@@ -1,0 +1,246 @@
+{
+  "nodes": [
+    {
+      "id": "node_eleve",
+      "type": "customEntity",
+      "position": { "x": 100, "y": 100 },
+      "data": {
+        "name": "Eleve",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p1", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p2", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p3", "propertyName": "prenom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p4", "propertyName": "date_naissance", "typeName": "Date", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p5", "propertyName": "email", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p6", "propertyName": "numero_etudiant", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_professeur",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 100 },
+      "data": {
+        "name": "Professeur",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p10", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p11", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p12", "propertyName": "prenom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p13", "propertyName": "specialite", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p14", "propertyName": "email", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_matiere",
+      "type": "customEntity",
+      "position": { "x": 400, "y": 400 },
+      "data": {
+        "name": "Matiere",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p20", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p21", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p22", "propertyName": "coefficient", "typeName": "Decimal", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p23", "propertyName": "volume_horaire", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_classe",
+      "type": "customEntity",
+      "position": { "x": 100, "y": 400 },
+      "data": {
+        "name": "Classe",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p30", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p31", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p32", "propertyName": "niveau", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p33", "propertyName": "annee_scolaire", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_salle",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 400 },
+      "data": {
+        "name": "Salle",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p40", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p41", "propertyName": "numero", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p42", "propertyName": "capacite", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p43", "propertyName": "batiment", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_enseigner",
+      "type": "ternaryEntity",
+      "position": { "x": 400, "y": 100 },
+      "data": {
+        "name": "Enseigner",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p50", "propertyName": "jour", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p51", "propertyName": "heure_debut", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p52", "propertyName": "heure_fin", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_note",
+      "type": "customEntity",
+      "position": { "x": 1100, "y": 100 },
+      "data": {
+        "name": "Note",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p60", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p61", "propertyName": "valeur", "typeName": "Decimal", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p62", "propertyName": "commentaire", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p63", "propertyName": "date_evaluation", "typeName": "Date", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_appartenir",
+      "type": "customEdge",
+      "source": "node_eleve",
+      "target": "node_classe",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "appartenir",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "1,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_enseigner_prof",
+      "type": "customEdge",
+      "source": "node_professeur",
+      "target": "node_enseigner",
+      "sourceHandle": "s1",
+      "targetHandle": "s4",
+      "data": {
+        "name": "dispenser",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_enseigner_matiere",
+      "type": "customEdge",
+      "source": "node_matiere",
+      "target": "node_enseigner",
+      "sourceHandle": "s2",
+      "targetHandle": "s3",
+      "data": {
+        "name": "concerner",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_enseigner_salle",
+      "type": "customEdge",
+      "source": "node_salle",
+      "target": "node_enseigner",
+      "sourceHandle": "s2",
+      "targetHandle": "s3",
+      "data": {
+        "name": "se_derouler",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_noter",
+      "type": "customEdge",
+      "source": "node_eleve",
+      "target": "node_note",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "recevoir",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_note_matiere",
+      "type": "customEdge",
+      "source": "node_matiere",
+      "target": "node_note",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "evaluer",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_note_prof",
+      "type": "customEdge",
+      "source": "node_professeur",
+      "target": "node_note",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "attribuer",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    }
+  ]
+}

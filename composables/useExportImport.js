@@ -134,7 +134,7 @@ export function useExportImport(currentFlow, model) {
         method: 'GET',
         query: { id: route.params.idModel },
       })
-      const { nodesMLD, edgesMLD } = mldStore.generateMLD(mcdModel.nodes, mcdModel.edges)
+      const { nodesMLD, edgesMLD } = await mldStore.generateMLD(mcdModel.nodes, mcdModel.edges)
 
       const safeName = getSafeFileName(mcdModel?.name)
       const title = `${safeName}_${Date.now()}_${crypto.randomUUID()}`

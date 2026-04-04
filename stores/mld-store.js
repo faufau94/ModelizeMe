@@ -58,6 +58,9 @@ export const useMLDStore = defineStore("flow-mld", () => {
       const targetNode = nodesMap.get(edge.target);
       if (!sourceNode || !targetNode) continue;
 
+      // Skip edges with missing cardinalities (orphan / incomplete edges)
+      if (!srcMax && !tgtMax && !ternaryNodeIds.has(edge.source) && !ternaryNodeIds.has(edge.target)) continue;
+
       const isReflexive = edge.source === edge.target;
       const edgeName = edge.data?.name || '';
       const isTernaryTarget = ternaryNodeIds.has(edge.target);
@@ -140,7 +143,8 @@ export const useMLDStore = defineStore("flow-mld", () => {
         // 1:N, N:1, 1:1 → add FK
         // Convention: srcMax = max # of sources per target, tgtMax = max # of targets per source
         // FK goes on the "many" side (the entity that has N of the other)
-        const makeFk = (refTable, customName = null) => ({
+        // Derive nullability from the min cardinality of the FK holder side
+        const makeFk = (refTable, customName = null, nullable = false) => ({
           id: uuidv4(),
           propertyName: customName || `${refTable.data.name.toLowerCase()}_id`,
           typeName: "Big Integer",
@@ -148,7 +152,7 @@ export const useMLDStore = defineStore("flow-mld", () => {
           autoIncrement: false,
           isForeignKey: true,
           foreignTable: refTable.data.name,
-          isNullable: false,
+          isNullable: nullable,
         });
 
         // Reflexive 1:N fix: use relation name for FK to avoid name collision
@@ -156,9 +160,13 @@ export const useMLDStore = defineStore("flow-mld", () => {
           ? `${edgeName.toLowerCase()}_id`
           : null;
 
-        if (srcMax === "1" && tgtMax === "N") insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName));
-        else if (srcMax === "N" && tgtMax === "1") insertForeignKey(sourceNode, makeFk(targetNode, reflexiveFkName));
-        else if (srcMax === "1" && tgtMax === "1") insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName));
+        // Min cardinality: "0,N" → min=0 → nullable, "1,N" → min=1 → not null
+        const srcMin = (edge.data?.sourceCardinality || "").split(",")[0]?.trim();
+        const tgtMin = (edge.data?.targetCardinality || "").split(",")[0]?.trim();
+
+        if (srcMax === "1" && tgtMax === "N") insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName, srcMin === "0"));
+        else if (srcMax === "N" && tgtMax === "1") insertForeignKey(sourceNode, makeFk(targetNode, reflexiveFkName, tgtMin === "0"));
+        else if (srcMax === "1" && tgtMax === "1") insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName, srcMin === "0"));
 
         // Strip cardinalities - FK replaces them in MLD
         mldEdges.push({

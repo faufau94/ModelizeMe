@@ -20,7 +20,7 @@
         <div v-else>
           <div class="flex items-center justify-between mb-5">
             <div class="relative w-full max-w-sm ">
-              <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle..." class="bg-white pl-10"/>
+              <Input v-model="searchTerm" id="search" type="text" placeholder="Rechercher un modèle..." class="bg-white dark:bg-card pl-10"/>
               <span class="absolute start-0 inset-y-0 flex items-center justify-center px-3">
                 <SearchIcon class="size-4 text-muted-foreground"/>
               </span>

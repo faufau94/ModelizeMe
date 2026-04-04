@@ -1,0 +1,210 @@
+{
+  "nodes": [
+    {
+      "id": "node_client",
+      "type": "customEntity",
+      "position": { "x": 100, "y": 300 },
+      "data": {
+        "name": "Client",
+        "hasTimestamps": true,
+        "usesSoftDeletes": true,
+        "properties": [
+          { "id": "p1", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p2", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p3", "propertyName": "prenom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p4", "propertyName": "email", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p5", "propertyName": "telephone", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p6", "propertyName": "adresse", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p7", "propertyName": "ville", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p8", "propertyName": "code_postal", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_categorie",
+      "type": "customEntity",
+      "position": { "x": 1300, "y": 0 },
+      "data": {
+        "name": "Categorie",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p10", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p11", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p12", "propertyName": "description", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p13", "propertyName": "image_url", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_produit",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 0 },
+      "data": {
+        "name": "Produit",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p20", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p21", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p22", "propertyName": "description", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p23", "propertyName": "prix", "typeName": "Decimal", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p24", "propertyName": "stock", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p25", "propertyName": "image_url", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p26", "propertyName": "actif", "typeName": "Boolean", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_commande",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 400 },
+      "data": {
+        "name": "Commande",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p30", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p31", "propertyName": "date_commande", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p32", "propertyName": "statut", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p33", "propertyName": "total", "typeName": "Decimal", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p34", "propertyName": "adresse_livraison", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_paiement",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 700 },
+      "data": {
+        "name": "Paiement",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p40", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p41", "propertyName": "montant", "typeName": "Decimal", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p42", "propertyName": "methode", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p43", "propertyName": "statut", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p44", "propertyName": "date_paiement", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_sous_categorie",
+      "type": "customEdge",
+      "source": "node_categorie",
+      "target": "node_categorie",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "sous-categorie",
+        "sourceCardinality": "0,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": "right"
+      }
+    },
+    {
+      "id": "edge_classer",
+      "type": "customEdge",
+      "source": "node_categorie",
+      "target": "node_produit",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "classer",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_passer",
+      "type": "customEdge",
+      "source": "node_client",
+      "target": "node_commande",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "passer",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_regler",
+      "type": "customEdge",
+      "source": "node_commande",
+      "target": "node_paiement",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "regler",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_contenir",
+      "type": "customEdge",
+      "source": "node_commande",
+      "target": "node_produit",
+      "sourceHandle": "s2",
+      "targetHandle": "s3",
+      "data": {
+        "name": "contenir",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [
+          { "id": "ep1", "propertyName": "quantite", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "ep2", "propertyName": "prix_unitaire", "typeName": "Decimal", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_evaluer",
+      "type": "customEdge",
+      "source": "node_client",
+      "target": "node_produit",
+      "sourceHandle": "s2",
+      "targetHandle": "s3",
+      "data": {
+        "name": "evaluer",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [
+          { "id": "ep3", "propertyName": "note", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "ep4", "propertyName": "commentaire", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "ep5", "propertyName": "date_avis", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ],
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    }
+  ]
+}

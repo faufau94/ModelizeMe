@@ -2,11 +2,11 @@
 
   <ContextMenu>
     <ContextMenuTrigger :disabled="isReadOnly">
-    <div class="bg-white shadow-lg rounded-xl w-80 z-40 relative cursor-pointer transition-all duration-200 hover:shadow-xl"
+    <div class="bg-white dark:bg-card shadow-lg rounded-xl w-80 z-40 relative cursor-pointer transition-all duration-200 hover:shadow-xl"
         :class="[
           isConnectHovered ? 'ring-2 ring-primary ring-offset-2 shadow-primary/30 shadow-xl scale-[1.02]'
             : isConnectTarget ? 'ring-2 ring-primary/60 ring-offset-2 shadow-primary/20 shadow-lg'
-            : isSelected ? 'ring-2 ring-indigo-400 ring-offset-2' : 'border border-gray-200',
+            : isSelected ? 'ring-2 ring-indigo-400 ring-offset-2' : 'border border-gray-200 dark:border-border',
           headerColorClass
         ]"
         v-bind="$attrs"
@@ -19,7 +19,7 @@
         <div v-if="isConnectHovered"
           class="absolute inset-0 rounded-xl pointer-events-none z-50 flex items-center justify-center"
           style="background: hsl(var(--primary) / 0.07); border: 2px dashed hsl(var(--primary));">
-          <span class="flex items-center gap-1.5 text-xs font-semibold text-primary bg-white/90 px-2.5 py-1 rounded-full shadow-sm border border-primary/30">
+          <span class="flex items-center gap-1.5 text-xs font-semibold text-primary bg-white/90 dark:bg-card/90 px-2.5 py-1 rounded-full shadow-sm border border-primary/30">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Relâcher pour connecter
           </span>
@@ -27,17 +27,17 @@
       </Transition>
 
       <!-- Entity header -->
-      <div class="flex justify-center items-center border-b border-gray-100 rounded-t-xl py-3 px-4 md:px-5 relative"
+      <div class="flex justify-center items-center border-b border-gray-100 dark:border-border rounded-t-xl py-3 px-4 md:px-5 relative"
            :class="isConnectHovered ? 'bg-primary/5' : headerBgClass">
-        <h3 v-if="props?.data?.name !== ''" class="text-sm font-semibold text-center text-gray-800 tracking-wide uppercase">
+        <h3 v-if="props?.data?.name !== ''" class="text-sm font-semibold text-center text-gray-800 dark:text-foreground tracking-wide uppercase">
           {{ props?.data?.name ?? 'Sans nom' }}
         </h3>
-        <h3 v-else class="text-sm font-semibold text-center text-gray-400 tracking-wide uppercase italic">Sans nom</h3>
+        <h3 v-else class="text-sm font-semibold text-center text-muted-foreground tracking-wide uppercase italic">Sans nom</h3>
       </div>
 
       <!-- Entity fields -->
       <div class="px-4 py-3 space-y-0.5">
-        <div class="flex justify-between items-center gap-4 py-1 rounded-md px-1 hover:bg-gray-50 transition-colors"
+        <div class="flex justify-between items-center gap-4 py-1 rounded-md px-1 hover:bg-accent/50 transition-colors"
              v-for="(field,index) in props?.data?.properties"
              :key="index">
           <div class="flex items-center gap-1 min-w-0">
@@ -45,30 +45,30 @@
               <KeyRound :size="12" class="text-red-500"/>
             </div>
             <div class="w-4 flex-shrink-0" v-else-if="field?.isForeignKey">
-              <KeyRound :size="12" class="text-gray-400"/>
-            </div>
-            <div v-else class="w-4 flex-shrink-0"></div>
+            <KeyRound :size="12" class="text-muted-foreground"/>
+          </div>
+          <div v-else class="w-4 flex-shrink-0"></div>
 
             <span :class="{ 'underline decoration-red-400 decoration-2 underline-offset-2' : field?.isPrimaryKey }"
-                  class="truncate text-sm font-medium text-gray-700">
+                  class="truncate text-sm font-medium text-foreground">
               {{ field?.isForeignKey ? '#' : '' }}{{ field?.propertyName }}
             </span>
           </div>
 
           <div class="flex items-center gap-1 flex-shrink-0">
             <!-- Type badge: hidden in MCD, shown in default/MLD/MPD -->
-            <span v-if="modelType !== 'mcd' && field?.typeName" class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+            <span v-if="modelType !== 'mcd' && field?.typeName" class="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
               {{ field?.typeName }}
             </span>
 
             <!-- MPD: show NOT NULL / NULL badge -->
             <span v-if="modelType === 'mpd'" class="text-[10px] px-1 py-0.5 rounded font-mono"
-                  :class="field?.isNullable ? 'text-gray-400 bg-gray-50' : 'text-orange-600 bg-orange-50'">
+                  :class="field?.isNullable ? 'text-muted-foreground bg-muted' : 'text-orange-600 bg-orange-50 dark:bg-orange-950/40 dark:text-orange-400'">
               {{ field?.isNullable ? 'NULL' : 'NOT NULL' }}
             </span>
 
             <!-- MPD: show AUTO_INCREMENT -->
-            <span v-if="modelType === 'mpd' && field?.autoIncrement" class="text-[10px] text-blue-500 bg-blue-50 px-1 py-0.5 rounded font-mono">
+            <span v-if="modelType === 'mpd' && field?.autoIncrement" class="text-[10px] text-blue-500 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-400 px-1 py-0.5 rounded font-mono">
               AI
             </span>
 
@@ -78,8 +78,8 @@
                 <NullableIcon class="w-4 h-4 cursor-pointer transition-colors"
                               @click="field.isNullable = !field.isNullable"
                               :class="[field?.isNullable ?
-                                        'text-gray-700' :
-                                        'text-gray-300']"
+                                        'text-foreground' :
+                                        'text-muted-foreground/50']"
                 />
               </div>
               <div v-else class="w-4"></div>
@@ -92,22 +92,22 @@
           <div class="flex justify-between items-center gap-4 py-1 px-1">
             <div class="flex items-center gap-1">
               <div class="w-4"></div>
-              <span class="text-xs text-gray-400 italic">created_at</span>
+              <span class="text-xs text-muted-foreground italic">created_at</span>
             </div>
             <div class="flex items-center gap-1">
-              <span v-if="modelType !== 'mcd'" class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
-              <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-gray-400"/>
+              <span v-if="modelType !== 'mcd'" class="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Timestamp</span>
+              <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-muted-foreground"/>
             </div>
           </div>
 
           <div class="flex justify-between items-center gap-4 py-1 px-1">
             <div class="flex items-center gap-1">
               <div class="w-4"></div>
-              <span class="text-xs text-gray-400 italic">updated_at</span>
+              <span class="text-xs text-muted-foreground italic">updated_at</span>
             </div>
             <div class="flex items-center gap-1">
-              <span v-if="modelType !== 'mcd'" class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
-              <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-gray-400"/>
+              <span v-if="modelType !== 'mcd'" class="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Timestamp</span>
+              <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-muted-foreground"/>
             </div>
           </div>
         </template>
@@ -115,11 +115,11 @@
         <div v-if="props?.data?.usesSoftDeletes" class="flex justify-between items-center gap-4 py-1 px-1">
           <div class="flex items-center gap-1">
             <div class="w-4"></div>
-            <span class="text-xs text-gray-400 italic">deleted_at</span>
+            <span class="text-xs text-muted-foreground italic">deleted_at</span>
           </div>
           <div class="flex items-center gap-1">
-            <span v-if="modelType !== 'mcd'" class="text-xs text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded">Timestamp</span>
-            <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-gray-400"/>
+            <span v-if="modelType !== 'mcd'" class="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">Timestamp</span>
+            <NullableIcon v-if="!isReadOnly" class="w-4 h-4 text-muted-foreground"/>
           </div>
         </div>
 
@@ -221,19 +221,19 @@ const isConnectHovered = computed(() =>
 /** Header background color per model type */
 const headerBgClass = computed(() => {
   switch (modelType.value) {
-    case 'mcd': return 'bg-blue-50/60';
-    case 'mld': return 'bg-emerald-50/60';
-    case 'mpd': return 'bg-purple-50/60';
-    default: return 'bg-gray-50/50';
+    case 'mcd': return 'bg-blue-50/60 dark:bg-blue-950/30';
+    case 'mld': return 'bg-emerald-50/60 dark:bg-emerald-950/30';
+    case 'mpd': return 'bg-purple-50/60 dark:bg-purple-950/30';
+    default: return 'bg-muted/50';
   }
 })
 
 const headerColorClass = computed(() => {
   if (!isReadOnly.value) return '';
   switch (modelType.value) {
-    case 'mcd': return 'border-blue-200';
-    case 'mld': return 'border-emerald-200';
-    case 'mpd': return 'border-purple-200';
+    case 'mcd': return 'border-blue-200 dark:border-blue-800';
+    case 'mld': return 'border-emerald-200 dark:border-emerald-800';
+    case 'mpd': return 'border-purple-200 dark:border-purple-800';
     default: return '';
   }
 })

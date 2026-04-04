@@ -4,41 +4,120 @@ import { getLayoutedElements } from '@/utils/useElk.js';
 
 export const useConvertToFlowElements = () => {
     // ─── SQL PARSER ───
+
+    // Map raw SQL types to the app's internal type system
+    function mapSQLType(rawType) {
+        const t = rawType.toLowerCase();
+        if (['bigint', 'bigserial'].includes(t)) return 'Big Integer';
+        if (['int', 'integer', 'smallint', 'tinyint', 'mediumint', 'serial'].includes(t)) return 'Integer';
+        if (['decimal', 'numeric', 'float', 'double', 'real', 'money'].includes(t)) return 'Decimal';
+        if (['text', 'mediumtext', 'longtext', 'clob'].includes(t)) return 'Text';
+        if (['date'].includes(t)) return 'Date';
+        if (['datetime', 'timestamp', 'timestamptz'].includes(t)) return 'DateTime';
+        if (['boolean', 'bool', 'bit'].includes(t)) return 'Boolean';
+        // varchar, char, enum, set, blob, etc. → String
+        return 'String';
+    }
+
     function parseSQLFile(sqlContent) {
         const entities = [];
-        const tableRegex = /CREATE TABLE `?(\w+)`? \(([\s\S]+?)\);/g;
-        const columnRegex = /`?(\w+)`?\s+(\w+)(\((\d+)\))?[^,]*?(PRIMARY KEY|FOREIGN KEY|REFERENCES `?(\w+)`?)?/g;
+
+        // Strip everything after the last CREATE TABLE block (INSERT INTO, etc.)
+        const stripped = sqlContent.replace(/\bINSERT\s+INTO\b[\s\S]*$/i, '');
+
+        const tableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"']?(\w+)[`"']?\s*\(([\s\S]+?)\)\s*;/gi;
 
         let matchTable;
-        while ((matchTable = tableRegex.exec(sqlContent)) !== null) {
+        while ((matchTable = tableRegex.exec(stripped)) !== null) {
             const tableName = matchTable[1];
+            const body = matchTable[2];
             const columns = [];
 
-            let matchColumn;
-            while ((matchColumn = columnRegex.exec(matchTable[2])) !== null) {
-                const columnName = matchColumn[1];
-                const columnType = matchColumn[2];
-                const isPrimaryKey = matchColumn[5] === 'PRIMARY KEY';
-                const isForeignKey = matchColumn[5] && matchColumn[5].startsWith('FOREIGN KEY');
-                const isNullable = matchColumn[0].toLowerCase().includes('null');
-                const referencedTable = matchColumn[6] || null;
+            // Split body into individual lines/clauses
+            const lines = body.split('\n').map(l => l.trim()).filter(Boolean);
+
+            // Collect constraint info first
+            const pkColumns = new Set();
+            const fkMap = {}; // columnName → referencedTable
+            const compositePKs = [];
+
+            for (const line of lines) {
+                // Standalone PRIMARY KEY constraint
+                const pkMatch = line.match(/^\s*PRIMARY\s+KEY\s*\(([^)]+)\)/i);
+                if (pkMatch) {
+                    const cols = pkMatch[1].split(',').map(c => c.trim().replace(/[`"']/g, ''));
+                    cols.forEach(c => pkColumns.add(c));
+                    if (cols.length > 1) compositePKs.push(...cols);
+                    continue;
+                }
+
+                // Standalone FOREIGN KEY constraint
+                const fkMatch = line.match(/^\s*(?:CONSTRAINT\s+[`"']?\w+[`"']?\s+)?FOREIGN\s+KEY\s*\([`"']?(\w+)[`"']?\)\s*REFERENCES\s+[`"']?(\w+)[`"']?/i);
+                if (fkMatch) {
+                    fkMap[fkMatch[1]] = fkMatch[2];
+                    continue;
+                }
+
+                // Skip KEY, INDEX, UNIQUE, CHECK constraints
+                if (/^\s*(UNIQUE|KEY|INDEX|CHECK|CONSTRAINT)\b/i.test(line)) continue;
+
+                // Parse column definition
+                const colMatch = line.match(/^[`"']?(\w+)[`"']?\s+(\w+)(?:\([^)]*\))?(.*)$/);
+                if (!colMatch) continue;
+
+                const columnName = colMatch[1];
+                const rawType = colMatch[2];
+                const rest = colMatch[3] || '';
+
+                // Skip SQL keywords mistakenly captured as column names
+                if (/^(PRIMARY|FOREIGN|KEY|INDEX|UNIQUE|CHECK|CONSTRAINT)$/i.test(columnName)) continue;
+
+                // Detect NOT NULL vs NULL (default nullable unless NOT NULL)
+                const hasNotNull = /\bNOT\s+NULL\b/i.test(rest);
+                const hasDefault = /\bDEFAULT\b/i.test(rest);
+                const isNullable = !hasNotNull || /\bDEFAULT\s+NULL\b/i.test(rest);
+
+                // Detect AUTO_INCREMENT / SERIAL
+                const autoIncrement = /\bAUTO_INCREMENT\b/i.test(rest) || /\b(BIG)?SERIAL\b/i.test(rawType);
+
+                // Detect inline PRIMARY KEY
+                const inlinePK = /\bPRIMARY\s+KEY\b/i.test(rest);
+                if (inlinePK) pkColumns.add(columnName);
+
+                // Detect inline REFERENCES
+                const inlineRef = rest.match(/\bREFERENCES\s+[`"']?(\w+)[`"']?/i);
+                if (inlineRef) fkMap[columnName] = inlineRef[1];
 
                 columns.push({
                     id: uuidv4(),
                     propertyName: columnName,
-                    typeName: columnType,
-                    isPrimaryKey: isPrimaryKey,
-                    isForeignKey: isForeignKey,
-                    isNullable: isNullable,
-                    referencedTable: referencedTable,
+                    typeName: mapSQLType(rawType),
+                    isPrimaryKey: inlinePK,
+                    autoIncrement,
+                    isForeignKey: false,
+                    isNullable,
+                    referencedTable: null,
                 });
+            }
+
+            // Apply constraint info to columns
+            for (const col of columns) {
+                if (pkColumns.has(col.propertyName)) {
+                    col.isPrimaryKey = true;
+                    col.isNullable = false;
+                }
+                if (fkMap[col.propertyName]) {
+                    col.isForeignKey = true;
+                    col.referencedTable = fkMap[col.propertyName];
+                }
             }
 
             entities.push({
                 name: tableName,
                 properties: columns,
-                hasTimestamps: true,
+                hasTimestamps: false,
                 usesSoftDeletes: false,
+                _compositePK: compositePKs.length > 1 ? compositePKs : null,
             });
         }
 
@@ -240,16 +319,30 @@ export const useConvertToFlowElements = () => {
 
     // ─── CREATE NODES FROM ENTITIES ───
     function createNodesFromEntities(entities) {
-        const nodes = entities.map((entity) => {
+        // Detect junction tables to exclude them from nodes
+        const junctionTableNames = new Set();
+        for (const entity of entities) {
+            if (!entity._compositePK || entity._compositePK.length < 2) continue;
+            const fkCols = entity.properties.filter(p => p.isForeignKey).map(p => p.propertyName);
+            const allPKsAreFK = entity._compositePK.every(pk => fkCols.includes(pk));
+            if (allPKsAreFK) junctionTableNames.add(entity.name);
+        }
+
+        const nodes = entities
+            .filter(entity => !junctionTableNames.has(entity.name))
+            .map((entity) => {
+            // Remove FK columns — in MCD, relationships are edges, not columns
+            const nonFKProperties = entity.properties.filter(p => !p.isForeignKey);
+
             // Check if 'id' property exists
-            const idProperty = entity.properties.find(
+            const idProperty = nonFKProperties.find(
                 (prop) => prop.propertyName.toLowerCase() === 'id' && prop.typeName.toLowerCase() === 'integer'
             );
             if (idProperty) {
                 idProperty.typeName = 'Big Integer';
-            } else if (!entity.properties.some((p) => p.isPrimaryKey)) {
+            } else if (!nonFKProperties.some((p) => p.isPrimaryKey)) {
                 // Add PK only if none exists
-                entity.properties.unshift({
+                nonFKProperties.unshift({
                     id: uuidv4(),
                     propertyName: "id",
                     typeName: "Big Integer",
@@ -268,7 +361,7 @@ export const useConvertToFlowElements = () => {
                 selected: false,
                 data: {
                     name: entity.name,
-                    properties: entity.properties,
+                    properties: nonFKProperties,
                     hasTimestamps: entity.hasTimestamps !== false,
                     usesSoftDeletes: entity.usesSoftDeletes || false,
                 },
@@ -287,36 +380,97 @@ export const useConvertToFlowElements = () => {
     function createEdgesFromEntities(entities, nodeMap) {
         const edges = [];
 
-        entities.forEach((entity) => {
-            entity.properties.forEach((property) => {
-                if (property.isForeignKey && property.referencedTable) {
-                    const sourceNode = nodeMap[entity.name];
-                    const targetNode = nodeMap[property.referencedTable];
+        // Detect junction tables: tables whose PK is a composite of FKs only
+        const junctionTables = new Set();
+        for (const entity of entities) {
+            if (!entity._compositePK || entity._compositePK.length < 2) continue;
+            const fkCols = entity.properties.filter(p => p.isForeignKey).map(p => p.propertyName);
+            const allPKsAreFK = entity._compositePK.every(pk => fkCols.includes(pk));
+            if (allPKsAreFK) junctionTables.add(entity.name);
+        }
 
+        for (const entity of entities) {
+            if (junctionTables.has(entity.name)) {
+                // Junction table → create N:N edge between the referenced tables
+                const fks = entity.properties.filter(p => p.isForeignKey && p.referencedTable);
+                if (fks.length >= 2) {
+                    const sourceNode = nodeMap[fks[0].referencedTable];
+                    const targetNode = nodeMap[fks[1].referencedTable];
                     if (sourceNode && targetNode) {
+                        // Non-FK, non-PK properties become edge properties
+                        const edgeProps = entity.properties
+                            .filter(p => !p.isForeignKey && !p.isPrimaryKey)
+                            .map(p => ({
+                                id: uuidv4(),
+                                propertyName: p.propertyName,
+                                typeName: p.typeName,
+                                isPrimaryKey: false,
+                                autoIncrement: false,
+                                isForeignKey: false,
+                                isNullable: p.isNullable,
+                            }));
+
+                        const isReflexive = fks[0].referencedTable === fks[1].referencedTable;
+
                         edges.push({
                             id: `dndedge_${uuidv4()}_${uuidv4()}`,
                             source: sourceNode,
                             target: targetNode,
-                            sourceHandle: 's1',
-                            targetHandle: 's4',
+                            sourceHandle: 's4',
+                            targetHandle: 's1',
                             type: 'customEdge',
                             updatable: true,
                             selectable: true,
                             label: '',
                             data: {
-                                name: `${entity.name} -> ${property.referencedTable}`,
-                                sourceCardinality: '1',
-                                targetCardinality: 'N',
-                                properties: [],
-                                hasTimestamps: true,
+                                name: entity.name,
+                                sourceCardinality: '0,N',
+                                targetCardinality: '0,N',
+                                properties: edgeProps,
+                                hasTimestamps: false,
                                 usesSoftDeletes: false,
+                                isCIF: false,
+                                loopbackSide: isReflexive ? 'right' : null,
                             },
                         });
                     }
                 }
-            });
-        });
+                continue;
+            }
+
+            // Regular table → create 1:N edges from FKs
+            for (const property of entity.properties) {
+                if (!property.isForeignKey || !property.referencedTable) continue;
+
+                const sourceNode = nodeMap[property.referencedTable];
+                const targetNode = nodeMap[entity.name];
+                if (!sourceNode || !targetNode) continue;
+
+                const isReflexive = property.referencedTable === entity.name;
+
+                edges.push({
+                    id: `dndedge_${uuidv4()}_${uuidv4()}`,
+                    source: sourceNode,
+                    target: targetNode,
+                    sourceHandle: isReflexive ? 's2' : 's4',
+                    targetHandle: isReflexive ? 's3' : 's1',
+                    type: 'customEdge',
+                    updatable: true,
+                    selectable: true,
+                    label: '',
+                    data: {
+                        name: property.propertyName.replace(/_?id$/i, '').replace(/([A-Z])/g, ' $1').trim(),
+                        sourceCardinality: property.isNullable ? '0,1' : '1,1',
+                        targetCardinality: '0,N',
+                        properties: [],
+                        hasTimestamps: false,
+                        usesSoftDeletes: false,
+                        isCIF: false,
+                        loopbackSide: isReflexive ? 'right' : null,
+                    },
+                });
+            }
+        }
 
         return edges;
     }

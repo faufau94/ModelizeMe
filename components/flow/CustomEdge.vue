@@ -333,13 +333,17 @@ const targetLabelY = computed(() => {
   font-size: 13px;
   font-weight: 700;
   color: #475569;
-  background: #ffffff;
-  border: 1.5px solid #cbd5e1;
+  background: hsl(var(--card));
+  border: 1.5px solid hsl(var(--border));
   padding: 2px 8px;
   border-radius: 5px;
   line-height: 1.4;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+:root.dark .cardinality-label {
+  color: #94a3b8;
 }
 
 .cardinality-label--selected {
@@ -348,10 +352,19 @@ const targetLabelY = computed(() => {
   background: #eef2ff;
 }
 
+:root.dark .cardinality-label--selected {
+  background: rgba(99, 102, 241, 0.15);
+}
+
 .cardinality-label--mcd {
   color: #2563eb;
   background: #eff6ff;
   border-color: #bfdbfe;
+}
+
+:root.dark .cardinality-label--mcd {
+  background: rgba(37, 99, 235, 0.15);
+  color: #60a5fa;
 }
 
 .cardinality-label--mld {
@@ -360,10 +373,20 @@ const targetLabelY = computed(() => {
   border-color: #a7f3d0;
 }
 
+:root.dark .cardinality-label--mld {
+  background: rgba(5, 150, 105, 0.15);
+  color: #34d399;
+}
+
 .cardinality-label--mpd {
   color: #7c3aed;
   background: #f5f3ff;
   border-color: #c4b5fd;
+}
+
+:root.dark .cardinality-label--mpd {
+  background: rgba(124, 58, 237, 0.15);
+  color: #a78bfa;
 }
 
 .cif-badge {
@@ -377,5 +400,10 @@ const targetLabelY = computed(() => {
   border-radius: 4px;
   line-height: 1.4;
   text-transform: uppercase;
+}
+
+:root.dark .cif-badge {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
 }
 </style>
