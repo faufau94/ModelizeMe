@@ -360,6 +360,22 @@
                   <CreditCardIcon class="mr-2 h-4 w-4" />
                   <span>Facturation</span>
                 </DropdownMenuItem>
+                <div class="flex items-center justify-between px-2 py-1.5 text-sm">
+                  <span>Thème</span>
+                  <div class="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+                    <button
+                      v-for="option in themeOptions"
+                      :key="option.value"
+                      class="rounded p-1 transition-colors cursor-pointer"
+                      :class="colorMode.preference === option.value
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-muted-foreground hover:text-foreground'"
+                      @click="setTheme(option.value, $event)"
+                    >
+                      <component :is="option.icon" class="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Languages class="mr-2 h-4 w-4" />
@@ -433,6 +449,8 @@ import {
   Loader2,
   LogOutIcon,
   MenuIcon,
+  Monitor,
+  Moon,
   MoreHorizontalIcon,
   Paintbrush,
   PanelLeftClose,
@@ -442,6 +460,7 @@ import {
   Plus,
   Settings2,
   SettingsIcon,
+  Sun,
   Trash2,
   UserIcon,
   UserRoundPlus,
@@ -476,6 +495,13 @@ import {NuxtLink} from '#components';
 
 const route = useRoute()
 const { data } = await useSession(useFetch);
+
+const { colorMode, setTheme } = useThemeTransition();
+const themeOptions = [
+  { value: 'system', icon: Monitor },
+  { value: 'light', icon: Sun },
+  { value: 'dark', icon: Moon },
+];
 
 const currentPageTitle = computed(() => {
   const segments = route.path.split('/')

@@ -26,17 +26,22 @@
         <DropdownMenuItem>
           Facturation
         </DropdownMenuItem>
-        <DropdownMenuItem class="flex items-center justify-between" @click.prevent>
-          <div class="flex items-center gap-2">
-            <LucideSun v-if="isDark" class="h-4 w-4" />
-            <LucideMoon v-else class="h-4 w-4" />
-            <span>Mode sombre</span>
+        <div class="flex items-center justify-between px-2 py-1.5 text-sm">
+          <span>Thème</span>
+          <div class="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+            <button
+              v-for="option in themeOptions"
+              :key="option.value"
+              class="rounded p-1 transition-colors cursor-pointer"
+              :class="colorMode.preference === option.value
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:text-foreground'"
+              @click="setTheme(option.value, $event)"
+            >
+              <component :is="option.icon" class="h-3.5 w-3.5" />
+            </button>
           </div>
-          <Switch
-            :checked="isDark"
-            @update:checked="colorMode.preference = isDark ? 'light' : 'dark'"
-          />
-        </DropdownMenuItem>
+        </div>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuItem>
@@ -58,7 +63,6 @@ import {
   AvatarImage,
 } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -66,15 +70,19 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Monitor, Moon, Sun } from 'lucide-vue-next'
 
 import { signOut, useSession } from '~/lib/auth-client';
 const { data } = await useSession(useFetch);
 
-const colorMode = useColorMode();
-console.log('Current color mode:', colorMode.value);
-const isDark = computed(() => colorMode.value === 'dark');
+const { colorMode, setTheme } = useThemeTransition();
+
+const themeOptions = [
+  { value: 'system', icon: Monitor },
+  { value: 'light', icon: Sun },
+  { value: 'dark', icon: Moon },
+];
 
 </script>
