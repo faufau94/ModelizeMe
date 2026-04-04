@@ -26,6 +26,16 @@ export const bulkDeleteModelsSchema = z.object({
   ids: z.array(z.string().min(1)),
 });
 
+export const bulkMoveModelsSchema = z.object({
+  ids: z.array(z.string().min(1)),
+  teamId: z.string().nullable().optional(),
+});
+
+export const bulkCopyModelsSchema = z.object({
+  ids: z.array(z.string().min(1)),
+  targetWorkspaceId: z.string().min(1, "Workspace de destination requis"),
+});
+
 export const renameModelSchema = z.object({
   name: z.string().min(1, "Nom requis").max(100, "Nom trop long"),
 });

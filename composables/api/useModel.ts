@@ -113,6 +113,24 @@ export const useModel = () => {
   const duplicateModel = (modelId: string, targetWorkspaceId?: string) =>
     duplicateModelMutation.mutateAsync({ modelId, targetWorkspaceId })
 
+  // - BULK MOVE -
+  const bulkMoveModelsMutation = useMutation({
+    mutationFn: async ({ ids, teamId }: { ids: string[]; teamId: string | null }) =>
+      await $fetch('/api/models/bulk-move', { method: 'POST', body: { ids, teamId } }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const bulkMoveModels = (ids: string[], teamId: string | null) =>
+    bulkMoveModelsMutation.mutateAsync({ ids, teamId })
+
+  // - BULK COPY TO WORKSPACE -
+  const bulkCopyModelsMutation = useMutation({
+    mutationFn: async ({ ids, targetWorkspaceId }: { ids: string[]; targetWorkspaceId: string }) =>
+      await $fetch('/api/models/bulk-copy', { method: 'POST', body: { ids, targetWorkspaceId } }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const bulkCopyModels = (ids: string[], targetWorkspaceId: string) =>
+    bulkCopyModelsMutation.mutateAsync({ ids, targetWorkspaceId })
+
   
   return {
     // mutations
@@ -121,6 +139,8 @@ export const useModel = () => {
     renameModel,
     deleteModel,
     bulkDeleteModels,
+    bulkMoveModels,
+    bulkCopyModels,
     duplicateModel,
 
     // list

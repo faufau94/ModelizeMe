@@ -1,20 +1,12 @@
 <template>
   <Card 
     @click="handleCardClick" 
-    class="relative group cursor-pointer border hover:border-primary/50 hover:shadow-md transition-all duration-200 bg-card"
-    :class="{ 'ring-2 ring-primary border-primary': isSelected }"
+    class="relative group cursor-pointer border transition-all duration-200 bg-card"
+    :class="[
+      isSelected ? 'ring-2 ring-primary border-primary bg-primary/5' : 'hover:border-primary/50 hover:shadow-md',
+      selectionMode ? 'cursor-pointer' : ''
+    ]"
   >
-    <div
-      v-show="isSelected || isAnySelected"
-      class="absolute top-3 right-3 z-20"
-    >
-      <Checkbox
-        :checked="isSelected"
-        @click.stop="emit('toggle-select', props.model.id)"
-        class="opacity-0 group-hover:opacity-100"
-        :class="{ 'opacity-100': isSelected || isAnySelected }"
-      />
-    </div>
     <CardHeader class="flex flex-row items-start justify-between gap-4 space-y-0 pb-3 pt-5 px-5">
       <div class="space-y-1 flex-1">
         <CardTitle class="text-lg font-semibold leading-tight tracking-tight">
@@ -23,7 +15,16 @@
       </div>
       <div class="rounded-md text-secondary-foreground z-10">
 
-        <DropdownMenu>
+        <!-- Selection mode: show checkbox instead of dropdown -->
+        <div v-if="selectionMode" class="flex items-center justify-center h-8 w-8">
+          <Checkbox
+            :checked="isSelected"
+            @click.stop="emit('toggle-select', props.model.id)"
+          />
+        </div>
+
+        <!-- Normal mode: show dropdown menu -->
+        <DropdownMenu v-else>
           <DropdownMenuTrigger as-child>
             <Button @click.stop="" variant="ghost" size="icon" class="h-8 w-8 text-muted-foreground hover:text-foreground">
               <EllipsisVertical class="h-4 w-4"/>
@@ -257,7 +258,7 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
-  isAnySelected: {
+  selectionMode: {
     type: Boolean,
     default: false
   }
@@ -266,7 +267,7 @@ const props = defineProps({
 const emit = defineEmits(['toggle-select']);
 
 const handleCardClick = async (e: Event) => {
-  if (props.isAnySelected) {
+  if (props.selectionMode) {
     emit('toggle-select', props.model.id)
     return
   }
