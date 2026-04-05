@@ -2,10 +2,10 @@ import { toPng, toJpeg, toSvg } from 'html-to-image'
 import { toast } from 'vue-sonner'
 import { useMLDStore } from '~/stores/mld-store.js'
 
-// Padding around diagram in the output image (in CSS px)
-const IMAGE_PADDING = 40
-// Pixel ratio — multiplies the actual file resolution for sharpness
-const PIXEL_RATIO = 2
+// Fixed padding in px around the diagram in the output image
+const IMAGE_PADDING = 30
+// Scale: pixels per flow-coordinate unit (1 = 1:1 with screen at zoom 1)
+const IMAGE_SCALE = 1.2
 
 /**
  * Composable centralizing all export/import logic for the model editor.
@@ -16,6 +16,7 @@ const PIXEL_RATIO = 2
 export function useExportImport(currentFlow, model) {
   const route = useRoute()
   const mldStore = useMLDStore()
+  const colorMode = useColorMode()
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -32,10 +33,53 @@ export function useExportImport(currentFlow, model) {
     document.body.removeChild(a)
   }
 
+  /**
+   * Compute the bounding box of ALL nodes using their flow-coordinate
+   * positions and measured dimensions. This is independent of the current
+   * viewport pan/zoom, so nodes that are scrolled off-screen are still
+   * included (unlike DOM-based getBoundingClientRect).
+   * An extra margin is added to account for edge labels / cardinality badges
+   * that sit slightly outside the node bounds.
+   */
+  function getContentBounds(flow) {
+    const nodes = Array.isArray(flow.getNodes) ? flow.getNodes : flow.getNodes?.value ?? []
+    if (!nodes.length) return null
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+
+    for (const node of nodes) {
+      const pos = node.computedPosition || node.position
+      const w = node.dimensions?.width ?? node.width ?? 0
+      const h = node.dimensions?.height ?? node.height ?? 0
+      if (!pos || (!w && !h)) continue
+
+      const x1 = pos.x
+      const y1 = pos.y
+      const x2 = pos.x + w
+      const y2 = pos.y + h
+
+      if (x1 < minX) minX = x1
+      if (y1 < minY) minY = y1
+      if (x2 > maxX) maxX = x2
+      if (y2 > maxY) maxY = y2
+    }
+
+    if (!isFinite(minX)) return null
+
+    // Extra margin for edge labels / cardinality badges that overflow nodes
+    const LABEL_MARGIN = 50
+    return {
+      x: minX - LABEL_MARGIN,
+      y: minY - LABEL_MARGIN,
+      width: (maxX - minX) + LABEL_MARGIN * 2,
+      height: (maxY - minY) + LABEL_MARGIN * 2,
+    }
+  }
+
   // ─── Image export (PNG / JPEG / SVG) ──────────────────────────────────────
-  // Uses Vue Flow's getRectOfNodes + getTransformForBounds to capture ALL nodes
-  // regardless of current viewport position/zoom — same approach as the
-  // official React Flow "Download Image" example adapted for Vue Flow.
+  // Captures all flow elements (nodes + edges + labels) by computing their
+  // bounding box in flow coordinates, then uses getTransformForBounds from
+  // Vue Flow to produce a transform that fits them tightly in the output image.
 
   async function exportAsImage(type = 'png') {
     const flow = currentFlow.value
@@ -53,51 +97,37 @@ export function useExportImport(currentFlow, model) {
       return
     }
 
-    // Measure the real bounding box of all content from the DOM
-    const { viewport } = flow
-    const vp = viewport.value || { x: 0, y: 0, zoom: 1 }
-    const containerRect = flow.vueFlowRef.getBoundingClientRect()
-    const selectors = '.vue-flow__node, .vue-flow__edge path, .vue-flow__edgelabel-renderer > div'
-    const elements = viewportEl.querySelectorAll(selectors)
+    // Get the real bounding box of all visible elements
+    const bounds = getContentBounds(flow)
+    if (!bounds) {
+      toast.warning('Aucun élément visible à exporter.')
+      return
+    }
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    elements.forEach((el) => {
-      const r = el.getBoundingClientRect()
-      if (r.width === 0 && r.height === 0) return
-      // Screen coords → flow coords: undo viewport translate + zoom
-      const x1 = (r.left - containerRect.left - vp.x) / vp.zoom
-      const y1 = (r.top - containerRect.top - vp.y) / vp.zoom
-      const x2 = x1 + r.width / vp.zoom
-      const y2 = y1 + r.height / vp.zoom
-      if (x1 < minX) minX = x1
-      if (y1 < minY) minY = y1
-      if (x2 > maxX) maxX = x2
-      if (y2 > maxY) maxY = y2
-    })
+    // Image dimensions derived from the actual content size
+    const imageWidth = Math.ceil(bounds.width * IMAGE_SCALE) + IMAGE_PADDING * 2
+    const imageHeight = Math.ceil(bounds.height * IMAGE_SCALE) + IMAGE_PADDING * 2
 
-    const boundsW = maxX - minX
-    const boundsH = maxY - minY
+    // Transform: scale the content then center it with padding
+    const tx = -bounds.x * IMAGE_SCALE + IMAGE_PADDING
+    const ty = -bounds.y * IMAGE_SCALE + IMAGE_PADDING
+    const zoom = IMAGE_SCALE
 
-    // Output image: fixed width, height follows diagram aspect ratio
-    const imageWidth = 1920
-    const imageHeight = Math.ceil(imageWidth * (boundsH / boundsW))
+    const filter = (node) => {
+      if (node.classList?.contains('vue-flow__panel')) return false
+      if (node.classList?.contains('vue-flow__controls')) return false
+      if (node.classList?.contains('vue-flow__minimap')) return false
+      return true
+    }
 
-    // Zoom to fit the diagram inside the image with padding
-    const zoom = Math.min(
-      (imageWidth - IMAGE_PADDING * 2) / boundsW,
-      (imageHeight - IMAGE_PADDING * 2) / boundsH,
-    )
-
-    // Center the diagram in the image
-    const tx = (imageWidth - boundsW * zoom) / 2 - minX * zoom
-    const ty = (imageHeight - boundsH * zoom) / 2 - minY * zoom
-
-    const filter = (node) => !node.classList?.contains('vue-flow__panel')
+    const isDark = colorMode.value === 'dark'
+    const bgColor = isDark ? '#0f172a' : '#ffffff'
 
     const baseOptions = {
       width: imageWidth,
       height: imageHeight,
-      pixelRatio: PIXEL_RATIO,
+      pixelRatio: 1,
+      backgroundColor: bgColor,
       filter,
       style: {
         width: `${imageWidth}px`,
@@ -111,11 +141,11 @@ export function useExportImport(currentFlow, model) {
       let dataUrl
 
       if (type === 'jpeg') {
-        dataUrl = await toJpeg(viewportEl, { ...baseOptions, backgroundColor: '#ffffff', quality: 0.95 })
+        dataUrl = await toJpeg(viewportEl, { ...baseOptions, quality: 0.95 })
       } else if (type === 'svg') {
-        dataUrl = await toSvg(viewportEl, { ...baseOptions, pixelRatio: 1 })
+        dataUrl = await toSvg(viewportEl, baseOptions)
       } else {
-        dataUrl = await toPng(viewportEl, { ...baseOptions, backgroundColor: '#ffffff' })
+        dataUrl = await toPng(viewportEl, baseOptions)
       }
 
       triggerDownload(dataUrl, `${safeName}-diagram.${type}`)
