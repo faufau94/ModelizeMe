@@ -1,11 +1,10 @@
 import { toPng, toJpeg, toSvg } from 'html-to-image'
+import { getTransformForBounds } from '@vue-flow/core'
 import { toast } from 'vue-sonner'
 import { useMLDStore } from '~/stores/mld-store.js'
 
-// Fixed padding in px around the diagram in the output image
-const IMAGE_PADDING = 30
-// Scale: pixels per flow-coordinate unit (1 = 1:1 with screen at zoom 1)
-const IMAGE_SCALE = 1.2
+// Padding ratio around the diagram (0.08 = 8% of image width/height)
+const IMAGE_PADDING = 0.08
 
 /**
  * Composable centralizing all export/import logic for the model editor.
@@ -104,14 +103,21 @@ export function useExportImport(currentFlow, model) {
       return
     }
 
-    // Image dimensions derived from the actual content size
-    const imageWidth = Math.ceil(bounds.width * IMAGE_SCALE) + IMAGE_PADDING * 2
-    const imageHeight = Math.ceil(bounds.height * IMAGE_SCALE) + IMAGE_PADDING * 2
+    // Output image dimensions: fit to diagram aspect ratio
+    const imageWidth = 1920
+    const imageHeight = Math.max(400, Math.ceil(imageWidth * (bounds.height / bounds.width)))
 
-    // Transform: scale the content then center it with padding
-    const tx = -bounds.x * IMAGE_SCALE + IMAGE_PADDING
-    const ty = -bounds.y * IMAGE_SCALE + IMAGE_PADDING
-    const zoom = IMAGE_SCALE
+    // Use Vue Flow's getTransformForBounds to compute the optimal transform
+    // that fits the diagram bounds into the output image with padding.
+    const transform = getTransformForBounds(
+      bounds,
+      imageWidth,
+      imageHeight,
+      0.5,   // minZoom
+      2,     // maxZoom
+      IMAGE_PADDING,
+    )
+    const { x: tx, y: ty, zoom } = transform
 
     const filter = (node) => {
       if (node.classList?.contains('vue-flow__panel')) return false
