@@ -261,6 +261,10 @@ const props = defineProps({
   selectionMode: {
     type: Boolean,
     default: false
+  },
+  isAnySelected: {
+    type: Boolean,
+    default: false
   }
 });
 

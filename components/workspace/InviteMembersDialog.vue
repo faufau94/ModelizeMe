@@ -20,40 +20,44 @@
             Invitez des membres à rejoindre votre espace de travail.
           </DialogDescription>
         </DialogHeader>
+
         <Form
-          ref="formRef"
-          v-slot="{ meta, values, validate }"
+          v-slot="{ meta, values, errors }"
           :validation-schema="formSchema"
+          as=""
         >
-          <form
-            @submit="async (e) => {
-              e.preventDefault()
-              await validate()
-              if (meta.valid) {
-                await handleSubmit(values)
-              }
-            }"
-          >
-            <div class="flex flex-col gap-4 mt-4">
-              <FormField name="emails" v-slot="{ componentField }">
-                <FormItem>
-                  <FormLabel>Adresses email</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      v-bind="componentField"
-                      placeholder="Entrez ou collez une ou plusieurs adresses email, séparées par des espaces ou des virgules"
-                      rows="3"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Vous pouvez inviter plusieurs personnes en même temps.
-                  </FormDescription>
+          <form class="mt-4 space-y-4" @submit="onSubmit">
+            <FormField
+              name="emails"
+              :validate-on-blur="false"
+              v-slot="{ componentField }"
+            >
+              <FormItem>
+                <FormLabel>Adresses email</FormLabel>
+
+                <FormControl>
+                  <Textarea
+                    v-bind="componentField"
+                    rows="3"
+                    placeholder="Entrez ou collez une ou plusieurs adresses email, séparées par des espaces ou des virgules"
+                  />
+                </FormControl>
+
+                <FormDescription>
+                  Vous pouvez inviter plusieurs personnes en même temps.
+                </FormDescription>
+
+                <div class="min-h-[20px]">
                   <FormMessage />
-                </FormItem>
-              </FormField>
-            </div>
-            <div class="flex items-center justify-end mt-4">
-              <Button type="submit" :disabled="isLoading">
+                </div>
+              </FormItem>
+            </FormField>
+
+            <div class="flex items-center justify-end">
+              <Button
+                type="submit"
+                :disabled="isSubmitDisabled(meta, values, errors)"
+              >
                 <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin" />
                 {{ isLoading ? 'Envoi des invitations...' : 'Envoyer les invitations' }}
               </Button>
@@ -66,10 +70,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { z } from 'zod'
+import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
+import { Loader2, Plus } from 'lucide-vue-next'
+import { toast } from 'vue-sonner'
+
 import { useWorkspace } from '@/composables/api/useWorkspace'
+import { useMember } from '~/composables/api/useMember'
+
 import {
   Dialog,
   DialogTrigger,
@@ -89,71 +99,113 @@ import {
 } from '@/components/ui/form'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import { Loader2, Plus } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
-import { authClient } from '~/lib/auth-client'
-import {useMember} from "~/composables/api/useMember";
 
 const { selectedWorkspaceId } = useWorkspace()
 const { addMember } = useMember()
-const isDialogOpen = defineModel('open', { default: false })
-const isLoading = ref(false)
-const formRef = ref<any>(null)
 
-const formSchema = toTypedSchema(z.object({
-  emails: z.string()
-    .min(1, 'Veuillez entrer au moins une adresse email')
-    .transform(val => {
-      if (!val) return [];
-      return val.split(/[\,\s]+/).map(email => email.trim()).filter(Boolean);
-    }),
-}))
+const isDialogOpen = defineModel<boolean>('open', { default: false })
+const isLoading = ref(false)
+
+const formSchema = toTypedSchema(
+  z.object({
+    emails: z
+      .string()
+      .trim()
+      .min(1, 'Veuillez entrer au moins une adresse email')
+      .transform((value) =>
+        value
+          .split(/[,\s]+/)
+          .map((email) => email.trim())
+          .filter(Boolean),
+      )
+      .pipe(
+        z
+          .array(
+            z.string().email('Une ou plusieurs adresses email sont invalides'),
+          )
+          .min(1, 'Veuillez entrer au moins une adresse email'),
+      ),
+  }),
+)
+
+const form = useForm({
+  validationSchema: formSchema,
+  initialValues: {
+    emails: '',
+  },
+})
 
 watch(isDialogOpen, (open) => {
   if (!open) {
-    formRef.value?.resetForm?.()
+    form.resetForm()
+    isLoading.value = false
   }
 })
 
-async function handleSubmit(values: any) {
+function isSubmitDisabled(
+  meta: { valid: boolean; dirty: boolean },
+  values: { emails?: string },
+  errors: Record<string, string | string[] | undefined>,
+) {
+  const rawEmails = values.emails?.trim() ?? ''
+  const hasEmailsError = !!errors.emails
+
+  return (
+    isLoading.value ||
+    rawEmails.length === 0 ||
+    hasEmailsError ||
+    !meta.dirty ||
+    !meta.valid
+  )
+}
+
+const onSubmit = form.handleSubmit(async (values) => {
   if (!selectedWorkspaceId.value) {
     toast.error('Aucun espace de travail sélectionné')
     return
   }
 
   isLoading.value = true
+
   try {
-    const emailList = values.emails.split(',') ?? []
+    const emailList = values.emails
     let successCount = 0
     let errorCount = 0
 
-    if (emailList.length > 0) {
     for (const email of emailList) {
       try {
-        await addMember({ email })
+        await addMember({
+          email,
+          selectedWorkspaceId: selectedWorkspaceId.value,
+        })
         successCount++
       } catch (error) {
         console.error('Error inviting member:', email, error)
         errorCount++
       }
-      }
     }
 
     if (successCount > 0) {
-      toast.success(`${successCount} invitation${successCount > 1 ? 's' : ''} envoyée${successCount > 1 ? 's' : ''}`)
+      toast.success(
+        `${successCount} invitation${successCount > 1 ? 's' : ''} envoyée${successCount > 1 ? 's' : ''}`,
+      )
     }
+
     if (errorCount > 0) {
-      toast.error(`${errorCount} invitation${errorCount > 1 ? 's ont' : ' a'} échoué`)
+      toast.error(
+        `${errorCount} invitation${errorCount > 1 ? 's ont' : ' a'} échoué`,
+      )
     }
 
     if (successCount > 0 && errorCount === 0) {
+      form.resetForm()
       isDialogOpen.value = false
     }
   } catch (error) {
     console.error('Error sending invitations:', error)
-    toast.error('Erreur lors de l\'envoi des invitations')
+    toast.error("Erreur lors de l'envoi des invitations")
   } finally {
     isLoading.value = false
   }
-}
-</script> 
+})
+</script>
