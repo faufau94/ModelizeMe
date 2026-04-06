@@ -1075,45 +1075,52 @@ watch(activeTab, async () => {
 
 
 
+const isReorganizing = ref(false);
+
 const reorganize = async () => {
-  // Close sidebar and clear selection before layout
-  isSubMenuVisible.value = false;
-  nodeIdSelected.value = null;
-  edgeIdSelected.value = null;
+  if (isReorganizing.value) return;
+  isReorganizing.value = true;
+  try {
+    // Close sidebar and clear selection before layout
+    isSubMenuVisible.value = false;
+    nodeIdSelected.value = null;
+    edgeIdSelected.value = null;
 
-  await nextTick()
-  await nextTick() // double tick to ensure DOM rendered
-  const ns = mcdFlowInstance.getNodes.value;
-  const es = mcdFlowInstance.getEdges.value;
-  if (!ns.length) return;
+    await nextTick()
+    await nextTick() // double tick to ensure DOM rendered
+    const ns = mcdFlowInstance.getNodes.value;
+    const es = mcdFlowInstance.getEdges.value;
+    if (!ns.length) return;
 
-  const opts = computeElkOptions(ns, es);
-  const result = await getLayoutedElements(ns, es, opts);
-  if (!result) return;
+    const opts = computeElkOptions(ns, es);
+    const result = await getLayoutedElements(ns, es, opts);
+    if (!result) return;
 
-  let { nodes: layoutedNodes } = result;
+    let { nodes: layoutedNodes } = result;
 
-  // Post-layout collision resolution pass: catch any remaining overlaps
-  // (association tables at edge midpoints, loopback arcs, etc.)
-  layoutedNodes = resolveCollisions(layoutedNodes, {
-    margin: 40,
-    flowInstance: mcdFlowInstance,
-  });
+    // Post-layout collision resolution pass using fresh positions + edges
+    // (association tables at bezier midpoints, loopback arcs, cardinalities)
+    layoutedNodes = resolveCollisions(layoutedNodes, result.edges, {
+      margin: 40,
+    });
 
-  // Force deselect on the plain objects BEFORE applying
-  for (const n of layoutedNodes) { n.selected = false; n.dragging = false; }
+    // Force deselect on the plain objects BEFORE applying
+    for (const n of layoutedNodes) { n.selected = false; n.dragging = false; }
 
-  // Emit LAYOUT_APPLIED event with all new positions
-  const positions = layoutedNodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y }))
-  await mcdStore.emitEvent(route.params.idModel, [{
-    type: 'LAYOUT_APPLIED',
-    payload: { positions },
-    inverse: null,
-    undoable: false
-  }])
+    // Emit LAYOUT_APPLIED event with all new positions
+    const positions = layoutedNodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y }))
+    await mcdStore.emitEvent(route.params.idModel, [{
+      type: 'LAYOUT_APPLIED',
+      payload: { positions },
+      inverse: null,
+      undoable: false
+    }])
 
-  await nextTick();
-  mcdFlowInstance.fitView({ padding: 0.4 });
+    await nextTick();
+    mcdFlowInstance.fitView({ padding: 0.4 });
+  } finally {
+    isReorganizing.value = false;
+  }
 };
 
 

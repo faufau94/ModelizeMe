@@ -1,3 +1,140 @@
+import { estimateNodeSize, computeAssociationSize, computeLoopbackObstacle } from './useElk.js';
+import { getBezierPath } from '@vue-flow/core';
+import { getDistributedEdgeParams, getEdgeParams } from './useFloatingEdge.js';
+
+/**
+ * Compute the bezier midpoint for an edge — this is where CustomEdge.vue
+ * actually renders the association table (edgePath[1], edgePath[2]).
+ * Nodes must have fresh positions (post-layout).
+ */
+function computeEdgeMidpoint(srcNode, tgtNode, edge, allNodes, allEdges) {
+  // Normalize nodes so getDistributedEdgeParams uses fresh positions
+  const normalize = (n) => ({
+    ...n,
+    computedPosition: n.position,
+    positionAbsolute: n.position,
+  });
+  const src = normalize(srcNode);
+  const tgt = normalize(tgtNode);
+  const normalizedNodes = allNodes.map(normalize);
+
+  let params;
+  if (normalizedNodes.length > 0 && allEdges.length > 0) {
+    params = getDistributedEdgeParams(src, tgt, allEdges, normalizedNodes, edge.id);
+  } else {
+    params = getEdgeParams(src, tgt);
+  }
+
+  const [, labelX, labelY] = getBezierPath({
+    sourceX: params.sx,
+    sourceY: params.sy,
+    targetX: params.tx,
+    targetY: params.ty,
+    sourcePosition: params.sourcePos,
+    targetPosition: params.targetPos,
+  });
+
+  return { x: labelX, y: labelY };
+}
+
+/**
+ * Build association obstacles from fresh node positions + edges.
+ * Uses the actual bezier midpoint for accurate placement.
+ */
+function getAssociationObstacles(nodes, edges) {
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const obstacles = [];
+  for (const edge of edges) {
+    if (edge.source === edge.target) continue;
+    if (!edge.data?.properties?.length && !edge.data?.hasNodeAssociation) continue;
+    const src = nodeMap.get(edge.source);
+    const tgt = nodeMap.get(edge.target);
+    if (!src || !tgt) continue;
+    const size = computeAssociationSize(edge.data);
+    const mid = computeEdgeMidpoint(src, tgt, edge, nodes, edges);
+    obstacles.push({
+      x: mid.x - size.width / 2,
+      y: mid.y - size.height / 2,
+      w: size.width,
+      h: size.height,
+    });
+  }
+  return obstacles;
+}
+
+/**
+ * Build loopback arc obstacles from fresh node positions + edges.
+ */
+function getLoopbackObstacles(nodes, edges) {
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const obstacles = [];
+  for (const edge of edges) {
+    if (edge.source !== edge.target) continue;
+    const node = nodeMap.get(edge.source);
+    if (!node) continue;
+    const w = node.dimensions?.width ?? estimateNodeSize(node).width;
+    const h = node.dimensions?.height ?? estimateNodeSize(node).height;
+    const side = edge.data?.loopbackSide || 'right';
+    obstacles.push(computeLoopbackObstacle(node.position, w, h, side));
+  }
+  return obstacles;
+}
+
+/**
+ * Build cardinality label obstacles from fresh node positions + edges.
+ * Labels are ~60x30px, offset 40px from the handle.
+ */
+function getCardinalityObstacles(nodes, edges) {
+  const nodeMap = new Map(nodes.map(n => [n.id, n]));
+  const obstacles = [];
+  const offset = 40;
+  const labelW = 60;
+  const labelH = 30;
+
+  for (const edge of edges) {
+    if (edge.source === edge.target) continue;
+    const src = nodeMap.get(edge.source);
+    const tgt = nodeMap.get(edge.target);
+    if (!src || !tgt) continue;
+
+    const normalize = (n) => ({
+      ...n,
+      computedPosition: n.position,
+      positionAbsolute: n.position,
+    });
+    const normalizedNodes = nodes.map(normalize);
+    let params;
+    if (normalizedNodes.length > 0 && edges.length > 0) {
+      params = getDistributedEdgeParams(normalize(src), normalize(tgt), edges, normalizedNodes, edge.id);
+    } else {
+      params = getEdgeParams(normalize(src), normalize(tgt));
+    }
+
+    // Source cardinality
+    if (edge.data?.sourceCardinality) {
+      let lx = params.sx;
+      let ly = params.sy;
+      if (params.sourcePos === 'left') lx -= offset;
+      else if (params.sourcePos === 'right') lx += offset;
+      if (params.sourcePos === 'top') ly -= offset;
+      else if (params.sourcePos === 'bottom') ly += offset;
+      obstacles.push({ x: lx - labelW / 2, y: ly - labelH / 2, w: labelW, h: labelH });
+    }
+
+    // Target cardinality
+    if (edge.data?.targetCardinality) {
+      let lx = params.tx;
+      let ly = params.ty;
+      if (params.targetPos === 'left') lx -= offset;
+      else if (params.targetPos === 'right') lx += offset;
+      if (params.targetPos === 'top') ly -= offset;
+      else if (params.targetPos === 'bottom') ly += offset;
+      obstacles.push({ x: lx - labelW / 2, y: ly - labelH / 2, w: labelW, h: labelH });
+    }
+  }
+  return obstacles;
+}
+
 /**
  * Find a free position for a new node that doesn't overlap existing nodes.
  * Only moves the NEW node - never touches existing nodes.
@@ -8,12 +145,12 @@ export function findFreePosition(candidate, size, otherNodes, flowInstance, marg
 
   // Collect real nodes
   for (const node of otherNodes) {
-    const w = node.dimensions?.width || fallbackNodeSize(node).width;
-    const h = node.dimensions?.height || fallbackNodeSize(node).height;
+    const w = node.dimensions?.width || estimateNodeSize(node).width;
+    const h = node.dimensions?.height || estimateNodeSize(node).height;
     obstacles.push({ x: node.position.x, y: node.position.y, w, h });
   }
 
-  // Collect virtual association nodes from edges + loopback arc zones
+  // Collect virtual obstacles from edges
   if (flowInstance) {
     const edges = flowInstance.getEdges?.value || [];
     for (const edge of edges) {
@@ -25,22 +162,7 @@ export function findFreePosition(candidate, size, otherNodes, flowInstance, marg
         const nw = node.dimensions?.width ?? 320;
         const nh = node.dimensions?.height ?? 100;
         const side = edge.data?.loopbackSide || 'right';
-        const bulgeW = Math.max(110, nw * 0.55);
-        const bulgeH = Math.max(110, nh * 0.75);
-        switch (side) {
-          case 'right':
-            obstacles.push({ x: pos.x + nw, y: pos.y, w: bulgeW, h: nh });
-            break;
-          case 'left':
-            obstacles.push({ x: pos.x - bulgeW, y: pos.y, w: bulgeW, h: nh });
-            break;
-          case 'top':
-            obstacles.push({ x: pos.x, y: pos.y - bulgeH, w: nw, h: bulgeH });
-            break;
-          case 'bottom':
-            obstacles.push({ x: pos.x, y: pos.y + nh, w: nw, h: bulgeH });
-            break;
-        }
+        obstacles.push(computeLoopbackObstacle(pos, nw, nh, side));
         continue;
       }
 
@@ -49,15 +171,11 @@ export function findFreePosition(candidate, size, otherNodes, flowInstance, marg
       const src = flowInstance.findNode(edge.source);
       const tgt = flowInstance.findNode(edge.target);
       if (!src || !tgt) continue;
-      const propCount = edge.data?.properties?.length || 0;
-      const hasTs = edge.data?.hasTimestamps ? 2 : 0;
-      const hasSd = edge.data?.usesSoftDeletes ? 1 : 0;
-      const assocW = 250;
-      const assocH = Math.max(100, 50 + (propCount + hasTs + hasSd) * 28);
+      const assocSize = computeAssociationSize(edge.data);
       obstacles.push({
-        x: (src.position.x + tgt.position.x) / 2 - assocW / 2,
-        y: (src.position.y + tgt.position.y) / 2 - assocH / 2,
-        w: assocW, h: assocH,
+        x: (src.position.x + tgt.position.x) / 2 - assocSize.width / 2,
+        y: (src.position.y + tgt.position.y) / 2 - assocSize.height / 2,
+        w: assocSize.width, h: assocSize.height,
       });
     }
   }
@@ -86,108 +204,18 @@ export function findFreePosition(candidate, size, otherNodes, flowInstance, marg
 }
 
 /**
- * Collision resolution algorithm adapted from React Flow examples.
- * Iteratively pushes overlapping nodes apart along the smallest overlap axis.
- */
-
-function fallbackNodeSize(node) {
-  const propertyCount = Array.isArray(node?.data?.properties) ? node.data.properties.length : 0;
-  const hasTimestamps = node?.data?.hasTimestamps ? 2 : 0;
-  const hasSoftDeletes = node?.data?.usesSoftDeletes ? 1 : 0;
-  const rowCount = propertyCount + hasTimestamps + hasSoftDeletes;
-  const isAssociation = node?.type === 'customEntityAssociation';
-  const isTernary = node?.type === 'ternaryEntity';
-
-  if (isAssociation || isTernary) {
-    const width = 250;
-    const baseHeight = isTernary ? 110 : 70;
-    const rowHeight = 28;
-    return {
-      width,
-      height: Math.max(baseHeight + rowCount * rowHeight, 120),
-    };
-  }
-
-  return {
-    width: 340,
-    height: Math.max(80 + rowCount * 32, 160),
-  };
-}
-
-/**
- * Build virtual obstacle boxes for association tables rendered at edge midpoints.
- * These are not real nodes but occupy space visually.
- */
-function getAssociationObstacles(flowInstance) {
-  const obstacles = [];
-  if (!flowInstance) return obstacles;
-  const edges = flowInstance.getEdges?.value || [];
-  for (const edge of edges) {
-    if (!edge.data?.properties?.length && !edge.data?.hasNodeAssociation) continue;
-    // Skip loopback edges (association rendered on arc, not midpoint)
-    if (edge.source === edge.target) continue;
-    const src = flowInstance.findNode(edge.source);
-    const tgt = flowInstance.findNode(edge.target);
-    if (!src || !tgt) continue;
-    const propCount = edge.data?.properties?.length || 0;
-    const hasTs = edge.data?.hasTimestamps ? 2 : 0;
-    const hasSd = edge.data?.usesSoftDeletes ? 1 : 0;
-    const assocW = 250;
-    const assocH = Math.max(100, 50 + (propCount + hasTs + hasSd) * 28);
-    obstacles.push({
-      x: (src.position.x + tgt.position.x) / 2 - assocW / 2,
-      y: (src.position.y + tgt.position.y) / 2 - assocH / 2,
-      w: assocW,
-      h: assocH,
-    });
-  }
-  return obstacles;
-}
-
-/**
- * Build virtual obstacle boxes for loopback (reflexive) edge arcs.
- * The arc extends outward from one side of the node and needs reserved space.
- */
-function getLoopbackObstacles(flowInstance) {
-  const obstacles = [];
-  if (!flowInstance) return obstacles;
-  const edges = flowInstance.getEdges?.value || [];
-  for (const edge of edges) {
-    if (edge.source !== edge.target) continue;
-    const node = flowInstance.findNode(edge.source);
-    if (!node) continue;
-    const pos = node.computedPosition || node.position;
-    const w = node.dimensions?.width ?? 320;
-    const h = node.dimensions?.height ?? 100;
-    const side = edge.data?.loopbackSide || 'right';
-    const bulgeW = Math.max(80, w * 0.5);
-    const bulgeH = Math.max(80, h * 0.65);
-    switch (side) {
-      case 'right':
-        obstacles.push({ x: pos.x + w, y: pos.y, w: bulgeW, h });
-        break;
-      case 'left':
-        obstacles.push({ x: pos.x - bulgeW, y: pos.y, w: bulgeW, h });
-        break;
-      case 'top':
-        obstacles.push({ x: pos.x, y: pos.y - bulgeH, w, h: bulgeH });
-        break;
-      case 'bottom':
-        obstacles.push({ x: pos.x, y: pos.y + h, w, h: bulgeH });
-        break;
-    }
-  }
-  return obstacles;
-}
-
-/**
- * @param {import('@vue-flow/core').Node[]} nodes
- * @param {{ maxIterations?: number, overlapThreshold?: number, margin?: number, flowInstance?: any }} options
+ * Collision resolution: pushes overlapping nodes apart.
+ * Uses fresh post-layout positions from the nodes/edges arrays (not flowInstance).
+ * Includes virtual obstacles for associations, loopbacks, and cardinalities.
+ *
+ * @param {import('@vue-flow/core').Node[]} nodes - nodes with fresh positions
+ * @param {import('@vue-flow/core').Edge[]} edges - edges for virtual obstacle computation
+ * @param {{ maxIterations?: number, overlapThreshold?: number, margin?: number }} options
  * @returns {import('@vue-flow/core').Node[]}
  */
-export function resolveCollisions(nodes, { maxIterations = 80, overlapThreshold = 0.5, margin = 30, flowInstance = null } = {}) {
+export function resolveCollisions(nodes, edges = [], { maxIterations = 50, overlapThreshold = 0.5, margin = 30 } = {}) {
   const boxes = nodes.map((node) => {
-    const estimated = fallbackNodeSize(node);
+    const estimated = estimateNodeSize(node);
     const dimW = node.dimensions?.width;
     const dimH = node.dimensions?.height;
     // Use rendered dimensions only if they are meaningful (> 0)
@@ -204,9 +232,8 @@ export function resolveCollisions(nodes, { maxIterations = 80, overlapThreshold 
     };
   });
 
-  // Add virtual boxes for association tables at edge midpoints
-  const assocObstacles = getAssociationObstacles(flowInstance);
-  for (const obs of assocObstacles) {
+  // Helper to add virtual obstacle boxes
+  const addVirtual = (obs) => {
     boxes.push({
       x: obs.x - margin,
       y: obs.y - margin,
@@ -216,24 +243,21 @@ export function resolveCollisions(nodes, { maxIterations = 80, overlapThreshold 
       isVirtual: true,
       node: null,
     });
-  }
+  };
+
+  // Add virtual boxes for association tables at bezier midpoints
+  for (const obs of getAssociationObstacles(nodes, edges)) addVirtual(obs);
 
   // Add virtual boxes for loopback arcs
-  const loopObstacles = getLoopbackObstacles(flowInstance);
-  for (const obs of loopObstacles) {
-    boxes.push({
-      x: obs.x - margin,
-      y: obs.y - margin,
-      width: obs.w + margin * 2,
-      height: obs.h + margin * 2,
-      moved: false,
-      isVirtual: true,
-      node: null,
-    });
-  }
+  for (const obs of getLoopbackObstacles(nodes, edges)) addVirtual(obs);
+
+  // Add virtual boxes for cardinality labels
+  for (const obs of getCardinalityObstacles(nodes, edges)) addVirtual(obs);
 
   for (let iter = 0; iter < maxIterations; iter++) {
-    let moved = false;
+    let totalDisplacement = 0;
+    // Progressive damping: full force early, half force at end
+    const damping = 1.0 - (iter / maxIterations) * 0.5;
 
     for (let i = 0; i < boxes.length; i++) {
       for (let j = i + 1; j < boxes.length; j++) {
@@ -255,42 +279,52 @@ export function resolveCollisions(nodes, { maxIterations = 80, overlapThreshold 
         const py = (A.height + B.height) * 0.5 - Math.abs(dy);
 
         if (px > overlapThreshold && py > overlapThreshold) {
-          moved = true;
           if (A.isVirtual) {
             // Only push B away (virtual obstacles are fixed)
             B.moved = true;
             if (px < py) {
-              B.x -= (dx > 0 ? 1 : -1) * px;
+              const push = (dx > 0 ? -1 : 1) * px * damping;
+              B.x += push;
+              totalDisplacement += Math.abs(push);
             } else {
-              B.y -= (dy > 0 ? 1 : -1) * py;
+              const push = (dy > 0 ? -1 : 1) * py * damping;
+              B.y += push;
+              totalDisplacement += Math.abs(push);
             }
           } else if (B.isVirtual) {
             // Only push A away
             A.moved = true;
             if (px < py) {
-              A.x += (dx > 0 ? 1 : -1) * px;
+              const push = (dx > 0 ? 1 : -1) * px * damping;
+              A.x += push;
+              totalDisplacement += Math.abs(push);
             } else {
-              A.y += (dy > 0 ? 1 : -1) * py;
+              const push = (dy > 0 ? 1 : -1) * py * damping;
+              A.y += push;
+              totalDisplacement += Math.abs(push);
             }
           } else {
             A.moved = B.moved = true;
             if (px < py) {
               const sx = dx > 0 ? 1 : -1;
-              const moveAmount = (px / 2) * sx;
+              const moveAmount = (px / 2) * sx * damping;
               A.x += moveAmount;
               B.x -= moveAmount;
+              totalDisplacement += Math.abs(moveAmount) * 2;
             } else {
               const sy = dy > 0 ? 1 : -1;
-              const moveAmount = (py / 2) * sy;
+              const moveAmount = (py / 2) * sy * damping;
               A.y += moveAmount;
               B.y -= moveAmount;
+              totalDisplacement += Math.abs(moveAmount) * 2;
             }
           }
         }
       }
     }
 
-    if (!moved) break;
+    // Converged or oscillating — stop early
+    if (totalDisplacement < 1.0) break;
   }
 
   return boxes

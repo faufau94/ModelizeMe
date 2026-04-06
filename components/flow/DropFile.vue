@@ -105,7 +105,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {Copy, Loader2} from 'lucide-vue-next'
 import { useConvertToFlowElements } from '@/composables/useConvertToFlowElements';
-import { getLayoutedElements } from '@/utils/useElk.js';
+import { getLayoutedElements, computeElkOptions } from '@/utils/useElk.js';
+import { resolveCollisions } from '@/utils/useCollisions.js';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-vue-next'
@@ -158,18 +159,24 @@ const handleFile = async () => {
       if (nodes && edges) {
         const existingNodes = mcdStore.flowMCD.getNodes ?? []
         const existingEdges = mcdStore.flowMCD.getEdges ?? []
-        const layouted = await getLayoutedElements(
-          [...existingNodes, ...nodes],
-          [...existingEdges, ...edges]
-        )
+        const allNodes = [...existingNodes, ...nodes]
+        const allEdges = [...existingEdges, ...edges]
+
+        // Layout all nodes (existing + imported) together
+        const opts = computeElkOptions(allNodes, allEdges)
+        const layouted = await getLayoutedElements(allNodes, allEdges, opts)
+        if (!layouted) throw new Error('Layout failed')
+
+        // Collision resolution pass (associations, loopbacks, cardinalities)
+        let finalNodes = resolveCollisions(layouted.nodes, layouted.edges, { margin: 40 })
 
         // Sync to Yjs with skipTracking=true (origin='init') so UndoManager
         // treats this as the new baseline, then clear undo history.
-        collaborationStore.setNodes(layouted.nodes, true);
+        collaborationStore.setNodes(finalNodes, true);
         collaborationStore.setEdges(layouted.edges, true);
         useUndoRedoStore().clear();
 
-        mcdStore.flowMCD.setNodes(layouted.nodes);
+        mcdStore.flowMCD.setNodes(finalNodes);
         mcdStore.flowMCD.setEdges(layouted.edges);
 
         await nextTick()

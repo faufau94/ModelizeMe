@@ -1,6 +1,42 @@
-import ELK from 'elkjs/lib/elk.bundled';
+import ELK from 'elkjs/lib/elk.bundled.js';
 
 const elk = new ELK();
+
+/**
+ * Compute the size of an association table rendered on an edge.
+ * Single source of truth — used by useElk (phantom nodes) and useCollisions (obstacles).
+ */
+const computeAssociationSize = (edgeData) => {
+    const propCount = edgeData?.properties?.length || 0;
+    const hasTs = edgeData?.hasTimestamps ? 2 : 0;
+    const hasSd = edgeData?.usesSoftDeletes ? 1 : 0;
+    const totalRows = propCount + hasTs + hasSd;
+    return {
+        width: 250,
+        height: Math.max(100, 48 + totalRows * 28),
+    };
+};
+
+/**
+ * Compute the bounding box of a loopback arc obstacle.
+ * Matches the actual rendering in CustomEdge.vue exactly.
+ */
+const computeLoopbackObstacle = (nodePos, w, h, side = 'right') => {
+    const bulgeHoriz = Math.max(100, w * 0.5);
+    const bulgeVert = Math.max(100, h * 0.7);
+    switch (side) {
+        case 'right':
+            return { x: nodePos.x + w, y: nodePos.y, w: bulgeHoriz, h };
+        case 'left':
+            return { x: nodePos.x - bulgeHoriz, y: nodePos.y, w: bulgeHoriz, h };
+        case 'top':
+            return { x: nodePos.x, y: nodePos.y - bulgeVert, w, h: bulgeVert };
+        case 'bottom':
+            return { x: nodePos.x, y: nodePos.y + h, w, h: bulgeVert };
+        default:
+            return { x: nodePos.x + w, y: nodePos.y, w: bulgeHoriz, h };
+    }
+};
 
 /**
  * Estimate the rendered size of a node based on its actual data.
@@ -75,7 +111,10 @@ const computeElkOptions = (nodes, edges, direction = 'RIGHT') => {
         'elk.layered.crossingMinimization.strategy': 'LAYER_SWEEP',
         'elk.separateConnectedComponents': 'true',
         'elk.layered.compaction.postCompaction.strategy': 'EDGE_LENGTH',
-        'elk.padding': '[top=100,left=100,bottom=100,right=100]',
+        'elk.padding.top': '100',
+        'elk.padding.left': '100',
+        'elk.padding.bottom': '100',
+        'elk.padding.right': '100',
     };
 };
 
@@ -166,15 +205,8 @@ const getLayoutedElements = (nodes, edges, options) => {
         const hasAssoc = edge.data?.hasNodeAssociation || (edge.data?.properties?.length > 0);
         if (hasAssoc) {
             const phantomId = `phantom_${edge.id}`;
-            // Size phantom to match actual MyCustomEntityAssociation component
-            // Component: min-width 160px, max-width 240px, header ~40px, each row ~28px
-            const propCount = edge.data?.properties?.length || 0;
-            const hasTs = edge.data?.hasTimestamps ? 2 : 0;
-            const hasSd = edge.data?.usesSoftDeletes ? 1 : 0;
-            const totalRows = propCount + hasTs + hasSd;
-            const phantomW = 250;
-            const phantomH = Math.max(100, 48 + totalRows * 28);
-            phantomNodes.push({ id: phantomId, width: phantomW, height: phantomH });
+            const phantomSize = computeAssociationSize(edge.data);
+            phantomNodes.push({ id: phantomId, width: phantomSize.width, height: phantomSize.height });
             // Split into two edges through the phantom node
             elkEdges.push({ id: `${edge.id}_a`, sources: [edge.source], targets: [phantomId] });
             elkEdges.push({ id: `${edge.id}_b`, sources: [phantomId], targets: [edge.target] });
@@ -217,8 +249,39 @@ const getLayoutedElements = (nodes, edges, options) => {
             });
 
             // Position ternary nodes at the barycenter of their connected entities,
-            // then nudge away from any overlapping node via spiral search
+            // then nudge away from any overlapping node or virtual obstacle via spiral search
             const allPositionedNodes = [...layoutedRegularNodes];
+
+            // Build virtual obstacles for associations and loopbacks
+            // so ternary nodes don't overlap them either
+            const virtualObstacles = [];
+            const nodeMap = new Map(layoutedRegularNodes.map(n => [n.id, n]));
+            for (const edge of nonTernaryEdges) {
+                if (edge.source === edge.target) continue;
+                if (!edge.data?.properties?.length && !edge.data?.hasNodeAssociation) continue;
+                const src = nodeMap.get(edge.source);
+                const tgt = nodeMap.get(edge.target);
+                if (!src || !tgt) continue;
+                const assocSize = computeAssociationSize(edge.data);
+                // Approximate midpoint (exact bezier not needed here — ELK handles main spacing)
+                const midX = (src.position.x + tgt.position.x) / 2;
+                const midY = (src.position.y + tgt.position.y) / 2;
+                virtualObstacles.push({
+                    x: midX - assocSize.width / 2,
+                    y: midY - assocSize.height / 2,
+                    w: assocSize.width,
+                    h: assocSize.height,
+                });
+            }
+            for (const edge of loopbackEdges) {
+                const node = nodeMap.get(edge.source);
+                if (!node) continue;
+                const w = node.dimensions?.width ?? estimateNodeSize(node).width;
+                const h = node.dimensions?.height ?? estimateNodeSize(node).height;
+                const side = edge.data?.loopbackSide || 'right';
+                virtualObstacles.push(computeLoopbackObstacle(node.position, w, h, side));
+            }
+
             for (const node of nodes) {
                 if (!ternaryNodeIds.has(node.id)) continue;
 
@@ -240,10 +303,11 @@ const getLayoutedElements = (nodes, edges, options) => {
                     barycenter = node.position || { x: 0, y: 0 };
                 }
 
-                // Spiral search to avoid overlap with already-positioned nodes
+                // Spiral search to avoid overlap with nodes AND virtual obstacles
                 const ternarySize = estimateNodeSize(node);
                 const margin = 60;
                 const overlaps = (pos) => {
+                    // Check against positioned nodes
                     for (const other of allPositionedNodes) {
                         const otherSize = sizeMap.get(other.id) || estimateNodeSize(other);
                         const ox = other.position.x;
@@ -257,6 +321,17 @@ const getLayoutedElements = (nodes, edges, options) => {
                             return true;
                         }
                     }
+                    // Check against virtual obstacles (associations + loopbacks)
+                    for (const obs of virtualObstacles) {
+                        if (
+                            pos.x < obs.x + obs.w + margin &&
+                            pos.x + ternarySize.width + margin > obs.x &&
+                            pos.y < obs.y + obs.h + margin &&
+                            pos.y + ternarySize.height + margin > obs.y
+                        ) {
+                            return true;
+                        }
+                    }
                     return false;
                 };
 
@@ -264,7 +339,7 @@ const getLayoutedElements = (nodes, edges, options) => {
                 if (overlaps(finalPos)) {
                     const step = Math.max(40, Math.min(ternarySize.width, ternarySize.height) * 0.5);
                     let found = false;
-                    for (let dist = step; dist < 1200 && !found; dist += step) {
+                    for (let dist = step; dist < 2000 && !found; dist += step) {
                         for (let angle = 0; angle < 360 && !found; angle += 20) {
                             const candidate = {
                                 x: barycenter.x + dist * Math.cos(angle * Math.PI / 180),
@@ -275,6 +350,10 @@ const getLayoutedElements = (nodes, edges, options) => {
                                 found = true;
                             }
                         }
+                    }
+                    if (!found) {
+                        // Fallback: offset from barycenter
+                        finalPos = { x: barycenter.x + 400, y: barycenter.y + 200 };
                     }
                 }
 
@@ -326,4 +405,4 @@ const getLayoutedElements = (nodes, edges, options) => {
         });
 };
 
-export { getLayoutedElements, computeElkOptions, estimateNodeSize };
+export { getLayoutedElements, computeElkOptions, estimateNodeSize, computeAssociationSize, computeLoopbackObstacle };
