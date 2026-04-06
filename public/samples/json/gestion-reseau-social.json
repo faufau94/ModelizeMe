@@ -1,0 +1,253 @@
+{
+  "nodes": [
+    {
+      "id": "node_utilisateur",
+      "type": "customEntity",
+      "position": { "x": 100, "y": 300 },
+      "data": {
+        "name": "Utilisateur",
+        "hasTimestamps": true,
+        "usesSoftDeletes": true,
+        "properties": [
+          { "id": "p1", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p2", "propertyName": "pseudo", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p3", "propertyName": "email", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p4", "propertyName": "bio", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p5", "propertyName": "avatar_url", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p6", "propertyName": "date_inscription", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p7", "propertyName": "actif", "typeName": "Boolean", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_publication",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 300 },
+      "data": {
+        "name": "Publication",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p10", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p11", "propertyName": "contenu", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p12", "propertyName": "image_url", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p13", "propertyName": "visibilite", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_commentaire",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 600 },
+      "data": {
+        "name": "Commentaire",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p20", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p21", "propertyName": "contenu", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_groupe",
+      "type": "customEntity",
+      "position": { "x": 100, "y": 600 },
+      "data": {
+        "name": "Groupe",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p30", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p31", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p32", "propertyName": "description", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p33", "propertyName": "prive", "typeName": "Boolean", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_tag",
+      "type": "customEntity",
+      "position": { "x": 1300, "y": 300 },
+      "data": {
+        "name": "Tag",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p40", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p41", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_publier",
+      "type": "customEdge",
+      "source": "node_utilisateur",
+      "target": "node_publication",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "publier",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_commenter",
+      "type": "customEdge",
+      "source": "node_publication",
+      "target": "node_commentaire",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "commenter",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_rediger",
+      "type": "customEdge",
+      "source": "node_utilisateur",
+      "target": "node_commentaire",
+      "sourceHandle": "s3",
+      "targetHandle": "s1",
+      "data": {
+        "name": "rediger",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_repondre",
+      "type": "customEdge",
+      "source": "node_commentaire",
+      "target": "node_commentaire",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "repondre",
+        "sourceCardinality": "0,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": "bottom"
+      }
+    },
+    {
+      "id": "edge_creer",
+      "type": "customEdge",
+      "source": "node_utilisateur",
+      "target": "node_groupe",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "creer",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_amitie",
+      "type": "customEdge",
+      "source": "node_utilisateur",
+      "target": "node_utilisateur",
+      "sourceHandle": "s2",
+      "targetHandle": "s3",
+      "data": {
+        "name": "amitie",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [
+          { "id": "ep1", "propertyName": "statut", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "ep2", "propertyName": "date_demande", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ],
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": "right"
+      }
+    },
+    {
+      "id": "edge_liker",
+      "type": "customEdge",
+      "source": "node_utilisateur",
+      "target": "node_publication",
+      "sourceHandle": "s2",
+      "targetHandle": "s3",
+      "data": {
+        "name": "liker",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_rejoindre",
+      "type": "customEdge",
+      "source": "node_utilisateur",
+      "target": "node_groupe",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "rejoindre",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [
+          { "id": "ep3", "propertyName": "role", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "ep4", "propertyName": "date_adhesion", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_taguer",
+      "type": "customEdge",
+      "source": "node_publication",
+      "target": "node_tag",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "taguer",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    }
+  ]
+}

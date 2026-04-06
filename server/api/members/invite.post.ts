@@ -1,25 +1,34 @@
-import { auth } from '~/lib/auth'
+import { requireAuth } from "~/server/utils/auth";
+import { auth } from "~/lib/auth";
 
-export default defineEventHandler(async event => {
-  // Validate session
-  const session = await auth.api.getSession({
+export default defineEventHandler(async (event) => {
+  const session = await requireAuth(event);
+
+  const { email, organizationId, role } = await readBody(event);
+
+  if (!email) {
+    throw createError({
+      statusCode: 400,
+      message: "L'email est requis",
+    });
+  }
+
+  if (!organizationId) {
+    throw createError({
+      statusCode: 400,
+      message: "L'ID de l'organisation est requis",
+    });
+  }
+
+  // Use better-auth's invitation system
+  const invitation = await auth.api.createInvitation({
     headers: event.headers,
-  })
-  if (!session?.user?.id) {
-    return { status: 401, body: { message: 'Unauthorized' } }
-  }
+    body: {
+      email,
+      organizationId,
+      role: role || "member",
+    },
+  });
 
-  // Parse request body
-  const { email } = await readBody(event)
-  if (!email || !password) {
-    return { status: 400, body: { message: 'Email and password are required' } }
-  }
-
-  try {
-    // send invite email
-    
-
-  } catch (error) {
-    
-  }
-})
+  return invitation;
+});

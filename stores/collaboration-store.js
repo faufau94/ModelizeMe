@@ -2,9 +2,8 @@
 import { defineStore } from 'pinia'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useMCDStore } from './mcd-store'
-import { useSession } from '~/lib/auth-client'
 
 export const useCollaborationStore = defineStore('collaboration', () => {
 
@@ -16,6 +15,14 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   const provider      = ref(null)     // will hold the single WebsocketProvider
   const sharedNodes   = ref(null)     // a Y.Array for nodes
   const sharedEdges   = ref(null)     // a Y.Array for edges
+  const currentModelId  = ref(null)
+  const currentUserId   = ref(null)
+  const heartbeatTimer  = ref(null)
+
+  // Raw (non-Vue-proxied) references to Yjs objects.
+  let _rawDoc   = null
+  let _rawNodes = null
+  let _rawEdges = null
 
   // ─── REACTIVE ACCESSORS ───
   // these computed() functions turn Y.Array → plain JS array
@@ -23,25 +30,40 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   const edges = computed(() => sharedEdges.value?.toArray() ?? [])
 
   // ─── INITIALIZATION ───
-  function initialize(flowId, userName) {
-    // do nothing if already initialized
-    if (ydoc.value) return
+  function initialize(flowId, userName, sessionToken, userId = null, userImage = null) {
+    // cleanup any previous session before re-initializing
+    cleanup()
 
     const mcdStore = useMCDStore()
+    const config = useRuntimeConfig()
+    const wsUrl = config.public.websocketUrl || 'ws://localhost:1234'
+
+    currentModelId.value = flowId
+    currentUserId.value = userId || userName
+
+    // Register this user as viewing the model
+    registerViewerHeartbeat(flowId, currentUserId.value, userName, userImage)
 
     // 1) create exactly one Y.Doc
-    ydoc.value = new Y.Doc()
+    _rawDoc = new Y.Doc()
+    ydoc.value = _rawDoc
 
-    // 2) open a websocket to your Yjs server
+    // 2) open a websocket to your Yjs server with auth token
+    // Token must be passed via `params` (not in serverUrl) so the URL is
+    // correctly built as: ws://host:port/flow-<id>?token=xxx
+    // Otherwise the room name ends up after a query string, breaking routing.
     provider.value = new WebsocketProvider(
-      'ws://localhost:1234',
+      wsUrl,
       'flow-' + flowId, // room name
-      ydoc.value
+      _rawDoc,
+      { params: { token: sessionToken || '' } }
     )
 
     // 3) create or retrieve two shared arrays
-    sharedNodes.value = ydoc.value.getArray('nodes')
-    sharedEdges.value = ydoc.value.getArray('edges')
+    _rawNodes = _rawDoc.getArray('nodes')
+    _rawEdges = _rawDoc.getArray('edges')
+    sharedNodes.value = _rawNodes
+    sharedEdges.value = _rawEdges
 
     // 4) set up awareness (cursor + name + color)
     const awareness = provider.value.awareness
@@ -52,27 +74,64 @@ export const useCollaborationStore = defineStore('collaboration', () => {
       cursor: null
     })
 
-    // 5) when sharedNodes changes anywhere, let MCDStore update the Vue Flow instance
-    sharedNodes.value.observe((event) => {
-      console.log('🔄 Yjs: nodes changed event →', event)
-      console.log('🔄 Yjs: nodes changed →', nodes.value)
-      console.log('event.transaction.origin: ', event.transaction.origin)
-      if (!mcdStore.flowMCD || nodes.value.length === 0 || event.transaction.origin === 'local') return
-      console.log('On arrive ici !')
-      // set VueFlow to exactly the current array of nodes
-      mcdStore.flowMCD.setNodes(nodes.value)
+    // 5) when sharedNodes changes from REMOTE users, update VueFlow
+    //    Skip 'local' origin to avoid resetting positions during/after drag.
+    //    Also skip 'init' origin (initial load handled explicitly in page).
+    _rawNodes.observe((event, transaction) => {
+      if (!mcdStore.flowMCD) return
+      if (transaction.origin === 'local' || transaction.origin === 'init') return
+
+      const yNodes = _rawNodes.toArray()
+      const yNodeIds = new Set(yNodes.map(n => n.id))
+
+      // Remote changes: update in-place to preserve dimensions/handleBounds
+      const currentNodes = mcdStore.flowMCD.getNodes?.value || []
+      const currentNodeIds = new Set(currentNodes.map(n => n.id))
+
+      for (const yNode of yNodes) {
+        const existing = mcdStore.flowMCD.findNode(yNode.id)
+        if (existing) {
+          if (yNode.position) {
+            mcdStore.flowMCD.updateNode(yNode.id, { position: { ...yNode.position } })
+          }
+          if (yNode.data) {
+            mcdStore.flowMCD.updateNodeData(yNode.id, { ...yNode.data })
+          }
+        }
+      }
+
+      const toAdd = yNodes.filter(n => !currentNodeIds.has(n.id))
+      if (toAdd.length) mcdStore.flowMCD.addNodes(toAdd)
+
+      const toRemove = currentNodes.filter(n => !yNodeIds.has(n.id)).map(n => n.id)
+      if (toRemove.length) mcdStore.flowMCD.removeNodes(toRemove)
+
+      nextTick(() => {
+        // Remove edges that reference deleted nodes
+        const currentEdges = mcdStore.flowMCD.getEdges?.value || []
+        const orphanEdgeIds = currentEdges
+          .filter(e => !yNodeIds.has(e.source) || !yNodeIds.has(e.target))
+          .map(e => e.id)
+        if (orphanEdgeIds.length) mcdStore.flowMCD.removeEdges(orphanEdgeIds)
+      })
     })
 
-    // 6) similarly for edges
-    sharedEdges.value.observe(() => {
-      console.log('🔄 Yjs: edges changed →', edges.value)
+    // 6) similarly for edges - skip local & init changes
+    _rawEdges.observe((event, transaction) => {
       if (!mcdStore.flowMCD) return
-      mcdStore.flowMCD.setEdges(edges.value)
+      if (transaction.origin === 'local' || transaction.origin === 'init') return
+
+      const edges = _rawEdges.toArray()
+      mcdStore.flowMCD.setEdges(edges)
+      nextTick(() => {
+        for (const e of edges) {
+          if (e.data && e.id) mcdStore.flowMCD.updateEdgeData(e.id, { ...e.data })
+        }
+      })
     })
 
     // 7) track connection status
     provider.value.on('status', ({ status }) => {
-      console.log('Connection status:', status)
       isConnected.value = (status === 'connected')
     })
 
@@ -93,86 +152,120 @@ export const useCollaborationStore = defineStore('collaboration', () => {
         .filter(u => u.name)
     })
 
-    // 9) set up event listeners so that if the local user drags/moves a node in Vue Flow,
-    //    we immediately write that change back into Yjs.  MCDStore provides onNodesChange/onEdgesChange.
-    // if (mcdStore.flowMCD) {
-    //   mcdStore.flowMCD.onNodesChange(({ node, type }) => {
-    //     if (type === 'position' || type === 'dimensions') {
-    //       updateNode(node.id, node)
-    //     }
-    //   })
-    //   mcdStore.flowMCD.onEdgesChange(({ edge, type }) => {
-    //     if (type === 'update') {
-    //       updateEdge(edge.id, edge)
-    //     }
-    //   })
-    // }
+  }
+
+  // ─── HELPERS ───
+  // Strip transient VueFlow state before storing in Yjs.
+  function stripTransientState(obj) {
+    const clean = JSON.parse(JSON.stringify(obj))
+    delete clean.selected
+    delete clean.dragging
+    return clean
   }
 
   // ─── NODE CRUD ───
+  // All local mutations use origin='local' so the observer skips them.
   function addNode(node) {
-    console.log('Adding node to Yjs:', node)
-    sharedNodes.value?.push([ node ])
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) mcdStore.flowMCD.addNodes([ node ])
+    if (!_rawNodes) return
+    const plain = stripTransientState(node)
+    _rawDoc.transact(() => {
+      _rawNodes.push([ plain ])
+    }, 'local')
   }
 
   function updateNode(nodeId, newData) {
-    if (!sharedNodes.value) return
-    const arr = sharedNodes.value.toArray()
+    if (!_rawNodes) return
+    const arr = _rawNodes.toArray()
     const idx = arr.findIndex(n => n.id === nodeId)
-    if (idx === -1) {
-      console.warn('Yjs node not found for update:', nodeId)
-      return
-    }
-    // merge old fields with newData, then replace exactly that index
-    const merged = { ...arr[idx], ...newData }
+    if (idx === -1) return
+    const merged = stripTransientState({ ...arr[idx], ...newData })
+    _rawDoc.transact(() => {
+      _rawNodes.delete(idx, 1)
+      _rawNodes.insert(idx, [merged])
+    }, 'local')
+  }
 
-    ydoc.value.transact(() => {
-      sharedNodes.value.delete(idx, 1)
-      sharedNodes.value.insert(idx, [merged])
-    }, /* origin= */ 'local')
+  // Position update
+  function updateNodePosition(nodeId, newData) {
+    if (!_rawNodes) return
+    const arr = _rawNodes.toArray()
+    const idx = arr.findIndex(n => n.id === nodeId)
+    if (idx === -1) return
+    const merged = stripTransientState({ ...arr[idx], ...newData })
+    _rawDoc.transact(() => {
+      _rawNodes.delete(idx, 1)
+      _rawNodes.insert(idx, [merged])
+    }, 'local')
   }
 
   function removeNode(nodeId) {
-    if (!sharedNodes.value) return
-    const arr = sharedNodes.value.toArray()
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) mcdStore.flowMCD.removeNodes([ nodeId ])
+    if (!_rawNodes) return
+    const arr = _rawNodes.toArray()
     const idx = arr.findIndex(n => n.id === nodeId)
     if (idx >= 0) {
-      sharedNodes.value.delete(idx, 1)
+      _rawDoc.transact(() => {
+        _rawNodes.delete(idx, 1)
+      }, 'local')
     }
   }
 
   // ─── EDGE CRUD ───
   function addEdge(edge) {
-    sharedEdges.value?.push([ edge ])
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) mcdStore.flowMCD.addEdges([ edge ])
+    if (!_rawEdges) return
+    const plain = stripTransientState(edge)
+    _rawDoc.transact(() => {
+      _rawEdges.push([ plain ])
+    }, 'local')
   }
 
   function updateEdge(edgeId, newData) {
-    if (!sharedEdges.value) return
-    const arr = sharedEdges.value.toArray()
+    if (!_rawEdges) return
+    const arr = _rawEdges.toArray()
     const idx = arr.findIndex(e => e.id === edgeId)
     if (idx === -1) return
-    const merged = { ...arr[idx], ...newData }
-    sharedEdges.value.delete(idx, 1)
-    sharedEdges.value.insert(idx, [ merged ])
+    const merged = stripTransientState({ ...arr[idx], ...newData })
+    _rawDoc.transact(() => {
+      _rawEdges.delete(idx, 1)
+      _rawEdges.insert(idx, [ merged ])
+    }, 'local')
   }
 
   function removeEdge(edgeId) {
-    if (!sharedEdges.value) return
-    const arr = sharedEdges.value.toArray()
+    const mcdStore = useMCDStore()
+    if (mcdStore.flowMCD) mcdStore.flowMCD.removeEdges([ edgeId ])
+    if (!_rawEdges) return
+    const arr = _rawEdges.toArray()
     const idx = arr.findIndex(e => e.id === edgeId)
-    if (idx >= 0) sharedEdges.value.delete(idx, 1)
+    if (idx >= 0) {
+      _rawDoc.transact(() => {
+        _rawEdges.delete(idx, 1)
+      }, 'local')
+    }
   }
 
   // ─── BULK SET ─── (e.g. initial load from your database)
-  function setNodes(newNodes) {
-    if (!sharedNodes.value) return
-    sharedNodes.value.delete(0, sharedNodes.value.length)
-    sharedNodes.value.push(newNodes)
+  // skipTracking=true uses 'init' origin so observers ignore it
+  function setNodes(newNodes, skipTracking = false) {
+    if (!_rawNodes) return
+    const plain = newNodes.map(n => stripTransientState(n))
+    _rawDoc.transact(() => {
+      _rawNodes.delete(0, _rawNodes.length)
+      _rawNodes.push(plain)
+    }, skipTracking ? 'init' : 'local')
   }
-  function setEdges(newEdges) {
-    if (!sharedEdges.value) return
-    sharedEdges.value.delete(0, sharedEdges.value.length)
-    sharedEdges.value.push(newEdges)
+  function setEdges(newEdges, skipTracking = false) {
+    if (!_rawEdges) return
+    const plain = newEdges.map(e => stripTransientState(e))
+    _rawDoc.transact(() => {
+      _rawEdges.delete(0, _rawEdges.length)
+      _rawEdges.push(plain)
+    }, skipTracking ? 'init' : 'local')
   }
 
   // ─── CURSOR / AWARENESS ───
@@ -180,17 +273,16 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     if (!provider.value) return
     const flowContainer = document.querySelector('.dndflow')
     if (!flowContainer) return
-    
-    // Get the Vue Flow instance from MCD store
+
     const mcdStore = useMCDStore()
     if (!mcdStore.flowMCD) return
-    
+
     // Convert screen coordinates to flow coordinates
     const flowPosition = mcdStore.flowMCD.screenToFlowCoordinate({
       x: event.clientX,
       y: event.clientY
     })
-    
+
     provider.value.awareness.setLocalStateField('user', {
       ...provider.value.awareness.getLocalState()?.user,
       cursor: flowPosition
@@ -203,27 +295,60 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     }
   }
 
+  // ─── VIEWER HEARTBEAT ───
+  function registerViewerHeartbeat(modelId, userId, userName, userImage) {
+    $fetch('/api/models/viewers', {
+      method: 'POST',
+      body: { modelId, userId, userName, userImage }
+    }).catch(() => {})
+
+    heartbeatTimer.value = setInterval(() => {
+      $fetch('/api/models/viewers', {
+        method: 'POST',
+        body: { modelId, userId, userName, userImage }
+      }).catch(() => {})
+    }, 30_000)
+  }
+
   // ─── CLEANUP ───
   function cleanup() {
     const flowContainer = document.querySelector('.dndflow')
     if (flowContainer) {
       flowContainer.removeEventListener('mousemove', updateCursor)
     }
+
     if (provider.value) {
       provider.value.awareness.setLocalStateField('user', null)
       provider.value.destroy()
     }
-    if (ydoc.value) {
-      ydoc.value.destroy()
+    if (_rawDoc) {
+      _rawDoc.destroy()
+    }
+
+    // Unregister viewer
+    if (currentModelId.value && currentUserId.value) {
+      $fetch('/api/models/viewers', {
+        method: 'DELETE',
+        body: { modelId: currentModelId.value, userId: currentUserId.value }
+      }).catch(() => {})
+    }
+    if (heartbeatTimer.value) {
+      clearInterval(heartbeatTimer.value)
+      heartbeatTimer.value = null
     }
 
     isConnected.value = false
     activeUsers.value = []
     remoteCursors.value = []
+    _rawDoc = null
+    _rawNodes = null
+    _rawEdges = null
     ydoc.value = null
     provider.value = null
     sharedNodes.value = null
     sharedEdges.value = null
+    currentModelId.value = null
+    currentUserId.value = null
   }
 
   return {
@@ -239,6 +364,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     cleanup,
     addNode,
     updateNode,
+    updateNodePosition,
     removeNode,
     addEdge,
     updateEdge,
@@ -246,6 +372,6 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     setNodes,
     setEdges,
     setupCursorTracking,
-    updateCursor
+    updateCursor,
   }
 })

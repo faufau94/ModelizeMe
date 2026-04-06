@@ -16,7 +16,7 @@ export function useTeam() {
 
   const queryClient = useQueryClient()
 
-  // // — LIST —
+  // // - LIST -
   // const {
   //   data: teams,
   //   isLoading: isLoadingTeams,
@@ -32,7 +32,7 @@ export function useTeam() {
   //   enabled: computed(() => !!selectedWorkspaceId.value),
   // })
 
-  // — READ SELECTED —
+  // - READ SELECTED -
   const {
     data: selectedTeam,
     isLoading: isLoadingSelectedTeam,
@@ -49,13 +49,19 @@ export function useTeam() {
     placeholderData: (prev) => prev ?? undefined,
   })
 
-  // — CREATE —
+  // - CREATE A TEAM -
   const createTeamMutation = useMutation({
     mutationFn: async (payload: Partial<Team>) => {
       const name = payload.name as string
+        const description = payload.description as string | undefined
+        const color = payload.color as string | undefined
+        const maxMembers = payload.maxMembers as number | undefined
       if (!name) throw new Error('Team name is required')
       return await authClient.organization.createTeam({
         name,
+        description,
+        color,
+        maxMembers,
         organizationId: selectedWorkspaceId.value as string | undefined
       }).then((res: any) => res.data)
     },
@@ -63,14 +69,12 @@ export function useTeam() {
   })
   const createTeam = (data: Partial<Team>) => createTeamMutation.mutateAsync(data)
 
-  // — UPDATE —
+  // - UPDATE -
   const updateTeamMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Team> }) => {
-      const updateData: { name?: string } = {}
-      if (data.name) updateData.name = data.name
       return await authClient.organization.updateTeam({
         teamId: id,
-        data: updateData
+        data: data
       }).then((res: any) => res.data)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] }),
@@ -78,7 +82,7 @@ export function useTeam() {
   const updateTeam = (id: string, data: Partial<Team>) =>
     updateTeamMutation.mutateAsync({ id, data })
 
-  // — DELETE —
+  // - DELETE -
   const deleteTeamMutation = useMutation({
     mutationFn: async (id: string) =>
       await authClient.organization.removeTeam({
@@ -87,25 +91,41 @@ export function useTeam() {
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] }),
   })
-  const deleteTeam = (id: string) => deleteTeamMutation.mutateAsync(id)
+  const deleteTeam = (id: string) => {
+      return deleteTeamMutation.mutateAsync(id)
+  }
 
-  // — ASSIGN MEMBERS —
-  const assignMembersMutation = useMutation({
-    mutationFn: async ({ teamId, assignments }: { teamId: string; assignments: TeamMember[] }) =>
-      await $fetch<Team>('/api/teams/assign', {
-        method: 'POST',
-        query: { id: teamId },
-        body: { assignments }
+
+  // - ADD TEAM MEMBER -
+  const addTeamMemberMutation = useMutation({
+    mutationFn: async ({ teamId, userId }: { teamId: string; userId: string }) =>
+      await authClient.organization.addTeamMember({
+          teamId: teamId,
+          userId: userId
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['team', selectedTeamId.value as string | undefined] })
-      queryClient.invalidateQueries({ queryKey: ['teams', selectedWorkspaceId.value as string | undefined] })
+        queryClient.refetchQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] })
     },
   })
-  const assignMembers = (teamId: string, assignments: TeamMember[]) =>
-    assignMembersMutation.mutateAsync({ teamId, assignments })
+  const addTeamMember = (teamId: string, userId: string) =>
+    addTeamMemberMutation.mutateAsync({ teamId, userId })
 
-  // — RENAME THE TEAM —
+    // - REMOVE TEAM MEMBER -
+    const removeTeamMemberMutation = useMutation({
+      mutationFn: async ({ teamId, userId }: { teamId: string; userId: string }) =>
+      // get server url 'api/team-members/remove'
+      await $fetch('/api/team-members/delete', {
+            method: 'DELETE',
+            query: { teamId, userId }
+      }),
+      onSuccess: () => {
+        queryClient.refetchQueries({ queryKey: ['workspace', selectedWorkspaceId.value as string | undefined] })
+      },
+    })
+    const removeTeamMember = (teamId: string, userId: string) =>
+      removeTeamMemberMutation.mutateAsync({ teamId, userId })
+
+  // - RENAME THE TEAM -
   const renameTeamMutation = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) =>
       await authClient.organization.updateTeam({
@@ -131,15 +151,18 @@ export function useTeam() {
     createTeam,
     updateTeam,
     deleteTeam,
-    assignMembers,
     renameTeam,
+    addTeamMember,
+      removeTeamMember,
 
     // pour debug ou usage avancé
     _mutations: {
       createTeamMutation,
       updateTeamMutation,
       deleteTeamMutation,
-      assignMembersMutation,
+        renameTeamMutation,
+      addTeamMemberMutation,
+        removeTeamMemberMutation,
     }
   }
 }

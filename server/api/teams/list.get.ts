@@ -1,17 +1,19 @@
 import prisma from "~/lib/prisma";
+import { requireOrgMembership } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-  const { workspaceId } = getQuery(event)
-  if (!workspaceId) {
-    throw createError({ statusCode: 400, message: 'workspaceId est requis' })
-  }
+  const { workspaceId } = getQuery(event);
+  const orgId = idSchema.parse(workspaceId);
+
+  await requireOrgMembership(event, orgId);
 
   return await prisma.team.findMany({
-    where: { workspaceId: String(workspaceId) },
+    where: { organizationId: orgId },
     include: {
-      members: {
-        include: { user: true }
-      }
-    }
-  })
-})
+      teammembers: {
+        include: { user: true },
+      },
+    },
+  });
+});

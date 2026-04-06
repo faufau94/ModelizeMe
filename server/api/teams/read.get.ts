@@ -1,22 +1,25 @@
 import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
+  await requireAuth(event);
 
-  const { id } = getQuery(event)
-  if (!id) {
-    throw createError({ statusCode: 400, message: 'id est requis' })
-  }
+  const { id } = getQuery(event);
+  const teamId = idSchema.parse(id);
 
   const team = await prisma.team.findUnique({
-    where: { id: Number(id) },
+    where: { id: teamId },
     include: {
-      members: {
-        include: { user: true }
-      }
-    }
-  })
+      teammembers: {
+        include: { user: true },
+      },
+    },
+  });
+
   if (!team) {
-    throw createError({ statusCode: 404, message: 'Équipe non trouvée' })
+    throw createError({ statusCode: 404, message: "Équipe non trouvée" });
   }
-  return team
-})
+
+  return team;
+});

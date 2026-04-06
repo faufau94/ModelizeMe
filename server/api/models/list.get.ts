@@ -1,57 +1,36 @@
 import prisma from "~/lib/prisma";
-import { auth } from "~/lib/auth";
+import { requireOrgMembership } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
-export default defineEventHandler(async event => {
-    const { selectedWorkspaceId, teamId } = getQuery(event);
-    const session = await auth.api.getSession({
-        headers: event.headers,
-    })
-    try {
+export default defineEventHandler(async (event) => {
+  const { selectedWorkspaceId, teamId, onlyTemplates } = getQuery(event);
+  const workspaceId = idSchema.parse(selectedWorkspaceId);
 
-        if (!session?.user?.email) {
-            throw createError({
-                statusCode: 401,
-                message: "Unauthorized: User not authenticated"
-            });
-        }
+  await requireOrgMembership(event, workspaceId);
 
-        const query = getQuery(event);
-        let models;
+  const isTemplates = onlyTemplates === "true";
 
-        try {
-            const onlyTemplates = query.onlyTemplates === 'true';
+  const where: any = {
+    workspaceId,
+    ...(teamId && { teamId: String(teamId) }),
+    ...(isTemplates && { Galery: { some: {} } }),
+  };
 
-            const where: any = {
-                workspaceId: selectedWorkspaceId,
-                ...(teamId && { teamId: teamId }),
-                ...(onlyTemplates && { Galery: { some: {} } }),
-            };
-
-            models = await prisma.model.findMany({
-                where,
-                ...(onlyTemplates && {
-                    include: {
-                        Galery: {
-                            include: { category: true },
-                        },
-                    },
-                }),
-                include: {
-                    team: true,
-                },
-            });
-        } catch (error) {
-            console.error('Error fetching models:', error);
-            throw createError({
-                statusCode: 500,
-                message: "Database error while fetching models"
-            });
-        }
-
-        return models;
-
-    } catch (error) {
-        console.error('Global error:', error);
-        
-    }
+  return await prisma.model.findMany({
+    where,
+    include: {
+      team: true,
+      author: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      ...(isTemplates && {
+        Galery: {
+          include: { category: true },
+        },
+      }),
+    },
+  });
 });

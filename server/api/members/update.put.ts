@@ -1,32 +1,45 @@
-import { auth } from '~/lib/auth'
-import prisma from '~/lib/prisma'
+import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
-export default defineEventHandler(async event => {
-  // Validate session
-  const session = await auth.api.getSession({
-    headers: event.headers,
-  })
-  if (!session?.user?.id) {
-    return { status: 401, body: { message: 'Unauthorized' } }
+export default defineEventHandler(async (event) => {
+  const session = await requireAuth(event);
+
+  const { id } = getQuery(event);
+  const memberId = idSchema.parse(id);
+  const body = await readBody(event);
+
+  // Find the member to get its orgId
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+  });
+
+  if (!member) {
+    throw createError({ statusCode: 404, message: "Membre non trouvé" });
   }
 
-  // Get user id and body
-  const { id } = getQuery(event)
-  const data = await readBody(event)
-  if (!id) {
-    return { status: 400, body: { message: 'User id is required' } }
+  // Check caller is owner/admin of this org
+  const callerMember = await prisma.member.findFirst({
+    where: {
+      organizationId: member.organizationId,
+      userId: session.user.id,
+    },
+  });
+
+  if (!callerMember || !["owner", "admin"].includes(callerMember.role)) {
+    throw createError({
+      statusCode: 403,
+      message: "Seuls les admins peuvent modifier les membres",
+    });
   }
 
-  try {
-    console.log('Updating user with id:', id, 'and data:', data)
-    // Update user fields
-    const updated = await prisma.workspaceMember.update({
-      where: { id: Number(id) },
-      data: data
-    })
+  // Only allow updating role
+  const updatedMember = await prisma.member.update({
+    where: { id: memberId },
+    data: {
+      role: body.role || member.role,
+    },
+  });
 
-    return { status: 200, body: { updated, message: `User "${updated.email}" updated successfully` } }
-  } catch (error) {
-    return { status: 500, body: { message: 'Error updating user' } }
-  }
-})
+  return updatedMember;
+});

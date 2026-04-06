@@ -1,40 +1,45 @@
 import prisma from "~/lib/prisma";
+import { requireModelAccess } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-    const body = await readBody(event);
-    const query = getQuery(event);
+  const body = await readBody(event);
+  const query = getQuery(event);
 
-    // Vérification du type de contenu et de l'action
-    const isNode = body.type === 'node' && body.action === 'removeNode';
-    const isEdge = body.type === 'edge' && body.action === 'removeEdge';
+  const isNode = body?.type === "node" && body?.action === "removeNode";
+  const isEdge = body?.type === "edge" && body?.action === "removeEdge";
 
-    if (isNode || isEdge) {
-        // Sélectionne la colonne appropriée en fonction du type
-        const field = isNode ? 'nodes' : 'edges';
-        const idField = isNode ? 'idNode' : 'idEdge';
+  if (isNode || isEdge) {
+    const modelId = idSchema.parse(query.idModel);
+    await requireModelAccess(event, modelId);
 
-        // Récupère le contenu actuel
-        const currentContent = await prisma.model.findUnique({
-            where: { id: query.idModel?.toString() },
-            select: { [field]: true },
-        });
+    const field = isNode ? "nodes" : "edges";
+    const idField = isNode ? "idNode" : "idEdge";
 
-        if (!currentContent) {
-            throw new Error('Modèle non trouvé');
-        }
+    const currentContent = await prisma.model.findUnique({
+      where: { id: modelId },
+      select: { [field]: true },
+    });
 
-        // Filtre l'élément à supprimer
-        const updatedContent = currentContent[field].filter(item => item.id !== query[idField]);
-
-        // Met à jour le modèle avec le nouveau contenu
-        return await prisma.model.update({
-            where: { id: query.idModel?.toString() },
-            data: { [field]: updatedContent },
-        });
+    if (!currentContent) {
+      throw createError({ statusCode: 404, message: "Modèle non trouvé" });
     }
 
-    // Suppression générale du modèle si aucune autre condition n'est remplie
-    return await prisma.model.delete({
-        where: { id: query.id?.toString() },
+    const updatedContent = (currentContent[field] as any[]).filter(
+      (item) => item.id !== query[idField]
+    );
+
+    return await prisma.model.update({
+      where: { id: modelId },
+      data: { [field]: updatedContent },
     });
+  }
+
+  // Full model deletion
+  const modelId = idSchema.parse(query.id);
+  await requireModelAccess(event, modelId);
+
+  return await prisma.model.delete({
+    where: { id: modelId },
+  });
 });

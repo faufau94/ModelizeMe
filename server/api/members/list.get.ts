@@ -1,66 +1,26 @@
-import { auth } from '~/lib/auth'
-import prisma from "~/lib/prisma"
+import prisma from "~/lib/prisma";
+import { requireOrgMembership } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
-export default defineEventHandler(async event => {
-  // Fetch current user session
-  const session = await auth.api.getSession({
-    headers: event.headers,
-  })
-  const userId = session?.user?.id
-  if (!userId) {
-    return { status: 401, body: { message: 'Unauthorized' } }
-  }
+export default defineEventHandler(async (event) => {
+  const { workspaceId } = getQuery(event);
+  const orgId = idSchema.parse(workspaceId);
 
-  // Get workspaceId from query
-  const { workspaceId } = getQuery(event)
-  if (!workspaceId) {
-    return { status: 400, body: { message: 'workspaceId is required' } }
-  }
+  await requireOrgMembership(event, orgId);
 
-  try {
-
-    // Retrieve owner of the workspace
-    const workspace = await prisma.workspace.findUnique({
-      where: { id: String(workspaceId) },
-      include: { owner: true }
-    })
-    
-    // Retrieve members of the workspace
-    const members = await prisma.workspaceMember.findMany({
-      where: { workspaceId: String(workspaceId) },
-      include: {
-        user: {
-          include: {
-            teamMemberships: {
-              where: { team: { workspaceId: String(workspaceId) } },
-              include: {
-                team: true
-              }
-            }
-          }
+  const members = await prisma.member.findMany({
+    where: { organizationId: orgId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
         },
-        role: {
-          select: { name: true }
-        }
-      }
-    })
-
-    
-    const allMembers = [
-      {
-        userId: workspace?.ownerId,
-        workspaceId: workspace?.id,
-        canViewAllTeams: true,
-        user: workspace?.owner,
-        role:{
-         name:"OWNER"
-        }
       },
-      ...members
-    ]
+    },
+  });
 
-    return allMembers
-  } catch (error) {
-    return { status: 500, body: { message: 'Error fetching members' } }
-  }
-})
+  return members;
+});
