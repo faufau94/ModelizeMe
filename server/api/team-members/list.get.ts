@@ -1,30 +1,27 @@
-import prisma from '~/lib/prisma'
+import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-  const query = getQuery(event)
-  const teamId = query.teamId as string
+  await requireAuth(event);
 
-  if (!teamId) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'teamId is required',
-    })
-  }
+  const query = getQuery(event);
+  const teamId = idSchema.parse(query.teamId);
 
-  return prisma.teamMember.findMany({
-      where: {teamId},
-      select: {
+  return await prisma.teamMember.findMany({
+    where: { teamId },
+    select: {
+      id: true,
+      userId: true,
+      teamId: true,
+      createdAt: true,
+      user: {
+        select: {
           id: true,
-          userId: true,
-          teamId: true,
-          createdAt: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            }
-          }
+          name: true,
+          email: true,
+        },
       },
+    },
   });
-})
+});

@@ -88,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -105,6 +105,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {Copy, Loader2} from 'lucide-vue-next'
 import { useConvertToFlowElements } from '@/composables/useConvertToFlowElements';
+import { getLayoutedElements, computeElkOptions } from '@/utils/useElk.js';
+import { resolveCollisions } from '@/utils/useCollisions.js';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-vue-next'
@@ -112,6 +114,8 @@ import { AlertCircle } from 'lucide-vue-next'
 
 import { UploadIcon, FileIcon, XIcon } from 'lucide-vue-next'
 import {useMCDStore} from "~/stores/mcd-store.js";
+import {useCollaborationStore} from "~/stores/collaboration-store.js";
+import {useUndoRedoStore} from "~/stores/undo-redo-store.js";
 
 
 defineProps({
@@ -123,24 +127,23 @@ const emit = defineEmits(['toggleDialog'])
 const route = useRoute()
 
 
-const { convertSQLToFlowElements, convertXMLToFlowElements } = useConvertToFlowElements();
+const { convertSQLToFlowElements, convertXMLToFlowElements, convertJSONToFlowElements } = useConvertToFlowElements();
 const mcdStore = useMCDStore()
+const collaborationStore = useCollaborationStore()
 
 const isDragging = ref(false)
 const file = ref(null)
 const fileInput = ref(null)
 
 const errorMessage = ref('')
-const allowedFileTypes = ['.xml', '.sql']
+const allowedFileTypes = ['.xml', '.sql', '.json']
 const isConvertingFile = ref(false)
 
 const handleFile = async () => {
   isConvertingFile.value = true
   if (file.value) {
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-      const fileContent = e.target.result;
+    try {
+      const fileContent = await readFileAsText(file.value);
       const fileType = file.value.name.split('.').pop().toLowerCase();
 
       let nodes, edges;
@@ -149,19 +152,52 @@ const handleFile = async () => {
         ({nodes, edges} = await convertSQLToFlowElements(fileContent, route.params.idModel));
       } else if (fileType === 'xml') {
         ({nodes, edges} = await convertXMLToFlowElements(fileContent, route.params.idModel));
+      } else if (fileType === 'json') {
+        ({nodes, edges} = await convertJSONToFlowElements(fileContent, route.params.idModel));
       }
-
 
       if (nodes && edges) {
-        mcdStore.flowMCD.addNodes(nodes);
-        mcdStore.flowMCD.addEdges(edges);
-      }
-    };
+        const existingNodes = mcdStore.flowMCD.getNodes ?? []
+        const existingEdges = mcdStore.flowMCD.getEdges ?? []
+        const allNodes = [...existingNodes, ...nodes]
+        const allEdges = [...existingEdges, ...edges]
 
-    reader.readAsText(file.value);
+        // Layout all nodes (existing + imported) together
+        const opts = computeElkOptions(allNodes, allEdges)
+        const layouted = await getLayoutedElements(allNodes, allEdges, opts)
+        if (!layouted) throw new Error('Layout failed')
+
+        // Collision resolution pass (associations, loopbacks, cardinalities)
+        let finalNodes = resolveCollisions(layouted.nodes, layouted.edges, { margin: 40 })
+
+        // Sync to Yjs with skipTracking=true (origin='init') so UndoManager
+        // treats this as the new baseline, then clear undo history.
+        collaborationStore.setNodes(finalNodes, true);
+        collaborationStore.setEdges(layouted.edges, true);
+        useUndoRedoStore().clear();
+
+        mcdStore.flowMCD.setNodes(finalNodes);
+        mcdStore.flowMCD.setEdges(layouted.edges);
+
+        await nextTick()
+        mcdStore.flowMCD.fitView({ padding: 0.4 })
+      }
+    } catch (err) {
+      errorMessage.value = 'Erreur lors de l\'importation du fichier.';
+      console.error(err);
+    }
   }
   isConvertingFile.value = false
   emit('toggleDialog')
+}
+
+function readFileAsText(f) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = (e) => reject(e);
+    reader.readAsText(f);
+  });
 }
 
 const onDragOver = () => {

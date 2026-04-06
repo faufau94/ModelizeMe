@@ -15,7 +15,7 @@ export const useWorkspace = () => {
 
     if(route.path.startsWith('/app/workspace/')) {
       // si l'URL fournit workspaceId, on l'utilise
-      if (route.params.workspaceId !== 'undefined' || route.params.workspaceId !== undefined) {
+      if (route.params.workspaceId && route.params.workspaceId !== 'undefined') {
         return String(route.params.workspaceId)
       }
 
@@ -61,8 +61,6 @@ export const useWorkspace = () => {
         throw new Error('Workspace not found')
       }
 
-      console.log('Organization Data:', organization.data);
-
       // Enrichir les équipes avec les membres et modèles
       const teamsWithCounts = await Promise.all(
         (organization.data.teams || []).map(async (team) => {
@@ -83,14 +81,10 @@ export const useWorkspace = () => {
         })
       )
 
-        console.log('Teams with Counts:', teamsWithCounts);
-
       // Sort teams in ascending order by createdAt
       const sortedTeams = teamsWithCounts.sort((a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       )
-
-        console.log('Sorted Teams:', sortedTeams);
 
       return {
         ...organization.data,
@@ -137,7 +131,7 @@ export const useWorkspace = () => {
   const switchWorkspace = async (organizationId: string) => {
     await authClient.organization.setActive({ organizationId: organizationId })
     await queryClient.invalidateQueries({ queryKey: ['workspaces'] })
-    await navigateTo(`/app/workspace/${organizationId}/dashboard`)
+    await navigateTo(goToThisWorkspaceUrl('', organizationId))
   }
 
   // // GET WORKSPACE ROLES (Organization Roles)
@@ -181,8 +175,9 @@ export const useWorkspace = () => {
   }
 
   // Go to Workspace URL
-  const goToThisWorkspaceUrl = (addToUrl: string) => {
-    return `/app/workspace/${selectedWorkspaceId.value}/${addToUrl}`
+  const goToThisWorkspaceUrl = (addToUrl?: string, workspaceId?: string) => {
+    const id = workspaceId ?? selectedWorkspaceId.value
+    return addToUrl ? `/app/workspace/${id}/${addToUrl}` : `/app/workspace/${id}`
   }
 
   // Add activeMember as a reactive query

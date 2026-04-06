@@ -4,10 +4,14 @@ import prisma from "@/lib/prisma";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
 import { sendOrganizationInvitation } from "@/lib/send-invitation";
-import {authClient} from "~/lib/auth-client";
 
 export const auth = betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    trustedOrigins: [
+      process.env.BASE_URL || 'http://localhost:3000',
+      'http://localhost:3000',
+      'http://localhost:3100'
+    ],
     database: prismaAdapter(prisma, {
         provider: "mysql",
     }),
@@ -15,23 +19,27 @@ export const auth = betterAuth({
         enabled: true,
         autoSignIn: true,
         async sendResetPassword(url, user) {
-			console.log("Reset password url:", url);
+			// TODO: implement password reset email
 		},
     },
-    // socialProviders: { 
-    //     google: { 
-    //        clientId: useRuntimeConfig().googleClientId  || "", 
-    //        clientSecret: useRuntimeConfig().googleClientSecret  || "", 
-    //     },
-    //     github: { 
-    //        clientId: useRuntimeConfig().githubClientId  || "", 
-    //        clientSecret: useRuntimeConfig().githubClientSecret  || "", 
-    //     },
-    //     gitlab: { 
-    //        clientId: useRuntimeConfig().gitlabClientId  || "", 
-    //        clientSecret: useRuntimeConfig().gitlabClientSecret  || "", 
-    //     },
-    // },
+    socialProviders: {
+        google: {
+           clientId: process.env.GOOGLE_CLIENT_ID || "",
+           clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+        },
+        github: {
+           clientId: process.env.GITHUB_CLIENT_ID || "",
+           clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+           // Scope 'repo' required to create repos and push code
+           scope: ["user:email", "repo"],
+        },
+        gitlab: {
+           clientId: process.env.GITLAB_CLIENT_ID || "",
+           clientSecret: process.env.GITLAB_CLIENT_SECRET || "",
+           // Scope 'api' required for project creation + commits
+           scope: ["read_user", "api"],
+        },
+    },
     plugins: [
         admin(),
         organization({
@@ -80,10 +88,8 @@ export const auth = betterAuth({
 
 
           async sendInvitationEmail(data) {
-            console.log("Sending invitation email to:", data.email);
-            const baseUrl = useRuntimeConfig().public.BASE_URL || "http://localhost:3000";
+            const baseUrl = useRuntimeConfig().public.baseUrl || "http://localhost:3000";
             const inviteLink = `${baseUrl}/app/workspace/join/${data.id}`;
-            console.log("Send invitation to:", data.email, "with link:", inviteLink);
             await sendOrganizationInvitation({
               email: data.email,
               invitedByUsername: data.inviter.user.name,

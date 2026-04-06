@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+  <div class="min-h-screen flex items-center justify-center bg-background p-4">
     <Card class="w-full max-w-md">
       <CardHeader class="text-center">
         <CardTitle class="text-2xl font-bold">Rejoindre l'espace de travail</CardTitle>
@@ -7,7 +7,7 @@
       </CardHeader>
       <CardContent class="space-y-6">
         <div class="text-center">
-          <p class="text-sm text-gray-600">Collaborez avec les membres de votre équipe et gérez vos projets ensemble</p>
+          <p class="text-sm text-muted-foreground">Collaborez avec les membres de votre équipe et gérez vos projets ensemble</p>
         </div>
 
         <div v-if="!session?.user" class="text-center">
@@ -42,7 +42,7 @@
           </div>
         </div>
 
-        <p class="text-xs text-center text-gray-500">
+        <p class="text-xs text-center text-muted-foreground">
           En rejoignant, vous acceptez les conditions d'utilisation de l'espace de travail
         </p>
       </CardContent>
@@ -102,7 +102,7 @@ const acceptInvitation = async () => {
     console.log('res', res)
     const orgId = res.data.invitation.organizationId
     if (orgId) {
-      await navigateTo(`/app/workspace/${orgId}/dashboard`)
+      await navigateTo(`/app/workspace/${orgId}`)
     } else {
       message.value = {
         type: 'error',

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(json|ts|js|env\\)$|nuxt\")",
+      "Bash(find /c/Users/faude/Documents/Projects/modelizeMe/server -type f -name *.ts -o -name *.js)",
+      "Bash(find /c/Users/faude/Documents/Projects/modelizeMe -type f -name *socket* -o -name *websocket* -o -name *ws*)",
+      "Bash(find /c/Users/faude/Documents/Projects/modelizeMe -type f -name *store* -o -name *pinia*)",
+      "Bash(grep -r \"vulnerable\\\\|TODO\\\\|FIXME\\\\|XXX\" /c/Users/faude/Documents/Projects/modelizeMe/server/api --include=*.ts)"
+    ]
+  }
+}

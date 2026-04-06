@@ -7,42 +7,138 @@
       </Button>
     </DialogTrigger>
     <DialogContent class="sm:max-w-[95%] sm:max-h-[95%] w-full h-full overflow-y-auto">
-      <div class="relative mt-5">
-        <div class="">
-          <p class="font-semibold text-primary text-3xl">Tarification</p>
-          <h2 class="mb-4 mt-3 text-sm font-semibold lg:mb-5 lg:text-sm text-gray-500">
-            Un tarif simple et transparent.
-          </h2>
-        </div>
+        <section class="py-24 px-4 min-h-screen bg-background" aria-labelledby="pricing-heading">
+          <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-16">
+              <h1 id="pricing-heading" class="text-4xl font-bold text-balance mb-4">
+                Choose Your Plan
+              </h1>
+              <p class="text-xl text-muted-foreground text-balance mb-8">
+                Select the perfect plan for your needs. Upgrade or downgrade at any time.
+              </p>
 
-        <div class="grid grid-cols-1 gap-y-10 py-10 lg:grid-cols-3 lg:gap-8 lg:gap-y-12 lg:py-10 overflow-y-auto">
-          <template v-for="(p, i) in prices" :key="i">
-            <Card
-                class=""
-                :class="[i === prices.length - 2 ? 'border-primary shadow-lg' : '']"
+              <!-- Toggle -->
+              <div class="flex flex-col items-center gap-4 mb-8">
+                <div class="flex items-center justify-center gap-4">
+            <span
+                :class="['text-sm font-medium w-16 text-center', !isYearly ? 'text-foreground' : 'text-muted-foreground']"
+                id="monthly-label"
             >
-              <CardContent class="flex w-full flex-col items-center mt-10 ">
-<!--                <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">-->
-<!--                  <Icon :name="p.icon" class="h-6 w-6 text-primary" />-->
-<!--                </div>-->
-                <h3 class="mb-2 text-xl font-semibold text-primary">{{ p.title }} </h3>
-                <p class="text-4xl/loose font-semibold lg:text-5xl/snug">{{ p.price }} €/mois</p>
-                <p class="mt-2 text-muted-foreground">Facturation annuelle</p>
+              Monthly
+            </span>
+                  <button
+                      @click="isYearly = !isYearly"
+                      :class="[
+                'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                isYearly ? 'bg-primary' : 'bg-accent'
+              ]"
+                      role="switch"
+                      :aria-checked="isYearly"
+                      aria-label="Toggle between monthly and yearly billing"
+                  >
+              <span
+                  :class="[
+                  'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+                  isYearly ? 'translate-x-6' : 'translate-x-1'
+                ]"
+                  aria-hidden="true"
+              />
+                  </button>
+                  <span
+                      :class="['text-sm font-medium w-16 text-center', isYearly ? 'text-foreground' : 'text-muted-foreground']"
+                      id="yearly-label"
+                  >
+              Yearly
+            </span>
+                </div>
+                <div class="min-h-[24px] flex justify-center">
+                  <Badge v-if="isYearly" variant="secondary" aria-label="17% savings with yearly billing">
+                    Save 17%
+                  </Badge>
+                </div>
+              </div>
+            </div>
 
-                <ul class="flex w-full flex-col items-center gap-4 px-5 py-8 lg:items-start">
-                  <li v-for="(perk, k) in p.perks" :key="k" class="flex items-center gap-3">
-                    <Check />
-                    <span class="opacity-80">{{ perk }}</span>
-                  </li>
-                </ul>
-              </CardContent>
-              <CardFooter class="border-t bg-muted !pt-6 dark:border-muted/50 dark:bg-muted/30">
-                <Button class="w-full"> Commencer </Button>
-              </CardFooter>
-            </Card>
-          </template>
-        </div>
-      </div>
+            <!-- Pricing Cards -->
+            <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto" role="list" aria-label="Pricing plans">
+              <Card
+                  v-for="(plan, index) in pricingPlans"
+                  :key="plan.name"
+                  :class="[
+            'relative flex flex-col h-[600px]',
+            plan.popular ? 'border-primary shadow-lg scale-105' : ''
+          ]"
+                  role="listitem"
+                  :aria-labelledby="`plan-${index}-title`"
+                  :aria-describedby="`plan-${index}-description plan-${index}-price`"
+              >
+                <Badge
+                    v-if="plan.popular"
+                    class="absolute -top-3 left-1/2 -translate-x-1/2"
+                    aria-label="Most popular plan"
+                >
+                  Most Popular
+                </Badge>
+
+                <CardHeader class="text-center pb-8">
+                  <CardTitle class="text-2xl font-bold" :id="`plan-${index}-title`">
+                    {{ plan.name }}
+                  </CardTitle>
+                  <CardDescription class="text-balance" :id="`plan-${index}-description`">
+                    {{ plan.description }}
+                  </CardDescription>
+                  <div class="mt-4" :id="`plan-${index}-price`">
+              <span
+                  class="text-4xl font-bold"
+                  :aria-label="`${isYearly ? plan.yearlyPrice : plan.monthlyPrice} dollars per ${isYearly ? 'year' : 'month'}`"
+              >
+                ${{ isYearly ? plan.yearlyPrice : plan.monthlyPrice }}
+              </span>
+                    <span class="text-muted-foreground" aria-hidden="true">
+                /{{ isYearly ? 'year' : 'month' }}
+              </span>
+                    <div
+                        v-if="isYearly"
+                        class="text-sm text-muted-foreground mt-1"
+                        :aria-label="`Equivalent to ${Math.round(plan.yearlyPrice / 12)} dollars per month when billed annually`"
+                    >
+                      ${{ Math.round(plan.yearlyPrice / 12) }}/month billed annually
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent class="flex-grow">
+                  <ul class="space-y-3" :aria-label="`${plan.name} plan features`">
+                    <li v-for="(feature, featureIndex) in plan.features" :key="featureIndex" class="flex items-start gap-3">
+                      <Check class="h-5 w-5 text-primary mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      <span class="text-sm">{{ feature }}</span>
+                    </li>
+                  </ul>
+                </CardContent>
+
+                <CardFooter>
+                  <Button
+                      :class="[
+                'w-full',
+                !plan.popular ? 'dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-700 dark:hover:border-gray-600' : ''
+              ]"
+                      :variant="plan.popular ? 'default' : 'outline'"
+                      size="lg"
+                      :aria-label="`Get started with ${plan.name} plan for $${isYearly ? plan.yearlyPrice : plan.monthlyPrice} per ${isYearly ? 'year' : 'month'}`"
+                  >
+                    Get Started
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-16">
+              <p class="text-muted-foreground">All plans include a 14-day free trial. No credit card required.</p>
+            </div>
+          </div>
+        </section>
     </DialogContent>
   </Dialog>
 </template>
@@ -52,54 +148,57 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
 
 import { Button } from '@/components/ui/button'
 import {Crown, Check} from "lucide-vue-next";
+import { ref } from 'vue'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
+  const isYearly = ref(false)
 
-const prices = [
+  const pricingPlans = [
   {
-    icon: "heroicons:bolt",
-    title: "Gratuit",
-    price: 0,
-    perks: [
-      "Accès aux outils essentiels",
-      "Limité à 10 utilisateurs",
-      "Stockage 20GB par utilisateur",
-      "Support standard par email",
-      "Rapports basiques",
-    ],
+    name: 'Starter',
+    description: 'Perfect for individuals and small projects',
+    monthlyPrice: 9,
+    yearlyPrice: 90,
+    features: ['Up to 5 projects', '10GB storage', 'Basic support', 'Standard templates', 'Email notifications'],
+    popular: false,
   },
   {
-    icon: "heroicons:bolt",
-    title: "Pro",
-    price: 18.99,
-    perks: [
-      "Accès aux intégrations avancées",
-      "Rapports détaillés",
-      "Jusqu'à 20 utilisateurs",
-      "Stockage 40GB par utilisateur",
-      "Support prioritaire",
+    name: 'Professional',
+    description: 'Ideal for growing teams and businesses',
+    monthlyPrice: 29,
+    yearlyPrice: 290,
+    features: [
+    'Unlimited projects',
+    '100GB storage',
+    'Priority support',
+    'Premium templates',
+    'Advanced analytics',
+    'Team collaboration',
+    'Custom integrations',
     ],
+    popular: true,
   },
   {
-    icon: "heroicons:bolt",
-    title: "École",
-    price: 'NC',
-    perks: [
-      "Champs et options de personnalisation",
-      "Suivi complet des activités",
-      "Utilisateurs illimités",
-      "Stockage sans limite",
-      "Accompagnement dédié",
+    name: 'Enterprise',
+    description: 'For large organizations with advanced needs',
+    monthlyPrice: 99,
+    yearlyPrice: 990,
+    features: [
+    'Everything in Professional',
+    'Unlimited storage',
+    '24/7 dedicated support',
+    'Custom development',
+    'Advanced security',
+    'SSO integration',
+    'API access',
+    'White-label options',
     ],
-  },
-];
-
+    popular: false,
+  }]
 </script>

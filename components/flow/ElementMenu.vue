@@ -2,25 +2,55 @@
   <Transition
       name="drawer"
       @before-enter="preventBodyScroll"
+      @after-enter="onDrawerEntered"
       @after-leave="restoreBodyScroll"
   >
 
     <div v-if="isSubMenuVisible"
          key="submenu"
 
-         class="absolute overflow-hidden z-40 md:w-[570px] px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white"
+         class="absolute overflow-hidden z-40 w-full sm:w-[400px] md:w-[570px] px-3 md:px-4 shadow-lg top-0 right-0 h-screen flex flex-col justify-between border-e bg-white dark:bg-card"
 
     >
 
-      <div v-if="nodeIdSelected !== null" class="px-5 py-10 flex flex-col justify-between items-center h-full">
+      <div v-if="nodeIdSelected !== null" class="px-3 md:px-5 py-6 md:py-10 flex flex-col justify-between items-center h-full">
         <div class="w-full">
-          <p class="font-bold text-xl">Entité</p>
-          <div class="max-w-sm mt-6">
+          <!-- Header bar: title + delete + close -->
+          <div class="flex items-center justify-between mb-6">
+            <p class="font-bold text-xl">{{ nodeData?.type === 'ternaryEntity' ? 'Association ternaire' : 'Entité' }}</p>
+            <div class="flex items-center gap-1">
+              <AlertDialog>
+                <AlertDialogTrigger as-child>
+                  <Button variant="ghost" size="icon" class="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent">
+                    <Trash2 :size="16" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Supprimer cette entité</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action est irréversible
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <Button @click="removeNodeById" variant="destructive" class="border-none rounded-sm">
+                      Supprimer
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button variant="ghost" size="icon" class="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-transparent" @click="isSubMenuVisible = false">
+                <X :size="16" />
+              </Button>
+            </div>
+          </div>
+          <div class="max-w-sm">
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de l'entité</label>
-            <Input v-model="nodeName" type="text"/>
+            <Input ref="nodeNameInputRef" v-model="nodeName" type="text"/>
           </div>
 
-          <div class="w-full flex items-center justify-start gap-x-8">
+          <div class="w-full flex flex-col sm:flex-row items-start sm:items-center justify-start gap-y-2 sm:gap-y-0 gap-x-4 md:gap-x-8">
             <div class="items-top flex gap-x-2 mt-5">
               <Checkbox id="field-timestamp" v-model:checked="nodeTimestamps"/>
               <div class="grid gap-1.5 leading-none">
@@ -58,7 +88,7 @@
             </div>
           </div>
           <div class="mt-6 space-y-2">
-            <ScrollArea ref="scrollAreaRef" class="h-[400px] pr-4 ">
+            <ScrollArea ref="scrollAreaRef" class="h-[calc(100vh-400px)] sm:h-[400px] pr-2 md:pr-4">
 
               <draggable
                   v-if="nodeData && nodeData.data?.properties"
@@ -68,7 +98,7 @@
               >
                 <template #item="{element}">
 
-                  <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full">
+                  <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full">
 
                     <div class="w-14 h-14 flex justify-center items-center"
                          v-if="!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété'">
@@ -89,16 +119,16 @@
                     </div>
 
                     <div
-                        class="w-12 h-9 flex justify-center items-center text-gray-300 hover:bg-gray-50 hover:rounded cursor-pointer">
+                        class="w-12 h-9 flex justify-center items-center text-muted-foreground/40 hover:bg-accent/50 hover:rounded cursor-pointer">
                       <GripVertical :size="20" class=" group-hover:visible"/>
                     </div>
 
                     <div class="flex justify-center items-center" :class="[element?.propertyName === 'id' ?
                                     'text-red-500 pointer-events-none ' :
-                                    'text-gray-300 cursor-pointer pointer-events-auto']"
+                                    'text-muted-foreground/40 cursor-pointer pointer-events-auto']"
                          @click="element.isPrimaryKey = !element.isPrimaryKey">
                       <KeyRound :size="20"
-                                :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']"/>
+                                :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-muted-foreground/40']"/>
                     </div>
 
                     <div class="w-full p-1">
@@ -196,55 +226,103 @@
 
 
           </div>
-        </div>
 
-        <div class="flex flex-col w-full md:flex-row justify-between items-center gap-4">
-          <div>
-            <AlertDialog>
-              <AlertDialogTrigger as-child>
-                <Button variant="destructive" class="border-none rounded-sm">
-                  Supprimer
+          <!-- Advanced actions: loopback edge + ternary relation -->
+          <div class="mt-4 pt-4 border-t border-border w-full">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="px-0 h-auto text-xs text-muted-foreground hover:text-foreground hover:bg-transparent mb-2 gap-1.5"
+              @click="showAdvanced = !showAdvanced"
+            >
+              <ChevronRight
+                :class="['w-3 h-3 transition-transform duration-200', showAdvanced ? 'rotate-90' : '']"
+              />
+              Actions avancées
+            </Button>
+            <Transition name="add-field">
+              <div v-if="showAdvanced" class="flex flex-col gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="w-full justify-start text-muted-foreground border border-dashed border-border hover:border-border hover:text-foreground hover:bg-accent/50"
+                  :class="{ 'opacity-50 cursor-not-allowed': !canAddLoopback }"
+                  :disabled="!canAddLoopback"
+                  @click="createLoopbackEdge"
+                >
+                  <svg class="w-4 h-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <path d="M14 8 C18 8, 18 14, 14 14" stroke-linecap="round"/>
+                    <path d="M14 8 L14 14" />
+                    <polyline points="11,12 14,14 14,16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <span class="flex-1 text-left">Auto-relation (réflexive)</span>
+                  <span v-if="loopbackCount > 0" class="ml-auto inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-semibold min-w-[18px] h-[18px] px-1">
+                    {{ loopbackCount }}
+                  </span>
+                  <span v-if="!canAddLoopback" class="ml-1 text-[10px] text-muted-foreground">(max)</span>
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Supprimer cette relation</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Cette action est irréversible
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <Button @click="removeNodeById" variant="destructive"
-                          class="border-none rounded-sm">
-                    Supprimer
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="w-full justify-start text-muted-foreground border border-dashed border-border hover:border-border hover:text-foreground hover:bg-accent/50"
+                  @click="startTernaryMode"
+                >
+                  <svg class="w-4 h-4 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <circle cx="10" cy="4" r="2.5"/>
+                    <circle cx="3.5" cy="15" r="2.5"/>
+                    <circle cx="16.5" cy="15" r="2.5"/>
+                    <line x1="10" y1="6.5" x2="5" y2="13"/>
+                    <line x1="10" y1="6.5" x2="15" y2="13"/>
+                    <line x1="5" y1="13" x2="15" y2="13"/>
+                  </svg>
+                  <span class="flex-1 text-left">Relation ternaire</span>
+                  <span v-if="ternaryCount > 0" class="ml-auto inline-flex items-center justify-center rounded-full bg-muted text-muted-foreground text-[10px] font-semibold min-w-[18px] h-[18px] px-1">
+                    {{ ternaryCount }}
+                  </span>
+                </Button>
+              </div>
+            </Transition>
           </div>
-        <div class="flex flex-col  w-full md:flex-row justify-end gap-4 self-end">
-          <Button @click="isSubMenuVisible = false" variant="outline">
-            Fermer
-          </Button>
-          <Button @click="updateNode" :disabled="isSaving">
-            <Loader2 v-if="isSaving" class="w-4 h-4 mr-2 animate-spin"/>
-            {{ isSaving ? 'Enregistrement...' : 'Enregistrer' }}
-          </Button>
         </div>
-        </div>
-
-
       </div>
 
-      <div v-else-if="edgeIdSelected !== null" class="px-5 py-10 flex flex-col justify-between items-center h-full">
+      <div v-else-if="edgeIdSelected !== null" class="px-3 md:px-5 py-6 md:py-10 flex flex-col justify-between items-center h-full">
 
         <div class="w-full">
-          <p class="font-bold text-xl">Cardinalité</p>
+          <!-- Header bar: title + delete + close -->
+          <div class="flex items-center justify-between mb-6">
+            <p class="font-bold text-xl">Cardinalité</p>
+            <div class="flex items-center gap-1">
+              <AlertDialog>
+                <AlertDialogTrigger as-child>
+                  <Button variant="ghost" size="icon" class="h-8 w-8 text-gray-400 hover:text-red-500 hover:bg-transparent">
+                    <Trash2 :size="16" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Supprimer cette relation</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action est irréversible
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <Button @click="removeEdgeById" variant="destructive" class="border-none rounded-sm">
+                      Supprimer
+                    </Button>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <Button variant="ghost" size="icon" class="h-8 w-8 text-gray-400 hover:text-gray-600" @click="isSubMenuVisible = false">
+                <X :size="16" />
+              </Button>
+            </div>
+          </div>
           <div class="mt-6 flex justify-between items-center w-full">
             <div class="w-full">
               <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
-                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.sourceNode?.data?.name.toUpperCase()
+                  mcdStore.flowMCD?.findEdge(edgeIdSelected)?.sourceNode?.data?.name?.toUpperCase() ?? ''
                 }}</label>
             </div>
             <div class="w-full">
@@ -252,7 +330,7 @@
             </div>
             <div class="w-full">
               <label for="hs-select-label" class="block text-center text-md font-medium mb-2 dark:text-white">{{
-                  mcdStore.flowMCD.findEdge(edgeIdSelected)?.targetNode?.data?.name.toUpperCase()
+                  mcdStore.flowMCD?.findEdge(edgeIdSelected)?.targetNode?.data?.name?.toUpperCase() ?? ''
                 }}</label>
             </div>
           </div>
@@ -294,13 +372,12 @@
           </div>
           <hr>
 
-
           <p class="font-bold text-xl mt-10">Association</p>
           <div class="max-w-sm mt-6">
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">
               Nom de l'association
             </label>
-            <Input v-model="edgeName"
+            <Input ref="edgeNameInputRef" v-model="edgeName"
                    type="text"
                    placeholder=""/>
           </div>
@@ -345,7 +422,7 @@
 
 
             <div class="mt-6 space-y-2">
-              <ScrollArea ref="scrollAreaRef" class="h-[250px] pr-4 ">
+              <ScrollArea ref="scrollAreaRef" class="h-[calc(100vh-500px)] sm:h-[250px] pr-2 md:pr-4">
 
                 <draggable
                     v-if="edgeData && edgeData.data?.properties"
@@ -355,7 +432,7 @@
                 >
                   <template #item="{element}">
 
-                    <div class="flex flex-col md:flex-row sm:items-center  sm:space-y-0 sm:space-x-3 w-full">
+                    <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full">
 
                       <div class="w-14 h-14 flex justify-center items-center"
                            v-if="!filteredProperty.includes(element.typeName) && element?.typeName !== 'Propriété'">
@@ -376,16 +453,16 @@
                       </div>
 
                       <div
-                          class="w-12 h-9 flex justify-center items-center text-gray-300 hover:bg-gray-50 hover:rounded cursor-pointer">
+                          class="w-12 h-9 flex justify-center items-center text-muted-foreground/40 hover:bg-accent/50 hover:rounded cursor-pointer">
                         <GripVertical :size="20" class=" group-hover:visible"/>
                       </div>
 
                       <div class="flex justify-center items-center" :class="[element?.propertyName === 'id' ?
                                     'text-red-500 pointer-events-none ' :
-                                    'text-gray-300 cursor-pointer pointer-events-auto']"
+                                    'text-muted-foreground/40 cursor-pointer pointer-events-auto']"
                            @click="element.isPrimaryKey = !element.isPrimaryKey">
                         <KeyRound :size="20"
-                                  :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-gray-300']"/>
+                                  :class="[element.isPrimaryKey || element?.propertyName === 'id' ? 'text-red-500' : 'text-muted-foreground/40']"/>
                       </div>
 
                       <div class="w-full p-1">
@@ -559,42 +636,39 @@
             -->
           </div>
 
-        </div>
+          <!-- Advanced actions: CIF for ternary edges -->
+          <div v-if="isTernaryEdgeSelected" class="mt-4 pt-4 border-t border-border w-full">
+            <Button
+              variant="ghost"
+              size="sm"
+              class="px-0 h-auto text-xs text-muted-foreground hover:text-foreground hover:bg-transparent mb-2 gap-1.5"
+              @click="showAdvancedEdge = !showAdvancedEdge"
+            >
+              <ChevronRight
+                :class="['w-3 h-3 transition-transform duration-200', showAdvancedEdge ? 'rotate-90' : '']"
+              />
+              Actions avancées
+            </Button>
+            <Transition name="add-field">
+              <div v-if="showAdvancedEdge" class="flex flex-col gap-2">
+                <div class="items-top flex gap-x-2 px-2 py-2 rounded border border-dashed border-border">
+                  <Checkbox id="field-cif" v-model:checked="edgeCIF"/>
+                  <div class="grid gap-1.5 leading-none">
+                    <label
+                        for="field-cif"
+                        class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Contrainte d'Intégrité Fonctionnelle (CIF)
+                    </label>
+                    <p class="text-xs text-gray-400">
+                      Indique une dépendance fonctionnelle dans cette relation ternaire
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Transition>
+          </div>
 
-        <div class="flex flex-col w-full md:flex-row justify-between items-center gap-4">
-          <div>
-            <AlertDialog>
-              <AlertDialogTrigger as-child>
-                <Button variant="destructive" class="border-none rounded-sm">
-                  Supprimer
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Supprimer cette relation</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Cette action est irréversible
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <Button @click="removeEdgeById" variant="destructive"
-                          class="border-none rounded-sm">
-                    Supprimer
-                  </Button>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-          <div class="space-x-4">
-            <Button @click="isSubMenuVisible = false" variant="outline">
-              Fermer
-            </Button>
-            <Button @click="updateEdge" :disabled="isSaving">
-              <Loader2 v-if="isSaving" class="w-4 h-4 mr-2 animate-spin"/>
-              {{ isSaving ? 'Enregistrement...' : 'Enregistrer' }}
-            </Button>
-          </div>
         </div>
 
       </div>
@@ -602,12 +676,14 @@
 
   </Transition>
 
+
 </template>
 
 <script setup lang="ts">
-import {computed, ref, watchEffect, watch} from "vue";
+import {computed, nextTick, ref, watch, onBeforeUnmount as onBeforeUnmountHook} from "vue";
 import {storeToRefs} from "pinia";
 import {useMCDStore} from "~/stores/mcd-store.js";
+import {useUndoRedoStore} from "~/stores/undo-redo-store.js";
 import {Input} from '@/components/ui/input';
 import {Button} from '@/components/ui/button';
 import {
@@ -630,16 +706,16 @@ import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandL
 import {
   Check,
   ChevronsUpDown,
+  ChevronRight,
   CirclePlus,
-  Loader2,
   Trash2,
   MoveRight,
   KeyRound,
   CircleAlert,
-  GripVertical
+  GripVertical,
+  X
 } from 'lucide-vue-next';
 import NullableIcon from '@/components/icon/nullable-icon';
-import {onBeforeUnmount} from 'vue';
 import draggable from 'vuedraggable';
 import {v4 as uuidv4} from 'uuid';
 
@@ -651,41 +727,263 @@ const restoreBodyScroll = () => {
   document.body.style.overflow = '';
 }
 
-// Assurez-vous de restaurer le scroll même si le composant est démonté
-onBeforeUnmount(() => {
+// Ensure body scroll is restored even if component is unmounted
+onBeforeUnmountHook(() => {
   restoreBodyScroll();
 });
 const scrollAreaRef = ref(null);
+const nodeNameInputRef = ref(null);
+const edgeNameInputRef = ref(null);
 
 const route = useRoute();
 const mcdStore = useMCDStore();
-const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, isSaving} = storeToRefs(mcdStore);
-const {removeEdge, removeNode} = mcdStore
+const undoRedoStore = useUndoRedoStore();
+const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, isSaving, isNewlyCreated} = storeToRefs(mcdStore);
+const {removeEdge, removeNode, addTernaryRelation, getLoopbackEdges, getTernaryRelations, LOOPBACK_SIDES} = mcdStore
+
+const startTernaryMode = () => {
+  mcdStore.isTernaryMode = true
+  mcdStore.ternarySelectedNodes = []
+  isSubMenuVisible.value = false
+}
+
+const showAdvanced = ref(false)
+const showAdvancedEdge = ref(false)
+
+const loopbackCount = computed(() => {
+  if (!nodeIdSelected.value) return 0;
+  return getLoopbackEdges(nodeIdSelected.value).length;
+});
+
+const ternaryCount = computed(() => {
+  if (!nodeIdSelected.value) return 0;
+  return getTernaryRelations(nodeIdSelected.value);
+});
+
+const canAddLoopback = computed(() => loopbackCount.value < LOOPBACK_SIDES.length);
+
+const createLoopbackEdge = async () => {
+  if (!nodeIdSelected.value || !canAddLoopback.value) return
+  await mcdStore.addLoopbackEdge(route.params.idModel, nodeIdSelected.value)
+}
+
+// CIF (Contrainte d'Intégrité Fonctionnelle) for ternary edges
+const isTernaryEdgeSelected = computed(() => {
+  if (!edgeIdSelected.value) return false;
+  const edge = mcdStore.flowMCD?.findEdge(edgeIdSelected.value);
+  if (!edge) return false;
+  const sourceNode = mcdStore.flowMCD?.findNode(edge.source);
+  const targetNode = mcdStore.flowMCD?.findNode(edge.target);
+  return sourceNode?.type === 'ternaryEntity' || targetNode?.type === 'ternaryEntity';
+});
+
+const edgeCIF = computed({
+  get() {
+    return edgeData?.value?.data?.isCIF ?? false;
+  },
+  set(value) {
+    if (edgeData?.value?.data) {
+      edgeData.value.data.isCIF = value;
+    }
+  },
+});
 
 const nodeData = ref(null);
 const edgeData = ref(null);
 
-watchEffect(() => {
-  nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value);
-  edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value);
-});
+// Auto-focus the name input - handles both fresh open and already-open drawer
+const _pendingFocusRef = ref(null)
+
+const focusInput = (inputRef) => {
+  const el = inputRef.value?.$el ?? inputRef.value
+  el?.focus({ preventScroll: true })
+}
+
+const onDrawerEntered = () => {
+  if (_pendingFocusRef.value) {
+    focusInput(_pendingFocusRef.value)
+    _pendingFocusRef.value = null
+  }
+}
+
+watch(
+  () => [nodeIdSelected.value, edgeIdSelected.value],
+  async ([newNodeId, newEdgeId], old) => {
+    // Only auto-focus when a brand-new node/edge was just created
+    if (!isNewlyCreated.value) return
+    isNewlyCreated.value = false
+
+    const [oldNodeId, oldEdgeId] = old ?? [null, null]
+    let targetRef = null
+    if (newNodeId !== null && newNodeId !== oldNodeId) {
+      targetRef = nodeNameInputRef
+    } else if (newEdgeId !== null && newEdgeId !== oldEdgeId) {
+      targetRef = edgeNameInputRef
+    }
+    if (!targetRef) return
+
+    if (isSubMenuVisible.value) {
+      // Drawer already open - input is in DOM, just wait for reactivity update
+      await nextTick()
+      focusInput(targetRef)
+    } else {
+      // Drawer about to open - defer until transition ends
+      _pendingFocusRef.value = targetRef
+    }
+  }
+)
+
+// Snapshot of node/edge data at selection time — used as inverse for undo.
+// Only captured on selection change or after explicit save, NOT on every
+// VueFlow state change (which would overwrite the snapshot after undo/redo).
+let _snapshotNodeData = null
+let _snapshotEdgeData = null
+
+// Keep nodeData/edgeData refs in sync with VueFlow state (needed for UI bindings).
+// Watch nodes/edges arrays so refs stay fresh after setNodes (e.g. after undo).
+watch(
+  () => [
+    nodeIdSelected.value,
+    edgeIdSelected.value,
+    mcdStore?.flowMCD?.getNodes?.value,
+    mcdStore?.flowMCD?.getEdges?.value,
+  ],
+  () => {
+    nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value) ?? null;
+    edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value) ?? null;
+  },
+  { immediate: true }
+);
+
+// Capture snapshots ONLY when the selected node/edge changes (not on every state update).
+// This prevents undo/redo from overwriting the inverse data.
+watch(
+  () => [nodeIdSelected.value, edgeIdSelected.value],
+  () => {
+    nodeData.value = mcdStore?.flowMCD?.findNode(nodeIdSelected.value) ?? null;
+    edgeData.value = mcdStore?.flowMCD?.findEdge(edgeIdSelected.value) ?? null;
+    _snapshotNodeData = nodeData.value?.data ? JSON.parse(JSON.stringify(nodeData.value.data)) : null
+    _snapshotEdgeData = edgeData.value?.data ? JSON.parse(JSON.stringify(edgeData.value.data)) : null
+    showAdvanced.value = false;
+    showAdvancedEdge.value = false;
+  },
+  { immediate: true }
+);
 
 
 const updateNode = async () => {
   isSaving.value = true;
-  await mcdStore.updateNode(route.params.idModel, nodeData.value.id)
-
-  mcdStore?.flowMCD.updateNodeData(nodeData.value.id, (node) => {
-    node.data = nodeData.value.data;
-  });
+  await mcdStore.updateNode(route.params.idModel, nodeData.value.id, _snapshotNodeData)
+  // Update snapshot to current state after save (for subsequent edits)
+  _snapshotNodeData = nodeData.value?.data ? JSON.parse(JSON.stringify(nodeData.value.data)) : null
   isSaving.value = false;
 };
 
 const updateEdge = async () => {
   isSaving.value = true;
-  await mcdStore.updateEdge(route.params.idModel, edgeIdSelected.value)
+  await mcdStore.updateEdge(route.params.idModel, edgeIdSelected.value, _snapshotEdgeData)
+  // Update snapshot to current state after save
+  _snapshotEdgeData = edgeData.value?.data ? JSON.parse(JSON.stringify(edgeData.value.data)) : null
   isSaving.value = false;
 };
+
+// --- Auto-save with debounce ---
+const AUTO_SAVE_DELAY = 800
+let _autoSaveNodeTimer = null
+let _autoSaveEdgeTimer = null
+
+function cancelNodeTimer() {
+  if (_autoSaveNodeTimer) { clearTimeout(_autoSaveNodeTimer); _autoSaveNodeTimer = null }
+}
+function cancelEdgeTimer() {
+  if (_autoSaveEdgeTimer) { clearTimeout(_autoSaveEdgeTimer); _autoSaveEdgeTimer = null }
+}
+
+// Check if data actually differs from snapshot before saving
+function hasNodeChanges() {
+  if (!nodeData.value?.data || !nodeIdSelected.value) return false
+  return JSON.stringify(nodeData.value.data) !== JSON.stringify(_snapshotNodeData)
+}
+function hasEdgeChanges() {
+  if (!edgeData.value?.data || !edgeIdSelected.value) return false
+  return JSON.stringify(edgeData.value.data) !== JSON.stringify(_snapshotEdgeData)
+}
+
+function scheduleAutoSaveNode() {
+  cancelNodeTimer()
+  _autoSaveNodeTimer = setTimeout(() => {
+    _autoSaveNodeTimer = null
+    if (undoRedoStore.isUndoRedoing) return
+    if (hasNodeChanges()) updateNode()
+  }, AUTO_SAVE_DELAY)
+}
+
+function scheduleAutoSaveEdge() {
+  cancelEdgeTimer()
+  _autoSaveEdgeTimer = setTimeout(() => {
+    _autoSaveEdgeTimer = null
+    if (undoRedoStore.isUndoRedoing) return
+    if (hasEdgeChanges()) updateEdge()
+  }, AUTO_SAVE_DELAY)
+}
+
+// Save immediately (used for structural changes that must be undoable right away)
+function saveNodeNow() {
+  cancelNodeTimer()
+  if (hasNodeChanges()) updateNode()
+}
+function saveEdgeNow() {
+  cancelEdgeTimer()
+  if (hasEdgeChanges()) updateEdge()
+}
+
+// Deep watcher on node data — handle undo/redo by refreshing snapshot
+watch(
+  () => nodeData.value?.data,
+  () => {
+    if (!nodeData.value?.data || !nodeIdSelected.value) return
+    if (undoRedoStore.isUndoRedoing) {
+      // Undo/redo just changed data — cancel pending auto-save and refresh snapshot
+      cancelNodeTimer()
+      _snapshotNodeData = JSON.parse(JSON.stringify(nodeData.value.data))
+      return
+    }
+    if (!hasNodeChanges()) return
+    scheduleAutoSaveNode()
+  },
+  { deep: true }
+)
+
+// Deep watcher on edge data — handle undo/redo by refreshing snapshot
+watch(
+  () => edgeData.value?.data,
+  () => {
+    if (!edgeData.value?.data || !edgeIdSelected.value) return
+    if (undoRedoStore.isUndoRedoing) {
+      cancelEdgeTimer()
+      _snapshotEdgeData = JSON.parse(JSON.stringify(edgeData.value.data))
+      return
+    }
+    if (!hasEdgeChanges()) return
+    scheduleAutoSaveEdge()
+  },
+  { deep: true }
+)
+
+// Flush pending auto-save on close or unmount (only if there are actual changes)
+watch(isSubMenuVisible, (visible) => {
+  if (!visible) {
+    cancelNodeTimer()
+    cancelEdgeTimer()
+    if (hasNodeChanges()) updateNode()
+    if (hasEdgeChanges()) updateEdge()
+  }
+})
+
+onBeforeUnmountHook(() => {
+  cancelNodeTimer()
+  cancelEdgeTimer()
+})
 
 const removeEdgeById = async () => {
   await removeEdge(route.params.idModel, edgeIdSelected.value)
@@ -695,11 +993,10 @@ const removeNodeById = async () => {
   await removeNode(route.params.idModel, nodeIdSelected.value)
 }
 
-const updateEdgeName = (newName) => {
-  mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, {name: newName});
-};
 
 const addFieldAssociation = () => {
+  // Flush pending changes before structural mutation
+  saveEdgeNow()
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
     edge.data.properties.push({
       id: uuidv4(),
@@ -712,9 +1009,13 @@ const addFieldAssociation = () => {
       isNullable: false,
     });
   });
+  // Save immediately so undo can revert this field addition
+  saveEdgeNow()
 };
 
 const addField = () => {
+  // Flush pending changes before structural mutation
+  saveNodeNow()
   mcdStore.flowMCD.updateNodeData(nodeData.value.id, (node) => {
     node.data.properties.push({
       id: uuidv4(),
@@ -727,29 +1028,28 @@ const addField = () => {
       isNullable: false,
     });
   });
-  //scrollAreaRef.value.scrollTop = scrollAreaRef.value.scrollHeight;
+  // Save immediately so undo can revert this field addition
+  saveNodeNow()
 };
 
 const removeField = (id) => {
+  // Flush pending changes before structural mutation
+  saveNodeNow()
   mcdStore.flowMCD.updateNodeData(nodeData.value.id, (node) => {
     node.data.properties = node.data.properties.filter(property => property.id !== id);
   });
+  // Save immediately so undo can revert this field removal
+  saveNodeNow()
 };
 
 const removeFieldAssociation = (id) => {
+  // Flush pending changes before structural mutation
+  saveEdgeNow()
   mcdStore.flowMCD.updateEdgeData(edgeIdSelected.value, (edge) => {
     edge.data.properties = edge.data.properties.filter(property => property.id !== id);
   });
-};
-
-function onEnd(event) {
-  console.log('Dragged', event);
-}
-
-const isExpanded = ref(true);
-
-const toggleSidebar = () => {
-  isExpanded.value = !isExpanded.value;
+  // Save immediately so undo can revert this field removal
+  saveEdgeNow()
 };
 
 const nodeName = computed({
@@ -821,28 +1121,36 @@ const edgeSoftDeletes = computed({
 
 const sourceCardinality = computed({
   get() {
-    return mcdStore.flowMCD.findEdge(edgeIdSelected.value)?.data?.sourceCardinality ?? "";
+    return mcdStore.flowMCD?.findEdge(edgeIdSelected.value)?.data?.sourceCardinality ?? "";
   },
   set(value) {
-    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.sourceCardinality = value;
+    const edge = mcdStore.flowMCD?.findEdge(edgeIdSelected.value);
+    if (edge?.data) edge.data.sourceCardinality = value;
   },
 });
 
 const targetCardinality = computed({
   get() {
-    return mcdStore.flowMCD.findEdge(edgeIdSelected.value)?.data?.targetCardinality ?? "";
+    return mcdStore.flowMCD?.findEdge(edgeIdSelected.value)?.data?.targetCardinality ?? "";
   },
   set(value) {
-    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.targetCardinality = value;
+    const edge = mcdStore.flowMCD?.findEdge(edgeIdSelected.value);
+    if (edge?.data) edge.data.targetCardinality = value;
   },
 });
 
 const checkIfTwoNRelation = computed(() => {
-  if (sourceCardinality.value.split(',')[1] === 'N' && targetCardinality.value.split(',')[1] === 'N') {
-    return true;
-  } else {
-    mcdStore.flowMCD.findEdge(edgeIdSelected.value).data.properties = [];
-    return false;
+  const src = sourceCardinality.value?.split(',')[1] ?? '';
+  const tgt = targetCardinality.value?.split(',')[1] ?? '';
+  return src === 'N' && tgt === 'N';
+});
+
+// Sync hasNodeAssociation flag when cardinality changes to/from N:N
+watch(checkIfTwoNRelation, (isNN) => {
+  if (!edgeIdSelected.value) return;
+  const edge = mcdStore.flowMCD?.findEdge(edgeIdSelected.value);
+  if (edge?.data && edge.data.hasNodeAssociation !== isNN) {
+    edge.data.hasNodeAssociation = isNN;
   }
 });
 
@@ -853,7 +1161,7 @@ const type = [
   "Boolean",
   "Date",
   "Time",
-  "Datetime",
+  "DateTime",
   "Decimal",
   "Double",
   "Float",
@@ -867,19 +1175,7 @@ const type = [
   "Json",
 ];
 
-const open = ref(false)
-const value = ref('')
-
-let selected = ref(type[0]);
-let query = ref("");
-
-let filteredProperty = computed(() =>
-    query.value === ""
-        ? type
-        : type.filter((person) =>
-            person.toLowerCase().replace(/\s+/g, "").includes(query.value.toLowerCase().replace(/\s+/g, ""))
-        )
-);
+const filteredProperty = computed(() => type);
 
 
 </script>
@@ -920,49 +1216,7 @@ let filteredProperty = computed(() =>
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-  transform: translateY(30px, 0);
-}
-
-
-<style scoped>
-.container {
-  max-width: 600px;
-  margin: auto;
-  padding: 20px;
-  background: #f8f8f8;
-  border-radius: 8px;
-}
-
-.field-row {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  margin-bottom: 10px;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.drag-handle {
-  cursor: grab;
-  padding: 10px;
-}
-
-.field-details {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.3s ease;
-}
-
-.list-enter-from,
-.list-leave-to {
-  transform: translateY(20px);
-  opacity: 0;
+  transform: translateY(30px);
 }
 </style>
+

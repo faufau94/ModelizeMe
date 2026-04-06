@@ -1,178 +1,92 @@
 <template>
-  <div class="min-h-screen bg-background">
-    <div class="container flex items-center justify-center mx-auto px-4 py-8">
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <!-- Main Content -->
-        <div class="lg:col-span-3 space-y-6">
-          <!-- General Settings -->
+  <div class="px-6 py-6 lg:px-8 max-w-5xl mx-auto w-full">
+    <div class="max-w-2xl mx-auto space-y-6">
+      <!-- General Settings -->
+      <Form v-slot="{ handleSubmit }" :initial-values="initialValues" :validation-schema="formSchema" as="">
+        <form @submit="handleSubmit($event, onSubmit)">
+          <Card>
+            <CardHeader>
+              <CardTitle class="text-base">Informations générales</CardTitle>
+              <CardDescription>
+                Modifiez le nom et la description de votre workspace.
+              </CardDescription>
+            </CardHeader>
+            <CardContent class="space-y-4">
+              <FormField v-slot="{ componentField }" name="name">
+                <FormItem>
+                  <FormLabel for="workspace-name">Nom du workspace</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="workspace-name"
+                      v-bind="componentField"
+                      placeholder="Mon workspace"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+              <FormField v-slot="{ componentField }" name="description">
+                <FormItem>
+                  <FormLabel for="workspace-description">Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      id="workspace-description"
+                      v-bind="componentField"
+                      placeholder="Décrivez votre workspace"
+                      rows="3"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </FormField>
+            </CardContent>
+            <CardFooter>
+              <Button type="submit" size="sm" :disabled="isSaving">
+                <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
+                Enregistrer
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
+      </Form>
 
-          <div class="space-y-6">
-            <Form v-slot="{ handleSubmit }" :initial-values="initialValues" :validation-schema="formSchema" as="">
-              <form @submit="handleSubmit($event, onSubmit)">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>General Information</CardTitle>
-                    <CardDescription>
-                      Update your workspace name and description.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent class="space-y-4">
-                    <FormField v-slot="{ componentField }" name="name">
-                      <FormItem>
-                        <FormLabel for="workspace-name">Workspace Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            id="workspace-name"
-                            v-bind="componentField"
-                            placeholder="Enter workspace name"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                    <FormField v-slot="{ componentField }" name="description">
-                      <FormItem>
-                        <FormLabel for="workspace-description">Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            id="workspace-description"
-                            v-bind="componentField"
-                            placeholder="Describe your workspace"
-                            rows="3"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    </FormField>
-                  </CardContent>
-                  <CardFooter>
-                    <Button type="submit" :disabled="isSaving">
-                      <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
-                      Save Changes
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </form>
-            </Form>
-
-            <!-- <Card>
-              <CardHeader>
-                <CardTitle>Workspace Avatar</CardTitle>
-                <CardDescription>
-                  Upload an image to represent your workspace.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div class="flex items-center gap-4">
-                  <Avatar class="h-16 w-16">
-                    <AvatarImage :src="workspace.avatar" />
-                    <AvatarFallback>{{ workspace.name.charAt(0).toUpperCase() }}</AvatarFallback>
-                  </Avatar>
-                  <div class="space-y-2">
-                    <Button variant="outline" size="sm">
-                      <Upload class="mr-2 h-4 w-4" />
-                      Upload Image
-                    </Button>
-                    <p class="text-xs text-muted-foreground">
-                      JPG, PNG or GIF. Max size 2MB.
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card> -->
-          </div>
-
-          <!-- Permissions Section -->
-          <!-- <div class="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Access Control</CardTitle>
-                <CardDescription>
-                  Configure who can access and modify this workspace.
-                </CardDescription>
-              </CardHeader>
-              <CardContent class="space-y-4">
-                <div class="space-y-3">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <Label>Public Access</Label>
-                      <p class="text-sm text-muted-foreground">
-                        Allow anyone with the link to view this workspace
-                      </p>
-                    </div>
-                    <Switch v-model="permissions.publicAccess" />
-                  </div>
-                  
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <Label>Member Invitations</Label>
-                      <p class="text-sm text-muted-foreground">
-                        Allow members to invite others to this workspace
-                      </p>
-                    </div>
-                    <Switch v-model="permissions.memberInvitations" />
-                  </div>
-                  
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <Label>Model Creation</Label>
-                      <p class="text-sm text-muted-foreground">
-                        Allow all members to create new models
-                      </p>
-                    </div>
-                    <Switch v-model="permissions.modelCreation" />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button @click="savePermissions">Save Permissions</Button>
-              </CardFooter>
-            </Card>
-          </div> -->
-
-          <!-- Danger Zone -->
-          <div class="space-y-6">
-            <Card class="border-destructive">
-              <CardHeader>
-                <CardTitle class="text-destructive">Delete Workspace</CardTitle>
-                <CardDescription>
-                  Permanently delete this workspace and all its data. This action cannot be undone.
-                </CardDescription>
-              </CardHeader>
-              <CardContent class="space-y-4">
-                <div class="space-y-4">
-                  <AlertDialog>
-                    <AlertDialogTrigger as-child>
-                      <Button variant="destructive" size="sm">
-                        <Trash2 class="mr-2 h-4 w-4" />
-                        Delete Workspace
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the
-                          "{{ selectedWorkspace.name }}" workspace and remove all associated data.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            @click="removeWorkspace"
-                            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete Workspace
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
+      <!-- Danger Zone -->
+      <Card class="border-destructive/50">
+        <CardHeader>
+          <CardTitle class="text-base text-destructive">Zone de danger</CardTitle>
+          <CardDescription>
+            Supprimez définitivement ce workspace et toutes ses données. Cette action est irréversible.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AlertDialog>
+            <AlertDialogTrigger as-child>
+              <Button variant="destructive" size="sm">
+                <Trash2 class="mr-2 h-4 w-4" />
+                Supprimer le workspace
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Êtes-vous absolument sûr ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irréversible. Le workspace
+                  « {{ selectedWorkspace.name }} » et toutes ses données seront définitivement supprimés.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                    @click="removeWorkspace"
+                    class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </template>
@@ -224,7 +138,7 @@ const inviteEmail = ref('')
 const inviteRole = ref('viewer')
 
 
-const { selectedWorkspace, selectedWorkspaceId, updateWorkspace, deleteWorkspace, workspaces } = useWorkspace()
+const { selectedWorkspace, selectedWorkspaceId, updateWorkspace, deleteWorkspace, workspaces, goToThisWorkspaceUrl } = useWorkspace()
 
 // const workspace = ref({
 //   name: selectedWorkspace.value?.name,
@@ -292,7 +206,7 @@ const removeWorkspace = async () => {
     toast.success('Workspace deleted successfully')
     // redirect to the latest workspace by using the created at date
     const latestWorkspace = [...workspaces.value].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0]
-    await navigateTo(`/app/workspace/${latestWorkspace.id}/dashboard`)
+    await navigateTo(goToThisWorkspaceUrl('', latestWorkspace.id))
   }
 }
 </script>

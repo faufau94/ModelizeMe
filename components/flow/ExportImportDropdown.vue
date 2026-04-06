@@ -1,7 +1,5 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
-import { useVueFlow } from '@vue-flow/core';
-import { useScreenshot } from '@/composables/useScreenshot';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -23,25 +21,15 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 
-const props = defineProps({
-  vueFlowRef: Element,
-  modelName: String,
-});
+const props = defineProps<{
+  importItems?: Array<{ title: string; disabled?: boolean; isComingSoon?: boolean }>;
+  exportItems?: Array<{ title: string; action: () => void; disabled?: boolean }>;
+}>();
 
 const isOpen = ref(false);
 const toggleDialog = () => isOpen.value = !isOpen.value;
-const { exportAsImage } = useScreenshot();
 
-const handleExport = (type) => {
-  // Accéder directement à l'élément DOM contenant le diagramme
-  const flowElement = props.vueFlowRef;
 
-  if (flowElement) {
-    exportAsImage(props.vueFlowRef, type, props.modelName);
-  } else {
-    console.warn('Current flow element not found');
-  }
-}
 </script>
 
 <template>
@@ -56,43 +44,39 @@ const handleExport = (type) => {
     <DropdownMenuContent class="w-56">
       <DropdownMenuLabel>Importer / Exporter</DropdownMenuLabel>
       <DropdownMenuSeparator/>
-      <DropdownMenuSub>
+      <DropdownMenuSub v-if="importItems && importItems.length > 0">
         <DropdownMenuSubTrigger>
           <span>Importer</span>
         </DropdownMenuSubTrigger>
         <DropdownMenuPortal>
           <DropdownMenuSubContent>
-            <DropdownMenuItem>
-              <DialogTrigger>
-                Importer un fichier XML
+            <DropdownMenuItem
+              v-for="(item, index) in importItems"
+              :key="index"
+              :class="{ 'opacity-25': item.disabled }"
+            >
+              <DialogTrigger v-if="!item.disabled">
+                {{ item.title }}
               </DialogTrigger>
-            </DropdownMenuItem>
-            <DropdownMenuItem class="opacity-25">
-              <DialogTrigger>
-                Importer un fichier SQL (coming soon...)
-              </DialogTrigger>
-            </DropdownMenuItem>
-            <DropdownMenuItem class="opacity-25">
-              <span>Importer un fichier JSON (coming soon...)</span>
+              <span v-else>{{ item.title }}</span>
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuPortal>
       </DropdownMenuSub>
-      <DropdownMenuSub>
+      <DropdownMenuSub v-if="exportItems && exportItems.length > 0">
         <DropdownMenuSubTrigger>
           <span>Exporter</span>
         </DropdownMenuSubTrigger>
         <DropdownMenuPortal>
           <DropdownMenuSubContent>
-            <DropdownMenuItem @click="handleExport('png')">
-              <span>Exporter en PNG</span>
+            <DropdownMenuItem
+              v-for="(item, index) in exportItems"
+              :key="index"
+              @click="item.action"
+              :disabled="item.disabled"
+            >
+              <span>{{ item.title }}</span>
             </DropdownMenuItem>
-            <DropdownMenuItem @click="handleExport('jpeg')">
-              <span>Exporter en JPEG</span>
-            </DropdownMenuItem>
-<!--            <DropdownMenuItem @click="handleExport('svg')">-->
-<!--              <span>Exporter en SVG</span>-->
-<!--            </DropdownMenuItem>-->
           </DropdownMenuSubContent>
         </DropdownMenuPortal>
       </DropdownMenuSub>
@@ -103,3 +87,5 @@ const handleExport = (type) => {
   </Dialog>
 
 </template>
+
+

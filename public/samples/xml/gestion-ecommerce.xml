@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Modèle — Gestion E-Commerce
+  Fonctionnalités couvertes :
+    - Types variés : Float, Decimal, Boolean, DateTime
+    - Cardinalité 1,N (un produit doit avoir au moins une image)
+    - Association N,N avec propriétés portées (ligne de commande)
+    - Association réflexive : Produit "recommandé avec" Produit
+    - Association ternaire sans CIF : Client × Produit × Promotion → "bénéficier"
+    - 7 entités pour un modèle riche
+-->
+<model name="Gestion E-Commerce">
+
+  <entities>
+
+    <entity name="Client" timestamps="true" softDeletes="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="prenom" type="String" nullable="false"/>
+      <property name="email" type="String" nullable="false"/>
+      <property name="telephone" type="String" nullable="true"/>
+      <property name="adresse" type="Text" nullable="false"/>
+      <property name="ville" type="String" nullable="false"/>
+      <property name="code_postal" type="String" nullable="false"/>
+      <property name="fidele" type="Boolean" nullable="false"/>
+    </entity>
+
+    <entity name="Produit" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="description" type="Text" nullable="true"/>
+      <property name="prix_unitaire" type="Decimal" nullable="false"/>
+      <property name="stock" type="Integer" nullable="false"/>
+      <property name="poids" type="Float" nullable="true"/>
+      <property name="actif" type="Boolean" nullable="false"/>
+    </entity>
+
+    <entity name="Categorie" timestamps="false">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="description" type="Text" nullable="true"/>
+    </entity>
+
+    <entity name="Commande" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="numero" type="String" nullable="false"/>
+      <property name="date_commande" type="DateTime" nullable="false"/>
+      <property name="statut" type="String" nullable="false"/>
+      <property name="montant_total" type="Decimal" nullable="false"/>
+      <property name="adresse_livraison" type="Text" nullable="false"/>
+    </entity>
+
+    <entity name="Paiement" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="montant" type="Decimal" nullable="false"/>
+      <property name="methode" type="String" nullable="false"/>
+      <property name="date_paiement" type="DateTime" nullable="false"/>
+      <property name="valide" type="Boolean" nullable="false"/>
+    </entity>
+
+    <entity name="Promotion" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="code" type="String" nullable="false"/>
+      <property name="reduction" type="Float" nullable="false"/>
+      <property name="date_debut" type="Date" nullable="false"/>
+      <property name="date_fin" type="Date" nullable="false"/>
+      <property name="active" type="Boolean" nullable="false"/>
+    </entity>
+
+    <entity name="Avis" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="note" type="Integer" nullable="false"/>
+      <property name="commentaire" type="Text" nullable="true"/>
+      <property name="date_avis" type="DateTime" nullable="false"/>
+      <property name="approuve" type="Boolean" nullable="false"/>
+    </entity>
+
+  </entities>
+
+  <relationships>
+
+    <!-- Un client passe des commandes -->
+    <relationship name="passer"
+                  source="Client" target="Commande"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Un produit appartient à une catégorie -->
+    <relationship name="appartenir"
+                  source="Categorie" target="Produit"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Une commande donne lieu à un paiement -->
+    <relationship name="regler"
+                  source="Commande" target="Paiement"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Un client rédige un avis sur un produit -->
+    <relationship name="rediger"
+                  source="Client" target="Avis"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Un avis concerne un produit -->
+    <relationship name="concerner"
+                  source="Produit" target="Avis"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Ligne de commande : commande contient des produits avec quantité et prix -->
+    <relationship name="contenir"
+                  source="Commande" target="Produit"
+                  sourceCardinality="0,N" targetCardinality="0,N">
+      <property name="quantite" type="Integer" nullable="false"/>
+      <property name="prix_ligne" type="Decimal" nullable="false"/>
+    </relationship>
+
+    <!-- Produit recommandé avec un autre (réflexive) -->
+    <relationship name="recommander"
+                  source="Produit" target="Produit"
+                  sourceCardinality="0,N" targetCardinality="0,N"
+                  loopbackSide="right"/>
+
+    <!-- Catégorie parent (réflexive) -->
+    <relationship name="parent"
+                  source="Categorie" target="Categorie"
+                  sourceCardinality="0,1" targetCardinality="0,N"
+                  loopbackSide="bottom"/>
+
+  </relationships>
+
+  <ternary-associations>
+
+    <!-- Un client bénéficie d'une promotion sur un produit -->
+    <ternary-association name="beneficier">
+      <participant entity="Client"    cardinality="0,N"/>
+      <participant entity="Produit"   cardinality="0,N"/>
+      <participant entity="Promotion" cardinality="0,N"/>
+    </ternary-association>
+
+  </ternary-associations>
+
+</model>

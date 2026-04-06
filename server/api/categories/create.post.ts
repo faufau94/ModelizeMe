@@ -1,23 +1,14 @@
 import prisma from "~/lib/prisma";
+import { requireAdmin } from "~/server/utils/auth";
+import { createCategorySchema } from "~/server/validators";
 
-export default defineEventHandler(async event => {
+export default defineEventHandler(async (event) => {
+  await requireAdmin(event);
 
-    const { name } = await readBody(event);
+  const body = await readBody(event);
+  const { name } = createCategorySchema.parse(body);
 
-    // const session = await getServerSession(event);
-
-
-    // const getCurrentUser = await prisma.user.findUnique({
-    //   where: {
-    //     email: session?.user?.email,
-    //   }
-    // })
-
-    const newCategory = await prisma.category.create({
-        data: {
-            name: name,
-        },
-    })
-
-    return newCategory
+  return await prisma.category.create({
+    data: { name },
+  });
 });

@@ -1,28 +1,21 @@
 import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { createGalerySchema } from "~/server/validators";
 
-export default defineEventHandler(async event => {
+export default defineEventHandler(async (event) => {
+  const session = await requireAuth(event);
 
-    const { idModel, idCategory } = await readBody(event);
+  const body = await readBody(event);
+  const { modelId, categoryId } = createGalerySchema.parse({
+    ...body,
+    userId: session.user.id,
+  });
 
-    // const session = await getServerSession(event);
-
-
-    // const getCurrentUser = await prisma.user.findUnique({
-    //   where: {
-    //     email: session?.user?.email,
-    //   }
-    // })
-
-    const newGalery = await prisma.galery.create({
-        data: {
-            model: {
-                connect: { id: parseInt(idModel) },
-            },
-            category: {
-                connect: { id: parseInt(idCategory) },
-            },
-        },
-    });
-
-    return newGalery
+  return await prisma.galery.create({
+    data: {
+      model: { connect: { id: modelId } },
+      category: { connect: { id: categoryId } },
+      user: { connect: { id: session.user.id } },
+    },
+  });
 });

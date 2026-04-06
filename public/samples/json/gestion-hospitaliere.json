@@ -1,0 +1,243 @@
+{
+  "nodes": [
+    {
+      "id": "node_service",
+      "type": "customEntity",
+      "position": { "x": 100, "y": 0 },
+      "data": {
+        "name": "Service",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p1", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p2", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p3", "propertyName": "etage", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p4", "propertyName": "capacite", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_medecin",
+      "type": "customEntity",
+      "position": { "x": 100, "y": 300 },
+      "data": {
+        "name": "Medecin",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p10", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p11", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p12", "propertyName": "prenom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p13", "propertyName": "specialite", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p14", "propertyName": "email", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p15", "propertyName": "telephone", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_patient",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 300 },
+      "data": {
+        "name": "Patient",
+        "hasTimestamps": true,
+        "usesSoftDeletes": true,
+        "properties": [
+          { "id": "p20", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p21", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p22", "propertyName": "prenom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p23", "propertyName": "date_naissance", "typeName": "Date", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p24", "propertyName": "sexe", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p25", "propertyName": "numero_secu", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p26", "propertyName": "telephone", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p27", "propertyName": "adresse", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_chambre",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 0 },
+      "data": {
+        "name": "Chambre",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p30", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p31", "propertyName": "numero", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p32", "propertyName": "nb_lits", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p33", "propertyName": "equipement", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_medicament",
+      "type": "customEntity",
+      "position": { "x": 1300, "y": 300 },
+      "data": {
+        "name": "Medicament",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p40", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p41", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p42", "propertyName": "dosage", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p43", "propertyName": "forme", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p44", "propertyName": "prix", "typeName": "Decimal", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_hospitalisation",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 600 },
+      "data": {
+        "name": "Hospitalisation",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p50", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p51", "propertyName": "date_entree", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p52", "propertyName": "date_sortie", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p53", "propertyName": "motif", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_appartenir",
+      "type": "customEdge",
+      "source": "node_service",
+      "target": "node_medecin",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "appartenir",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_chef",
+      "type": "customEdge",
+      "source": "node_medecin",
+      "target": "node_medecin",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "chef",
+        "sourceCardinality": "0,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": "right"
+      }
+    },
+    {
+      "id": "edge_heberger",
+      "type": "customEdge",
+      "source": "node_service",
+      "target": "node_chambre",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "heberger",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_occuper",
+      "type": "customEdge",
+      "source": "node_patient",
+      "target": "node_hospitalisation",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "occuper",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_affecter",
+      "type": "customEdge",
+      "source": "node_chambre",
+      "target": "node_hospitalisation",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "affecter",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_consulter",
+      "type": "customEdge",
+      "source": "node_medecin",
+      "target": "node_patient",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "consulter",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [
+          { "id": "ep1", "propertyName": "date_consultation", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "ep2", "propertyName": "diagnostic", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "ep3", "propertyName": "notes", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ],
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_prescrire",
+      "type": "customEdge",
+      "source": "node_medecin",
+      "target": "node_medicament",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "prescrire",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [
+          { "id": "ep4", "propertyName": "posologie", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "ep5", "propertyName": "duree_jours", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "ep6", "propertyName": "quantite", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    }
+  ]
+}

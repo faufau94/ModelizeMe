@@ -21,7 +21,7 @@
               >
                 <div class="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar>
-                    <AvatarImage :src="member.avatar" :alt="member.name"/>
+                    <AvatarImage v-if="member.avatar" :src="member.avatar" :alt="member.name"/>
                     <AvatarFallback>{{ getInitials(member.name) }}</AvatarFallback>
                   </Avatar>
                   <div class="flex-1 min-w-0">
@@ -33,10 +33,11 @@
                 </div>
                 <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     @click="removeMember(member.id)"
+                    class="text-destructive hover:text-destructive hover:bg-destructive/10"
                 >
-                  <Trash color="red" class="h-4 w-4"/>
+                  <Trash class="h-4 w-4"/>
                 </Button>
               </div>
               <div
@@ -69,7 +70,7 @@
               >
                 <div class="flex items-center gap-3 flex-1 min-w-0">
                   <Avatar>
-                    <AvatarImage :src="member.avatar" :alt="member.name"/>
+                    <AvatarImage v-if="member.avatar" :src="member.avatar" :alt="member.name"/>
                     <AvatarFallback>{{ getInitials(member.name) }}</AvatarFallback>
                   </Avatar>
                   <div class="flex-1 min-w-0">
