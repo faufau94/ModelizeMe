@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
   <img src="public/logo.svg" alt="ModelizeMe" width="120" />
   <h1>ModelizeMe</h1>
   <p><strong>The open-source Merise data modeling IDE, from concept to code.</strong></p>
@@ -23,7 +23,7 @@ The project is actively developed. More methodologies (UML class diagrams, Entit
 ## Table of contents
 
 - [⭐️ Features](#️-features)
-- [�:� Roadmap](#-roadmap)
+- [🗺️ Roadmap](#️-roadmap)
 - [🛠 Tech Stack](#-tech-stack)
 - [🚀 Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
@@ -60,7 +60,7 @@ The project is actively developed. More methodologies (UML class diagrams, Entit
 
 ---
 
-## �:� Roadmap
+## 🗺️ Roadmap
 
 ModelizeMe is under active development. Here's what's planned:
 
@@ -69,28 +69,28 @@ ModelizeMe is under active development. Here's what's planned:
 - [ ] **UML Class Diagrams**: Full UML class diagram support with inheritance, interfaces, associations
 - [ ] **Entity-Relationship Diagrams (ERD)**: Chen and Crow's Foot notations
 - [ ] **UML Use Case / Sequence Diagrams**: Extend beyond data modeling
-- [ ] **MCD → MLD auto-derivation improvements**: Better handling of ternary associations and inheritance
+- [x] **MCD → MLD auto-derivation improvements**: Better handling of ternary associations and inheritance
 
 ### Code Generation
 
-- [ ] **More ORMs**: Hibernate (Java), ActiveRecord (Rails), GORM (Go)
-- [ ] **More frameworks**: Spring Boot, Rails, FastAPI, NestJS
-- [ ] **More databases**: MongoDB, MariaDB, Microsoft SQL Server
+- [x] **More ORMs**: Prisma, TypeORM, SQLAlchemy, Doctrine, Eloquent ✓ — Hibernate (Java), ActiveRecord (Rails), GORM (Go) coming
+- [x] **More frameworks**: Laravel, Symfony, Django, Next.js, Nuxt ✓ — Spring Boot, Rails, FastAPI, NestJS coming
+- [x] **More databases**: MySQL, PostgreSQL, SQLite ✓ — MongoDB, MariaDB, MSSQL coming
 - [ ] **API generation**: Generate REST/GraphQL endpoint scaffolding from the model
 
 ### Collaboration & UX
 
-- [ ] **Comments & annotations** on entities and attributes
+- [x] **Comments & annotations** on entities and attributes
 - [ ] **Version history**: Browse and restore previous model states
 - [ ] **Shareable public links** for read-only model viewing
-- [ ] **Multiplayer cursors**: See teammates' cursors in real time
+- [x] **Multiplayer cursors**: See teammates' cursors in real time
 - [ ] **Mobile-friendly canvas**
 
 ### Platform
 
 - [ ] **CLI tool**: Import/export models from the command line
 - [ ] **VS Code extension**: View and navigate your models from the editor
-- [ ] **Self-hosted one-click deploy** (Railway, Render, Coolify)
+- [x] **Self-hosted deploy via Docker Compose**: Full stack containerized ✓ — one-click Railway / Render / Coolify coming
 
 > Have an idea? [Open an issue](https://github.com/your-org/modelizeme/issues) and let's discuss it.
 
