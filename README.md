@@ -1,7 +1,7 @@
 <div align="center">
   <img src="public/logo.svg" alt="ModelizeMe" width="120" />
   <h1>ModelizeMe</h1>
-  <p><strong>The open-source data modeling IDE — from concept to code.</strong></p>
+  <p><strong>The open-source Merise data modeling IDE, from concept to code.</strong></p>
 
   [![Nuxt](https://img.shields.io/badge/Nuxt-3-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com)
   [![Vue](https://img.shields.io/badge/Vue-3-42b883?logo=vue.js&logoColor=white)](https://vuejs.org)
@@ -12,47 +12,87 @@
 
 ---
 
-**ModelizeMe** is a collaborative, visual data modeling IDE that takes you from conceptual model (MCD) to logical model (MLD) to physical model (MPD) — and generates production-ready code (migrations, ORM models, project scaffolding) for your framework, ORM, and database of choice.
+**ModelizeMe** is a collaborative, visual data modeling IDE built around the **[Merise](https://en.wikipedia.org/wiki/Merise) methodology**. Design your data from the ground up: starting with the **Conceptual Data Model (MCD)**, deriving the **Logical Data Model (MLD)**, down to the **Physical Data Model (MPD)**, then generate production-ready code (migrations, ORM models, project scaffolding) for your framework, ORM, and database of choice.
 
 > Design your data. Collaborate in real time. Generate your stack.
+
+The project is actively developed. More methodologies (UML class diagrams, Entity-Relationship diagrams) and features are on the roadmap.
 
 ---
 
 ## Table of contents
 
 - [⭐️ Features](#️-features)
+- [�:� Roadmap](#-roadmap)
 - [🛠 Tech Stack](#-tech-stack)
 - [🚀 Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
   - [Development](#development)
   - [🐳 Docker](#-docker)
 - [⚙️ Environment Variables](#️-environment-variables)
-- [ Contributing](#-contributing)
+- [🤝 Contributing](#-contributing)
+- [💝 Special Thanks](#-special-thanks)
 
 ---
 
 ## ⭐️ Features
 
-- 🗂 **Full modeling pipeline** — Design entities and relations visually as MCD, then auto-derive MLD and MPD
+- 🗂 **Full Merise pipeline**: Design entities and relations visually as MCD (Conceptual), auto-derive MLD (Logical) and MPD (Physical). Each level is always in sync.
 
-- 🤝 **Real-time collaboration** — Multiple users edit the same model simultaneously with Yjs CRDT sync over WebSocket, with live cursors and presence indicators
+- 🤝 **Real-time collaboration**: Multiple users edit the same model simultaneously with Yjs CRDT sync over WebSocket, with live presence indicators
 
-- ⚡ **Code generation** — Generate migrations, ORM models and full project scaffolding for your exact stack:
+- ⚡ **Code generation**: Generate migrations, ORM models and full project scaffolding for your exact stack:
   - **Frameworks**: Laravel, Symfony, Django, Next.js, Nuxt
   - **ORMs**: Prisma, TypeORM, SQLAlchemy, Doctrine, Eloquent
   - **Databases**: MySQL, PostgreSQL, SQLite
 
-- 🔄 **Auto-layout** — One-click graph reorganization powered by ELK.js, with collision avoidance
+- 🔄 **Auto-layout**: One-click graph reorganization powered by ELK.js, with collision avoidance
 
-- ↩️ **Undo / Redo** — Full collaborative undo history via Yjs UndoManager
+- ↩️ **Undo / Redo**: Full collaborative undo history via Yjs UndoManager
 
-- 📤 **Export & Import** — Export your diagrams as JSON, SQL, or XML; import existing schemas
+- 📤 **Export & Import**: Export your diagrams as JSON, SQL, or XML; import existing schemas
 
-- 🖼 **Gallery** — Browse and fork community model templates to jumpstart your project
+- 🖼 **Gallery**: Browse and fork community model templates to jumpstart your project
 
-- 🔐 **Auth & workspaces** — Sign in with Google, GitHub or GitLab. Organize work in Organizations → Teams → Models
+- 🔐 **Auth & workspaces**: Sign in with Google, GitHub or GitLab. Organize work in Organizations → Teams → Models
 
-- 🌙 **Dark mode** — First-class support, no flash
+- 🌙 **Dark mode**: First-class support, no flash
+
+---
+
+## �:� Roadmap
+
+ModelizeMe is under active development. Here's what's planned:
+
+### Modeling
+
+- [ ] **UML Class Diagrams**: Full UML class diagram support with inheritance, interfaces, associations
+- [ ] **Entity-Relationship Diagrams (ERD)**: Chen and Crow's Foot notations
+- [ ] **UML Use Case / Sequence Diagrams**: Extend beyond data modeling
+- [ ] **MCD → MLD auto-derivation improvements**: Better handling of ternary associations and inheritance
+
+### Code Generation
+
+- [ ] **More ORMs**: Hibernate (Java), ActiveRecord (Rails), GORM (Go)
+- [ ] **More frameworks**: Spring Boot, Rails, FastAPI, NestJS
+- [ ] **More databases**: MongoDB, MariaDB, Microsoft SQL Server
+- [ ] **API generation**: Generate REST/GraphQL endpoint scaffolding from the model
+
+### Collaboration & UX
+
+- [ ] **Comments & annotations** on entities and attributes
+- [ ] **Version history**: Browse and restore previous model states
+- [ ] **Shareable public links** for read-only model viewing
+- [ ] **Multiplayer cursors**: See teammates' cursors in real time
+- [ ] **Mobile-friendly canvas**
+
+### Platform
+
+- [ ] **CLI tool**: Import/export models from the command line
+- [ ] **VS Code extension**: View and navigate your models from the editor
+- [ ] **Self-hosted one-click deploy** (Railway, Render, Coolify)
+
+> Have an idea? [Open an issue](https://github.com/your-org/modelizeme/issues) and let's discuss it.
 
 ---
 
@@ -177,15 +217,15 @@ npm run build
 
 ModelizeMe is built on the shoulders of giants:
 
-- **[Claude](https://www.anthropic.com/claude) by [Anthropic](https://www.anthropic.com/)** — The AI pair programmer that helped design, build and iterate on ModelizeMe. A genuinely useful coding companion.
+- **[Claude](https://www.anthropic.com/claude) by [Anthropic](https://www.anthropic.com/)**: The AI pair programmer that helped design, build and iterate on ModelizeMe. A genuinely useful coding companion.
 
-- **[Vue Flow](https://vueflow.dev/)** — The powerful Vue 3 graph/flowchart library that powers the entire modeling canvas. Without it, ModelizeMe wouldn't exist in its current form. Please consider [starring their repo](https://github.com/bcakmakoglu/vue-flow).
+- **[Vue Flow](https://vueflow.dev/)**: The powerful Vue 3 graph/flowchart library that powers the entire modeling canvas. Without it, ModelizeMe wouldn't exist in its current form. Please consider [starring their repo](https://github.com/bcakmakoglu/vue-flow).
 
-- **[Better Auth](https://www.better-auth.com/)** — A refreshingly simple and secure authentication library for TypeScript. Handles all our OAuth flows, sessions and user management without the usual headaches.
+- **[Better Auth](https://www.better-auth.com/)**: A refreshingly simple and secure authentication library for TypeScript. Handles all our OAuth flows, sessions and user management without the usual headaches.
 
-- **[ELK.js](https://github.com/kieler/elkjs)** — The Eclipse Layout Kernel ported to JavaScript, powering the automatic graph layout engine.
+- **[ELK.js](https://github.com/kieler/elkjs)**: The Eclipse Layout Kernel ported to JavaScript, powering the automatic graph layout engine.
 
-- **[Yjs](https://yjs.dev/)** — The CRDT framework that makes real-time collaboration possible without a central conflict-resolution server.
+- **[Yjs](https://yjs.dev/)**: The CRDT framework that makes real-time collaboration possible without a central conflict-resolution server.
 
 ---
 
