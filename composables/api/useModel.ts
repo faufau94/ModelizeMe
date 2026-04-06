@@ -14,7 +14,7 @@ export const useModel = () => {
   const teamId = computed(() => route.params.teamId as string|undefined|null)
 
 
-  // — LIST —
+  // - LIST -
   const {data: models, isLoading: isLoadingModels, isFetched: isModelsFetched, error, suspense } = useQuery<Model[]>({
     queryKey: computed(() => ['models', selectedWorkspaceId.value, teamId.value]),
     queryFn: async () => {
@@ -37,7 +37,7 @@ export const useModel = () => {
     enabled: computed(() => selectedWorkspaceId.value !== null),
   })
 
-    // — READ SELECTED —
+    // - READ SELECTED -
     const {data: selectedModel, isLoading: isLoadingSelectedModel } = useQuery<Model>({
     queryKey: computed(() => ['model', selectedModelId.value]),
     queryFn: async ({ queryKey }) => {
@@ -52,12 +52,16 @@ export const useModel = () => {
     placeholderData: (previousData, previousQuery) => previousData,
    })
 
-  // — CREATE —
+  // - CREATE -
   const addModelMutation = useMutation({
     mutationFn: async (payload: any) =>
       await $fetch('/api/models/create', { 
         method: 'POST', 
-        body: {...payload, selectedWorkspaceId: selectedWorkspaceId.value}
+        body: {
+          ...payload,
+          selectedWorkspaceId: selectedWorkspaceId.value,
+          ...(teamId.value ? { teamId: teamId.value } : {}),
+        }
       }),
     onSuccess: () => queryClient.invalidateQueries(['models']),
   })
@@ -65,7 +69,7 @@ export const useModel = () => {
     return addModelMutation.mutateAsync(newModel)
   } 
 
-  // — EDIT —
+  // - EDIT -
   const updateModelMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) =>
       await $fetch('/api/models/update', { method: 'PUT', query: { id }, body: data }),
@@ -75,7 +79,7 @@ export const useModel = () => {
     updateModelMutation.mutateAsync({ id, data: updatedData })
 
 
-  // — RENAME —
+  // - RENAME -
   const renametModelMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) =>
       await $fetch('/api/models/rename', { method: 'PUT', query: { id }, body: data }),
@@ -84,13 +88,48 @@ export const useModel = () => {
   const renameModel = (id: number, updatedData: any) =>
     renametModelMutation.mutateAsync({ id, data: updatedData })
 
-  // — DELETE —
+  // - DELETE -
   const deleteModelMutation = useMutation({
     mutationFn: async ({id, body}) =>
       await $fetch('/api/models/delete', { method: 'DELETE', query: { id }, body: body }),
     onSuccess: () => queryClient.invalidateQueries(['models']),
   })
   const deleteModel = (id: string, body: any) => deleteModelMutation.mutateAsync({id, body})
+
+  // - BULK DELETE -
+  const bulkDeleteModelsMutation = useMutation({
+    mutationFn: async (ids: string[]) =>
+      await $fetch('/api/models/bulk-delete', { method: 'POST', body: { ids } }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const bulkDeleteModels = (ids: string[]) => bulkDeleteModelsMutation.mutateAsync(ids)
+
+  // - DUPLICATE -
+  const duplicateModelMutation = useMutation({
+    mutationFn: async ({ modelId, targetWorkspaceId }: { modelId: string; targetWorkspaceId?: string }) =>
+      await $fetch('/api/models/duplicate', { method: 'POST', body: { modelId, targetWorkspaceId } }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const duplicateModel = (modelId: string, targetWorkspaceId?: string) =>
+    duplicateModelMutation.mutateAsync({ modelId, targetWorkspaceId })
+
+  // - BULK MOVE -
+  const bulkMoveModelsMutation = useMutation({
+    mutationFn: async ({ ids, teamId }: { ids: string[]; teamId: string | null }) =>
+      await $fetch('/api/models/bulk-move', { method: 'POST', body: { ids, teamId } }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const bulkMoveModels = (ids: string[], teamId: string | null) =>
+    bulkMoveModelsMutation.mutateAsync({ ids, teamId })
+
+  // - BULK COPY TO WORKSPACE -
+  const bulkCopyModelsMutation = useMutation({
+    mutationFn: async ({ ids, targetWorkspaceId }: { ids: string[]; targetWorkspaceId: string }) =>
+      await $fetch('/api/models/bulk-copy', { method: 'POST', body: { ids, targetWorkspaceId } }),
+    onSuccess: () => queryClient.invalidateQueries(['models']),
+  })
+  const bulkCopyModels = (ids: string[], targetWorkspaceId: string) =>
+    bulkCopyModelsMutation.mutateAsync({ ids, targetWorkspaceId })
 
   
   return {
@@ -99,6 +138,10 @@ export const useModel = () => {
     updateModel,
     renameModel,
     deleteModel,
+    bulkDeleteModels,
+    bulkMoveModels,
+    bulkCopyModels,
+    duplicateModel,
 
     // list
     models,

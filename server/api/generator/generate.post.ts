@@ -1,41 +1,31 @@
-import prisma from '@/lib/prisma';
+import { requireAuth } from "~/server/utils/auth";
+import { generateSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-    const body = await readBody(event);
-    const { title, modelId, framework, database, orm, nodes, edges } = body;
+  await requireAuth(event);
 
-    try {
+  const body = await readBody(event);
+  const { title, framework, database, orm, nodes, edges } = generateSchema.parse(body);
 
-        // Créer un objet MLD
-        const mld = { nodes: nodes, edges: edges};
+  const mld = { nodes, edges };
 
-        // Étape 2 : Appeler l'API Lumen pour la génération du projet
-        const response = await $fetch(process.env.URL_BACKEND + '/api/generate-project', {
-            method: 'POST',
-            body: {
-                title: title.replace(/ /g, '-'),
-                framework,
-                database,
-                orm,
-                mld
-            }
-        });
+  const response = await $fetch(process.env.URL_BACKEND + "/api/generate-project", {
+    method: "POST",
+    body: {
+      title: title.replace(/ /g, "-"),
+      framework,
+      database,
+      orm,
+      mld,
+    },
+  });
 
-        if(response.status === 'success') {
-            return {
-                status: 200,
-                projectName: response.projectName
-            }
-        } else {
-            return {
-                status: 400,
-            };
-        }
-    } catch (error) {
-        console.error('Erreur lors de la génération du projet via Laravel:', error);
-        return {
-            status: 400,
-            message: 'Erreur lors de la génération du projet'
-        };
-    }
+  if ((response as any).status === "success") {
+    return { projectName: (response as any).projectName };
+  }
+
+  throw createError({
+    statusCode: 400,
+    message: "Erreur lors de la génération du projet",
+  });
 });

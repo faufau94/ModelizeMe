@@ -1,12 +1,13 @@
 <template>
-  <Dialog>
+  <Dialog v-model:open="showModel">
     <DialogTrigger as-child>
-      <Button @click="showModel = true">
-        <CirclePlus :size="20" class="mr-2"/>
+      <Button>
+        <CirclePlus :size="20" class="mr-2" />
         Nouveau modèle
       </Button>
     </DialogTrigger>
-    <DialogContent class="sm:max-w-[425px]" v-if="showModel">
+
+    <DialogContent class="sm:max-w-[425px]">
       <DialogHeader>
         <DialogTitle>Nouveau modèle</DialogTitle>
         <DialogDescription>
@@ -14,34 +15,76 @@
         </DialogDescription>
       </DialogHeader>
 
-      <form @submit="onSubmit">
-        <FormField v-slot="{ componentField }" name="title">
-          <FormItem>
-            <FormLabel>Nom</FormLabel>
-            <FormControl>
-              <Input type="text" v-bind="componentField"/>
-            </FormControl>
-            <FormDescription>
-              Il pourra toujours être modifié plus tard.
-            </FormDescription>
-            <FormMessage />
-            <FormControl class="float-right">
-              <Button type="submit" :disabled="isLoadingNewModel">
-                <Loader2 v-if="isLoadingNewModel" class="w-4 h-4 mr-2 animate-spin"/>
-                {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
-              </Button>
-            </FormControl>
-          </FormItem>
-        </FormField>
-      </form>
+      <Form
+        v-slot="{ handleSubmit, meta, resetForm, errors, values }"
+        :validation-schema="formSchema"
+        as=""
+      >
+        <form
+          class="space-y-4"
+          @submit="handleSubmit((formValues) => onSubmit(formValues, { resetForm }))"
+        >
+          <FormField
+            v-slot="{ componentField }"
+            name="title"
+            :validate-on-blur="false"
+          >
+            <FormItem>
+              <FormLabel>Nom</FormLabel>
 
+              <FormControl>
+                <Input
+                  type="text"
+                  v-bind="componentField"
+                  placeholder="Ex. Modèle A"
+                />
+              </FormControl>
+
+              <FormDescription>
+                Il pourra toujours être modifié plus tard.
+              </FormDescription>
+
+              <div class="min-h-[20px]">
+                <FormMessage />
+              </div>
+            </FormItem>
+          </FormField>
+
+          <div class="flex justify-end">
+            <Button
+              type="submit"
+              :disabled="isSubmitDisabled(meta, values, errors)"
+            >
+              <Loader2
+                v-if="isLoadingNewModel"
+                class="w-4 h-4 mr-2 animate-spin"
+              />
+              {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
+            </Button>
+          </div>
+        </form>
+      </Form>
     </DialogContent>
   </Dialog>
 </template>
 
-<script setup>
-import {Dialog, DialogContent, DialogFooter, DialogTrigger,} from '@/components/ui/dialog'
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import { useForm } from 'vee-validate'
+import { toTypedSchema } from '@vee-validate/zod'
+import { z } from 'zod/v4'
+import { CirclePlus, Loader2 } from 'lucide-vue-next'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Form,
   FormControl,
@@ -51,42 +94,70 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import {CirclePlus, Loader2} from "lucide-vue-next";
-import {ref} from "vue";
-import { useForm } from 'vee-validate'
-import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";;
 
-const showModel = ref(false);
-const isLoadingNewModel = ref(false);
+const showModel = ref(false)
+const isLoadingNewModel = ref(false)
 
-const formSchema = toTypedSchema(z.object({
-  title: z.string({
-    error: (issue) => issue.input === undefined 
-    ? "Veuillez remplir le champs." 
-    : ""
-  }).min(2, 'Le nom doit être supérieur à 2 caractères.').max(50),
-}))
+const formSchema = toTypedSchema(
+  z.object({
+    title: z
+      .string({
+        error: (issue) =>
+          issue.input === undefined ? 'Veuillez remplir le champs.' : '',
+      })
+      .min(2, 'Le nom doit être supérieur à 2 caractères.')
+      .max(50, 'Le nom doit contenir au maximum 50 caractères.'),
+  }),
+)
 
 const form = useForm({
   validationSchema: formSchema,
+  initialValues: {
+    title: '',
+  },
+})
+
+const isSubmitDisabled = (
+  meta: { valid: boolean; dirty: boolean },
+  values: { title?: string },
+  errors: Record<string, string | string[] | undefined>,
+) => {
+  const title = values.title?.trim() ?? ''
+  const hasTitleError = !!errors.title
+
+  return (
+    isLoadingNewModel.value ||
+    title.length === 0 ||
+    hasTitleError ||
+    !meta.dirty ||
+    !meta.valid
+  )
+}
+
+watch(showModel, (open) => {
+  if (!open) {
+    form.resetForm()
+    isLoadingNewModel.value = false
+  }
 })
 
 const onSubmit = form.handleSubmit(async (values) => {
-  isLoadingNewModel.value = true;
+  isLoadingNewModel.value = true
 
-  const res = await $fetch('/api/models/create', {
-    method: 'POST',
-    body: {
-      title: values.title
-    },
-  });
+  try {
+    const res = await $fetch('/api/models/create', {
+      method: 'POST',
+      body: {
+        title: values.title,
+      },
+    })
 
-  if (res) {
-    isLoadingNewModel.value = false;
-    showModel.value = false;
-    await navigateTo('/app/model/' + res.id.toString());
+    form.resetForm()
+    showModel.value = false
+
+    await navigateTo('/app/model/' + res.id.toString())
+  } finally {
+    isLoadingNewModel.value = false
   }
-
 })
 </script>

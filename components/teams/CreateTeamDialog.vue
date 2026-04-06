@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model:open="isOpen">
     <DialogTrigger as-child>
-      <div class="cursor-pointer hover:bg-accent p-2 rounded-md flex items-center gap-2 text-sm font-medium text-gray-700 border border-dashed border-gray-300">
+      <div class="cursor-pointer hover:bg-accent p-2 rounded-md flex items-center gap-2 text-sm font-medium text-muted-foreground border border-dashed border-border">
         <PlusIcon class="h-4 w-4" />
       </div>
     </DialogTrigger>
@@ -125,7 +125,7 @@
                   <div
                     v-for="member in getMembersList"
                     :key="member.id"
-                    class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
+                    class="flex items-center space-x-3 p-2 hover:bg-accent/50 rounded"
                   >
                     <Checkbox
                       :id="`member-${member.id}`"

@@ -1,46 +1,49 @@
-import { auth } from '~/lib/auth'
-import prisma from '~/lib/prisma'
+import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
-export default defineEventHandler(async event => {
-  console.log('DELETE MEMBER API CALLED')
-  // Validate session
-  const session = await auth.api.getSession({
-    headers: event.headers,
-  })
-  if (!session?.user?.id) {
-    return { status: 401, body: { message: 'Unauthorized' } }
+export default defineEventHandler(async (event) => {
+  const session = await requireAuth(event);
+
+  const { userId, workspaceId } = getQuery(event);
+  const targetUserId = idSchema.parse(userId);
+  const orgId = idSchema.parse(workspaceId);
+
+  // Check caller is an owner/admin of this org
+  const callerMember = await prisma.member.findFirst({
+    where: {
+      organizationId: orgId,
+      userId: session.user.id,
+    },
+  });
+
+  if (!callerMember || !["owner", "admin"].includes(callerMember.role)) {
+    throw createError({
+      statusCode: 403,
+      message: "Seuls les admins peuvent retirer des membres",
+    });
   }
 
-  // Get user id
-  const { userId, workspaceId } = getQuery(event)
-  if (!userId) {
-    return { status: 400, body: { message: 'User id is required' } }
+  // Cannot remove the owner
+  const targetMember = await prisma.member.findFirst({
+    where: {
+      organizationId: orgId,
+      userId: targetUserId,
+    },
+  });
+
+  if (!targetMember) {
+    throw createError({ statusCode: 404, message: "Membre non trouvé" });
   }
 
-  console.log('Deleting user with id:', userId)
-  console.log('Workspace ID:', workspaceId)
-  // Validate workspaceId
-  try {
-    // Delete user
-    const member = await prisma.workspaceMember.delete({ 
-      where: { 
-        userId_workspaceId: { 
-          userId: Number(userId), 
-          workspaceId: String(workspaceId) 
-        } 
-      }
-     })
-
-     
-    if (!member) {
-      return {
-        status: 404,
-        body: { message: `No member found with userId ${userId} in workspace ${workspaceId}` },
-      }
-    }
-    return { status: 200, body: { message: `User deleted successfully` } }
-  } catch (error) {
-    console.error('Error deleting user:', error)
-    return { status: 500, body: { message: 'Error deleting user' } }
+  if (targetMember.role === "owner") {
+    throw createError({
+      statusCode: 400,
+      message: "Impossible de retirer le propriétaire",
+    });
   }
-})
+
+  await prisma.member.delete({ where: { id: targetMember.id } });
+
+  return { success: true };
+});
