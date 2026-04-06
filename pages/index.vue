@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import UiMeteors from '@/components/UiMeteors.client.vue'
 //import UiRetroGrid from '@/components/RetroGrid.vue'
-import { signOut, useSession } from '~/lib/auth-client';
+import {signOut, useSession} from '~/lib/auth-client';
+
 const { data } = await useSession(useFetch);
 </script>
 
@@ -34,7 +35,7 @@ const { data } = await useSession(useFetch);
         <Button
             variant="outline"
             @click="() => signOut({ callbackUrl: '/' })"
-            class="inline-flex h-9 items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium text-black shadow-sm transition-colors hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            class="inline-flex h-9 items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
         >
           Se déconnecter
         </Button>

@@ -3,17 +3,17 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-04-03',
   devtools: { enabled: false },
   css: ['~/assets/css/main.css'],
+  components: [
+        {
+            path: '~/components',
+            pathPrefix: false,
+            ignore: ['**/index.*']
+        }
+  ],
 
   plugins: [
     '~/plugins/vue-query.ts',
   ],
-
-  postcss: {
-    plugins: {
-      tailwindcss: {},
-      autoprefixer: {},
-    },
-  },
 
   modules: [
     "shadcn-nuxt",
@@ -22,12 +22,19 @@ export default defineNuxtConfig({
     "nuxt-lucide-icons",
     'dayjs-nuxt',
     '@vee-validate/nuxt',
+    '@nuxtjs/color-mode',
     //'@nuxtjs/i18n'
   ],
 
   vite: {
     optimizeDeps: {
       include: ["zod"],
+      // Force le scan de tout le dossier node_modules au démarrage
+      entries: [
+        './app.vue',
+        './pages/**/*.vue',
+        './components/**/*.vue'
+      ],
       exclude: ['vee-validate']
     },
     resolve: {
@@ -42,6 +49,12 @@ export default defineNuxtConfig({
         'better-auth',
         'better-auth/adapters/prisma'
       ]
+    },
+    server: {
+      watch: {
+        usePolling: true,
+        interval: 1000
+      }
     }
   },
 
@@ -54,6 +67,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       baseUrl: process.env.BASE_URL,
+      websocketUrl: process.env.NUXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:1234',
     },
     authSecret: process.env.AUTH_SECRET,
     authOrigin: process.env.NUXT_AUTH_ORIGIN,
@@ -64,8 +78,17 @@ export default defineNuxtConfig({
     gitlabClientSecret: process.env.GITLAB_CLIENT_SECRET,
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    mailerHost: process.env.MAILER_HOST,
+    mailerPort: process.env.MAILER_PORT,
+    mailerUser: process.env.MAILER_USER,
+    mailerPassword: process.env.MAILER_PASSWORD,
+    mailerFrom: process.env.MAILER_FROM,
   },
-
+  colorMode: {
+    classSuffix: '',
+    preference: 'system',
+    fallback: 'light',
+  },
   shadcn: {
     prefix: '',
     componentDir: './components/ui'

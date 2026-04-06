@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="Gestion de Rendez-vous Médical">
+  <entities>
+    <entity name="Patient" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="prenom" type="String" nullable="false"/>
+      <property name="date_naissance" type="Date" nullable="false"/>
+      <property name="email" type="String" nullable="true"/>
+      <property name="telephone" type="String" nullable="false"/>
+      <property name="adresse" type="String" nullable="true"/>
+      <property name="numero_secu" type="String" nullable="false"/>
+    </entity>
+
+    <entity name="Medecin" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="prenom" type="String" nullable="false"/>
+      <property name="email" type="String" nullable="false"/>
+      <property name="telephone" type="String" nullable="false"/>
+      <property name="numero_rpps" type="String" nullable="false"/>
+    </entity>
+
+    <entity name="Specialite" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="description" type="Text" nullable="true"/>
+    </entity>
+
+    <entity name="Cabinet" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="adresse" type="String" nullable="false"/>
+      <property name="telephone" type="String" nullable="false"/>
+      <property name="email" type="String" nullable="true"/>
+    </entity>
+
+    <entity name="RendezVous" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="date_heure" type="DateTime" nullable="false"/>
+      <property name="duree_minutes" type="Integer" nullable="false"/>
+      <property name="motif" type="String" nullable="false"/>
+      <property name="statut" type="String" nullable="false"/>
+      <property name="notes" type="Text" nullable="true"/>
+    </entity>
+
+    <entity name="Consultation" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="date" type="DateTime" nullable="false"/>
+      <property name="diagnostic" type="Text" nullable="true"/>
+      <property name="traitement" type="Text" nullable="true"/>
+      <property name="observations" type="Text" nullable="true"/>
+      <property name="prix" type="Decimal" nullable="false"/>
+    </entity>
+
+    <entity name="Ordonnance" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="date_emission" type="Date" nullable="false"/>
+      <property name="date_expiration" type="Date" nullable="true"/>
+      <property name="contenu" type="Text" nullable="false"/>
+    </entity>
+
+    <entity name="DisponibiliteMedecin" timestamps="false">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="jour_semaine" type="Integer" nullable="false"/>
+      <property name="heure_debut" type="Time" nullable="false"/>
+      <property name="heure_fin" type="Time" nullable="false"/>
+    </entity>
+  </entities>
+
+  <relationships>
+    <!-- Un médecin a une ou plusieurs spécialités -->
+    <relationship name="pratiquer" source="Medecin" target="Specialite"
+                  sourceCardinality="0,N" targetCardinality="1,N"/>
+
+    <!-- Un médecin exerce dans un ou plusieurs cabinets -->
+    <relationship name="exercer" source="Medecin" target="Cabinet"
+                  sourceCardinality="0,N" targetCardinality="1,N"/>
+
+    <!-- Un patient prend un rendez-vous -->
+    <relationship name="prendre" source="Patient" target="RendezVous"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Un rendez-vous est attribué à un médecin -->
+    <relationship name="attribuer" source="RendezVous" target="Medecin"
+                  sourceCardinality="0,N" targetCardinality="1,1"/>
+
+    <!-- Un rendez-vous se déroule dans un cabinet -->
+    <relationship name="se_tenir" source="RendezVous" target="Cabinet"
+                  sourceCardinality="0,N" targetCardinality="1,1"/>
+
+    <!-- Un rendez-vous donne lieu à une consultation -->
+    <relationship name="generer" source="RendezVous" target="Consultation"
+                  sourceCardinality="1,1" targetCardinality="0,1"/>
+
+    <!-- Une consultation produit une ordonnance -->
+    <relationship name="produire" source="Consultation" target="Ordonnance"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Un médecin définit ses disponibilités -->
+    <relationship name="definir" source="Medecin" target="DisponibiliteMedecin"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+  </relationships>
+</model>

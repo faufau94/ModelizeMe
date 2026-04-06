@@ -37,7 +37,7 @@
                     <span class="sr-only">Edit</span>
                   </Button>
                   <Button variant="ghost" size="icon" @click="isDeleteDialogOpen = true">
-                    <TrashIcon class="w-4 h-4"/>
+                    <Trash2 class="w-4 h-4"/>
                     <span class="sr-only">Delete</span>
                   </Button>
                 </div>
@@ -136,7 +136,7 @@ import {Table, TableHeader, TableRow, TableHead, TableBody, TableCell} from '@/c
 import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter} from '@/components/ui/dialog'
 import {Label} from '@/components/ui/label'
 import {Input} from '@/components/ui/input'
-import {CirclePlus, FilePenIcon, TrashIcon} from 'lucide-vue-next'
+import {CirclePlus, FilePenIcon, Trash2} from 'lucide-vue-next'
 
 definePageMeta({
   layout: 'sidebar',

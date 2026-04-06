@@ -1,40 +1,31 @@
 import prisma from "~/lib/prisma";
+import { requireAdmin } from "~/server/utils/auth";
+import { idSchema, editUserSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-  
-    const body = await readBody(event);
-    const query = getQuery(event);
-    const id = parseInt(query.id);
-    
-    const { role, ...userInfo } = body;
+  await requireAdmin(event);
 
-    // Check if the user exists
-    const user = await prisma.user.findUnique({
-        where: { id },
-    });
-    
-    if (!user) {
-        throw createError({ statusCode: 404, statusMessage: "User not found" });
-    }
+  const query = getQuery(event);
+  const id = idSchema.parse(query.id);
+  const body = await readBody(event);
+  const data = editUserSchema.parse(body);
 
-    
-    
-    // Update the user with his role
-    const updatedUser = await prisma.user.update({
-        where: { id },
-        data: {
-            ...userInfo,
-            roleId: role,
-        },
-        include: {
-            role: true,
-        },
-    });
-    
-    return {
-        status: 200,
-        body: {
-            message: 'Les informations ont été modifiées'
-        }
-    }
-})
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) {
+    throw createError({ statusCode: 404, message: "Utilisateur non trouvé" });
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id },
+    data,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      banned: true,
+    },
+  });
+
+  return updatedUser;
+});

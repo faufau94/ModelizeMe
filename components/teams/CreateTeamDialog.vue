@@ -1,7 +1,7 @@
 <template>
   <Dialog v-model:open="isOpen">
     <DialogTrigger as-child>
-      <div class="cursor-pointer hover:bg-gray-50">
+      <div class="cursor-pointer hover:bg-accent p-2 rounded-md flex items-center gap-2 text-sm font-medium text-muted-foreground border border-dashed border-border">
         <PlusIcon class="h-4 w-4" />
       </div>
     </DialogTrigger>
@@ -46,34 +46,10 @@
                   <SelectValue placeholder="Select color" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="blue">
+                  <SelectItem v-for="color in colors" :value="color" :key="color">
                     <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-blue-500"></div>
-                      Blue
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="green">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-green-500"></div>
-                      Green
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="purple">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-purple-500"></div>
-                      Purple
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="orange">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-orange-500"></div>
-                      Orange
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="red">
-                    <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full bg-red-500"></div>
-                      Red
+                      <div class="w-3 h-3 rounded-full" :class="teamColorClass(color)"></div>
+                      {{ color.charAt(0).toUpperCase() + color.slice(1) }}
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -149,7 +125,7 @@
                   <div
                     v-for="member in getMembersList"
                     :key="member.id"
-                    class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded"
+                    class="flex items-center space-x-3 p-2 hover:bg-accent/50 rounded"
                   >
                     <Checkbox
                       :id="`member-${member.id}`"
@@ -245,10 +221,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useForm } from 'vee-validate'
-import { toTypedSchema } from '@vee-validate/zod'
-import { z } from 'zod'
+import {computed, ref} from 'vue'
+import {useForm} from 'vee-validate'
+import {toTypedSchema} from '@vee-validate/zod'
+import {z} from 'zod'
+import {teamColorClass} from "~/utils";
 import {
   Dialog,
   DialogContent,
@@ -258,32 +235,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  PlusIcon,
-  XIcon,
-  InfoIcon,
-  LoaderIcon
-} from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Textarea} from '@/components/ui/textarea'
+import {Checkbox} from '@/components/ui/checkbox'
+import {Badge} from '@/components/ui/badge'
+import {Avatar} from '@/components/ui/avatar'
+import {Separator} from '@/components/ui/separator'
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select'
+import {InfoIcon, LoaderIcon, PlusIcon, XIcon} from 'lucide-vue-next'
+import {toast} from 'vue-sonner'
 
-import { useTeam } from '@/composables/api/useTeam';
-import { useMember } from '@/composables/api/useMember'
-import { useWorkspace } from '~/composables/api/useWorkspace'
+import {useTeam} from '@/composables/api/useTeam';
+import {useWorkspace} from '~/composables/api/useWorkspace'
 
 const { selectedWorkspace } = useWorkspace()
 
@@ -382,7 +347,7 @@ const onSubmit = handleSubmit(async (formValues) => {
   isSubmitting.value = true
 
   try {
-    createTeam(formValues)
+    await createTeam(formValues)
 
     // let members = []
     // if (formValues.dispatchMode === 'manual') {
@@ -415,4 +380,6 @@ const onSubmit = handleSubmit(async (formValues) => {
     isSubmitting.value = false
   }
 })
+
+const colors = ['blue', 'green', 'purple', 'orange', 'red']
 </script>

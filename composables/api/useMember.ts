@@ -14,7 +14,7 @@ export function useMember() {
   const { selectedWorkspaceId } = useWorkspace()
   const queryClient = useQueryClient()
 
-  // // — LIST MEMBERS IN WORKSPACE —
+  // // - LIST MEMBERS IN WORKSPACE -
   // const {
   //   data: members,
   //   isLoading: isLoadingMembers,
@@ -33,17 +33,25 @@ export function useMember() {
   // })
 
 
-  // — CREATE MEMBER —
+  // - CREATE MEMBER -
   const addMemberMutation = useMutation({
-    mutationFn: async (payload: any) =>
-      await $fetch('/api/members/add', { method: 'POST', body: payload }),
+    mutationFn: async (payload: any) => {
+        const { email } = payload;
+        return await authClient.organization.inviteMember({
+            organizationId: selectedWorkspaceId.value,
+            email,
+            role: 'member',
+            resend: true,
+        })
+    },
+      //await $fetch('/api/members/add', { method: 'POST', body: payload }),
     onSuccess: () => {
       queryClient.invalidateQueries(['workspaceMembers', selectedWorkspaceId.value])
     }
   })
   const addMember = (member: any) => addMemberMutation.mutateAsync(member)
 
-  // — UPDATE MEMBER —
+  // - UPDATE MEMBER -
   const updateMemberMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
       return await authClient.organization.updateMemberRole({
@@ -57,7 +65,7 @@ export function useMember() {
   })
   const updateMember = (id: string, data: any) => updateMemberMutation.mutateAsync({ id, data })
 
-  // — DELETE MEMBER —
+  // - DELETE MEMBER -
   const deleteMemberMutation = useMutation({
     mutationFn: async (id: string) => {
       return await authClient.organization.removeMember({

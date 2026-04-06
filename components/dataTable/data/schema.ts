@@ -26,9 +26,21 @@ export const roleSchema = z.object({
 export const teamSchema = z.object({
   id: z.string(),
   name: z.string(),
+  description: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
+  maxMembers: z.number().nullable().optional(),
   organizationId: z.string(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
+  teammembers: z.array(z.object({
+    id: z.string(),
+    userId: z.string(),
+    teamId: z.string(),
+  })).optional(),
+  models: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+  })).optional(),
 })
 
 // Organization (Workspace) schema

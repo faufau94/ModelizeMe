@@ -1,0 +1,237 @@
+{
+  "nodes": [
+    {
+      "id": "node_adherent",
+      "type": "customEntity",
+      "position": { "x": 100, "y": 300 },
+      "data": {
+        "name": "Adherent",
+        "hasTimestamps": true,
+        "usesSoftDeletes": true,
+        "properties": [
+          { "id": "p1", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p2", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p3", "propertyName": "prenom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p4", "propertyName": "email", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p5", "propertyName": "telephone", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p6", "propertyName": "date_inscription", "typeName": "Date", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p7", "propertyName": "actif", "typeName": "Boolean", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_livre",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 300 },
+      "data": {
+        "name": "Livre",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p10", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p11", "propertyName": "titre", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p12", "propertyName": "isbn", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p13", "propertyName": "annee_publication", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p14", "propertyName": "nombre_pages", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p15", "propertyName": "disponible", "typeName": "Boolean", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_auteur",
+      "type": "customEntity",
+      "position": { "x": 700, "y": 0 },
+      "data": {
+        "name": "Auteur",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p20", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p21", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p22", "propertyName": "prenom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p23", "propertyName": "nationalite", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p24", "propertyName": "biographie", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_categorie",
+      "type": "customEntity",
+      "position": { "x": 1300, "y": 300 },
+      "data": {
+        "name": "Categorie",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p30", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p31", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p32", "propertyName": "description", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    },
+    {
+      "id": "node_emprunt",
+      "type": "customEntity",
+      "position": { "x": 400, "y": 600 },
+      "data": {
+        "name": "Emprunt",
+        "hasTimestamps": true,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p40", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p41", "propertyName": "date_emprunt", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p42", "propertyName": "date_retour_prevue", "typeName": "Date", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p43", "propertyName": "date_retour_effective", "typeName": "DateTime", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "p44", "propertyName": "rendu", "typeName": "Boolean", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ]
+      }
+    },
+    {
+      "id": "node_editeur",
+      "type": "customEntity",
+      "position": { "x": 1300, "y": 0 },
+      "data": {
+        "name": "Editeur",
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "properties": [
+          { "id": "p50", "propertyName": "id", "typeName": "Big Integer", "isPrimaryKey": true, "autoIncrement": true, "isForeignKey": false, "isNullable": false },
+          { "id": "p51", "propertyName": "nom", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "p52", "propertyName": "pays", "typeName": "String", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true }
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_publier",
+      "type": "customEdge",
+      "source": "node_editeur",
+      "target": "node_livre",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "publier",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_classer",
+      "type": "customEdge",
+      "source": "node_categorie",
+      "target": "node_livre",
+      "sourceHandle": "s1",
+      "targetHandle": "s4",
+      "data": {
+        "name": "classer",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_effectuer",
+      "type": "customEdge",
+      "source": "node_adherent",
+      "target": "node_emprunt",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "effectuer",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_concerner",
+      "type": "customEdge",
+      "source": "node_livre",
+      "target": "node_emprunt",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "concerner",
+        "sourceCardinality": "1,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_ecrire",
+      "type": "customEdge",
+      "source": "node_auteur",
+      "target": "node_livre",
+      "sourceHandle": "s3",
+      "targetHandle": "s2",
+      "data": {
+        "name": "ecrire",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_noter",
+      "type": "customEdge",
+      "source": "node_adherent",
+      "target": "node_livre",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "noter",
+        "sourceCardinality": "0,N",
+        "targetCardinality": "0,N",
+        "properties": [
+          { "id": "ep1", "propertyName": "note", "typeName": "Integer", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false },
+          { "id": "ep2", "propertyName": "commentaire", "typeName": "Text", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": true },
+          { "id": "ep3", "propertyName": "date_avis", "typeName": "Date", "isPrimaryKey": false, "autoIncrement": false, "isForeignKey": false, "isNullable": false }
+        ],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": null
+      }
+    },
+    {
+      "id": "edge_sous_categorie",
+      "type": "customEdge",
+      "source": "node_categorie",
+      "target": "node_categorie",
+      "sourceHandle": "s4",
+      "targetHandle": "s1",
+      "data": {
+        "name": "sous-categorie",
+        "sourceCardinality": "0,1",
+        "targetCardinality": "0,N",
+        "properties": [],
+        "hasTimestamps": false,
+        "usesSoftDeletes": false,
+        "isCIF": false,
+        "loopbackSide": "right"
+      }
+    }
+  ]
+}

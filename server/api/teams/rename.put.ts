@@ -1,17 +1,17 @@
 import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { idSchema, renameTeamSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
-    const body = await readBody(event)
-    const query = getQuery(event)
+  await requireAuth(event);
 
+  const query = getQuery(event);
+  const teamId = idSchema.parse(query.id);
+  const body = await readBody(event);
+  const { name } = renameTeamSchema.parse(body);
 
-    const updateTeamName = await prisma.team.update({
-        where: {
-            id: parseInt(query.id),
-        },
-        data: {
-            name: body.name
-        },
-    })
-    return updateTeamName
-})
+  return await prisma.team.update({
+    where: { id: teamId },
+    data: { name },
+  });
+});

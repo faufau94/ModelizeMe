@@ -94,7 +94,7 @@
 
           <div class="mt-4 text-center text-sm">
             Pas encore de compte ?
-            <NuxtLink to="/sign-up" class="underline">
+            <NuxtLink :to="route.query.redirect ? `/sign-up?redirect=${route.query.redirect}` : '/sign-up'" class="underline">
               S'inscrire
             </NuxtLink>
           </div>
@@ -110,25 +110,16 @@
 import {Button} from '~/components/ui/button'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Input} from '~/components/ui/input'
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form'
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from '@/components/ui/form'
 
 import {AlertCircle, Loader2} from "lucide-vue-next";
 
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
-import { z } from "zod/v4";
+import {z} from "zod/v4";
 
-import { signIn, authClient } from "~/lib/auth-client.js";
-import { getDashboardUrl } from '~/utils/routes'
-import { computed } from 'vue'
+import {authClient, signIn} from "~/lib/auth-client.js";
+import {computed} from 'vue'
 
 const formSchema = toTypedSchema(z.object({
   email: z.email({message: "Adresse email invalide."}),
@@ -195,7 +186,7 @@ const onSubmit = async (values: { email: string; password: string }) => {
     // Default redirect to dashboard
     const orgId = session?.session?.activeOrganizationId
     if (orgId) {
-      const url = getDashboardUrl(orgId)
+      const url = `/app/workspace/${orgId}`
       await navigateTo(url)
     }
   }
@@ -211,7 +202,7 @@ const signInProvider = async (providerId: typeof socialProviders[number]['id']) 
     
     await authClient.signIn.social({
       provider: providerId,
-      callbackURL: redirect ? decodeURIComponent(redirect) : "/dashboard",
+      callbackURL: redirect ? decodeURIComponent(redirect) : "/",
       errorCallbackURL: "/error",
       newUserCallbackURL: "/welcome",
     });

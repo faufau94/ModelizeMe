@@ -20,15 +20,28 @@
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem>
-          Profil
+        <DropdownMenuItem class="cursor-pointer" @click="navigateTo('/app/profile')">
+          Mon compte
         </DropdownMenuItem>
         <DropdownMenuItem>
           Facturation
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          Paramètres
-        </DropdownMenuItem>
+        <div class="flex items-center justify-between px-2 py-1.5 text-sm">
+          <span>Thème</span>
+          <div class="flex items-center gap-0.5 rounded-md border border-border p-0.5">
+            <button
+              v-for="option in themeOptions"
+              :key="option.value"
+              class="rounded p-1 transition-colors cursor-pointer"
+              :class="colorMode.preference === option.value
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:text-foreground'"
+              @click="setTheme(option.value, $event)"
+            >
+              <component :is="option.icon" class="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
       <DropdownMenuItem>
@@ -57,11 +70,19 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Monitor, Moon, Sun } from 'lucide-vue-next'
 
 import { signOut, useSession } from '~/lib/auth-client';
 const { data } = await useSession(useFetch);
+
+const { colorMode, setTheme } = useThemeTransition();
+
+const themeOptions = [
+  { value: 'system', icon: Monitor },
+  { value: 'light', icon: Sun },
+  { value: 'dark', icon: Moon },
+];
 
 </script>

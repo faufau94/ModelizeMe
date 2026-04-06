@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="Gestion de Tâches Collaboratif">
+  <entities>
+    <entity name="Utilisateur" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="prenom" type="String" nullable="false"/>
+      <property name="email" type="String" nullable="false"/>
+      <property name="mot_de_passe" type="String" nullable="false"/>
+      <property name="avatar" type="String" nullable="true"/>
+      <property name="role_global" type="String" nullable="false"/>
+    </entity>
+
+    <entity name="Projet" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="description" type="Text" nullable="true"/>
+      <property name="date_debut" type="Date" nullable="true"/>
+      <property name="date_fin_prevue" type="Date" nullable="true"/>
+      <property name="statut" type="String" nullable="false"/>
+      <property name="couleur" type="String" nullable="true"/>
+    </entity>
+
+    <entity name="Tache" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="titre" type="String" nullable="false"/>
+      <property name="description" type="Text" nullable="true"/>
+      <property name="priorite" type="String" nullable="false"/>
+      <property name="statut" type="String" nullable="false"/>
+      <property name="date_echeance" type="Date" nullable="true"/>
+      <property name="estimation_heures" type="Decimal" nullable="true"/>
+      <property name="heures_passees" type="Decimal" nullable="true"/>
+    </entity>
+
+    <entity name="Categorie" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="couleur" type="String" nullable="true"/>
+    </entity>
+
+    <entity name="Etiquette" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom" type="String" nullable="false"/>
+      <property name="couleur" type="String" nullable="false"/>
+    </entity>
+
+    <entity name="Commentaire" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="contenu" type="Text" nullable="false"/>
+    </entity>
+
+    <entity name="PieceJointe" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="nom_fichier" type="String" nullable="false"/>
+      <property name="url" type="String" nullable="false"/>
+      <property name="taille_ko" type="Integer" nullable="true"/>
+      <property name="type_mime" type="String" nullable="true"/>
+    </entity>
+
+    <entity name="Notification" timestamps="true">
+      <property name="id" type="Big Integer" primaryKey="true" autoIncrement="true" nullable="false"/>
+      <property name="message" type="String" nullable="false"/>
+      <property name="type" type="String" nullable="false"/>
+      <property name="est_lue" type="Boolean" nullable="false"/>
+    </entity>
+  </entities>
+
+  <relationships>
+    <!-- Un utilisateur crée des projets -->
+    <relationship name="creer" source="Utilisateur" target="Projet"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Plusieurs utilisateurs participent à plusieurs projets -->
+    <relationship name="participer" source="Utilisateur" target="Projet"
+                  sourceCardinality="0,N" targetCardinality="0,N">
+      <property name="role" type="String" nullable="false"/>
+      <property name="date_adhesion" type="Date" nullable="false"/>
+    </relationship>
+
+    <!-- Un projet contient plusieurs tâches -->
+    <relationship name="contenir" source="Projet" target="Tache"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Une tâche peut avoir des sous-tâches -->
+    <relationship name="depenre_de" source="Tache" target="Tache"
+                  sourceCardinality="0,N" targetCardinality="0,1"/>
+
+    <!-- Une tâche est assignée à un utilisateur -->
+    <relationship name="assigner" source="Tache" target="Utilisateur"
+                  sourceCardinality="0,N" targetCardinality="0,N">
+      <property name="date_assignation" type="DateTime" nullable="false"/>
+    </relationship>
+
+    <!-- Une tâche appartient à une catégorie -->
+    <relationship name="classifier" source="Tache" target="Categorie"
+                  sourceCardinality="0,N" targetCardinality="0,1"/>
+
+    <!-- Une tâche a des étiquettes -->
+    <relationship name="etiqueter" source="Tache" target="Etiquette"
+                  sourceCardinality="0,N" targetCardinality="0,N"/>
+
+    <!-- Un utilisateur rédige des commentaires sur une tâche -->
+    <relationship name="commenter" source="Utilisateur" target="Commentaire"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Un commentaire est lié à une tâche -->
+    <relationship name="concerner" source="Commentaire" target="Tache"
+                  sourceCardinality="0,N" targetCardinality="1,1"/>
+
+    <!-- Une tâche a des pièces jointes -->
+    <relationship name="joindre" source="Tache" target="PieceJointe"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+
+    <!-- Une notification est envoyée à un utilisateur -->
+    <relationship name="recevoir" source="Utilisateur" target="Notification"
+                  sourceCardinality="1,1" targetCardinality="0,N"/>
+  </relationships>
+</model>

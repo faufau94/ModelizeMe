@@ -1,0 +1,45 @@
+# Dependencies
+node_modules
+
+# Nuxt build output
+.output
+.nuxt
+.nitro
+.cache
+dist
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.fleet
+.vscode
+.claude
+
+# Env files (injected via docker-compose)
+.env
+.env.*
+!.env.example
+
+# Prisma generated client (regenerated in build)
+prisma/generated
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker files (no need to copy themselves)
+Dockerfile
+docker-compose.yml
+docker-compose*.yml
+.dockerignore
+
+# Docs
+README.md
+ANALYSE-PROJET.md

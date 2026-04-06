@@ -303,22 +303,24 @@
     </div>
   </template>
   <script setup lang="ts">
-  import { getWorkspaceColumns } from '~/components/dataTable/workspace-columns'
+  import {getWorkspaceColumns} from '~/components/dataTable/workspace-columns'
   import DataTable from '@/components/dataTable/DataTable.vue'
-  import { CirclePlus, Loader2, Copy } from 'lucide-vue-next';
-  
-  import { useQuery } from '@tanstack/vue-query'
-  
-  import { useWorkspaceStore } from '~/stores/api/workspace-store'
-  
-  import { useForm } from 'vee-validate'
+  import {CirclePlus, Copy, Loader2} from 'lucide-vue-next';
+
+  import {useQuery} from '@tanstack/vue-query'
+
+  import {useWorkspaceStore} from '~/stores/api/workspace-store'
+
+  import {useForm} from 'vee-validate'
   import {toTypedSchema} from "@vee-validate/zod";
-  import { z } from "zod/v4";;
-  import type { Workspace } from '~/components/dataTable/data/schema';
-  import { useRoleStore } from '~/stores/api/role-store';
-  import { makeWorkspaceLink } from '~/utils/workspace-link';
-  
-  
+  import {z} from "zod/v4";
+  import type {Workspace} from '~/components/dataTable/data/schema';
+  import {useRoleStore} from '~/stores/api/role-store';
+  import {makeWorkspaceLink} from '~/utils/workspace-link';
+
+  ;
+
+
   definePageMeta({
       layout: 'sidebar-admin',
   });

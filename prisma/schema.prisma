@@ -9,7 +9,7 @@ generator client {
   provider      = "prisma-client-js"
   //output        = "./generated/prisma/client"
   //module        = "esm"
-  binaryTargets = ["native", "debian-openssl-1.0.x"]
+  binaryTargets = ["native", "debian-openssl-1.0.x", "debian-openssl-3.0.x"]
 }
 
 model User {
@@ -28,11 +28,14 @@ model User {
   banReason  String?   @db.Text
   banExpires DateTime?
 
-  members        Member[]
-  invitations    Invitation[]
-  authoredModels Model[]      @relation("AuthorModels")
-  galeries       Galery[]
-  annotations    Annotation[]
+  members           Member[]
+  invitations      Invitation[]
+  authoredModels   Model[]      @relation("AuthorModels")
+  galeries         Galery[]
+  annotations      Annotation[]
+  teammembers      TeamMember[]
+  modelEvents      ModelEvent[]
+  generatedProjects GeneratedProject[] @relation("AuthorProjects")
 
   @@unique([email])
   @@map("user")
@@ -52,8 +55,10 @@ model Session {
   impersonatedBy String? @db.Text
 
   activeOrganizationId String? @db.Text
+  activeTeamId         String? @db.Text
 
   @@unique([token])
+  @@index([userId])
   @@map("session")
 }
 
@@ -94,10 +99,11 @@ model Organization {
   logo        String?      @db.Text
   createdAt   DateTime
   metadata    String?      @db.Text
-  members     Member[]
-  invitations Invitation[]
-  teams       Team[]
-  models      Model[]
+  members           Member[]
+  invitations      Invitation[]
+  teams            Team[]
+  models           Model[]
+  generatedProjects GeneratedProject[]
 
   @@unique([slug])
   @@map("organization")
@@ -112,8 +118,7 @@ model Member {
   role           String       @db.Text
   createdAt      DateTime
 
-  teamId String? @db.Text
-
+  @@index([organizationId, userId])
   @@map("member")
 }
 
@@ -130,19 +135,38 @@ model Invitation {
 
   teamId String? @db.Text
 
+  @@index([organizationId])
+  @@index([inviterId])
   @@map("invitation")
 }
 
 model Team {
   id             String       @id
   name           String       @db.Text
+  description    String?      @db.Text
+  color          String?
+  maxMembers     Int?
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   createdAt      DateTime
   updatedAt      DateTime?
   models         Model[]
+  teammembers    TeamMember[]
 
+  @@index([organizationId])
   @@map("team")
+}
+
+model TeamMember {
+  id        String    @id
+  teamId    String
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime?
+
+  @@map("teamMember")
+  @@unique([teamId, userId])
 }
 
 model Model {
@@ -168,10 +192,17 @@ model Model {
   author   User?   @relation("AuthorModels", fields: [authorId], references: [id], onDelete: SetNull)
 
   // Relations existantes
-  Galery      Galery[]
+  Galery            Galery[]
   // Nouvelles annotations
-  annotations Annotation[]
+  annotations       Annotation[]
+  generatedProjects GeneratedProject[]
 
+  // Event sourcing
+  events    ModelEvent[]
+  snapshots ModelSnapshot[]
+
+  @@index([workspaceId, teamId])
+  @@index([authorId])
   @@map("models")
 }
 
@@ -215,4 +246,63 @@ model Annotation {
   updatedAt DateTime @updatedAt
 
   @@map("annotations")
+}
+
+// ─── GENERATED PROJECTS ───
+
+model GeneratedProject {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  framework   String   @db.VarChar(50)
+  orm         String   @db.VarChar(50)
+  database    String   @db.VarChar(50)
+
+  modelId     String
+  model       Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  workspaceId String
+  workspace   Organization @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  authorId    String?
+  author      User?    @relation("AuthorProjects", fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([modelId])
+  @@map("generated_projects")
+}
+
+// ─── EVENT SOURCING ───
+
+model ModelEvent {
+  id        Int      @id @default(autoincrement())
+  modelId   String
+  model     Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  type      String   @db.VarChar(64)
+  payload   Json
+  inverse   Json?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  sessionId String?  @db.VarChar(128)
+  undoable  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([modelId, id])
+  @@map("model_events")
+}
+
+model ModelSnapshot {
+  id          Int      @id @default(autoincrement())
+  modelId     String
+  model       Model    @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  nodes       Json
+  edges       Json
+  eventCursor Int
+  createdAt   DateTime @default(now())
+
+  @@index([modelId, eventCursor])
+  @@map("model_snapshots")
 }

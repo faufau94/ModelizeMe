@@ -1,15 +1,15 @@
 import prisma from "~/lib/prisma";
+import { requireAuth } from "~/server/utils/auth";
+import { idSchema } from "~/server/validators";
 
 export default defineEventHandler(async (event) => {
+  await requireAuth(event);
 
-  const { id } = getQuery(event)
-  if (!id) {
-    throw createError({ statusCode: 400, message: 'id est requis' })
-  }
+  const query = getQuery(event);
+  const id = idSchema.parse(query.id);
 
-  // Supprime d'abord les membres, puis l'équipe
-  await prisma.teamMember.deleteMany({ where: { teamId: Number(id) } })
-  await prisma.team.delete({ where: { id: Number(id) } })
+  // Cascade delete handles teamMembers automatically
+  await prisma.team.delete({ where: { id } });
 
-  return { success: true }
-})
+  return { success: true };
+});
