@@ -180,7 +180,7 @@ const handleFile = async () => {
         mcdStore.flowMCD.setEdges(layouted.edges);
 
         await nextTick()
-        mcdStore.flowMCD.fitView({ padding: 0.4 })
+        mcdStore.flowMCD.fitView({ padding: 0.1, minZoom: 0.1 })
       }
     } catch (err) {
       errorMessage.value = 'Erreur lors de l\'importation du fichier.';

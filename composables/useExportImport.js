@@ -1,5 +1,4 @@
 import { toPng, toJpeg, toSvg } from 'html-to-image'
-import { getTransformForBounds } from '@vue-flow/core'
 import { toast } from 'vue-sonner'
 import { useMLDStore } from '~/stores/mld-store.js'
 
@@ -32,53 +31,9 @@ export function useExportImport(currentFlow, model) {
     document.body.removeChild(a)
   }
 
-  /**
-   * Compute the bounding box of ALL nodes using their flow-coordinate
-   * positions and measured dimensions. This is independent of the current
-   * viewport pan/zoom, so nodes that are scrolled off-screen are still
-   * included (unlike DOM-based getBoundingClientRect).
-   * An extra margin is added to account for edge labels / cardinality badges
-   * that sit slightly outside the node bounds.
-   */
-  function getContentBounds(flow) {
-    const nodes = Array.isArray(flow.getNodes) ? flow.getNodes : flow.getNodes?.value ?? []
-    if (!nodes.length) return null
-
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-
-    for (const node of nodes) {
-      const pos = node.computedPosition || node.position
-      const w = node.dimensions?.width ?? node.width ?? 0
-      const h = node.dimensions?.height ?? node.height ?? 0
-      if (!pos || (!w && !h)) continue
-
-      const x1 = pos.x
-      const y1 = pos.y
-      const x2 = pos.x + w
-      const y2 = pos.y + h
-
-      if (x1 < minX) minX = x1
-      if (y1 < minY) minY = y1
-      if (x2 > maxX) maxX = x2
-      if (y2 > maxY) maxY = y2
-    }
-
-    if (!isFinite(minX)) return null
-
-    // Extra margin for edge labels / cardinality badges that overflow nodes
-    const LABEL_MARGIN = 50
-    return {
-      x: minX - LABEL_MARGIN,
-      y: minY - LABEL_MARGIN,
-      width: (maxX - minX) + LABEL_MARGIN * 2,
-      height: (maxY - minY) + LABEL_MARGIN * 2,
-    }
-  }
-
   // ─── Image export (PNG / JPEG / SVG) ──────────────────────────────────────
-  // Captures all flow elements (nodes + edges + labels) by computing their
-  // bounding box in flow coordinates, then uses getTransformForBounds from
-  // Vue Flow to produce a transform that fits them tightly in the output image.
+  // Uses Vue Flow's fitView to frame the diagram tightly, captures via
+  // html-to-image, then restores the original viewport position.
 
   async function exportAsImage(type = 'png') {
     const flow = currentFlow.value
@@ -90,34 +45,12 @@ export function useExportImport(currentFlow, model) {
       return
     }
 
-    const viewportEl = flow.vueFlowRef?.querySelector('.vue-flow__viewport')
-    if (!viewportEl) {
+    const containerEl = flow.vueFlowRef
+    const viewportEl = containerEl?.querySelector('.vue-flow__viewport')
+    if (!viewportEl || !containerEl) {
       toast.error('Impossible de trouver le viewport.')
       return
     }
-
-    // Get the real bounding box of all visible elements
-    const bounds = getContentBounds(flow)
-    if (!bounds) {
-      toast.warning('Aucun élément visible à exporter.')
-      return
-    }
-
-    // Output image dimensions: fit to diagram aspect ratio
-    const imageWidth = 1920
-    const imageHeight = Math.max(400, Math.ceil(imageWidth * (bounds.height / bounds.width)))
-
-    // Use Vue Flow's getTransformForBounds to compute the optimal transform
-    // that fits the diagram bounds into the output image with padding.
-    const transform = getTransformForBounds(
-      bounds,
-      imageWidth,
-      imageHeight,
-      0.5,   // minZoom
-      2,     // maxZoom
-      IMAGE_PADDING,
-    )
-    const { x: tx, y: ty, zoom } = transform
 
     const filter = (node) => {
       if (node.classList?.contains('vue-flow__panel')) return false
@@ -129,20 +62,32 @@ export function useExportImport(currentFlow, model) {
     const isDark = colorMode.value === 'dark'
     const bgColor = isDark ? '#0f172a' : '#ffffff'
 
-    const baseOptions = {
-      width: imageWidth,
-      height: imageHeight,
-      pixelRatio: 1,
-      backgroundColor: bgColor,
-      filter,
-      style: {
-        width: `${imageWidth}px`,
-        height: `${imageHeight}px`,
-        transform: `translate(${tx}px, ${ty}px) scale(${zoom})`,
-      },
-    }
+    // Deselect all nodes before capture to avoid rendering selection outlines
+    const previousSelected = nodes.filter((n) => n.selected).map((n) => n.id)
+    nodes.forEach((n) => { n.selected = false })
+
+    // Save original viewport so we can restore it after capture
+    const originalViewport = flow.getViewport()
 
     try {
+      // Use Vue Flow's fitView to frame all nodes with padding
+      flow.fitView({ padding: IMAGE_PADDING, duration: 0 })
+
+      // Wait for Vue Flow to apply the new viewport transform
+      await new Promise((resolve) => setTimeout(resolve, 50))
+
+      // Capture at the container's actual screen dimensions
+      const { width: screenW, height: screenH } = containerEl.getBoundingClientRect()
+
+      const baseOptions = {
+        width: screenW,
+        height: screenH,
+        pixelRatio: 2,
+        backgroundColor: bgColor,
+        skipFonts: true,
+        filter,
+      }
+
       const safeName = getSafeFileName(model.value?.name)
       let dataUrl
 
@@ -159,6 +104,13 @@ export function useExportImport(currentFlow, model) {
     } catch (e) {
       console.error(e)
       toast.error(`Une erreur est survenue lors de l'export ${type.toUpperCase()}.`)
+    } finally {
+      // Restore original viewport position
+      flow.setViewport(originalViewport, { duration: 0 })
+      // Restore previously selected nodes
+      nodes.forEach((n) => {
+        if (previousSelected.includes(n.id)) n.selected = true
+      })
     }
   }
 
@@ -221,12 +173,17 @@ export function useExportImport(currentFlow, model) {
   ]
 
   const exportItems = [
-    { title: 'Exporter en PNG', action: () => exportAsImage('png') },
-    { title: 'Exporter en JPEG', action: () => exportAsImage('jpeg') },
-    { title: 'Exporter en SVG', action: () => exportAsImage('svg') },
-    { title: 'Exporter en JSON', action: () => exportToJSON() },
-    { title: 'Exporter en SQL (MySQL)', action: () => exportToSQL('mysql') },
-    { title: 'Exporter en SQL (PostgreSQL)', action: () => exportToSQL('pgsql') },
+    { type: 'label', title: 'Image' },
+    { title: 'PNG', action: () => exportAsImage('png') },
+    { title: 'JPEG', action: () => exportAsImage('jpeg') },
+    { title: 'SVG', action: () => exportAsImage('svg') },
+    { type: 'separator' },
+    { type: 'label', title: 'Données' },
+    { title: 'JSON', action: () => exportToJSON() },
+    { type: 'separator' },
+    { type: 'label', title: 'Base de données' },
+    { title: 'SQL (MySQL)', action: () => exportToSQL('mysql') },
+    { title: 'SQL (PostgreSQL)', action: () => exportToSQL('pgsql') },
   ]
 
   return { exportAsImage, exportToSQL, exportToJSON, importItems, exportItems }

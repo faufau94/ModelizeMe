@@ -22,7 +22,7 @@
       >
         <form
           class="space-y-4"
-          @submit="handleSubmit((formValues) => onSubmit(formValues, { resetForm }))"
+          @submit.prevent="handleSubmit((formValues) => onSubmit(formValues, { resetForm }))()"
         >
           <FormField
             v-slot="{ componentField }"

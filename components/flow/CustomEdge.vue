@@ -25,6 +25,7 @@
         :style="{
           pointerEvents: 'none',
           position: 'absolute',
+          zIndex: 1,
           transform: `translate(-50%, -50%) translate(${sourceLabelX}px, ${sourceLabelY}px)`,
         }"
       >
@@ -40,6 +41,7 @@
         :style="{
           pointerEvents: 'none',
           position: 'absolute',
+          zIndex: 1,
           transform: `translate(-50%, -50%) translate(${targetLabelX}px, ${targetLabelY}px)`,
         }"
       >
@@ -71,6 +73,7 @@
         :style="{
           pointerEvents: 'none',
           position: 'absolute',
+          zIndex: 1,
           transform: `translate(-50%, -50%) translate(${edgePath[1]}px, ${edgePath[2]}px)`,
         }"
       >

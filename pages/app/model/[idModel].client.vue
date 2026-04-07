@@ -10,6 +10,7 @@
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
         :connection-radius="50"
+        :min-zoom="0.1"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="(e) => onDrop(e, route.params.idModel)"
@@ -20,7 +21,7 @@
         @edges-delete="onEdgesDelete"
     >
       <MiniMap/>
-      <Controls :fit-view-params="{ padding: 0.4, includeHiddenNodes: false }"/>
+      <Controls :fit-view-params="{ padding: 0.1, includeHiddenNodes: false, minZoom: 0.1 }"/>
 
       <!-- Ternary selection mode banner -->
       <Panel v-if="isTernaryMode" position="top-center" class="z-50">
@@ -156,19 +157,24 @@
                 <DropdownMenuSub v-if="exportItems && exportItems.length > 0">
                   <DropdownMenuSubTrigger class="cursor-pointer">
                     <Download :size="16" class="mr-2"/>
-                    <span>Exporter</span>
+                    <span>Exporter en</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem
-                        v-for="(item, index) in exportItems"
-                        :key="index"
-                        class="cursor-pointer"
-                        @click="item.action"
-                        :disabled="item.disabled"
-                      >
-                        <span>{{ item.title }}</span>
-                      </DropdownMenuItem>
+                    <DropdownMenuSubContent class="min-w-[160px]">
+                      <template v-for="(item, index) in exportItems" :key="index">
+                        <DropdownMenuSeparator v-if="item.type === 'separator'" />
+                        <DropdownMenuLabel v-else-if="item.type === 'label'" class="text-xs text-muted-foreground font-normal px-2 py-1">
+                          {{ item.title }}
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem
+                          v-else
+                          class="cursor-pointer"
+                          @click="item.action"
+                          :disabled="item.disabled"
+                        >
+                          <span>{{ item.title }}</span>
+                        </DropdownMenuItem>
+                      </template>
                     </DropdownMenuSubContent>
                   </DropdownMenuPortal>
                 </DropdownMenuSub>
@@ -228,19 +234,24 @@
                 <DropdownMenuSub v-if="exportItems && exportItems.length > 0">
                   <DropdownMenuSubTrigger class="cursor-pointer">
                     <Download :size="16" class="mr-2"/>
-                    <span>Exporter</span>
+                    <span>Exporter en</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem
-                        v-for="(item, index) in exportItems"
-                        :key="index"
-                        class="cursor-pointer"
-                        @click="item.action"
-                        :disabled="item.disabled"
-                      >
-                        <span>{{ item.title }}</span>
-                      </DropdownMenuItem>
+                    <DropdownMenuSubContent class="min-w-[160px]">
+                      <template v-for="(item, index) in exportItems" :key="index">
+                        <DropdownMenuSeparator v-if="item.type === 'separator'" />
+                        <DropdownMenuLabel v-else-if="item.type === 'label'" class="text-xs text-muted-foreground font-normal px-2 py-1">
+                          {{ item.title }}
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem
+                          v-else
+                          class="cursor-pointer"
+                          @click="item.action"
+                          :disabled="item.disabled"
+                        >
+                          <span>{{ item.title }}</span>
+                        </DropdownMenuItem>
+                      </template>
                     </DropdownMenuSubContent>
                   </DropdownMenuPortal>
                 </DropdownMenuSub>
@@ -383,7 +394,7 @@
                   variant="ghost"
                   size="sm"
                   class="rounded-md"
-                  @click="currentFlow?.fitView({ padding: 0.4 })"
+                  @click="currentFlow?.fitView({ padding: 0.1, minZoom: 0.1 })"
               >
                 <Maximize2 :size="16"/>
               </Button>
@@ -819,7 +830,7 @@ onMounted(async () => {
   isFlowReady.value = true
 
   mcdStore.flowMCD.onNodesInitialized(() => {
-    mcdStore.flowMCD.fitView({ padding: 0.4 })
+    mcdStore.flowMCD.fitView({ padding: 0.1, minZoom: 0.1 })
   })
 
   await nextTick(); // Ensure DOM is updated and .dndflow exists
@@ -1068,7 +1079,7 @@ watch(activeTab, async () => {
 
   await nextTick()
   currentFlow.value?.onNodesInitialized(() => {
-    currentFlow.value?.fitView?.({ padding: 0.4 })
+    currentFlow.value?.fitView?.({ padding: 0.1, minZoom: 0.1 })
   })
   isChangingTab.value = false
 })
@@ -1117,7 +1128,7 @@ const reorganize = async () => {
     }])
 
     await nextTick();
-    mcdFlowInstance.fitView({ padding: 0.4 });
+    mcdFlowInstance.fitView({ padding: 0.1, minZoom: 0.1 });
   } finally {
     isReorganizing.value = false;
   }
