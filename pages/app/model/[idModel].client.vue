@@ -574,7 +574,7 @@ import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 import {useModel} from '@/composables/api/useModel'
 import {authClient} from '~/lib/auth-client'
 import ActiveUsersAvatars from '@/components/ActiveUsersAvatars.vue'
-import { useExportImport } from '@/composables/useExportImport';
+import { useExport } from '@/composables/useExport';
 import {toast} from "vue-sonner";
 
 const route = useRoute()
@@ -1032,7 +1032,7 @@ const isChangingTab = ref(false)
 
 const currentFlow = ref(mcdStore.flowMCD)
 
-const { exportItems } = useExportImport(currentFlow, model)
+const { exportItems } = useExport(currentFlow, model)
 
 const hasNoNodes = computed(() => {
   // Use the local VueFlow instance ref directly for proper reactivity tracking

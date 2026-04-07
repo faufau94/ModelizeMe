@@ -104,7 +104,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {Copy, Loader2} from 'lucide-vue-next'
-import { useConvertToFlowElements } from '@/composables/useConvertToFlowElements';
+import { useImport } from '@/composables/useImport';
 import { getLayoutedElements, computeElkOptions } from '@/utils/useElk.js';
 import { resolveCollisions } from '@/utils/useCollisions.js';
 
@@ -127,7 +127,7 @@ const emit = defineEmits(['toggleDialog'])
 const route = useRoute()
 
 
-const { convertSQLToFlowElements, convertXMLToFlowElements, convertJSONToFlowElements } = useConvertToFlowElements();
+const { convertSQLToFlowElements, convertJSONToFlowElements } = useImport();
 const mcdStore = useMCDStore()
 const collaborationStore = useCollaborationStore()
 
@@ -136,7 +136,7 @@ const file = ref(null)
 const fileInput = ref(null)
 
 const errorMessage = ref('')
-const allowedFileTypes = ['.xml', '.sql', '.json']
+const allowedFileTypes = ['.sql', '.json']
 const isConvertingFile = ref(false)
 
 const handleFile = async () => {
@@ -150,8 +150,6 @@ const handleFile = async () => {
 
       if (fileType === 'sql') {
         ({nodes, edges} = await convertSQLToFlowElements(fileContent, route.params.idModel));
-      } else if (fileType === 'xml') {
-        ({nodes, edges} = await convertXMLToFlowElements(fileContent, route.params.idModel));
       } else if (fileType === 'json') {
         ({nodes, edges} = await convertJSONToFlowElements(fileContent, route.params.idModel));
       }
@@ -183,11 +181,14 @@ const handleFile = async () => {
         mcdStore.flowMCD.fitView({ padding: 0.1, minZoom: 0.1 })
       }
     } catch (err) {
-      errorMessage.value = 'Erreur lors de l\'importation du fichier.';
+      errorMessage.value = err.message || 'Erreur lors de l\'importation du fichier.';
       console.error(err);
+      isConvertingFile.value = false
+      return
     }
   }
   isConvertingFile.value = false
+  file.value = null
   emit('toggleDialog')
 }
 

@@ -6,12 +6,12 @@ import { useMLDStore } from '~/stores/mld-store.js'
 const IMAGE_PADDING = 0.08
 
 /**
- * Composable centralizing all export/import logic for the model editor.
+ * Composable centralizing all export logic for the model editor.
  *
  * @param {import('vue').Ref} currentFlow - Ref to the active VueFlow instance
  * @param {import('vue').Ref} model       - Ref to the current model object { name, ... }
  */
-export function useExportImport(currentFlow, model) {
+export function useExport(currentFlow, model) {
   const route = useRoute()
   const mldStore = useMLDStore()
   const colorMode = useColorMode()
@@ -166,12 +166,6 @@ export function useExportImport(currentFlow, model) {
 
   // ─── Items for the dropdown ────────────────────────────────────────────────
 
-  const importItems = [
-    { title: 'Importer un fichier JSON' },
-    { title: 'Importer un fichier SQL' },
-    { title: 'Importer un fichier XML' },
-  ]
-
   const exportItems = [
     { type: 'label', title: 'Image' },
     { title: 'PNG', action: () => exportAsImage('png') },
@@ -186,5 +180,5 @@ export function useExportImport(currentFlow, model) {
     { title: 'SQL (PostgreSQL)', action: () => exportToSQL('pgsql') },
   ]
 
-  return { exportAsImage, exportToSQL, exportToJSON, importItems, exportItems }
+  return { exportAsImage, exportToSQL, exportToJSON, exportItems }
 }
