@@ -218,12 +218,27 @@ export const useImport = () => {
     try {
       data = JSON.parse(jsonContent)
     } catch {
-      throw new Error('Le fichier JSON est invalide.')
+      throw new Error('Le fichier JSON est mal formé (syntaxe invalide). Vérifiez qu\'il ne contient pas d\'erreurs de virgules ou de guillemets manquants.')
+    }
+
+    if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+      throw new Error('Le fichier JSON doit être un objet. Format attendu : { "nodes", "edges" } pour un re-import, ou { "entities", "relationships" } pour un import manuel.')
     }
 
     // Direct node/edge format (exported from ModelizeMe)
     if (data.nodes && data.edges) {
+      if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
+        throw new Error('Les clés "nodes" et "edges" doivent être des tableaux. Le fichier semble corrompu.')
+      }
       return { nodes: data.nodes, edges: data.edges, isDirect: true }
+    }
+
+    if (!data.entities && !data.nodes) {
+      throw new Error('Format non reconnu : aucune clé "entities" ou "nodes" trouvée. Utilisez { "entities": [...], "relationships": [...] } pour un import manuel, ou exportez d\'abord un modèle depuis l\'app.')
+    }
+
+    if (data.entities && !Array.isArray(data.entities)) {
+      throw new Error('La clé "entities" doit être un tableau d\'objets (ex: [{ "name": "User", "properties": [...] }]).')
     }
 
     // Entity/relationship structured format
@@ -557,7 +572,7 @@ export const useImport = () => {
   async function convertSQLToFlowElements(sqlContent, modelId) {
     const entitiesFromSQL = parseSQLFile(sqlContent)
     if (!entitiesFromSQL.length) {
-      throw new Error('Aucune table CREATE TABLE trouvée dans le fichier SQL.')
+      throw new Error('Aucune instruction CREATE TABLE trouvée dans le fichier SQL. Assurez-vous que le fichier contient des définitions de tables valides (MySQL, PostgreSQL, SQLite ou SQL Server).')
     }
 
     const { nodes, nodeMap } = createNodesFromEntities(entitiesFromSQL)

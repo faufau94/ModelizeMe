@@ -9,6 +9,58 @@
           Vous ne pouvez importer qu'un seul fichier.
         </DialogDescription>
       </DialogHeader>
+      <!-- Format info -->
+      <div class="rounded-lg border bg-muted/30 px-3 py-2.5 space-y-2.5">
+        <!-- Format chips -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-xs text-muted-foreground font-medium mr-0.5">Formats :</span>
+          <button
+            v-for="fmt in formatOptions"
+            :key="fmt.id"
+            type="button"
+            class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border transition-colors"
+            :class="activeFormat === fmt.id
+              ? 'bg-primary/10 border-primary/40 text-primary font-medium'
+              : 'bg-background border-border text-muted-foreground hover:border-primary/30 hover:text-foreground'"
+            @click="activeFormat = activeFormat === fmt.id ? null : fmt.id"
+          >
+            <component :is="fmt.icon" class="w-3 h-3" />
+            {{ fmt.label }}
+          </button>
+        </div>
+
+        <!-- Format detail (shown when a chip is active) -->
+        <Transition
+          enter-active-class="transition-all duration-150 ease-out"
+          enter-from-class="opacity-0 -translate-y-1"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition-all duration-100 ease-in"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 -translate-y-1"
+        >
+          <div v-if="activeFormat" class="text-xs text-muted-foreground space-y-2 pt-0.5 border-t border-border/60">
+            <p class="pt-1.5">{{ formatOptions.find(f => f.id === activeFormat)?.description }}</p>
+            <div v-if="activeFormat === 'json-structured'" class="flex items-center gap-2">
+              <span class="text-muted-foreground/70">Types :</span>
+              <span class="font-mono">{{ supportedTypes.join(' · ') }}</span>
+            </div>
+            <div v-if="activeFormat === 'json-structured'" class="flex items-center gap-2">
+              <span class="text-muted-foreground/70">Cardinalités :</span>
+              <span class="font-mono">{{ supportedCardinalities.join(' · ') }}</span>
+            </div>
+            <button
+              v-if="activeFormat !== 'sql-ddl'"
+              type="button"
+              class="flex items-center gap-1.5 font-medium text-primary hover:text-primary/80 transition-colors"
+              @click="downloadExample"
+            >
+              <DownloadIcon class="w-3.5 h-3.5 flex-shrink-0" />
+              Télécharger un exemple JSON
+            </button>
+          </div>
+        </Transition>
+      </div>
+
       <div class="w-full max-w-md mx-auto space-y-4">
         <div
             @dragover.prevent="onDragOver"
@@ -43,9 +95,18 @@
 
           <Alert v-if="errorMessage !== ''" class="mt-4" variant="destructive">
             <AlertCircle class="w-4 h-4" />
-            <AlertTitle>Erreur</AlertTitle>
-            <AlertDescription>
-              {{ errorMessage }}
+            <AlertTitle>Erreur d'import</AlertTitle>
+            <AlertDescription class="space-y-2">
+              <p>{{ errorMessage }}</p>
+              <button
+                v-if="isJsonError"
+                type="button"
+                class="flex items-center gap-1.5 text-xs font-medium underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity"
+                @click="downloadExample"
+              >
+                <DownloadIcon class="w-3.5 h-3.5 flex-shrink-0" />
+                Télécharger un exemple JSON valide
+              </button>
             </AlertDescription>
           </Alert>
         </div>
@@ -101,9 +162,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {Copy, Loader2} from 'lucide-vue-next'
+import { Loader2, UploadIcon, FileIcon, XIcon, DownloadIcon, FileJson2, Database, RefreshCcw } from 'lucide-vue-next'
 import { useImport } from '@/composables/useImport';
 import { getLayoutedElements, computeElkOptions } from '@/utils/useElk.js';
 import { resolveCollisions } from '@/utils/useCollisions.js';
@@ -111,12 +170,81 @@ import { resolveCollisions } from '@/utils/useCollisions.js';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-vue-next'
 
-
-import { UploadIcon, FileIcon, XIcon } from 'lucide-vue-next'
 import {useMCDStore} from "~/stores/mcd-store.js";
 import {useCollaborationStore} from "~/stores/collaboration-store.js";
 import {useUndoRedoStore} from "~/stores/undo-redo-store.js";
 
+
+const activeFormat = ref(null)
+
+const supportedTypes = ['String', 'Integer', 'Big Integer', 'Decimal', 'Text', 'Date', 'Timestamp', 'Boolean']
+const supportedCardinalities = ['0,1', '1,1', '0,N', '1,N']
+
+const formatOptions = [
+  {
+    id: 'json-export',
+    label: 'JSON export',
+    icon: RefreshCcw,
+    description: 'Re-import d\'un JSON exporté depuis ModelizeMe — contient nodes + edges, prêt à l\'emploi.',
+  },
+  {
+    id: 'json-structured',
+    label: 'JSON structuré',
+    icon: FileJson2,
+    description: 'Format manuel : un objet avec entities (tableaux de propriétés) et relationships. Téléchargez l\'exemple pour voir la structure complète.',
+  },
+  {
+    id: 'sql-ddl',
+    label: 'SQL DDL',
+    icon: Database,
+    description: 'Instructions CREATE TABLE — MySQL, PostgreSQL, SQLite et SQL Server. Les clés primaires, étrangères et contraintes UNIQUE sont automatiquement détectées.',
+  },
+]
+
+const JSON_EXAMPLE = {
+  entities: [
+    {
+      name: 'User',
+      hasTimestamps: true,
+      usesSoftDeletes: false,
+      properties: [
+        { propertyName: 'id',         typeName: 'Big Integer', isPrimaryKey: true,  autoIncrement: true,  isNullable: false },
+        { propertyName: 'email',      typeName: 'String',      isPrimaryKey: false, autoIncrement: false, isNullable: false, isUnique: true },
+        { propertyName: 'first_name', typeName: 'String',      isPrimaryKey: false, autoIncrement: false, isNullable: true  },
+      ],
+    },
+    {
+      name: 'Post',
+      hasTimestamps: true,
+      usesSoftDeletes: false,
+      properties: [
+        { propertyName: 'id',      typeName: 'Big Integer', isPrimaryKey: true,  autoIncrement: true,  isNullable: false },
+        { propertyName: 'title',   typeName: 'String',      isPrimaryKey: false, autoIncrement: false, isNullable: false },
+        { propertyName: 'content', typeName: 'Text',        isPrimaryKey: false, autoIncrement: false, isNullable: true  },
+      ],
+    },
+  ],
+  relationships: [
+    {
+      name: 'écrit',
+      source: 'User',
+      target: 'Post',
+      sourceCardinality: '1,1',
+      targetCardinality: '0,N',
+    },
+  ],
+}
+
+
+function downloadExample() {
+  const blob = new Blob([JSON.stringify(JSON_EXAMPLE, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'modelize-me-example.json'
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 defineProps({
   menuItem: String,
@@ -138,6 +266,10 @@ const fileInput = ref(null)
 const errorMessage = ref('')
 const allowedFileTypes = ['.sql', '.json']
 const isConvertingFile = ref(false)
+
+const isJsonError = computed(() =>
+  !!errorMessage.value && file.value?.name.toLowerCase().endsWith('.json')
+)
 
 const handleFile = async () => {
   isConvertingFile.value = true

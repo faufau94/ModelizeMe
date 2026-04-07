@@ -16,14 +16,11 @@
       </DialogHeader>
 
       <Form
-        v-slot="{ handleSubmit, meta, resetForm, errors, values }"
+        v-slot="{ meta, errors, values }"
         :validation-schema="formSchema"
-        as=""
+        class="space-y-4"
+        @submit="onSubmit"
       >
-        <form
-          class="space-y-4"
-          @submit.prevent="handleSubmit((formValues) => onSubmit(formValues, { resetForm }))()"
-        >
           <FormField
             v-slot="{ componentField }"
             name="title"
@@ -61,7 +58,6 @@
               {{ isLoadingNewModel ? 'Ajout...' : 'Ajouter' }}
             </Button>
           </div>
-        </form>
       </Form>
     </DialogContent>
   </Dialog>
@@ -137,10 +133,7 @@ watch(isCreateModelDialogOpen, (open) => {
   }
 })
 
-const onSubmit = async (
-  values: { title: string },
-  { resetForm }: { resetForm: () => void },
-) => {
+const onSubmit = async (values: { title: string }) => {
   isLoadingNewModel.value = true
 
   try {
@@ -149,7 +142,7 @@ const onSubmit = async (
       selectedWorkspaceId: selectedWorkspaceId.value,
     })
 
-    resetForm()
+    form.resetForm()
     isCreateModelDialogOpen.value = false
     await navigateTo(`/app/model/${res.id}`)
   } catch (err: any) {
