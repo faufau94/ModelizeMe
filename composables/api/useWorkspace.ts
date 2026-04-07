@@ -188,9 +188,17 @@ export const useWorkspace = () => {
     }
   })
 
-  // Fix getIsOwner to use the resolved value
+  // Role-based computed properties
   const getIsOwner = computed(() => {
     return session?.value?.data?.user?.id === activeMember?.value?.user?.id && activeMember?.value?.role === 'owner'
+  })
+
+  const getIsAdmin = computed(() => {
+    return session?.value?.data?.user?.id === activeMember?.value?.user?.id && activeMember?.value?.role === 'admin'
+  })
+
+  const getIsOwnerOrAdmin = computed(() => {
+    return getIsOwner.value || getIsAdmin.value
   })
 
   return {
@@ -211,6 +219,8 @@ export const useWorkspace = () => {
     selectedWorkspace,
     isLoadingSelectedWorkspace,
     getIsOwner,
+    getIsAdmin,
+    getIsOwnerOrAdmin,
     activeMember,
     isLoadingActiveMember,
   }

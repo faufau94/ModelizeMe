@@ -33,6 +33,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // Admin cannot modify another admin or owner
+  if (callerMember.role === "admin" && ["admin", "owner"].includes(member.role)) {
+    throw createError({
+      statusCode: 403,
+      message: "Un admin ne peut pas modifier le rôle d'un autre admin ou du propriétaire",
+    });
+  }
+
   // Only allow updating role
   const updatedMember = await prisma.member.update({
     where: { id: memberId },

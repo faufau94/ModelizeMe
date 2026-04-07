@@ -8,7 +8,7 @@
           <SearchIcon class="size-4 text-muted-foreground" />
         </span>
       </div>
-      <Button @click="showAddMemberDialog = true">
+      <Button v-if="getIsOwnerOrAdmin" @click="showAddMemberDialog = true">
         <PlusIcon class="w-4 h-4 mr-2" />
         Ajouter
       </Button>
@@ -22,7 +22,7 @@
             <TableRow class="hover:bg-transparent">
               <TableHead class="h-12 px-4">Utilisateur</TableHead>
               <TableHead class="h-12 px-4">Rôle</TableHead>
-              <TableHead v-if="getIsOwner" class="h-12 px-4 text-right">Actions</TableHead>
+              <TableHead v-if="getIsOwnerOrAdmin" class="h-12 px-4 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody v-if="filteredMembers?.length > 0">
@@ -39,18 +39,15 @@
                 </div>
               </TableCell>
               <TableCell class="py-4 px-4">
-                <template v-if="getIsOwner">
+                <template v-if="getIsOwnerOrAdmin && canManageMember(member)">
                   <DropdownMenu>
                     <DropdownMenuTrigger as-child>
-                      <Button v-if="member?.role !== 'owner'" variant="outline" size="sm" class="h-7 px-2.5 text-xs gap-1">
+                      <Button variant="outline" size="sm" class="h-7 px-2.5 text-xs gap-1">
                         {{ member?.role ? member.role.charAt(0).toUpperCase() + member.role.slice(1).toLowerCase() : '' }}
                         <ChevronDownIcon class="h-3 w-3" />
                       </Button>
-                      <Badge v-else variant="secondary" class="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30">
-                        Owner
-                      </Badge>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent v-if="member?.role !== 'owner'">
+                    <DropdownMenuContent>
                       <DropdownMenuLabel class="text-xs">Changer le rôle</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -75,7 +72,7 @@
               </TableCell>
               <TableCell class="py-4 px-4 text-right">
                 <Button
-                  v-if="getIsOwner && member?.role !== 'owner'"
+                  v-if="getIsOwnerOrAdmin && canManageMember(member)"
                   @click="confirmRemoveMember(member.id)"
                   variant="ghost"
                   size="icon"
@@ -188,7 +185,7 @@ const { data: session } = await useSession(useFetch)
 // const activeMember = await authClient.organization.getActiveMember()
 
 // Extract workspace share link
-const { selectedWorkspace, getIsOwner, isLoadingSelectedWorkspace } = useWorkspace()
+const { selectedWorkspace, getIsOwner, getIsOwnerOrAdmin, isLoadingSelectedWorkspace } = useWorkspace()
 
 // Use Member composable
 const { addMember, updateMember, deleteMember } = useMember()
@@ -202,6 +199,15 @@ const memberToRemove = ref<number|null>(null)
 
 // Available roles
 const availableRoles = ['Admin', 'Member']
+
+// Determine if the current user can manage a given member
+// Owner can manage everyone except themselves. Admin can only manage members (not other admins or owner).
+const canManageMember = (member: any) => {
+  if (member?.role === 'owner') return false
+  if (getIsOwner.value) return true
+  if (getIsAdmin.value && member?.role === 'member') return true
+  return false
+}
 
 const filteredMembers = computed(() => {
   const members = selectedWorkspace.value?.members || []

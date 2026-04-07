@@ -88,6 +88,87 @@ export async function requireTeamMembership(event: H3Event, teamId: string) {
 }
 
 /**
+ * Requires that the authenticated user has one of the specified roles in the given organization.
+ * Returns { session, member }.
+ */
+export async function requireOrgRole(
+  event: H3Event,
+  organizationId: string,
+  allowedRoles: string[]
+) {
+  const session = await requireAuth(event);
+
+  const member = await prisma.member.findFirst({
+    where: {
+      organizationId,
+      userId: session.user.id,
+    },
+  });
+
+  if (!member) {
+    throw createError({
+      statusCode: 403,
+      message: "Vous n'êtes pas membre de cette organisation",
+    });
+  }
+
+  if (!allowedRoles.includes(member.role)) {
+    throw createError({
+      statusCode: 403,
+      message: "Vous n'avez pas les permissions nécessaires",
+    });
+  }
+
+  return { session, member };
+}
+
+/**
+ * Resolves a team's organizationId then checks membership + role.
+ * Returns { session, member, team }.
+ */
+export async function requireTeamOrgRole(
+  event: H3Event,
+  teamId: string,
+  allowedRoles: string[]
+) {
+  const team = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { id: true, organizationId: true },
+  });
+
+  if (!team) {
+    throw createError({
+      statusCode: 404,
+      message: "Équipe non trouvée",
+    });
+  }
+
+  const { session, member } = await requireOrgRole(event, team.organizationId, allowedRoles);
+  return { session, member, team };
+}
+
+/**
+ * Resolves a team's organizationId then checks org membership (any role).
+ * Returns { session, member, team }.
+ */
+export async function requireTeamOrgMembership(event: H3Event, teamId: string) {
+  const team = await prisma.team.findUnique({
+    where: { id: teamId },
+    select: { id: true, organizationId: true },
+  });
+
+  if (!team) {
+    throw createError({
+      statusCode: 404,
+      message: "Équipe non trouvée",
+    });
+  }
+
+  const { session, member } = await requireOrgMembership(event, team.organizationId);
+  return { session, member, team };
+}
+
+/**
  * Requires that the authenticated user owns the model (is member of the model's workspace).
  * Returns the model.
  */

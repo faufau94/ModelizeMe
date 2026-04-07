@@ -43,6 +43,14 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // Admin cannot remove another admin
+  if (callerMember.role === "admin" && targetMember.role === "admin") {
+    throw createError({
+      statusCode: 403,
+      message: "Un admin ne peut pas retirer un autre admin",
+    });
+  }
+
   await prisma.member.delete({ where: { id: targetMember.id } });
 
   return { success: true };

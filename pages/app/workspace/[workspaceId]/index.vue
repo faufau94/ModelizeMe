@@ -104,11 +104,13 @@
                 <ExternalLink class="mr-2 h-4 w-4" />
                 <span>Voir l'équipe</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive" @click.stop="removeTeam(team.id)">
-                <Trash2 class="mr-2 h-4 w-4" />
-                <span>Supprimer</span>
-              </DropdownMenuItem>
+              <template v-if="getIsOwnerOrAdmin">
+                <DropdownMenuSeparator />
+                <DropdownMenuItem class="cursor-pointer text-destructive focus:text-destructive" @click.stop="removeTeam(team.id)">
+                  <Trash2 class="mr-2 h-4 w-4" />
+                  <span>Supprimer</span>
+                </DropdownMenuItem>
+              </template>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -139,7 +141,7 @@ import {
 import { toast } from 'vue-sonner'
 
 const { models, isLoadingModels } = useModel()
-const { selectedWorkspace, goToThisWorkspaceUrl } = useWorkspace()
+const { selectedWorkspace, goToThisWorkspaceUrl, getIsOwnerOrAdmin } = useWorkspace()
 const { deleteTeam } = useTeam()
 
 const recentModels = computed(() => {

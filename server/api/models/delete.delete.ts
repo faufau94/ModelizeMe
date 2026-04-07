@@ -35,9 +35,19 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Full model deletion
+  // Full model deletion — only owner/admin or model author can delete
   const modelId = idSchema.parse(query.id);
-  await requireModelAccess(event, modelId);
+  const { session, model, member } = await requireModelAccess(event, modelId);
+
+  const isOwnerOrAdmin = ["owner", "admin"].includes(member.role);
+  const isAuthor = model.authorId === session.user.id;
+
+  if (!isOwnerOrAdmin && !isAuthor) {
+    throw createError({
+      statusCode: 403,
+      message: "Seuls les admins ou l'auteur du modèle peuvent le supprimer",
+    });
+  }
 
   return await prisma.model.delete({
     where: { id: modelId },
