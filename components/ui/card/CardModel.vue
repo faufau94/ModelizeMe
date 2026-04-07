@@ -87,7 +87,7 @@
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem class="cursor-pointer !text-red-600 focus:!text-red-700 focus:!bg-red-50" @click.stop="showDialogDeleteModel = true">
+            <DropdownMenuItem class="cursor-pointer !text-red-600 focus:!text-red-700" @click.stop="showDialogDeleteModel = true">
               <Trash2 class="mr-2 h-4 w-4" />
               Supprimer
             </DropdownMenuItem>

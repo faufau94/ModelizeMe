@@ -101,7 +101,10 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - modelizeme
+      modelizeme:
+      modelizemoi:
+        aliases:
+          - modelizeme-app
     command: ["yarn", "dev"]
 
   # ─── WebSocket Server (y-websocket) ──────
@@ -169,3 +172,6 @@ volumes:
 networks:
   modelizeme:
     driver: bridge
+  modelizemoi:
+    external: true
+    name: modelizemoi_network
