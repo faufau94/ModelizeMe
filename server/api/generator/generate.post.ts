@@ -5,7 +5,7 @@ export default defineEventHandler(async (event) => {
   await requireAuth(event);
 
   const body = await readBody(event);
-  const { title, framework, database, orm, nodes, edges } = generateSchema.parse(body);
+  const { title, framework, database, orm, nodes, edges, packages } = generateSchema.parse(body);
 
   const mld = { nodes, edges };
 
@@ -17,6 +17,7 @@ export default defineEventHandler(async (event) => {
       database,
       orm,
       mld,
+      packages: packages ?? [],
     },
   });
 
