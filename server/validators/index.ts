@@ -94,6 +94,7 @@ export const generateSchema = z.object({
   orm: z.enum(["django_orm", "sqlalchemy", "eloquent", "prisma", "typeorm", "doctrine"]),
   nodes: z.array(z.record(z.unknown())),
   edges: z.array(z.record(z.unknown())),
+  packages: z.array(z.string()).optional(),
 });
 
 export const projectNameSchema = z
