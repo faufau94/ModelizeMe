@@ -682,7 +682,7 @@
 <script setup lang="ts">
 import {computed, nextTick, ref, watch, onBeforeUnmount as onBeforeUnmountHook} from "vue";
 import {storeToRefs} from "pinia";
-import {useMCDStore} from "~/stores/mcd-store.js";
+import {useModelStore} from "~/stores/model-store.js";
 import {useUndoRedoStore} from "~/stores/undo-redo-store.js";
 import {Input} from '@/components/ui/input';
 import {Button} from '@/components/ui/button';
@@ -736,7 +736,7 @@ const nodeNameInputRef = ref(null);
 const edgeNameInputRef = ref(null);
 
 const route = useRoute();
-const mcdStore = useMCDStore();
+const mcdStore = useModelStore();
 const undoRedoStore = useUndoRedoStore();
 const {isSubMenuVisible, nodeIdSelected, edgeIdSelected, isSaving, isNewlyCreated} = storeToRefs(mcdStore);
 const {removeEdge, removeNode, addTernaryRelation, getLoopbackEdges, getTernaryRelations, LOOPBACK_SIDES} = mcdStore

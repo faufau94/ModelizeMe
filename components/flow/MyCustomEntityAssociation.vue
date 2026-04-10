@@ -80,11 +80,11 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import { useMCDStore } from "~/stores/mcd-store.js";
+import { useModelStore } from "~/stores/model-store.js";
 import { KeyRound } from 'lucide-vue-next';
 import { storeToRefs } from "pinia";
 
-const mcdStore = useMCDStore();
+const mcdStore = useModelStore();
 const { edgeIdSelected } = storeToRefs(mcdStore);
 const content = ref(null);
 

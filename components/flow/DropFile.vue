@@ -170,7 +170,7 @@ import { resolveCollisions } from '@/utils/useCollisions.js';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { AlertCircle } from 'lucide-vue-next'
 
-import {useMCDStore} from "~/stores/mcd-store.js";
+import {useModelStore} from "~/stores/model-store.js";
 import {useCollaborationStore} from "~/stores/collaboration-store.js";
 import {useUndoRedoStore} from "~/stores/undo-redo-store.js";
 
@@ -256,7 +256,7 @@ const route = useRoute()
 
 
 const { convertSQLToFlowElements, convertJSONToFlowElements } = useImport();
-const mcdStore = useMCDStore()
+const mcdStore = useModelStore()
 const collaborationStore = useCollaborationStore()
 
 const isDragging = ref(false)

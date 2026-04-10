@@ -12,7 +12,7 @@
           Create a new team and manage member assignments. Users can be in multiple teams.
         </DialogDescription>
       </DialogHeader>
-      
+
       <form @submit="onSubmit" class="space-y-6">
         <!-- Team Basic Info -->
         <div class="space-y-4">
@@ -46,10 +46,10 @@
                   <SelectValue placeholder="Select color" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem v-for="color in colors" :value="color" :key="color">
+                  <SelectItem v-for="c in colors" :value="c" :key="c">
                     <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full" :class="teamColorClass(color)"></div>
-                      {{ color.charAt(0).toUpperCase() + color.slice(1) }}
+                      <div class="w-3 h-3 rounded-full" :class="teamColorClass(c)"></div>
+                      {{ c.charAt(0).toUpperCase() + c.slice(1) }}
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -77,42 +77,23 @@
         <div class="space-y-4">
           <div class="space-y-3">
             <h3 class="text-lg font-medium">Team Members</h3>
-            <div class="space-y-3">
+            <RadioGroup v-model="dispatchMode" class="space-y-2">
               <div class="flex items-center space-x-2">
-                <input
-                  id="manual"
-                  type="radio"
-                  value="manual"
-                  v-model="dispatchMode"
-                  class="h-4 w-4 text-blue-600"
-                />
-                <Label for="manual" class="text-sm">Manual selection</Label>
+                <RadioGroupItem id="manual" value="manual" />
+                <Label for="manual" class="text-sm cursor-pointer">Manual selection</Label>
               </div>
               <div class="flex items-center space-x-2">
-                <input
-                  id="unassigned"
-                  type="radio"
-                  value="unassigned"
-                  v-model="dispatchMode"
-                  class="h-4 w-4 text-blue-600"
-                />
-                <Label for="unassigned" class="text-sm">Auto-dispatch unassigned users only</Label>
+                <RadioGroupItem id="unassigned" value="unassigned" />
+                <Label for="unassigned" class="text-sm cursor-pointer">Auto-dispatch unassigned users only</Label>
               </div>
               <div class="flex items-center space-x-2">
-                <input
-                  id="all"
-                  type="radio"
-                  value="all"
-                  v-model="dispatchMode"
-                  class="h-4 w-4 text-blue-600"
-                />
-                <Label for="all" class="text-sm">Auto-dispatch all workspace users</Label>
+                <RadioGroupItem id="all" value="all" />
+                <Label for="all" class="text-sm cursor-pointer">Auto-dispatch all workspace users</Label>
               </div>
-            </div>
+            </RadioGroup>
             <p v-if="errors.dispatchMode" class="text-sm text-red-500">{{ errors.dispatchMode }}</p>
           </div>
 
-          
           <div v-if="dispatchMode === 'manual'" class="space-y-4">
             <!-- Manual User Selection -->
             <div class="space-y-2">
@@ -178,11 +159,11 @@
 
           <div v-else-if="dispatchMode === 'unassigned'" class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div class="flex items-start gap-3">
-              <InfoIcon class="h-5 w-5 text-blue-500 mt-0.5" />
+              <InfoIcon class="h-5 w-5 text-blue-500 mt-0.5 shrink-0" />
               <div>
                 <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100">Auto-dispatch Unassigned Users</h4>
                 <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  All unassigned users ({{ availableUsers.length }}) will be automatically added to this team.
+                  All unassigned users ({{ unassignedUsers.length }}) will be automatically added to this team.
                   Users already in other teams will remain in their current teams only.
                 </p>
               </div>
@@ -191,11 +172,11 @@
 
           <div v-else-if="dispatchMode === 'all'" class="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg p-4">
             <div class="flex items-start gap-3">
-              <InfoIcon class="h-5 w-5 text-green-500 mt-0.5" />
+              <InfoIcon class="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
               <div>
                 <h4 class="text-sm font-medium text-green-900 dark:text-green-100">Auto-dispatch All Users</h4>
                 <p class="text-sm text-green-700 dark:text-green-300 mt-1">
-                  All workspace users will be added to this team.
+                  All workspace users ({{ getMembersList.length }}) will be added to this team.
                   Users can be members of multiple teams simultaneously.
                 </p>
               </div>
@@ -244,6 +225,7 @@ import {Badge} from '@/components/ui/badge'
 import {Avatar} from '@/components/ui/avatar'
 import {Separator} from '@/components/ui/separator'
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select'
+import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group'
 import {InfoIcon, LoaderIcon, PlusIcon, XIcon} from 'lucide-vue-next'
 import {toast} from 'vue-sonner'
 
@@ -252,20 +234,18 @@ import {useWorkspace} from '~/composables/api/useWorkspace'
 
 const { selectedWorkspace } = useWorkspace()
 
-
 // Zod schema for form validation
 const teamSchema = z.object({
   name: z.string().min(2, 'Team name must be at least 2 characters').max(50, 'Team name must be less than 50 characters'),
   description: z.string().optional(),
   color: z.string().default('blue'),
   maxMembers: z.number().min(1, 'Must have at least 1 member').max(50, 'Cannot exceed 50 members').default(10),
-  selectedUsers: z.array(z.number()).default([]),
+  selectedUsers: z.array(z.string()).default([]),
   dispatchMode: z.enum(['manual', 'unassigned', 'all']).default('manual'),
 })
 
 const getMembersList = computed(() => {
-
-  const memberListWithoutOwners = selectedWorkspace?.value?.members?.filter(member => member.role !== 'owner')
+  const memberListWithoutOwners = selectedWorkspace?.value?.members?.filter(member => member.role !== 'owner') ?? []
   return memberListWithoutOwners.map(member => {
     const teamMemberships = member.user.teamMemberships || []
     let teamName = null
@@ -284,15 +264,19 @@ const getMembersList = computed(() => {
   })
 })
 
+// Users with no team membership at all
+const unassignedUsers = computed(() =>
+  getMembersList.value.filter(m => !m.teamName)
+)
 
 // Component state
 const isOpen = ref(false)
 const isSubmitting = ref(false)
 
-const { createTeam } = useTeam()
+const { createTeam, addTeamMember } = useTeam()
 
 // vee-validate form setup
-const { defineField, handleSubmit, errors, resetForm, values } = useForm({
+const { defineField, handleSubmit, errors, resetForm } = useForm({
   validationSchema: toTypedSchema(teamSchema),
   initialValues: {
     name: '',
@@ -312,11 +296,6 @@ const [maxMembers] = defineField('maxMembers')
 const [selectedUsers] = defineField('selectedUsers')
 const [dispatchMode] = defineField('dispatchMode')
 
-// Computed properties
-const availableUsers = computed(() => {
-  return selectedWorkspace.value?.members?.filter(member => !member.user.teamId)
-})
-
 // Helper functions
 const getUserById = (userId) => {
   return selectedWorkspace.value?.members?.find(member => member.user.id === userId) || null
@@ -329,7 +308,6 @@ const toggleUser = (userId) => {
   } else {
     selectedUsers.value = [...currentUsers, userId]
   }
-
 }
 
 const removeUser = (userId) => {
@@ -342,37 +320,31 @@ const resetFormAndClose = () => {
   isOpen.value = false
 }
 
-// Form submission with vee-validate
+// Form submission
 const onSubmit = handleSubmit(async (formValues) => {
   isSubmitting.value = true
 
   try {
-    await createTeam(formValues)
+    const team = await createTeam(formValues)
 
-    // let members = []
-    // if (formValues.dispatchMode === 'manual') {
-    //   members = formValues.selectedUsers
-    // } else if (formValues.dispatchMode === 'unassigned') {
-    //   members = availableUsers.value.map(user => user.id)
-    // } else if (formValues.dispatchMode === 'all') {
-    //   members = workspaceUsers.value.map(user => user.id)
-    // }
+    // Resolve which user IDs to add based on dispatch mode
+    let userIdsToAdd = []
+    if (formValues.dispatchMode === 'manual') {
+      userIdsToAdd = formValues.selectedUsers
+    } else if (formValues.dispatchMode === 'unassigned') {
+      userIdsToAdd = unassignedUsers.value.map(m => m.id)
+    } else if (formValues.dispatchMode === 'all') {
+      userIdsToAdd = getMembersList.value.map(m => m.id)
+    }
 
-    // const teamData = {
-    //   ...formValues,
-    //   id: `team-${Date.now()}`,
-    //   createdAt: new Date().toISOString(),
-    //   members
-    // }
+    // Add members sequentially to avoid race conditions
+    for (const userId of userIdsToAdd) {
+      await addTeamMember(team.id, userId)
+    }
 
-    // console.log('Creating team:', teamData)
-
-    // Reset form and close dialog
     resetForm()
     isOpen.value = false
-    
-    toast.success(`Team created successfully!`)
-    
+    toast.success('Team created successfully!')
   } catch (error) {
     console.error('Error creating team:', error)
     toast.error('Failed to create team. Please try again.')

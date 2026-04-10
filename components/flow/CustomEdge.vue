@@ -88,10 +88,10 @@ import { computed, watchEffect } from 'vue';
 import MyCustomEntityAssociation from './MyCustomEntityAssociation.vue';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, getSimpleBezierPath, getStraightPath, getSmoothStepPath } from "@vue-flow/core";
 import { storeToRefs } from "pinia";
-import { useMCDStore } from "~/stores/mcd-store.js";
+import { useModelStore } from "~/stores/model-store.js";
 import { getEdgeParams, getDistributedEdgeParams } from '~/utils/useFloatingEdge.js';
 
-const mcdStore = useMCDStore();
+const mcdStore = useModelStore();
 const { activeTab, nodeIdSelected, isSubMenuVisible, edgeIdSelected, edgePathStyle } = storeToRefs(mcdStore);
 
 const pathFunctions: Record<string, typeof getBezierPath> = {
