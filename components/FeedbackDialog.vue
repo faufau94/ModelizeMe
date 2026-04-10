@@ -42,7 +42,7 @@
         </div>
 
         <!-- Footer -->
-        <DialogFooter class="gap-2 sm:gap-0">
+        <DialogFooter class="gap-2">
           <Button type="button" variant="outline" @click="isOpen = false">
             Annuler
           </Button>
