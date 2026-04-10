@@ -54,14 +54,7 @@
 
               <FormField name="password" v-slot="{ field }">
                 <FormItem>
-                  <div class="flex items-center">
-                    <FormLabel for="password">Mot de passe</FormLabel>
-                    <!--
-                    <a href="#" class="ml-auto inline-block text-sm underline">
-                      Mot de passe oublié ?
-                    </a>
-                    -->
-                  </div>
+                  <FormLabel for="password">Mot de passe</FormLabel>
                   <FormControl>
                     <Input v-bind="field" id="password" type="password" required />
                   </FormControl>
@@ -69,10 +62,21 @@
                 </FormItem>
               </FormField>
 
+              <NuxtLink to="/forgot-password" class="text-sm underline text-muted-foreground hover:text-foreground">
+                Mot de passe oublié ?
+              </NuxtLink>
+
               <div v-if="message && message.type === 'error'" class="w-full">
-                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 border border-red-300">
+                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800">
                   <AlertCircle class="h-6 w-6 text-red-500" />
-                  <p class="text-red-600">{{ message.text }}</p>
+                  <p class="text-red-600 dark:text-red-400">{{ message.text }}</p>
+                </div>
+              </div>
+
+              <div v-if="message && message.type === 'warning'" class="w-full">
+                <div class="flex justify-start p-4 gap-x-2 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800">
+                  <AlertCircle class="h-6 w-6 text-amber-500" />
+                  <p class="text-amber-700 dark:text-amber-400">{{ message.text }}</p>
                 </div>
               </div>
 
@@ -148,6 +152,20 @@ const socialProviders = [
   { id: 'gitlab', name: 'GitLab' },
 ] as const
 
+const authErrorMessages: Record<string, { type: string; text: string }> = {
+  'Invalid email or password': { type: 'error', text: 'Email ou mot de passe incorrect.' },
+  'Email not verified': { type: 'warning', text: 'Veuillez vérifier votre adresse email avant de vous connecter. Consultez votre boîte de réception.' },
+  'Too many requests': { type: 'error', text: 'Trop de tentatives. Veuillez réessayer plus tard.' },
+  'User not found': { type: 'error', text: 'Aucun compte trouvé avec cet email.' },
+}
+
+const translateAuthError = (error: { status?: number; message?: string }) => {
+  if (error.status === 403) {
+    return { type: 'warning', text: 'Veuillez vérifier votre adresse email avant de vous connecter. Consultez votre boîte de réception.' }
+  }
+  return authErrorMessages[error.message || ''] || { type: 'error', text: 'Une erreur est survenue. Veuillez réessayer.' }
+}
+
 const onSubmit = async (values: { email: string; password: string }) => {
   isLoading.value = true
 
@@ -158,16 +176,18 @@ const onSubmit = async (values: { email: string; password: string }) => {
     },
     {
       onError(context) {
-        message.value.type = 'error'
-        message.value.text = context.error.message
+        const translated = translateAuthError(context.error)
+        message.value.type = translated.type
+        message.value.text = translated.text
         isLoading.value = false
       },
     },
   )
 
   if (result.error) {
-    message.value.type = 'error'
-    message.value.text = result.error.message
+    const translated = translateAuthError(result.error)
+    message.value.type = translated.type
+    message.value.text = translated.text
     isLoading.value = false
     
   } else {
