@@ -203,7 +203,26 @@
         </div>
       </nav>
 
-
+      <!-- Feedback button (bottom) -->
+      <div class="border-t border-border/50 shrink-0" :class="isSidebarCollapsed ? 'px-1.5 py-2' : 'px-3 py-2'">
+        <TooltipProvider :delay-duration="300" :disable-hoverable-content="true">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                @click="isFeedbackDialogOpen = true"
+                class="w-full flex items-center gap-2.5 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground transition-colors cursor-pointer"
+                :class="isSidebarCollapsed ? 'justify-center px-2' : 'px-2.5'"
+              >
+                <MessageCircleMore class="h-4 w-4 shrink-0" />
+                <span v-if="!isSidebarCollapsed">Feedback</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent v-if="isSidebarCollapsed" side="right">
+              Feedback
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
 
     <!-- Mobile: standalone dialogs (rendered outside Sheet) -->
@@ -312,6 +331,14 @@
                     </NuxtLink>
                   </div>
                 </div>
+
+                <!-- Feedback Mobile -->
+                <div class="mt-5 pt-4 border-t border-border/50">
+                  <Button @click="closeMobileSheet(); isFeedbackDialogOpen = true" variant="ghost" class="w-full justify-start h-9 text-sm text-muted-foreground">
+                    <MessageCircleMore class="mr-2 h-4 w-4" />
+                    Feedback
+                  </Button>
+                </div>
               </nav>
             </ScrollArea>
           </SheetContent>
@@ -358,7 +385,7 @@
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem class="cursor-pointer" @click="navigateTo('/app/feedback')">
+                <DropdownMenuItem class="cursor-pointer" @click="isFeedbackDialogOpen = true">
                   <MessageCircleMore class="mr-2 h-4 w-4" />
                   <span>Feedback</span>
                 </DropdownMenuItem>
@@ -425,6 +452,9 @@
       v-model:open="isManageTeamDialogOpen"
       :team-id="currentTeamId"
     />
+
+    <!-- Feedback Dialog -->
+    <FeedbackDialog v-model:open="isFeedbackDialogOpen" />
   </div>
 </template>
 
@@ -439,6 +469,7 @@ import AddWorkspaceDialog from '@/components/workspace/AddWorkspaceDialog.vue'
 import CreateTeamDialog from '@/components/teams/CreateTeamDialog.vue'
 import InviteMembersDialog from '@/components/workspace/InviteMembersDialog.vue'
 import ManageTeamDialog from '@/components/teams/ManageTeamDialog.vue'
+import FeedbackDialog from '@/components/FeedbackDialog.vue'
 import PricingDialog from '@/components/PricingDialog.vue'
 import { teamColorClass } from "~/utils";
 import {
@@ -682,6 +713,7 @@ const colors = ['blue', 'green', 'purple', 'orange', 'red']
 // État pour contrôler le Dialog ManageTeamDialog
 const currentTeamId = ref('')
 const isManageTeamDialogOpen = ref(false)
+const isFeedbackDialogOpen = ref(false)
 
 // Fonction pour ouvrir le dialog de gestion d'équipe
 const openManageTeamDialog = (teamId: string) => {
