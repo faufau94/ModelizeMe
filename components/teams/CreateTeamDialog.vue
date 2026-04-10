@@ -118,7 +118,7 @@
             <div class="space-y-2">
               <Label>Select Members</Label>
               <div class="border rounded-lg p-3 max-h-48 overflow-y-auto">
-                <div v-if="getMembersList.length === 0" class="text-sm text-gray-500 text-center py-4">
+                <div v-if="getMembersList.length === 0" class="text-sm text-muted-foreground text-center py-4">
                   No users available
                 </div>
                 <div v-else class="space-y-2">
@@ -137,13 +137,13 @@
                     </Avatar>
                     <div class="flex-1">
                       <p class="text-sm font-medium">{{ member.first_name }} {{ member.name }}</p>
-                      <p class="text-xs text-gray-500">{{ member.email }}</p>
+                      <p class="text-xs text-muted-foreground">{{ member.email }}</p>
                     </div>
                     <div class="flex items-center gap-2">
-                      <Badge v-if="member?.teamName" variant="outline" class="text-xs text-orange-600 border-orange-200">
+                      <Badge v-if="member?.teamName" variant="outline" class="text-xs text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800">
                         {{ member?.teamName }}
                       </Badge>
-                      <Badge v-else variant="outline" class="text-xs text-green-600 border-green-200">
+                      <Badge v-else variant="outline" class="text-xs text-green-600 dark:text-green-400 border-green-200 dark:border-green-800">
                         Unassigned
                       </Badge>
                     </div>
@@ -176,12 +176,12 @@
             </div>
           </div>
 
-          <div v-else-if="dispatchMode === 'unassigned'" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div v-else-if="dispatchMode === 'unassigned'" class="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div class="flex items-start gap-3">
               <InfoIcon class="h-5 w-5 text-blue-500 mt-0.5" />
               <div>
-                <h4 class="text-sm font-medium text-blue-900">Auto-dispatch Unassigned Users</h4>
-                <p class="text-sm text-blue-700 mt-1">
+                <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100">Auto-dispatch Unassigned Users</h4>
+                <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">
                   All unassigned users ({{ availableUsers.length }}) will be automatically added to this team.
                   Users already in other teams will remain in their current teams only.
                 </p>
@@ -189,12 +189,12 @@
             </div>
           </div>
 
-          <div v-else-if="dispatchMode === 'all'" class="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div v-else-if="dispatchMode === 'all'" class="bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800 rounded-lg p-4">
             <div class="flex items-start gap-3">
               <InfoIcon class="h-5 w-5 text-green-500 mt-0.5" />
               <div>
-                <h4 class="text-sm font-medium text-green-900">Auto-dispatch All Users</h4>
-                <p class="text-sm text-green-700 mt-1">
+                <h4 class="text-sm font-medium text-green-900 dark:text-green-100">Auto-dispatch All Users</h4>
+                <p class="text-sm text-green-700 dark:text-green-300 mt-1">
                   All workspace users will be added to this team.
                   Users can be members of multiple teams simultaneously.
                 </p>
