@@ -376,11 +376,11 @@
                   @click="navigateTo('/app/profile')"
                   class="flex items-start justify-between w-full px-2 py-1.5 rounded-sm hover:bg-accent transition-colors cursor-pointer"
                 >
-                  <div class="flex flex-col space-y-1">
-                    <p class="text-sm font-medium leading-none">{{ data?.user?.name }}</p>
-                    <p class="text-xs leading-none text-muted-foreground">{{ data?.user?.email }}</p>
+                  <div class="flex flex-col space-y-1 text-left min-w-0">
+                    <p class="text-sm font-medium leading-none truncate">{{ data?.user?.name }}</p>
+                    <p class="text-xs leading-none text-muted-foreground truncate">{{ data?.user?.email }}</p>
                   </div>
-                  <Settings class="h-4 w-4 text-muted-foreground shrink-0" />
+                  <Settings class="h-4 w-4 text-muted-foreground shrink-0 ml-auto" />
                 </button>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

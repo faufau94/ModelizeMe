@@ -4,12 +4,12 @@ import prisma from "@/lib/prisma";
 import { admin } from "better-auth/plugins";
 import { organization } from "better-auth/plugins";
 import { sendOrganizationInvitation } from "@/lib/send-invitation";
+import { sendEmail } from "@/lib/send-email";
 
 export const auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3100',
     trustedOrigins: [
-      process.env.BASE_URL || 'http://localhost:3000',
-      'http://localhost:3000',
+      process.env.BASE_URL || 'http://localhost:3100',
       'http://localhost:3100'
     ],
     database: prismaAdapter(prisma, {
@@ -17,10 +17,57 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {  
         enabled: true,
-        autoSignIn: true,
-        async sendResetPassword(url, user) {
-			// TODO: implement password reset email
-		},
+        autoSignIn: false,
+        requireEmailVerification: true,
+        async sendResetPassword({ user, url }, request) {
+            void sendEmail({
+                to: user.email,
+                subject: "Réinitialisation de votre mot de passe - ModelizeMe",
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                        <div style="background: #4f46e5; color: white; padding: 24px 32px;">
+                            <h2 style="margin: 0;">Réinitialisation de mot de passe</h2>
+                        </div>
+                        <div style="padding: 32px; background: #f9fafb;">
+                            <p style="font-size: 16px; margin-bottom: 24px;">Bonjour <strong>${user.name}</strong>,</p>
+                            <p style="font-size: 16px; margin-bottom: 24px;">Vous avez demandé une réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour continuer :</p>
+                            <a href="${url}" style="display: inline-block; background: #4f46e5; color: white; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-size: 18px; font-weight: bold; margin-bottom: 24px;">Réinitialiser mon mot de passe</a>
+                            <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>
+                        </div>
+                    </div>
+                `,
+            });
+        },
+        async onPasswordReset({ user }) {
+            // User proved email ownership by clicking the reset link
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { emailVerified: true },
+            });
+        },
+    },
+    emailVerification: {
+        sendOnSignUp: true,
+        autoSignInAfterVerification: true,
+        async sendVerificationEmail({ user, url }) {
+            void sendEmail({
+                to: user.email,
+                subject: "Vérifiez votre adresse email - ModelizeMe",
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+                        <div style="background: #4f46e5; color: white; padding: 24px 32px;">
+                            <h2 style="margin: 0;">Vérification de votre email</h2>
+                        </div>
+                        <div style="padding: 32px; background: #f9fafb;">
+                            <p style="font-size: 16px; margin-bottom: 24px;">Bonjour <strong>${user.name}</strong>,</p>
+                            <p style="font-size: 16px; margin-bottom: 24px;">Merci de vous être inscrit sur ModelizeMe ! Cliquez sur le bouton ci-dessous pour vérifier votre adresse email :</p>
+                            <a href="${url}" style="display: inline-block; background: #4f46e5; color: white; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-size: 18px; font-weight: bold; margin-bottom: 24px;">Vérifier mon email</a>
+                            <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">Si vous n'avez pas créé de compte, ignorez cet email.</p>
+                        </div>
+                    </div>
+                `,
+            });
+        },
     },
     socialProviders: {
         google: {
@@ -107,10 +154,11 @@ export const auth = betterAuth({
             create: {
                 after: async (user) => {
                     // Create a default organization for the new user
+                    const suffix = user.id.slice(0, 8);
                     const org = await auth.api.createOrganization({
                         body: {
                             name: `${user.name}'s Workspace`,
-                            slug: `${user.name.toLowerCase().replace(/\s+/g, '-')}-wp`,
+                            slug: `${user.name.toLowerCase().replace(/\s+/g, '-')}-${suffix}`,
                             userId: user.id,
                         },
                     });

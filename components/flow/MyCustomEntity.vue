@@ -160,7 +160,7 @@
 <script lang="ts" setup>
 import {Handle, Position} from '@vue-flow/core'
 import {computed, ref, watch} from 'vue'
-import {useMCDStore} from "~/stores/mcd-store.js";
+import {useModelStore} from "~/stores/model-store.js";
 import {storeToRefs} from "pinia";
 import {KeyRound} from "lucide-vue-next";
 import NullableIcon from '@/components/icon/nullable-icon';
@@ -193,7 +193,7 @@ const props = defineProps({
 })
 
 
-const mcdStore = useMCDStore()
+const mcdStore = useModelStore()
 const {removeNode, duplicateNode} = mcdStore
 const {activeTab, nodeIdSelected, isSaving, isConnecting, connectingSourceNodeId, connectHoveredNodeId} = storeToRefs(mcdStore)
 

@@ -1,6 +1,6 @@
 import { ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useMCDStore } from '~/stores/mcd-store.js';
+import { useModelStore } from '~/stores/model-store.js';
 import { useCollaborationStore } from '~/stores/collaboration-store';
 import { findFreePosition } from '~/utils/useCollisions.js';
 
@@ -18,7 +18,7 @@ export default function useDragAndDrop() {
   const { draggedType, isDragOver, isDragging } = state;
 
   // 2) Pinia stores (singleton instances)
-  const mcdStore = useMCDStore();
+  const mcdStore = useModelStore();
   const collaborationStore = useCollaborationStore();
 
   // 3) we extract only the refs we need from mcdStore

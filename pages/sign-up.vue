@@ -92,20 +92,16 @@
 
               <div v-if="message.type !== ''">
                 <div v-if="message.type === 'error'" class="w-full">
-                  <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 border border-red-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="text-red-600">{{ message.text }}</p>
+                  <div class="flex justify-start p-4 gap-x-2 rounded-md bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800">
+                    <AlertCircle class="h-6 w-6 text-red-500 shrink-0" />
+                    <p class="text-red-600 dark:text-red-400">{{ message.text }}</p>
                   </div>
                 </div>
 
                 <div v-if="message.type === 'success'" class="w-full">
-                  <div class="flex justify-start p-4 gap-x-2 rounded-md bg-green-50 border border-green-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <p class="text-green-600">{{ message.text }}</p>
+                  <div class="flex justify-start p-4 gap-x-2 rounded-md bg-green-50 dark:bg-green-950/50 border border-green-300 dark:border-green-800">
+                    <CheckCircle2 class="h-6 w-6 text-green-500 shrink-0" />
+                    <p class="text-green-600 dark:text-green-400">{{ message.text }}</p>
                   </div>
                 </div>
               </div>
@@ -141,7 +137,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/compo
 import {Input} from '~/components/ui/input'
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from '@/components/ui/form'
 
-import {Loader2} from "lucide-vue-next";
+import {AlertCircle, CheckCircle2, Loader2} from "lucide-vue-next";
 
 import {useForm} from 'vee-validate'
 import {toTypedSchema} from "@vee-validate/zod";
@@ -216,6 +212,7 @@ const onSubmit = async (values) => {
     email: values.email,
     password: values.password,
     name: values.name,
+    callbackURL: '/welcome',
   });
   
   if (res.error) {
@@ -223,22 +220,10 @@ const onSubmit = async (values) => {
     message.value.text = res.error.message || "";
     isLoading.value = false;
   } else {
-    // Wait for session to load
-    const { data: session } = await authClient.getSession()
-
-    // Check for redirect parameter (e.g. invitation link)
-    const redirect = route.query.redirect
-
-    if (redirect) {
-      await navigateTo(decodeURIComponent(redirect))
-    } else {
-      // Default redirect to dashboard
-      const orgId = session?.session?.activeOrganizationId
-      if (orgId) {
-        const url = `/app/workspace/${orgId}`
-        await navigateTo(url)
-      }
-    }
+    // Email verification is required — show success message
+    message.value.type = 'success';
+    message.value.text = 'Un email de vérification a été envoyé. Vérifiez votre boîte de réception pour activer votre compte.';
+    isLoading.value = false;
   }
 };
 

@@ -529,8 +529,8 @@ import {Controls} from "@vue-flow/controls";
 import CustomEntity from "~/components/flow/MyCustomEntity.vue";
 import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation.vue";
 import CustomEntityTernary from "~/components/flow/MyCustomEntityTernary.vue";
+import {useModelStore} from "~/stores/model-store.js";
 import {useMCDStore} from "~/stores/mcd-store.js";
-import {useMCDGenStore} from "~/stores/mcd-gen-store.js";
 import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
@@ -577,8 +577,8 @@ const router = useRouter()
 
 const model = ref(null)
 
-const mcdStore = useMCDStore()
-const mcdGenStore = useMCDGenStore()
+const mcdStore = useModelStore()
+const mcdGenStore = useMCDStore()
 const mldStore = useMLDStore()
 const mpdStore = useMPDStore()
 const {addNode} = mcdStore
@@ -649,12 +649,12 @@ const undoRedoStore = useUndoRedoStore()
 const { canUndo, canRedo } = storeToRefs(undoRedoStore)
 
 
-const mcdFlowInstance = useVueFlow('flow-mcd-' + route.params.idModel)
+const mcdFlowInstance = useVueFlow('flow-model-' + route.params.idModel)
 // Clear immediately to prevent flash of cached nodes from a previous visit
 mcdFlowInstance.setNodes([])
 mcdFlowInstance.setEdges([])
 mcdStore.setFlowInstance(mcdFlowInstance)
-mcdGenStore.setFlowInstance(useVueFlow('flow-mcd-gen-' + route.params.idModel))
+mcdGenStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
 mldStore.setFlowInstance(useVueFlow('flow-mld-' + route.params.idModel))
 mpdStore.setFlowInstance(useVueFlow('flow-mpd-' + route.params.idModel))
 
@@ -1016,11 +1016,11 @@ const goBack = async () => {
 
 // Tabs
 const getFlowId = computed(() => {
-  if (activeTab.value === 'default') return 'flow-mcd-' + route.params.idModel;
-  if (activeTab.value === 'mcd') return 'flow-mcd-gen-' + route.params.idModel;
+  if (activeTab.value === 'default') return 'flow-model-' + route.params.idModel;
+  if (activeTab.value === 'mcd') return 'flow-mcd-' + route.params.idModel;
   if (activeTab.value === 'mld') return 'flow-mld-' + route.params.idModel;
   if (activeTab.value === 'mpd') return 'flow-mpd-' + route.params.idModel;
-  return 'flow-mcd-' + route.params.idModel;
+  return 'flow-model-' + route.params.idModel;
 });
 
 const isChangingTab = ref(false)

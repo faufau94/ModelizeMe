@@ -3,7 +3,7 @@
     <!-- Workspace Creation Dialog -->
     <Dialog v-model:open="isDialogOpen">
       <DialogTrigger as-child>
-        <Button 
+        <Button
           @click="isDialogOpen = true"
           :variant="isOnlyIcon ? 'outline' : 'default'"
           :size="isOnlyIcon ? 'icon' : 'default'"
@@ -25,23 +25,16 @@
         </DialogHeader>
         <Form
           ref="formRef"
-          v-slot="{ meta, values, validate }"
+          v-slot="{ meta }"
+          :validation-schema="formSchema"
           as=""
           keep-values
-          :validation-schema="formSchema"
+          @submit="onSubmit"
         >
-          <form
-            @submit="async (e) => {
-              e.preventDefault()
-              await validate()
-              if (meta.valid) {
-                await handleSubmit(values)
-              }
-            }"
-          >
+          <form @submit.prevent="onSubmit">
             <div class="flex flex-col gap-4 mt-4">
               <template v-if="stepIndex === 1">
-                <FormField name="name" v-slot="{ componentField }">
+                <FormField name="name" :validate-on-blur="false" v-slot="{ componentField }">
                   <FormItem>
                     <FormLabel>Nom de l'espace</FormLabel>
                     <FormControl>
@@ -50,7 +43,7 @@
                     <FormMessage />
                   </FormItem>
                 </FormField>
-                <FormField name="description" v-slot="{ componentField }">
+                <FormField name="description" :validate-on-blur="false" v-slot="{ componentField }">
                   <FormItem>
                     <FormLabel>Description (optionnel)</FormLabel>
                     <FormControl>
@@ -61,7 +54,7 @@
                 </FormField>
               </template>
               <template v-if="stepIndex === 2">
-                <FormField name="emails" v-slot="{ componentField }">
+                <FormField name="emails" :validate-on-blur="false" v-slot="{ componentField }">
                   <FormItem>
                     <FormLabel>Adresses email (optionnel)</FormLabel>
                     <FormControl>
@@ -135,7 +128,7 @@ const isDialogOpen = defineModel('open', { default: false })
 const isLoading = ref(false)
 const stepIndex = ref(1)
 const { data } = await useSession(useFetch)
-const formRef = ref<any>(null)
+const formRef = ref<InstanceType<typeof Form> | null>(null)
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({ message: 'Champs requis' })
@@ -155,22 +148,31 @@ const slugify = (str: string) => str
   .replace(/ /g, '-')
   .replace(/[^\w-]+/g, '');
 
-
 watch(isDialogOpen, (open) => {
   if (!open) {
     stepIndex.value = 1
-    formRef.value?.resetForm?.()
+    formRef.value?.resetForm()
+    isLoading.value = false
   }
 })
 
-async function handleSubmit(values: any) {
+const onSubmit = async (e: Event) => {
+  e.preventDefault()
+  const form = formRef.value
+  if (!form) return
+
+  const { valid } = await form.validate()
+  if (!valid) return
+
+  const values = form.getValues()
+
   if (stepIndex.value === 1) {
     stepIndex.value = 2
     return
   }
+
   isLoading.value = true
   try {
-    // Create workspace
     const res = await addWorkspace({
       name: values.name,
       slug: slugify(values.name),
@@ -182,7 +184,6 @@ async function handleSubmit(values: any) {
       toast.error(res.error.statusText)
       return
     }
-    // Invite members if emails provided
     const emailList = values.emails ? values.emails.split(',') : []
     if (emailList.length > 0) {
       try {
@@ -199,6 +200,7 @@ async function handleSubmit(values: any) {
         toast.error('Erreur lors de l\'invitation des membres')
       }
     }
+    formRef.value?.resetForm()
     isDialogOpen.value = false
     stepIndex.value = 1
     toast.success(`Espace de travail "${res.data.name}" créé avec succès`)
