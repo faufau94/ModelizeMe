@@ -211,6 +211,25 @@
                     </div>
                     <div v-else class="w-[15%] h-10"></div>
 
+                    <div class="w-[15%] h-[15%]" v-if="element?.propertyName !== 'id' && !element?.isForeignKey">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Fingerprint class="w-[20px] h-[20px] cursor-pointer"
+                                          @click="element.isUnique = !element.isUnique"
+                                          :class="[element?.isUnique ?
+                                    'text-amber-500' :
+                                    'text-gray-400']"
+                            />
+                          </TooltipTrigger>
+                          <TooltipContent class="bg-black text-white">
+                            <p>Est Unique ?</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div v-else-if="element?.propertyName !== 'id'" class="w-[15%] h-10"></div>
+
                     <Trash2 class=" w-12 h-12"
                             :class="[element?.propertyName === 'id' ?
                                     'text-gray-300 pointer-events-none invisible' :
@@ -541,6 +560,22 @@
                           </Tooltip>
                         </TooltipProvider>
 
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Fingerprint class="w-[20px] h-[20px] cursor-pointer"
+                                            @click="element.isUnique = !element.isUnique"
+                                            :class="[element?.isUnique ?
+                                    'text-amber-500' :
+                                    'text-gray-400']"
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent class="bg-black text-white">
+                              <p>Est Unique ?</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
 
                       <Trash2 class=" w-12 h-12"
                               :class="[element?.propertyName === 'id' ?
@@ -713,6 +748,7 @@ import {
   KeyRound,
   CircleAlert,
   GripVertical,
+  Fingerprint,
   X
 } from 'lucide-vue-next';
 import NullableIcon from '@/components/icon/nullable-icon';
@@ -1007,6 +1043,7 @@ const addFieldAssociation = () => {
       autoIncrement: false,
       isForeignKey: false,
       isNullable: false,
+      isUnique: false,
     });
   });
   // Save immediately so undo can revert this field addition
@@ -1026,6 +1063,7 @@ const addField = () => {
       autoIncrement: false,
       isForeignKey: false,
       isNullable: false,
+      isUnique: false,
     });
   });
   // Save immediately so undo can revert this field addition

@@ -256,6 +256,7 @@ export const useModelStore = defineStore("flow-model", () => {
             autoIncrement: true,
             isForeignKey: false,
             isNullable: false,
+            isUnique: false,
           },
         ],
       },

@@ -1,7 +1,9 @@
 <template>
+  <ContextMenu>
+    <ContextMenuTrigger :disabled="isReadOnly">
   <div
     ref="content"
-    class="bg-white dark:bg-card z-40 relative cursor-pointer transition-all duration-200"
+    class="bg-white dark:bg-card relative cursor-pointer transition-all duration-200"
     :class="isSelected
       ? 'ring-2 ring-indigo-400 ring-offset-2 shadow-lg'
       : 'shadow-md hover:shadow-lg border border-border'"
@@ -13,7 +15,6 @@
       <h3
         v-if="props.data?.name"
         class="text-xs font-semibold text-center text-foreground tracking-wide uppercase truncate"
-        :class="isSelected ? 'text-indigo-600' : ''"
       >
         {{ props.data.name }}
       </h3>
@@ -76,20 +77,47 @@
 
     <div class="pb-1"></div>
   </div>
+    </ContextMenuTrigger>
+    <ContextMenuContent v-if="!isReadOnly">
+      <ContextMenuItem class="cursor-pointer" @select="openRename">Renommer</ContextMenuItem>
+      <ContextMenuSeparator v-if="isNNRelation" />
+      <ContextMenuItem v-if="isNNRelation" class="cursor-pointer" @select="setEdgeTimestamps(!getEdgeTimestamps)">
+        {{ getEdgeTimestamps ? "Désactiver l'horodatage" : "Activer l'horodatage" }}
+      </ContextMenuItem>
+      <ContextMenuItem v-if="isNNRelation" class="cursor-pointer" @select="setEdgeSoftDeletes(!getEdgeSoftDeletes)">
+        {{ getEdgeSoftDeletes ? 'Désactiver le soft-deletes' : 'Activer le soft-deletes' }}
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem @select="handleDelete" class="text-red-500 cursor-pointer">Supprimer</ContextMenuItem>
+    </ContextMenuContent>
+  </ContextMenu>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useModelStore } from "~/stores/model-store.js";
 import { KeyRound } from 'lucide-vue-next';
 import { storeToRefs } from "pinia";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 
 const mcdStore = useModelStore();
-const { edgeIdSelected } = storeToRefs(mcdStore);
+const { removeEdge, updateEdge } = mcdStore;
+const { edgeIdSelected, isSaving } = storeToRefs(mcdStore);
 const content = ref(null);
+const route = useRoute();
 
 const props = defineProps({
   id: {
+    type: String,
+    required: false,
+  },
+  edgeId: {
     type: String,
     required: false,
   },
@@ -103,7 +131,66 @@ const props = defineProps({
   },
 });
 
+const modelType = computed(() => props.data?.modelType ?? 'default');
+const isReadOnly = computed(() => modelType.value !== 'default');
+
 const isSelected = computed(() =>
   props.selected || (props.id != null && edgeIdSelected.value === props.id)
 );
+
+const getEdgeTimestamps = computed(() => props.data?.hasTimestamps);
+const getEdgeSoftDeletes = computed(() => props.data?.usesSoftDeletes);
+
+// Only show timestamps/soft-deletes options for N:N relations (association tables)
+const isNNRelation = computed(() => {
+  const targetEdgeId = props.edgeId || props.id;
+  if (!targetEdgeId || !mcdStore.flowMCD) return false;
+  const edge = mcdStore.flowMCD.findEdge(targetEdgeId);
+  if (!edge?.data) return false;
+  const srcMax = (edge.data.sourceCardinality || '').split(',')[1]?.trim();
+  const tgtMax = (edge.data.targetCardinality || '').split(',')[1]?.trim();
+  return srcMax === 'N' && tgtMax === 'N';
+});
+
+const openRename = () => {
+  const targetEdgeId = props.edgeId || props.id;
+  if (!targetEdgeId) return;
+  edgeIdSelected.value = targetEdgeId;
+  mcdStore.isNewlyCreated = true;
+  mcdStore.isSubMenuVisible = true;
+};
+
+const setEdgeTimestamps = async (value) => {
+  const targetEdgeId = props.edgeId || props.id;
+  if (!targetEdgeId || !mcdStore.flowMCD) return;
+  const edge = mcdStore.flowMCD.findEdge(targetEdgeId);
+  if (edge) {
+    const prevData = JSON.parse(JSON.stringify(edge.data));
+    edge.data.hasTimestamps = value;
+    isSaving.value = true;
+    await updateEdge(route.params.idModel, targetEdgeId, prevData);
+    isSaving.value = false;
+  }
+};
+
+const setEdgeSoftDeletes = async (value) => {
+  const targetEdgeId = props.edgeId || props.id;
+  if (!targetEdgeId || !mcdStore.flowMCD) return;
+  const edge = mcdStore.flowMCD.findEdge(targetEdgeId);
+  if (edge) {
+    const prevData = JSON.parse(JSON.stringify(edge.data));
+    edge.data.usesSoftDeletes = value;
+    isSaving.value = true;
+    await updateEdge(route.params.idModel, targetEdgeId, prevData);
+    isSaving.value = false;
+  }
+};
+
+const handleDelete = () => {
+  const targetEdgeId = props.edgeId || props.id;
+  if (!targetEdgeId) return;
+  nextTick(() => {
+    removeEdge(route.params.idModel, targetEdgeId);
+  });
+};
 </script>

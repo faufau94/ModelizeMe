@@ -91,6 +91,7 @@ export const useMPDStore = defineStore("flow-mpd", () => {
             autoIncrement: false,
             isForeignKey: false,
             isNullable: true,
+            isUnique: false,
           });
         }
         if (!copy.data.properties.some((p) => p.propertyName === "updated_at")) {
@@ -102,6 +103,7 @@ export const useMPDStore = defineStore("flow-mpd", () => {
             autoIncrement: false,
             isForeignKey: false,
             isNullable: true,
+            isUnique: false,
           });
         }
       }
@@ -117,6 +119,7 @@ export const useMPDStore = defineStore("flow-mpd", () => {
             autoIncrement: false,
             isForeignKey: false,
             isNullable: true,
+            isUnique: false,
           });
         }
       }

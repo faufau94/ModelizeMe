@@ -77,6 +77,7 @@ definePageMeta({
 });
 
 const route = useRoute()
+const router = useRouter()
 
 const createRepoWithProvider = async (provider) => {
   try {
@@ -134,11 +135,12 @@ const downloadProject = async () => {
   }
 }
 
-const hasTriggeredConfetti = ref(false);
 onMounted(() => {
-  if (_confettiTriggered) return
-  _confettiTriggered = true
-  hasTriggeredConfetti.value = true
+  // Only trigger confetti when arriving from the generation wizard (not from project list)
+  if (route.query.generated !== '1') return
+
+  // Remove the query param to prevent re-triggering on refresh
+  router.replace({ query: {} })
 
   const colors = ["#bb0000", "#0000ee"];
   const end = Date.now() + 4 * 1000;
@@ -151,9 +153,4 @@ onMounted(() => {
 
   requestAnimationFrame(frame);
 })
-</script>
-
-<script>
-// Module-level flag: survives component unmount/remount within the same session
-let _confettiTriggered = false
 </script>

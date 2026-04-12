@@ -16,6 +16,7 @@
       :id="id"
       :path="edgePath[0]"
       :style="edgeStyle"
+      :marker-start="markerStart"
       :marker-end="markerEnd"
     />
 
@@ -29,7 +30,7 @@
           transform: `translate(-50%, -50%) translate(${sourceLabelX}px, ${sourceLabelY}px)`,
         }"
       >
-        <div class="cardinality-label" :class="[cardinalityClass, { 'cardinality-label--selected': props.selected }]">
+        <div class="cardinality-label" :class="[cardinalityClass, { 'cardinality-label--selected': isActive }]">
           {{ sourceCardinality }}
         </div>
       </div>
@@ -45,7 +46,7 @@
           transform: `translate(-50%, -50%) translate(${targetLabelX}px, ${targetLabelY}px)`,
         }"
       >
-        <div class="cardinality-label" :class="[cardinalityClass, { 'cardinality-label--selected': props.selected }]">
+        <div class="cardinality-label" :class="[cardinalityClass, { 'cardinality-label--selected': isActive }]">
           {{ targetCardinality }}
         </div>
       </div>
@@ -60,6 +61,7 @@
           transform: `translate(-50%, -50%) translate(${edgePath[1]}px, ${edgePath[2]}px)`,
         }"
         class="nodrag nopan"
+        @contextmenu.stop
       >
         <div @click="onclick">
           <MyCustomEntityAssociation :data="data" :selected="props.selected" :edgeId="props.id" />
@@ -115,6 +117,7 @@ const props = defineProps({
   sourceNode: Object,
   targetNode: Object,
   data: Object,
+  markerStart: String,
   markerEnd: String,
 });
 
@@ -232,9 +235,18 @@ const edgePath = computed(() => {
   });
 });
 
+// Edge is "active" if directly selected OR if one of its endpoint nodes is selected
+const isActive = computed(() =>
+  props.selected ||
+  (nodeIdSelected.value !== null && (
+    props.sourceNode?.id === nodeIdSelected.value ||
+    props.targetNode?.id === nodeIdSelected.value
+  ))
+);
+
 /** Edge color per model type */
 const edgeColor = computed(() => {
-  if (props.selected) return '#6366f1';
+  if (isActive.value) return '#6366f1';
   switch (modelType.value) {
     case 'mcd': return '#60a5fa';
     case 'mld': return '#34d399';
@@ -244,7 +256,7 @@ const edgeColor = computed(() => {
 });
 
 const edgeStyle = computed(() => ({
-  strokeWidth: props.selected ? 2.5 : 1.8,
+  strokeWidth: isActive.value ? 2.5 : 1.8,
   stroke: edgeColor.value,
   fill: 'none',
   transition: 'stroke 0.15s ease, stroke-width 0.15s ease',
@@ -356,7 +368,7 @@ const targetLabelY = computed(() => {
 }
 
 :root.dark .cardinality-label--selected {
-  background: rgba(99, 102, 241, 0.15);
+  background: hsl(var(--card));
 }
 
 .cardinality-label--mcd {
@@ -406,7 +418,7 @@ const targetLabelY = computed(() => {
 }
 
 :root.dark .cif-badge {
-  background: rgba(251, 191, 36, 0.15);
+  background: hsl(var(--card));
   color: #fbbf24;
 }
 </style>

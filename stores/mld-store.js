@@ -81,6 +81,7 @@ export const useMLDStore = defineStore("flow-mld", () => {
           isForeignKey: true,
           foreignTable: entityNode.data.name,
           isNullable: false,
+          isUnique: false,
         });
         mldEdges.push({
           ...makeMldEdge(),
@@ -120,6 +121,7 @@ export const useMLDStore = defineStore("flow-mld", () => {
                   isForeignKey: true,
                   foreignTable: sourceNode.data.name,
                   isNullable: false,
+                  isUnique: false,
                 },
                 {
                   id: uuidv4(),
@@ -130,6 +132,7 @@ export const useMLDStore = defineStore("flow-mld", () => {
                   isForeignKey: true,
                   foreignTable: targetNode.data.name,
                   isNullable: false,
+                  isUnique: false,
                 },
                 ...(edge.data?.properties || []).map((p) => ({ ...p })),
               ],
@@ -153,6 +156,7 @@ export const useMLDStore = defineStore("flow-mld", () => {
           isForeignKey: true,
           foreignTable: refTable.data.name,
           isNullable: nullable,
+          isUnique: false,
         });
 
         // Reflexive 1:N fix: use relation name for FK to avoid name collision
@@ -164,15 +168,29 @@ export const useMLDStore = defineStore("flow-mld", () => {
         const srcMin = (edge.data?.sourceCardinality || "").split(",")[0]?.trim();
         const tgtMin = (edge.data?.targetCardinality || "").split(",")[0]?.trim();
 
-        if (srcMax === "1" && tgtMax === "N") insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName, srcMin === "0"));
-        else if (srcMax === "N" && tgtMax === "1") insertForeignKey(sourceNode, makeFk(targetNode, reflexiveFkName, tgtMin === "0"));
-        else if (srcMax === "1" && tgtMax === "1") insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName, srcMin === "0"));
+        // Determine which side holds the FK and which is the referenced table
+        // Arrow should point FROM the FK holder TO the referenced table
+        let fkHolderIsSource = false;
+        if (srcMax === "1" && tgtMax === "N") {
+          // FK on target, referencing source → arrow: target → source
+          insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName, srcMin === "0"));
+          fkHolderIsSource = false;
+        } else if (srcMax === "N" && tgtMax === "1") {
+          // FK on source, referencing target → arrow: source → target
+          insertForeignKey(sourceNode, makeFk(targetNode, reflexiveFkName, tgtMin === "0"));
+          fkHolderIsSource = true;
+        } else if (srcMax === "1" && tgtMax === "1") {
+          // FK on target, referencing source → arrow: target → source
+          insertForeignKey(targetNode, makeFk(sourceNode, reflexiveFkName, srcMin === "0"));
+          fkHolderIsSource = false;
+        }
 
         // Strip cardinalities - FK replaces them in MLD
-        mldEdges.push({
-          ...JSON.parse(JSON.stringify(edge)),
+        // Arrow points from FK holder to referenced table
+        const edgeCopy = JSON.parse(JSON.stringify(edge));
+        const mldEdge = {
+          ...edgeCopy,
           type: "customEdge",
-          markerEnd: MarkerType.ArrowClosed,
           selectable: false,
           updatable: false,
           data: {
@@ -181,7 +199,19 @@ export const useMLDStore = defineStore("flow-mld", () => {
             sourceCardinality: "",
             targetCardinality: "",
           },
-        });
+        };
+
+        if (fkHolderIsSource) {
+          // source has FK → arrow points to target (referenced) = markerEnd
+          mldEdge.markerEnd = MarkerType.ArrowClosed;
+          delete mldEdge.markerStart;
+        } else {
+          // target has FK → arrow points to source (referenced) = markerStart
+          mldEdge.markerStart = MarkerType.ArrowClosed;
+          delete mldEdge.markerEnd;
+        }
+
+        mldEdges.push(mldEdge);
       }
     }
 

@@ -18,6 +18,15 @@ body,
   width: 100%;
 }
 
+/* Force stacking order: edges (SVG) → edge labels → nodes */
+.vue-flow__edgelabel-renderer {
+  z-index: 1 !important;
+}
+
+.vue-flow__nodes {
+  z-index: 2 !important;
+}
+
 .vue-flow__minimap {
   transform: scale(75%);
   transform-origin: bottom left;
