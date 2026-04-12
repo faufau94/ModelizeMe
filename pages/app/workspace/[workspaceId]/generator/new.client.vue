@@ -303,7 +303,7 @@ async function onSubmit(values) {
       workspaceId: route.params.workspaceId,
     })
 
-    await navigateTo({path: `/app/workspace/${route.params.workspaceId}/generator/result/${response.projectName}`})
+    await navigateTo({path: `/app/workspace/${route.params.workspaceId}/generator/result/${response.projectName}`, query: { generated: '1' }})
   } catch (error) {
     console.error('Erreur:', error);
     toast.error('Il y a eu un problème lors de la génération du projet. Réessayez.')

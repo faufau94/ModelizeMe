@@ -2,7 +2,7 @@
 
   <ContextMenu>
     <ContextMenuTrigger :disabled="isReadOnly">
-    <div class="bg-white dark:bg-card shadow-lg rounded-xl w-80 z-40 relative cursor-pointer transition-all duration-200 hover:shadow-xl"
+    <div class="bg-white dark:bg-card shadow-lg rounded-xl w-80 relative cursor-pointer transition-all duration-200 hover:shadow-xl"
         :class="[
           isConnectHovered ? 'ring-2 ring-primary ring-offset-2 shadow-primary/30 shadow-xl scale-[1.02]'
             : isConnectTarget ? 'ring-2 ring-primary/60 ring-offset-2 shadow-primary/20 shadow-lg'
@@ -72,6 +72,11 @@
               AI
             </span>
 
+            <!-- MLD/MPD: show UNIQUE -->
+            <span v-if="(modelType === 'mld' || modelType === 'mpd') && field?.isUnique" class="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-400 px-1 py-0.5 rounded font-mono">
+              UQ
+            </span>
+
             <!-- Nullable toggle: only in editable (default) mode -->
             <template v-if="!isReadOnly">
               <div class="w-4" v-if="field?.propertyName !== 'id'">
@@ -134,32 +139,24 @@
     </div>
     </ContextMenuTrigger>
     <ContextMenuContent v-if="!isReadOnly">
-        <ContextMenuItem @click="duplicateNode(props)" class="cursor-pointer">Dupliquer</ContextMenuItem>
-        <ContextMenuItem class="cursor-pointer" as-child @click="setNodeTimestamps(!getNodeTimestamps)">
-          <div v-if="getNodeTimestamps">
-            Désactiver l'horodatage
-          </div>
-          <div v-else>
-            Activer l'horodatage
-          </div>
+        <ContextMenuItem @select="openRename" class="cursor-pointer">Renommer</ContextMenuItem>
+        <ContextMenuItem @select="duplicateNode(props)" class="cursor-pointer">Dupliquer</ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem class="cursor-pointer" @select="setNodeTimestamps(!getNodeTimestamps)">
+          {{ getNodeTimestamps ? "Désactiver l'horodatage" : "Activer l'horodatage" }}
         </ContextMenuItem>
-        <ContextMenuItem class="cursor-pointer" as-child @click="setNodeSoftDeletes(!getNodeSoftDeletes)">
-          <div v-if="getNodeSoftDeletes">
-            Désactiver le soft-deletes
-          </div>
-          <div v-else>
-            Activer le soft-deletes
-          </div>
+        <ContextMenuItem class="cursor-pointer" @select="setNodeSoftDeletes(!getNodeSoftDeletes)">
+          {{ getNodeSoftDeletes ? 'Désactiver le soft-deletes' : 'Activer le soft-deletes' }}
         </ContextMenuItem>
         <ContextMenuSeparator />
-        <ContextMenuItem @click="removeNode(route.params.idModel, props.id)" class="text-red-500 cursor-pointer">Supprimer</ContextMenuItem>
+        <ContextMenuItem @select="handleDelete" class="text-red-500 cursor-pointer">Supprimer</ContextMenuItem>
     </ContextMenuContent>
   </ContextMenu>
 </template>
 
 <script lang="ts" setup>
 import {Handle, Position} from '@vue-flow/core'
-import {computed, ref, watch} from 'vue'
+import {computed, nextTick, ref, watch} from 'vue'
 import {useModelStore} from "~/stores/model-store.js";
 import {storeToRefs} from "pinia";
 import {KeyRound} from "lucide-vue-next";
@@ -276,6 +273,20 @@ const updateNode = async (previousData = null) => {
   isSaving.value = true;
   await mcdStore.updateNode(route.params.idModel, props?.id, previousData)
   isSaving.value = false;
+};
+
+// Open ElementMenu with focus on the name field
+const openRename = () => {
+  nodeIdSelected.value = props.id
+  mcdStore.isNewlyCreated = true
+  mcdStore.isSubMenuVisible = true
+}
+
+// Defer deletion so the ContextMenu portal closes before the component unmounts
+const handleDelete = () => {
+  nextTick(() => {
+    removeNode(route.params.idModel, props.id)
+  })
 };
 
 const sourceHandle = ref(0)

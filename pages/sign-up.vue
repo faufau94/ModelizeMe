@@ -106,18 +106,21 @@
                 </div>
               </div>
 
-              <Button type="submit" :disabled="isLoading">
+              <Button type="submit" :disabled="isLoading || isLoadingProvider">
                 <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin"/>
                 {{ isLoading ? "Chargement..." : "S'inscrire" }}
               </Button>
-
-              <!-- <div v-for="provider in filteredProviders" :key="provider?.id" class="w-full">
-                <Button  class="w-full" variant="outline" @click="signInProvider(provider.id)">
-                  Continuer avec {{ provider?.name }}
-                </Button>
-              </div> -->
             </div>
           </Form>
+
+          <div class="my-4">
+            <div v-for="provider in socialProviders" :key="provider.id" class="w-full py-2">
+              <Button class="w-full" variant="outline" :disabled="isLoadingProvider || isLoading" @click="signInProvider(provider.id)">
+                <Loader2 v-if="isLoadingProvider" class="w-4 h-4 mr-2 animate-spin"/>
+                Continuer avec {{ provider.name }}
+              </Button>
+            </div>
+          </div>
 
           <div class="mt-4 text-center text-sm">
             Vous avez déjà un compte ?
@@ -146,6 +149,14 @@ import {z} from "zod/v4";
 import {authClient, signUp} from "~/lib/auth-client.js";
 
 const route = useRoute()
+
+const socialProviders = [
+  { id: 'google', name: 'Google' },
+  { id: 'github', name: 'GitHub' },
+  { id: 'gitlab', name: 'GitLab' },
+]
+
+const isLoadingProvider = ref(false)
 
 const formSchema = toTypedSchema(z.object({
   name: z.string({
@@ -228,30 +239,20 @@ const onSubmit = async (values) => {
 };
 
 const signInProvider = async (providerId) => {
-  isLoading.value = true
+  isLoadingProvider.value = true
   try {
-    const res = await signIn(providerId)
-    if (res?.error) {
-      console.error("Erreur de connexion avec le provider:", res.error)
-      // Gérer l'erreur de connexion ici, par exemple en affichant un message d'erreur
-    } else {
-      // Redirection réussie
-      await refresh()
-      return navigateTo(goToDashboard())
-    }
+    const redirect = route.query.redirect
+    await authClient.signIn.social({
+      provider: providerId,
+      callbackURL: redirect ? decodeURIComponent(redirect) : "/",
+      errorCallbackURL: "/sign-up",
+      newUserCallbackURL: "/welcome",
+    })
   } catch (error) {
-    console.error("Erreur lors de la connexion avec le provider:", error)
+    message.value.type = 'error'
+    message.value.text = error instanceof Error ? error.message : 'Erreur lors de la connexion avec le provider.'
   } finally {
-    isLoading.value = false
+    isLoadingProvider.value = false
   }
 }
-
-// const filteredProviders = computed(() => {
-//   return Object.keys(providers)
-//       .filter(key => key !== 'credentials')
-//       .reduce((result, key) => {
-//         result[key] = providers[key]
-//         return result
-//       }, {})
-// })
 </script>

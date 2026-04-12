@@ -223,7 +223,7 @@ const signInProvider = async (providerId: typeof socialProviders[number]['id']) 
     await authClient.signIn.social({
       provider: providerId,
       callbackURL: redirect ? decodeURIComponent(redirect) : "/",
-      errorCallbackURL: "/error",
+      errorCallbackURL: "/sign-in",
       newUserCallbackURL: "/welcome",
     });
   } catch (error) {

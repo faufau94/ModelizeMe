@@ -155,13 +155,26 @@ export const auth = betterAuth({
                 after: async (user) => {
                     // Create a default organization for the new user
                     const suffix = user.id.slice(0, 8);
-                    const org = await auth.api.createOrganization({
-                        body: {
-                            name: `${user.name}'s Workspace`,
-                            slug: `${user.name.toLowerCase().replace(/\s+/g, '-')}-${suffix}`,
-                            userId: user.id,
-                        },
-                    });
+                    const slug = `${(user.name || 'user').toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')}-${suffix}`;
+                    try {
+                        await auth.api.createOrganization({
+                            body: {
+                                name: `${user.name || 'Mon'}'s Workspace`,
+                                slug,
+                                userId: user.id,
+                            },
+                        });
+                    } catch (e) {
+                        // Retry with a unique fallback slug to prevent user lockout
+                        const fallbackSlug = `workspace-${user.id.slice(0, 16)}`;
+                        await auth.api.createOrganization({
+                            body: {
+                                name: `${user.name || 'Mon'}'s Workspace`,
+                                slug: fallbackSlug,
+                                userId: user.id,
+                            },
+                        });
+                    }
                 },
             },
         },
@@ -169,7 +182,7 @@ export const auth = betterAuth({
         session: {
             create: {
               before: async (session) => {
-                // 1. Rechercher la dernière session précédente
+                // 1. Check the previous session for activeOrganizationId
                 const lastSession = await prisma.session.findFirst({
                   where: {
                     userId: session.userId,
@@ -178,10 +191,19 @@ export const auth = betterAuth({
                     createdAt: 'desc',
                   },
                 });
-          
+
                 let activeOrganizationId = lastSession?.activeOrganizationId;
-          
-                // 2. Sinon, prendre la première organisation liée
+
+                // 2. Verify the org still exists and user is still a member
+                if (activeOrganizationId) {
+                  const stillMember = await prisma.member.findFirst({
+                    where: { organizationId: activeOrganizationId, userId: session.userId },
+                    select: { id: true },
+                  });
+                  if (!stillMember) activeOrganizationId = null;
+                }
+
+                // 3. Fallback: pick the first organization the user belongs to
                 if (!activeOrganizationId) {
                   const firstOrg = await prisma.organization.findFirst({
                     where: {
@@ -189,12 +211,10 @@ export const auth = betterAuth({
                     },
                     orderBy: { createdAt: 'asc' },
                   });
-          
-                  if (!firstOrg) throw new Error('No organization found');
-          
-                  activeOrganizationId = firstOrg.id;
+
+                  activeOrganizationId = firstOrg?.id || null;
                 }
-          
+
                 return {
                   data: {
                     ...session,

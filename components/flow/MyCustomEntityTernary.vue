@@ -1,7 +1,9 @@
 <template>
+  <ContextMenu>
+    <ContextMenuTrigger :disabled="isReadOnly">
   <div
     ref="content"
-    class="bg-white dark:bg-card z-40 relative cursor-pointer transition-all duration-200 nodrag"
+    class="bg-white dark:bg-card relative cursor-pointer transition-all duration-200 nodrag"
     :class="isSelected
       ? 'ring-2 ring-indigo-400 ring-offset-2 shadow-lg'
       : 'shadow-md hover:shadow-lg border border-border'"
@@ -13,7 +15,6 @@
       <h3
         v-if="props.data?.name"
         class="text-xs font-semibold text-center text-foreground tracking-wide uppercase truncate"
-        :class="isSelected ? 'text-indigo-600' : ''"
       >
         {{ props.data.name }}
       </h3>
@@ -83,17 +84,40 @@
 
     <div class="pb-1"></div>
   </div>
+    </ContextMenuTrigger>
+    <ContextMenuContent v-if="!isReadOnly">
+      <ContextMenuItem @select="openRename" class="cursor-pointer">Renommer</ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem @select="setNodeTimestamps(!getNodeTimestamps)" class="cursor-pointer">
+        {{ getNodeTimestamps ? "Désactiver l'horodatage" : "Activer l'horodatage" }}
+      </ContextMenuItem>
+      <ContextMenuItem @select="setNodeSoftDeletes(!getNodeSoftDeletes)" class="cursor-pointer">
+        {{ getNodeSoftDeletes ? 'Désactiver le soft-deletes' : 'Activer le soft-deletes' }}
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem @select="handleDelete" class="text-red-500 cursor-pointer">Supprimer</ContextMenuItem>
+    </ContextMenuContent>
+  </ContextMenu>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useModelStore } from '~/stores/model-store.js';
 import { KeyRound } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 
 const mcdStore = useModelStore();
-const { nodeIdSelected } = storeToRefs(mcdStore);
+const { removeNode, updateNode: storeUpdateNode } = mcdStore;
+const { nodeIdSelected, isSaving } = storeToRefs(mcdStore);
 const content = ref(null);
+const route = useRoute();
 
 const props = defineProps({
   id: { type: String, required: true },
@@ -101,7 +125,46 @@ const props = defineProps({
   data: { type: Object, required: false },
 });
 
+const modelType = computed(() => props.data?.modelType ?? 'default');
+const isReadOnly = computed(() => modelType.value !== 'default');
 const isSelected = computed(() => props.selected || nodeIdSelected.value === props.id);
+
+const getNodeTimestamps = computed(() => props.data?.hasTimestamps);
+const getNodeSoftDeletes = computed(() => props.data?.usesSoftDeletes);
+
+const setNodeTimestamps = async (value: boolean) => {
+  const nodeData = mcdStore.flowMCD?.findNode(props.id);
+  if (nodeData) {
+    const prevData = JSON.parse(JSON.stringify(nodeData.data));
+    nodeData.data.hasTimestamps = value;
+    isSaving.value = true;
+    await storeUpdateNode(route.params.idModel, props.id, prevData);
+    isSaving.value = false;
+  }
+};
+
+const setNodeSoftDeletes = async (value: boolean) => {
+  const nodeData = mcdStore.flowMCD?.findNode(props.id);
+  if (nodeData) {
+    const prevData = JSON.parse(JSON.stringify(nodeData.data));
+    nodeData.data.usesSoftDeletes = value;
+    isSaving.value = true;
+    await storeUpdateNode(route.params.idModel, props.id, prevData);
+    isSaving.value = false;
+  }
+};
+
+const openRename = () => {
+  nodeIdSelected.value = props.id;
+  mcdStore.isNewlyCreated = true;
+  mcdStore.isSubMenuVisible = true;
+};
+
+const handleDelete = () => {
+  nextTick(() => {
+    removeNode(route.params.idModel, props.id);
+  });
+};
 
 // Check if any connected edge has CIF
 const hasCIF = computed(() => {

@@ -35,6 +35,9 @@ export const useMCDStore = defineStore("flow-mcd", () => {
       copy.selectable = false;
       copy.updatable = false;
       copy.data.modelType = "mcd";
+      // MCD is conceptual: no directional arrows, only cardinalities
+      delete copy.markerEnd;
+      delete copy.markerStart;
       return copy;
     });
 
