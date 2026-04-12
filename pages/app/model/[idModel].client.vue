@@ -38,6 +38,25 @@
       </button>
     </div>
 
+    <!-- Multi-selection context menu (right-click on selected element) -->
+    <div
+      v-if="selectionContextMenuOpen && activeTab === 'default'"
+      ref="selectionContextMenuRef"
+      class="fixed z-50 min-w-[200px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+      :style="{ left: selectionContextMenuPos.x + 'px', top: selectionContextMenuPos.y + 'px' }"
+    >
+      <div class="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+        {{ selectedElements.count }} élément{{ selectedElements.count > 1 ? 's' : '' }} sélectionné{{ selectedElements.count > 1 ? 's' : '' }}
+      </div>
+      <div class="h-px bg-border my-1" />
+      <button class="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-destructive/10 hover:text-destructive w-full"
+              @click="deleteSelectedElements(); selectionContextMenuOpen = false">
+        <Trash2 :size="16" />
+        Supprimer
+        <span class="ml-auto text-xs text-muted-foreground">Del</span>
+      </button>
+    </div>
+
     <VueFlow
         v-if="isFlowReady"
         :id="getFlowId"
@@ -585,6 +604,24 @@
       </DropzoneBackground>
 
 
+      <!-- Multi-selection floating bar -->
+      <Panel v-if="selectedElements.count > 1 && activeTab === 'default'" position="bottom-center" class="z-50 mb-4">
+        <div class="bg-background/95 backdrop-blur-sm border border-border px-4 py-2 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-2 fade-in-0 duration-200">
+          <span class="text-sm font-medium text-foreground">
+            {{ selectedElements.count }} élément{{ selectedElements.count > 1 ? 's' : '' }}
+          </span>
+          <div class="h-4 w-px bg-border" />
+          <button
+            class="flex items-center gap-1.5 text-sm text-destructive hover:text-destructive/80 transition-colors cursor-pointer"
+            @click="deleteSelectedElements()"
+          >
+            <Trash2 :size="14" />
+            Supprimer
+          </button>
+          <kbd class="hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">Del</kbd>
+        </div>
+      </Panel>
+
       <template #connection-line="{ sourceX, sourceY, targetX, targetY, sourceNode }">
         <FloatingConnectionLine
           :from-node="sourceNode"
@@ -633,7 +670,7 @@ import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {ArrowLeft, Check, Download, EllipsisVertical, FolderCode, Loader2, PanelTop, Plus, Redo2, Undo2, Upload, WandSparkles, Workflow, Maximize2, Table2, Search, Link} from "lucide-vue-next";
+import {ArrowLeft, Check, Download, EllipsisVertical, FolderCode, Loader2, PanelTop, Plus, Redo2, Undo2, Upload, WandSparkles, Workflow, Maximize2, Table2, Search, Link, Trash2, Copy} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,} from '@/components/ui/dialog'
@@ -918,12 +955,38 @@ mpdStore.setFlowInstance(useVueFlow('flow-mpd-' + route.params.idModel))
 
 mcdStore.flowMCD.onPaneClick((e) => {
   paneContextMenuOpen.value = false
+  selectionContextMenuOpen.value = false
   if (activeTab.value === 'default') {
     if (isSubMenuVisible.value)
       isSubMenuVisible.value = false
     elementsMenu.value = false
     nodeIdSelected.value = null
     edgeIdSelected.value = null
+  }
+})
+
+// ─── Multi-selection tracking ───
+const selectedElements = computed(() => {
+  const nodes = (mcdFlowInstance.getNodes?.value ?? []).filter(n => n.selected)
+  const edges = (mcdFlowInstance.getEdges?.value ?? []).filter(e => e.selected)
+  return { nodes, edges, count: nodes.length + edges.length }
+})
+
+// ─── Multi-selection context menu (right-click on selected element) ───
+const selectionContextMenuOpen = ref(false)
+const selectionContextMenuPos = ref({ x: 0, y: 0 })
+const selectionContextMenuRef = ref(null)
+
+const closeSelectionContextMenu = (e) => {
+  if (selectionContextMenuRef.value && !selectionContextMenuRef.value.contains(e.target)) {
+    selectionContextMenuOpen.value = false
+  }
+}
+watch(selectionContextMenuOpen, (open) => {
+  if (open) {
+    window.addEventListener('mousedown', closeSelectionContextMenu, { capture: true })
+  } else {
+    window.removeEventListener('mousedown', closeSelectionContextMenu, { capture: true })
   }
 })
 
@@ -934,14 +997,27 @@ const paneContextMenuRef = ref(null)
 
 const onPaneContextMenu = (e) => {
   if (activeTab.value !== 'default') return
-  // Don't show pane menu when right-clicking on a node, edge label, or association
   const target = e.target
-  if (target?.closest('.vue-flow__node') || target?.closest('.vue-flow__edge-labels') || target?.closest('.vue-flow__edgelabel-renderer') || target?.closest('[data-radix-popper-content-wrapper]')) {
+
+  // If right-clicking on a selected node/edge while multi-selection is active → show selection menu
+  const clickedNode = target?.closest('.vue-flow__node')
+  const clickedEdgeLabel = target?.closest('.vue-flow__edge-labels') || target?.closest('.vue-flow__edgelabel-renderer')
+  if (selectedElements.value.count > 1 && (clickedNode || clickedEdgeLabel)) {
+    e.preventDefault()
+    selectionContextMenuPos.value = { x: e.clientX, y: e.clientY }
+    selectionContextMenuOpen.value = true
+    paneContextMenuOpen.value = false
+    return
+  }
+
+  // Don't show pane menu when right-clicking on a node, edge label, or association
+  if (clickedNode || clickedEdgeLabel || target?.closest('[data-radix-popper-content-wrapper]')) {
     return
   }
   e.preventDefault()
   paneContextMenuPos.value = { x: e.clientX, y: e.clientY }
   paneContextMenuOpen.value = true
+  selectionContextMenuOpen.value = false
 }
 
 // Close pane context menu on any click outside
@@ -1205,8 +1281,10 @@ window.addEventListener('keydown', handleUndoRedoKeydown)
 onUnmounted(() => {
   window.removeEventListener('keydown', handleUndoRedoKeydown)
   window.removeEventListener('mousedown', closePaneContextMenu, { capture: true })
+  window.removeEventListener('mousedown', closeSelectionContextMenu, { capture: true })
   window.removeEventListener('mousedown', closeSearchOnClickOutside)
   paneContextMenuOpen.value = false
+  selectionContextMenuOpen.value = false
   searchOpen.value = false
   activeTab.value = 'default'
   isSubMenuVisible.value = false
