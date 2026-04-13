@@ -35,6 +35,9 @@
                         <div class="min-w-0">
                           <div class="flex items-center gap-x-2">
                             <h3 class="text-sm font-semibold">{{ item.name }}</h3>
+                            <Badge variant="outline" v-if="item.version" class="text-[10px] px-1.5 py-0 h-4 font-medium text-muted-foreground">
+                              v{{ item.version }}
+                            </Badge>
                             <Badge variant="secondary" v-if="item.comingSoon">
                               À venir
                             </Badge>
