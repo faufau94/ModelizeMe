@@ -121,13 +121,14 @@ export const useCodeGeneratorStore = defineStore("generator", () => {
   const ormOptions = computed(() => {
     const fw = datas.value.framework;
     if (!fw || !capabilities.value?.[fw]) return [];
-    return capabilities.value[fw].orms.map((ormKey) => {
+    return Object.entries(capabilities.value[fw].orms).map(([ormKey, ormData]) => {
       const meta = ORM_META[ormKey] || {};
       return {
         value: ormKey,
         name: meta.name || ormKey,
         logoName: meta.logoName || ormKey,
         description: meta.description || "",
+        version: ormData?.version ?? null,
       };
     });
   });
@@ -136,13 +137,14 @@ export const useCodeGeneratorStore = defineStore("generator", () => {
   const databaseOptions = computed(() => {
     const fw = datas.value.framework;
     if (!fw || !capabilities.value?.[fw]) return [];
-    return capabilities.value[fw].databases.map((dbKey) => {
+    return Object.entries(capabilities.value[fw].databases).map(([dbKey, dbData]) => {
       const meta = DATABASE_META[dbKey] || {};
       return {
         value: dbKey,
         name: meta.name || dbKey,
         logoName: meta.logoName || dbKey,
         description: meta.description || "",
+        version: dbData?.version ?? null,
       };
     });
   });
