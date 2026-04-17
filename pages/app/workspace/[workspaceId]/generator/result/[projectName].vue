@@ -69,6 +69,7 @@
       v-model="isRepoDialogOpen"
       :provider="selectedProvider"
       :project-name="repoProjectName"
+      :generated-project-name="String(route.params.projectName)"
       :auto-submit="autoSubmitRepo"
       @success="onRepoCreated"
     />
@@ -89,12 +90,14 @@ const router = useRouter()
 
 const isRepoDialogOpen = ref(false)
 const selectedProvider = ref('github')
-const repoProjectName = ref(String(route.params.projectName))
+// Extract clean project title from the generated name (format: {title}_project_{timestamp}_{uuid})
+const cleanProjectName = String(route.params.projectName).replace(/_project_.*$/, '')
+const repoProjectName = ref(cleanProjectName)
 const autoSubmitRepo = ref(false)
 
 const openRepoDialog = (provider) => {
   selectedProvider.value = provider
-  repoProjectName.value = String(route.params.projectName)
+  repoProjectName.value = cleanProjectName
   autoSubmitRepo.value = false
   isRepoDialogOpen.value = true
 }
@@ -134,7 +137,7 @@ onMounted(() => {
   // After OAuth redirect: auto-open dialog and submit with saved form values
   if (route.query.linkProvider) {
     const provider = String(route.query.linkProvider)
-    const repoName = route.query.repoName ? String(route.query.repoName) : String(route.params.projectName)
+    const repoName = route.query.repoName ? String(route.query.repoName) : cleanProjectName
 
     // Clean query params
     router.replace({ query: {} })

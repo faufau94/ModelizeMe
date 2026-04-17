@@ -14,6 +14,7 @@ const createRepoSchema = z.object({
     .min(1)
     .max(100)
     .regex(/^[a-zA-Z0-9_-]+$/, "Nom de projet invalide"),
+  generatedProjectName: z.string().min(1).max(200),
   branchName: z
     .string()
     .min(1)
@@ -25,7 +26,7 @@ export default defineEventHandler(async (event) => {
   const session = await requireAuth(event);
 
   const body = await readBody(event);
-  const { provider, projectName, branchName } = createRepoSchema.parse(body);
+  const { provider, projectName, generatedProjectName, branchName } = createRepoSchema.parse(body);
 
   // Retrieve OAuth access token server-side from the linked account
   const account = await prisma.account.findFirst({
@@ -48,7 +49,7 @@ export default defineEventHandler(async (event) => {
   // Download the generated project ZIP from the backend
   const zipBlob = await $fetch(process.env.URL_BACKEND + "/api/download-project", {
     method: "POST",
-    body: { projectName },
+    body: { projectName: generatedProjectName },
     responseType: "arrayBuffer",
   });
 

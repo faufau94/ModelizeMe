@@ -12,7 +12,7 @@
           </DialogDescription>
         </DialogHeader>
 
-        <form @submit="onSubmit" class="space-y-4">
+        <form @submit.prevent="onSubmit" class="space-y-4">
           <FormField v-slot="{ componentField }" name="projectName">
             <FormItem>
               <FormLabel>Nom du projet</FormLabel>
@@ -99,7 +99,7 @@
 </template>
 
 <script setup>
-import {ref, onUnmounted} from 'vue'
+import {ref, watch, onUnmounted} from 'vue'
 import {toTypedSchema} from '@vee-validate/zod'
 import * as z from 'zod'
 import {useForm} from 'vee-validate'
@@ -115,6 +115,7 @@ const props = defineProps({
   modelValue: { type: Boolean, required: true },
   provider: { type: String, required: true },
   projectName: { type: String, required: true },
+  generatedProjectName: { type: String, required: true },
   /** Auto-submit after OAuth redirect (account just got linked) */
   autoSubmit: { type: Boolean, default: false },
 })
@@ -157,10 +158,21 @@ const form = useForm({
   validateOnMount: false,
 })
 
+// Re-fill form with current prop values on every open
+watch(() => props.modelValue, (open) => {
+  if (open) {
+    form.resetForm({
+      values: {
+        projectName: props.projectName || '',
+        branchName: 'main',
+      },
+    })
+  }
+})
+
 const onOpenChange = (open) => {
   if (!isCreating.value) {
     emit('update:modelValue', open)
-    // Reset state when closing
     if (!open) {
       isSuccess.value = false
       isCreating.value = false
@@ -198,6 +210,7 @@ const createRepo = async (values) => {
       body: {
         provider: props.provider,
         projectName: values.projectName,
+        generatedProjectName: props.generatedProjectName,
         branchName: values.branchName,
       },
     })
