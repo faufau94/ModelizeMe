@@ -82,20 +82,35 @@ export async function createGitHubRepo(
   branchName: string,
   files: FileEntry[]
 ): Promise<CreateRepoResult> {
-  // 1. Create repo (empty, no auto_init)
+  // 1. Create repo with auto_init so GitHub creates an initial commit (avoids "empty repo" errors)
   const repo: any = await githubFetch("/user/repos", token, {
     method: "POST",
     body: {
       name: repoName,
       private: true,
-      auto_init: false,
+      auto_init: true,
+      default_branch: branchName,
     },
   });
 
   const owner = repo.owner.login;
   const repoPath = `/repos/${owner}/${repoName}`;
 
-  // 2. Create blobs for each file
+  // 2. Get the SHA of the initial commit created by auto_init
+  const refData: any = await githubFetch(
+    `${repoPath}/git/ref/heads/${branchName}`,
+    token
+  );
+  const baseSha = refData.object.sha;
+
+  // 3. Get the tree SHA of the initial commit
+  const baseCommit: any = await githubFetch(
+    `${repoPath}/git/commits/${baseSha}`,
+    token
+  );
+  const baseTreeSha = baseCommit.tree.sha;
+
+  // 4. Create blobs for each file
   const treeItems = await Promise.all(
     files.map(async (file) => {
       const blob: any = await githubFetch(`${repoPath}/git/blobs`, token, {
@@ -114,34 +129,26 @@ export async function createGitHubRepo(
     })
   );
 
-  // 3. Create tree (no base_tree since repo is empty)
+  // 5. Create tree on top of base tree
   const tree: any = await githubFetch(`${repoPath}/git/trees`, token, {
     method: "POST",
-    body: { tree: treeItems },
+    body: { tree: treeItems, base_tree: baseTreeSha },
   });
 
-  // 4. Create commit
+  // 6. Create commit with parent
   const commit: any = await githubFetch(`${repoPath}/git/commits`, token, {
     method: "POST",
     body: {
       message: "Initial commit from ModelizeMe",
       tree: tree.sha,
+      parents: [baseSha],
     },
   });
 
-  // 5. Create ref (branch)
-  await githubFetch(`${repoPath}/git/refs`, token, {
-    method: "POST",
-    body: {
-      ref: `refs/heads/${branchName}`,
-      sha: commit.sha,
-    },
-  });
-
-  // 6. Set default branch
-  await githubFetch(repoPath, token, {
+  // 7. Update the branch ref to point to the new commit
+  await githubFetch(`${repoPath}/git/refs/heads/${branchName}`, token, {
     method: "PATCH",
-    body: { default_branch: branchName },
+    body: { sha: commit.sha, force: true },
   });
 
   return { repoUrl: repo.html_url };

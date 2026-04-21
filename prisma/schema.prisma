@@ -252,9 +252,10 @@ model Annotation {
 // ─── GENERATED PROJECTS ───
 
 model GeneratedProject {
-  id          String   @id @default(cuid())
-  name        String
-  description String?  @db.Text
+  id            String   @id @default(cuid())
+  name          String
+  generatedName String?  @db.VarChar(255)
+  description   String?  @db.Text
   framework   String   @db.VarChar(50)
   orm         String   @db.VarChar(50)
   database    String   @db.VarChar(50)

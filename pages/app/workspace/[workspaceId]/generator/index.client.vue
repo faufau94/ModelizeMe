@@ -44,7 +44,7 @@
               v-for="project in filteredProjects"
               :key="project.id"
               class="group hover:shadow-md transition-shadow cursor-pointer"
-              @click="goToResult(project.name)"
+              @click="goToResult(project.generatedName)"
             >
               <CardHeader class="pb-3">
                 <div class="flex items-start justify-between">
@@ -61,7 +61,7 @@
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem @click.stop="goToResult(project.name)">
+                      <DropdownMenuItem @click.stop="goToResult(project.generatedName)">
                         <Download class="h-4 w-4 mr-2"/>
                         Télécharger / Dépôt
                       </DropdownMenuItem>
