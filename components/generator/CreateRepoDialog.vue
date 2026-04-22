@@ -33,6 +33,34 @@
             </FormItem>
           </FormField>
 
+          <FormField v-slot="{ componentField }" name="visibility">
+            <FormItem>
+              <FormLabel>Visibilité</FormLabel>
+              <Select v-bind="componentField">
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue/>
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="private">Privé</SelectItem>
+                  <SelectItem value="public">Public</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage/>
+            </FormItem>
+          </FormField>
+
+          <FormField v-slot="{ componentField }" name="description">
+            <FormItem>
+              <FormLabel>Description <span class="text-muted-foreground font-normal">(optionnel)</span></FormLabel>
+              <FormControl>
+                <Textarea placeholder="Décrivez votre projet..." class="resize-none" rows="2" v-bind="componentField"/>
+              </FormControl>
+              <FormMessage/>
+            </FormItem>
+          </FormField>
+
           <div class="flex justify-end gap-2 pt-2">
             <Button variant="ghost" type="button" @click="onOpenChange(false)">
               Annuler
@@ -108,7 +136,9 @@ import {Loader2, CheckCircle2, ExternalLink} from 'lucide-vue-next'
 import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} from '@/components/ui/dialog'
 import {FormControl, FormField, FormItem, FormLabel, FormMessage} from '@/components/ui/form'
 import {Input} from '@/components/ui/input'
+import {Textarea} from '@/components/ui/textarea'
 import {Button} from '@/components/ui/button'
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select'
 import {authClient} from '~/lib/auth-client'
 
 const props = defineProps({
@@ -147,6 +177,8 @@ const formSchema = toTypedSchema(z.object({
     .min(1, 'Le nom de la branche est requis.')
     .max(50)
     .regex(/^[a-zA-Z0-9._/-]+$/, 'Nom de branche invalide.'),
+  visibility: z.enum(['private', 'public']),
+  description: z.string().max(200).optional(),
 }))
 
 const form = useForm({
@@ -154,6 +186,8 @@ const form = useForm({
   initialValues: {
     projectName: props.projectName || '',
     branchName: 'main',
+    visibility: 'private',
+    description: '',
   },
   validateOnMount: false,
 })
@@ -165,6 +199,8 @@ watch(() => props.modelValue, (open) => {
       values: {
         projectName: props.projectName || '',
         branchName: 'main',
+        visibility: 'private',
+        description: '',
       },
     })
   }
@@ -212,6 +248,8 @@ const createRepo = async (values) => {
         projectName: values.projectName,
         generatedProjectName: props.generatedProjectName,
         branchName: values.branchName,
+        visibility: values.visibility,
+        description: values.description || '',
       },
     })
 

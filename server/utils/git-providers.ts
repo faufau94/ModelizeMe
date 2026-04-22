@@ -80,14 +80,17 @@ export async function createGitHubRepo(
   token: string,
   repoName: string,
   branchName: string,
-  files: FileEntry[]
+  files: FileEntry[],
+  isPublic = false,
+  description = ""
 ): Promise<CreateRepoResult> {
   // 1. Create repo with auto_init so GitHub creates an initial commit (avoids "empty repo" errors)
   const repo: any = await githubFetch("/user/repos", token, {
     method: "POST",
     body: {
       name: repoName,
-      private: true,
+      private: !isPublic,
+      description,
       auto_init: true,
       default_branch: branchName,
     },
@@ -176,14 +179,17 @@ export async function createGitLabRepo(
   token: string,
   repoName: string,
   branchName: string,
-  files: FileEntry[]
+  files: FileEntry[],
+  isPublic = false,
+  description = ""
 ): Promise<CreateRepoResult> {
   // 1. Create project (initialize_with_readme to have a branch)
   const project: any = await gitlabFetch("/projects", token, {
     method: "POST",
     body: {
       name: repoName,
-      visibility: "private",
+      description,
+      visibility: isPublic ? "public" : "private",
       default_branch: branchName,
       initialize_with_readme: true,
     },

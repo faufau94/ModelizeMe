@@ -20,13 +20,15 @@ const createRepoSchema = z.object({
     .min(1)
     .max(50)
     .regex(/^[a-zA-Z0-9._/-]+$/, "Nom de branche invalide"),
+  visibility: z.enum(["private", "public"]).default("private"),
+  description: z.string().max(200).optional(),
 });
 
 export default defineEventHandler(async (event) => {
   const session = await requireAuth(event);
 
   const body = await readBody(event);
-  const { provider, projectName, generatedProjectName, branchName } = createRepoSchema.parse(body);
+  const { provider, projectName, generatedProjectName, branchName, visibility, description } = createRepoSchema.parse(body);
 
   // Retrieve OAuth access token server-side from the linked account
   const account = await prisma.account.findFirst({
@@ -81,10 +83,10 @@ export default defineEventHandler(async (event) => {
     let result;
     switch (provider) {
       case "github":
-        result = await createGitHubRepo(token, projectName, branchName, files);
+        result = await createGitHubRepo(token, projectName, branchName, files, visibility === "public", description);
         break;
       case "gitlab":
-        result = await createGitLabRepo(token, projectName, branchName, files);
+        result = await createGitLabRepo(token, projectName, branchName, files, visibility === "public", description);
         break;
     }
 
