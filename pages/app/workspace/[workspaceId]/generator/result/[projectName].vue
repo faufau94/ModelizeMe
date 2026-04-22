@@ -51,12 +51,14 @@
           <CardDescription class="text-sm">Poussez le projet sur un service Git.</CardDescription>
         </CardHeader>
         <CardContent class="pt-0 grid grid-cols-2 gap-3">
-          <Button size="lg" @click="openRepoDialog('github')" variant="outline" class="w-full text-base">
-            <Github class="w-5 h-5 mr-2"/>
+          <Button size="lg" @click="openRepoDialog('github')" variant="outline" class="w-full text-base" :disabled="!!isCheckingProvider">
+            <Loader2 v-if="isCheckingProvider === 'github'" class="w-5 h-5 mr-2 animate-spin"/>
+            <Github v-else class="w-5 h-5 mr-2"/>
             GitHub
           </Button>
-          <Button size="lg" @click="openRepoDialog('gitlab')" variant="outline" class="w-full text-base">
-            <Gitlab class="w-5 h-5 mr-2"/>
+          <Button size="lg" @click="openRepoDialog('gitlab')" variant="outline" class="w-full text-base" :disabled="!!isCheckingProvider">
+            <Loader2 v-if="isCheckingProvider === 'gitlab'" class="w-5 h-5 mr-2 animate-spin"/>
+            <Gitlab v-else class="w-5 h-5 mr-2"/>
             GitLab
           </Button>
         </CardContent>
@@ -80,6 +82,8 @@
 import {CheckCircle2, Download, GitBranch, Github, Gitlab, Loader2, Package} from 'lucide-vue-next'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Button} from '~/components/ui/button'
+import {authClient} from '~/lib/auth-client'
+import {toast} from 'vue-sonner'
 
 definePageMeta({
   layout: 'sidebar',
@@ -90,16 +94,34 @@ const router = useRouter()
 
 const isRepoDialogOpen = ref(false)
 const selectedProvider = ref('github')
-// Extract clean project title from the generated name (format: {title}_project_{timestamp}_{uuid})
 const cleanProjectName = String(route.params.projectName).replace(/_project_.*$/, '')
 const repoProjectName = ref(cleanProjectName)
 const autoSubmitRepo = ref(false)
+const isCheckingProvider = ref(null) // 'github' | 'gitlab' | null
 
-const openRepoDialog = (provider) => {
-  selectedProvider.value = provider
-  repoProjectName.value = cleanProjectName
-  autoSubmitRepo.value = false
-  isRepoDialogOpen.value = true
+const openRepoDialog = async (provider) => {
+  isCheckingProvider.value = provider
+  try {
+    const { linked } = await $fetch('/api/auth/linked-account', { query: { provider } })
+
+    if (!linked) {
+      // Redirect to OAuth linking before showing the form
+      const callbackURL = `${route.path}?linkProvider=${provider}&repoName=${cleanProjectName}`
+      await authClient.linkSocial({ provider, callbackURL })
+      // Browser redirects — execution stops here
+      return
+    }
+
+    // Account already linked — open form directly
+    selectedProvider.value = provider
+    repoProjectName.value = cleanProjectName
+    autoSubmitRepo.value = false
+    isRepoDialogOpen.value = true
+  } catch {
+    toast.error('Impossible de vérifier votre compte. Réessayez.')
+  } finally {
+    isCheckingProvider.value = null
+  }
 }
 
 const onRepoCreated = () => {

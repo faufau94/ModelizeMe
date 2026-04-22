@@ -19,7 +19,8 @@ const createRepoSchema = z.object({
     .string()
     .min(1)
     .max(50)
-    .regex(/^[a-zA-Z0-9._/-]+$/, "Nom de branche invalide"),
+    .regex(/^[a-zA-Z0-9._/-]+$/, "Nom de branche invalide")
+    .default("main"),
   visibility: z.enum(["private", "public"]).default("private"),
   description: z.string().max(200).optional(),
 });
@@ -95,11 +96,28 @@ export default defineEventHandler(async (event) => {
       repoUrl: result.repoUrl,
     };
   } catch (err: any) {
+    // TEMP debug — remove once stable
+    console.error("[create-repo] provider=", provider, "status=", err?.response?.status || err?.statusCode, "data=", JSON.stringify(err?.data), "message=", err?.message);
+
     // Handle known API errors with clear messages
     const status = err?.response?.status || err?.statusCode || 500;
-    const detail = err?.data?.message || err?.data?.error?.message || err?.message || "";
+    // GitLab may return err.data.message as { name: [...], path: [...] } or a string
+    const rawMessage = err?.data?.message ?? err?.data?.error?.message ?? err?.data?.error;
+    const detail =
+      typeof rawMessage === "string"
+        ? rawMessage
+        : typeof rawMessage === "object" && rawMessage !== null
+          ? JSON.stringify(rawMessage)
+          : err?.message || "";
 
-    if (status === 422 || status === 400) {
+    // Only a repo-creation conflict should yield 409 — file-push errors must not.
+    const isRepoDuplicate =
+      (status === 422 || status === 400) &&
+      (detail.includes("name already exists") ||
+        detail.includes("has already been taken") ||
+        detail.includes("\"name\":") && detail.includes("taken"));
+
+    if (isRepoDuplicate) {
       throw createError({
         statusCode: 409,
         message: `Un dépôt "${projectName}" existe déjà sur ${provider}. Choisissez un autre nom.`,

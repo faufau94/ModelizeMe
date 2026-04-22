@@ -23,16 +23,6 @@
             </FormItem>
           </FormField>
 
-          <FormField v-slot="{ componentField }" name="branchName">
-            <FormItem>
-              <FormLabel>Branche par défaut</FormLabel>
-              <FormControl>
-                <Input placeholder="main" v-bind="componentField"/>
-              </FormControl>
-              <FormMessage/>
-            </FormItem>
-          </FormField>
-
           <FormField v-slot="{ componentField }" name="visibility">
             <FormItem>
               <FormLabel>Visibilité</FormLabel>
@@ -65,8 +55,7 @@
             <Button variant="ghost" type="button" @click="onOpenChange(false)">
               Annuler
             </Button>
-            <Button type="submit" :disabled="isCheckingLink">
-              <Loader2 v-if="isCheckingLink" class="w-4 h-4 mr-2 animate-spin"/>
+            <Button type="submit">
               Créer le dépôt
             </Button>
           </div>
@@ -139,7 +128,6 @@ import {Input} from '@/components/ui/input'
 import {Textarea} from '@/components/ui/textarea'
 import {Button} from '@/components/ui/button'
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select'
-import {authClient} from '~/lib/auth-client'
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
@@ -152,11 +140,8 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'success'])
 
-const route = useRoute()
-
 const isCreating = ref(false)
 const isSuccess = ref(false)
-const isCheckingLink = ref(false)
 const repoUrl = ref('')
 const currentStep = ref(0)
 let stepTimer = null
@@ -173,10 +158,6 @@ const formSchema = toTypedSchema(z.object({
     .min(1, 'Le nom du projet est requis.')
     .max(100)
     .regex(/^[a-zA-Z0-9_-]+$/, 'Caractères autorisés : lettres, chiffres, tirets, underscores.'),
-  branchName: z.string()
-    .min(1, 'Le nom de la branche est requis.')
-    .max(50)
-    .regex(/^[a-zA-Z0-9._/-]+$/, 'Nom de branche invalide.'),
   visibility: z.enum(['private', 'public']),
   description: z.string().max(200).optional(),
 }))
@@ -185,7 +166,6 @@ const form = useForm({
   validationSchema: formSchema,
   initialValues: {
     projectName: props.projectName || '',
-    branchName: 'main',
     visibility: 'private',
     description: '',
   },
@@ -198,7 +178,6 @@ watch(() => props.modelValue, (open) => {
     form.resetForm({
       values: {
         projectName: props.projectName || '',
-        branchName: 'main',
         visibility: 'private',
         description: '',
       },
@@ -212,7 +191,6 @@ const onOpenChange = (open) => {
     if (!open) {
       isSuccess.value = false
       isCreating.value = false
-      isCheckingLink.value = false
       currentStep.value = 0
       repoUrl.value = ''
     }
@@ -247,7 +225,7 @@ const createRepo = async (values) => {
         provider: props.provider,
         projectName: values.projectName,
         generatedProjectName: props.generatedProjectName,
-        branchName: values.branchName,
+        branchName: 'main',
         visibility: values.visibility,
         description: values.description || '',
       },
@@ -279,33 +257,7 @@ const createRepo = async (values) => {
 }
 
 const onSubmit = form.handleSubmit(async (values) => {
-  isCheckingLink.value = true
-
-  try {
-    // Check if account is linked for this provider
-    const { linked } = await $fetch('/api/auth/linked-account', {
-      query: { provider: props.provider },
-    })
-
-    if (!linked) {
-      // Need OAuth — save form values in query params for after redirect
-      const callbackURL = `${route.path}?linkProvider=${props.provider}&repoName=${values.projectName}`
-      await authClient.signIn.social({
-        provider: props.provider,
-        callbackURL,
-      })
-      // Browser will redirect — execution stops here
-      return
-    }
-
-    isCheckingLink.value = false
-    // Account linked — proceed to create
-    await createRepo(values)
-  } catch (error) {
-    isCheckingLink.value = false
-    console.error('Erreur:', error)
-    toast.error('Impossible de vérifier votre compte. Réessayez.')
-  }
+  await createRepo(values)
 })
 
 // Auto-submit after returning from OAuth redirect

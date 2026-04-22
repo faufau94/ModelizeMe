@@ -14,20 +14,14 @@ interface CreateRepoResult {
 
 // ─── Shared helpers ────────────────────────
 
-/**
- * Extract files from a ZIP buffer. Returns an array of { path, content, encoding }.
- * Binary files are base64-encoded, text files are UTF-8.
- */
 export function extractZipEntries(zipBuffer: Buffer): FileEntry[] {
   const data = new Uint8Array(zipBuffer);
   const files = unzipSync(data);
   const entries: FileEntry[] = [];
 
   for (const [filePath, fileData] of Object.entries(files)) {
-    // Skip directories (empty entries ending with /)
     if (filePath.endsWith("/") || fileData.length === 0) continue;
 
-    // Detect binary vs text
     if (isBinary(fileData)) {
       entries.push({
         path: filePath,
@@ -46,9 +40,6 @@ export function extractZipEntries(zipBuffer: Buffer): FileEntry[] {
   return entries;
 }
 
-/**
- * Simple binary detection: check for null bytes in first 8KB.
- */
 function isBinary(data: Uint8Array): boolean {
   const len = Math.min(data.length, 8192);
   for (let i = 0; i < len; i++) {
@@ -72,10 +63,6 @@ async function githubFetch(path: string, token: string, options: any = {}) {
   });
 }
 
-/**
- * Create a GitHub repo and push all files using the Git Trees API.
- * Flow: create repo → create blobs → create tree → create commit → create ref
- */
 export async function createGitHubRepo(
   token: string,
   repoName: string,
@@ -84,7 +71,8 @@ export async function createGitHubRepo(
   isPublic = false,
   description = ""
 ): Promise<CreateRepoResult> {
-  // 1. Create repo with auto_init so GitHub creates an initial commit (avoids "empty repo" errors)
+  // 1. Create repo with auto_init — GitHub creates the default branch "main"
+  //    and an initial README commit. The Git Database API requires a non-empty repo.
   const repo: any = await githubFetch("/user/repos", token, {
     method: "POST",
     body: {
@@ -92,28 +80,28 @@ export async function createGitHubRepo(
       private: !isPublic,
       description,
       auto_init: true,
-      default_branch: branchName,
     },
   });
 
   const owner = repo.owner.login;
   const repoPath = `/repos/${owner}/${repoName}`;
+  // GitHub always creates "main" when auto_init is true (regardless of default_branch hint)
+  const initialBranch = repo.default_branch || "main";
 
-  // 2. Get the SHA of the initial commit created by auto_init
+  // 2. Get the initial commit SHA and tree SHA
   const refData: any = await githubFetch(
-    `${repoPath}/git/ref/heads/${branchName}`,
+    `${repoPath}/git/ref/heads/${initialBranch}`,
     token
   );
   const baseSha = refData.object.sha;
 
-  // 3. Get the tree SHA of the initial commit
   const baseCommit: any = await githubFetch(
     `${repoPath}/git/commits/${baseSha}`,
     token
   );
   const baseTreeSha = baseCommit.tree.sha;
 
-  // 4. Create blobs for each file
+  // 3. Create blobs for each file
   const treeItems = await Promise.all(
     files.map(async (file) => {
       const blob: any = await githubFetch(`${repoPath}/git/blobs`, token, {
@@ -132,13 +120,15 @@ export async function createGitHubRepo(
     })
   );
 
-  // 5. Create tree on top of base tree
+  // 4. Create tree on top of the initial commit's tree.
+  //    Using base_tree keeps files we don't override (e.g. README if not in ZIP).
+  //    If the ZIP contains README.md, it overrides the auto-generated one.
   const tree: any = await githubFetch(`${repoPath}/git/trees`, token, {
     method: "POST",
     body: { tree: treeItems, base_tree: baseTreeSha },
   });
 
-  // 6. Create commit with parent
+  // 5. Create commit with the initial commit as parent
   const commit: any = await githubFetch(`${repoPath}/git/commits`, token, {
     method: "POST",
     body: {
@@ -148,11 +138,19 @@ export async function createGitHubRepo(
     },
   });
 
-  // 7. Update the branch ref to point to the new commit
-  await githubFetch(`${repoPath}/git/refs/heads/${branchName}`, token, {
+  // 6. Fast-forward the branch to the new commit
+  await githubFetch(`${repoPath}/git/refs/heads/${initialBranch}`, token, {
     method: "PATCH",
-    body: { sha: commit.sha, force: true },
+    body: { sha: commit.sha },
   });
+
+  // 7. If the user wants a different branch name than GitHub's default, rename it
+  if (branchName !== initialBranch) {
+    await githubFetch(`${repoPath}/branches/${initialBranch}/rename`, token, {
+      method: "POST",
+      body: { new_name: branchName },
+    });
+  }
 
   return { repoUrl: repo.html_url };
 }
@@ -172,9 +170,32 @@ async function gitlabFetch(path: string, token: string, options: any = {}) {
 }
 
 /**
- * Create a GitLab project and push all files using the Commits API.
- * Single request to create initial commit with all files.
+ * Poll the GitLab branches endpoint until the default branch is ready.
+ * GitLab creates projects asynchronously — pushing files too early fails.
  */
+async function waitForGitLabBranch(
+  projectId: number,
+  branchName: string,
+  token: string,
+  maxAttempts = 15,
+  intervalMs = 1000
+): Promise<void> {
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      await gitlabFetch(
+        `/projects/${projectId}/repository/branches/${encodeURIComponent(branchName)}`,
+        token
+      );
+      return;
+    } catch {
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+  }
+  throw new Error(
+    `GitLab branch "${branchName}" did not become ready after ${maxAttempts * intervalMs}ms`
+  );
+}
+
 export async function createGitLabRepo(
   token: string,
   repoName: string,
@@ -183,7 +204,7 @@ export async function createGitLabRepo(
   isPublic = false,
   description = ""
 ): Promise<CreateRepoResult> {
-  // 1. Create project (initialize_with_readme to have a branch)
+  // 1. Create project with README so the default branch exists immediately
   const project: any = await gitlabFetch("/projects", token, {
     method: "POST",
     body: {
@@ -197,13 +218,30 @@ export async function createGitLabRepo(
 
   const projectId = project.id;
 
-  // 2. Push all files in a single commit via the Commits API
-  // Batch files to avoid request size limits (max ~50 files per request)
+  // 2. Wait for the default branch to be fully ready (repo init is async)
+  await waitForGitLabBranch(projectId, branchName, token);
+
+  // 3. Fetch the existing tree to know which files to "update" vs "create"
+  // The README created by initialize_with_readme needs "update" if we replace it.
+  let existingPaths = new Set<string>();
+  try {
+    const tree: any = await gitlabFetch(
+      `/projects/${projectId}/repository/tree?ref=${encodeURIComponent(branchName)}&recursive=true&per_page=100`,
+      token
+    );
+    existingPaths = new Set(
+      (Array.isArray(tree) ? tree : []).filter((e: any) => e.type === "blob").map((e: any) => e.path)
+    );
+  } catch {
+    // Non-fatal: fall back to "create" for everything
+  }
+
+  // 4. Push all files in batches
   const BATCH_SIZE = 50;
   for (let i = 0; i < files.length; i += BATCH_SIZE) {
     const batch = files.slice(i, i + BATCH_SIZE);
     const actions = batch.map((file) => ({
-      action: "create" as const,
+      action: existingPaths.has(file.path) ? ("update" as const) : ("create" as const),
       file_path: file.path,
       content: file.content,
       encoding: file.encoding === "base64" ? "base64" : "text",
@@ -222,6 +260,9 @@ export async function createGitLabRepo(
         actions,
       },
     });
+
+    // Mark these files as existing for subsequent batches
+    for (const f of batch) existingPaths.add(f.path);
   }
 
   return { repoUrl: project.web_url };

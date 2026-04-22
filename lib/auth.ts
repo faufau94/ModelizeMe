@@ -69,6 +69,13 @@ export const auth = betterAuth({
             });
         },
     },
+    account: {
+        accountLinking: {
+            enabled: true,
+            trustedProviders: ["google", "github", "gitlab"],
+            allowDifferentEmails: true,
+        },
+    },
     socialProviders: {
         google: {
            clientId: process.env.GOOGLE_CLIENT_ID || "",
