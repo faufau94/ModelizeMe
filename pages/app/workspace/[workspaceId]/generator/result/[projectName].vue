@@ -51,18 +51,30 @@
           <CardDescription class="text-sm">Poussez le projet sur un service Git.</CardDescription>
         </CardHeader>
         <CardContent class="pt-0 grid grid-cols-2 gap-3">
-          <Button size="lg" @click="createRepoWithProvider('github')" variant="outline" class="w-full text-base">
-            <Github class="w-5 h-5 mr-2"/>
+          <Button size="lg" @click="openRepoDialog('github')" variant="outline" class="w-full text-base" :disabled="!!isCheckingProvider">
+            <Loader2 v-if="isCheckingProvider === 'github'" class="w-5 h-5 mr-2 animate-spin"/>
+            <Github v-else class="w-5 h-5 mr-2"/>
             GitHub
           </Button>
-          <Button size="lg" @click="createRepoWithProvider('gitlab')" variant="outline" class="w-full text-base">
-            <Gitlab class="w-5 h-5 mr-2"/>
+          <Button size="lg" @click="openRepoDialog('gitlab')" variant="outline" class="w-full text-base" :disabled="!!isCheckingProvider">
+            <Loader2 v-if="isCheckingProvider === 'gitlab'" class="w-5 h-5 mr-2 animate-spin"/>
+            <Gitlab v-else class="w-5 h-5 mr-2"/>
             GitLab
           </Button>
         </CardContent>
       </Card>
 
     </div>
+
+    <!-- Create Repo Dialog -->
+    <CreateRepoDialog
+      v-model="isRepoDialogOpen"
+      :provider="selectedProvider"
+      :project-name="repoProjectName"
+      :generated-project-name="String(route.params.projectName)"
+      :auto-submit="autoSubmitRepo"
+      @success="onRepoCreated"
+    />
   </div>
 </template>
 
@@ -71,6 +83,7 @@ import {CheckCircle2, Download, GitBranch, Github, Gitlab, Loader2, Package} fro
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '~/components/ui/card'
 import {Button} from '~/components/ui/button'
 import {authClient} from '~/lib/auth-client'
+import {toast} from 'vue-sonner'
 
 definePageMeta({
   layout: 'sidebar',
@@ -79,34 +92,41 @@ definePageMeta({
 const route = useRoute()
 const router = useRouter()
 
-const createRepoWithProvider = async (provider) => {
-  try {
-    // Check server-side if the user has a linked account for this provider
-    const { linked } = await $fetch('/api/auth/linked-account', {
-      query: { provider },
-    });
+const isRepoDialogOpen = ref(false)
+const selectedProvider = ref('github')
+const cleanProjectName = String(route.params.projectName).replace(/_project_.*$/, '')
+const repoProjectName = ref(cleanProjectName)
+const autoSubmitRepo = ref(false)
+const isCheckingProvider = ref(null) // 'github' | 'gitlab' | null
 
-    const basePath = `/app/workspace/${route.params.workspaceId}/generator/result`
+const openRepoDialog = async (provider) => {
+  isCheckingProvider.value = provider
+  try {
+    const { linked } = await $fetch('/api/auth/linked-account', { query: { provider } })
 
     if (!linked) {
-      // Redirect to OAuth flow to link the account
-      await authClient.signIn.social({
-        provider,
-        callbackURL: `${basePath}/create-repo?provider=${provider}&projectName=${route.params.projectName}`,
-      });
-    } else {
-      await navigateTo({
-        path: `${basePath}/create-repo`,
-        query: {
-          provider,
-          projectName: route.params.projectName,
-        }
-      })
+      // Redirect to OAuth linking before showing the form
+      const callbackURL = `${route.path}?linkProvider=${provider}&repoName=${cleanProjectName}`
+      await authClient.linkSocial({ provider, callbackURL })
+      // Browser redirects — execution stops here
+      return
     }
-  } catch (error) {
-    console.error('Erreur lors de la redirection:', error);
+
+    // Account already linked — open form directly
+    selectedProvider.value = provider
+    repoProjectName.value = cleanProjectName
+    autoSubmitRepo.value = false
+    isRepoDialogOpen.value = true
+  } catch {
+    toast.error('Impossible de vérifier votre compte. Réessayez.')
+  } finally {
+    isCheckingProvider.value = null
   }
-};
+}
+
+const onRepoCreated = () => {
+  // Nothing extra needed — dialog handles success state
+}
 
 const isDownloading = ref(false)
 const downloadProject = async () => {
@@ -136,10 +156,23 @@ const downloadProject = async () => {
 }
 
 onMounted(() => {
-  // Only trigger confetti when arriving from the generation wizard (not from project list)
-  if (route.query.generated !== '1') return
+  // After OAuth redirect: auto-open dialog and submit with saved form values
+  if (route.query.linkProvider) {
+    const provider = String(route.query.linkProvider)
+    const repoName = route.query.repoName ? String(route.query.repoName) : cleanProjectName
 
-  // Remove the query param to prevent re-triggering on refresh
+    // Clean query params
+    router.replace({ query: {} })
+
+    selectedProvider.value = provider
+    repoProjectName.value = repoName
+    autoSubmitRepo.value = true
+    isRepoDialogOpen.value = true
+    return
+  }
+
+  // Confetti only when arriving from the generation wizard
+  if (route.query.generated !== '1') return
   router.replace({ query: {} })
 
   const colors = ["#bb0000", "#0000ee"];

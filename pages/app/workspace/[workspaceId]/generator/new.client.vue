@@ -295,6 +295,7 @@ async function onSubmit(values) {
     // Save project to database
     await createProject({
       name: values.title.replace(/ /g, '-'),
+      generatedName: response.projectName,
       description: values.description,
       framework: values.framework,
       orm: values.orm,
@@ -306,7 +307,8 @@ async function onSubmit(values) {
     await navigateTo({path: `/app/workspace/${route.params.workspaceId}/generator/result/${response.projectName}`, query: { generated: '1' }})
   } catch (error) {
     console.error('Erreur:', error);
-    toast.error('Il y a eu un problème lors de la génération du projet. Réessayez.')
+    const serverMessage = error?.data?.message || error?.data?.statusMessage;
+    toast.error(serverMessage || 'Il y a eu un problème lors de la génération du projet. Réessayez.')
   } finally {
     isGenerating.value = false
   }

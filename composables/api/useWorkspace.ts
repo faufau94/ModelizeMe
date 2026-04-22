@@ -1,5 +1,5 @@
 // ~/composables/useWorkspace.ts
-import {computed} from 'vue'
+import {computed, watch} from 'vue'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/vue-query'
 import type {Workspace} from '@/components/dataTable/data/schema'
 import {authClient, useSession} from '~/lib/auth-client'
@@ -9,7 +9,6 @@ export const useWorkspace = () => {
   const session = useSession()
   const queryClient = useQueryClient()
   const activeOrganizationId = computed(() => session.value?.data?.session?.activeOrganizationId)
-
 
   const selectedWorkspaceId = computed<string|null>(() => {
 
@@ -27,6 +26,32 @@ export const useWorkspace = () => {
       return null
     }
   })
+
+  // Sync session activeOrganizationId with URL workspaceId (e.g. after OAuth redirects)
+  watch(
+    [selectedWorkspaceId, activeOrganizationId],
+    async ([urlWorkspaceId, sessionOrgId]) => {
+      if (
+        urlWorkspaceId &&
+        sessionOrgId !== undefined &&
+        sessionOrgId !== null &&
+        urlWorkspaceId !== sessionOrgId
+      ) {
+        try {
+          await authClient.organization.setActive({ organizationId: urlWorkspaceId })
+          // Refetch all workspace-dependent data after org sync
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['activeMember'] }),
+            queryClient.invalidateQueries({ queryKey: ['workspace', urlWorkspaceId] }),
+            queryClient.invalidateQueries({ queryKey: ['workspaces'] }),
+          ])
+        } catch (e) {
+          console.warn('Failed to sync active organization:', e)
+        }
+      }
+    },
+    { immediate: true }
+  )
 
   const workspaceShareLink = computed(() => {
     if (!selectedWorkspaceId.value) return ''
@@ -182,10 +207,11 @@ export const useWorkspace = () => {
 
   // Add activeMember as a reactive query
   const { data: activeMember, isLoading: isLoadingActiveMember } = useQuery({
-    queryKey: ['activeMember'],
+    queryKey: computed(() => ['activeMember', selectedWorkspaceId.value]),
     queryFn: async () => {
       return await authClient.organization.getActiveMember().then(res => res.data)
-    }
+    },
+    enabled: computed(() => !!selectedWorkspaceId.value),
   })
 
   // Role-based computed properties

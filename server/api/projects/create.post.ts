@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(200),
+  generatedName: z.string().min(1).max(255),
   description: z.string().max(1000).optional(),
   framework: z.string().min(1),
   orm: z.string().min(1),
@@ -23,6 +24,7 @@ export default defineEventHandler(async (event) => {
   return await prisma.generatedProject.create({
     data: {
       name: data.name,
+      generatedName: data.generatedName,
       description: data.description,
       framework: data.framework,
       orm: data.orm,

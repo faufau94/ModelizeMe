@@ -132,16 +132,16 @@ services:
       - modelizeme
 
   # ─── MailHog (dev only) ──────────────────
-  mailhog:
-    image: mailhog/mailhog:latest
-    restart: unless-stopped
-    ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
-    networks:
-      - modelizeme
-    profiles:
-      - dev
+  # mailhog:
+  #   image: mailhog/mailhog:latest
+  #   restart: unless-stopped
+  #   ports:
+  #     - "1025:1025"   # SMTP
+  #     - "8025:8025"   # Web UI
+  #   networks:
+  #     - modelizeme
+  #   profiles:
+  #     - dev
 
   # ─── phpMyAdmin (dev only) ───────────────
   phpmyadmin:
