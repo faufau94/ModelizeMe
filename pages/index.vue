@@ -64,8 +64,16 @@ const tabContent = {
 
 const currentTab = computed(() => tabContent[activeTab.value])
 
-const frameworks = ['Laravel', 'Symfony', 'Django', 'Next.js', 'Nuxt']
-const orms = ['Prisma', 'TypeORM', 'SQLAlchemy', 'Doctrine', 'Eloquent']
+const frameworks = [
+  { name: 'Django', soon: false },
+  { name: 'Laravel', soon: false },
+  { name: 'Nuxt', soon: false },
+  { name: 'Next.js', soon: true },
+  { name: 'Symfony', soon: true },
+  { name: 'Rails', soon: true },
+  { name: 'Spring Boot', soon: true },
+]
+const orms = ['Prisma', 'TypeORM', 'SQLAlchemy', 'Doctrine', 'Eloquent', 'Django ORM']
 const databases = ['MySQL', 'PostgreSQL', 'SQLite']
 
 const features = [
@@ -85,7 +93,7 @@ const features = [
     icon: Sparkles,
     title: 'Génération multi-stack',
     description:
-      'Exportez migrations, modèles ORM et structure de projet. 5 frameworks, 5 ORM, 3 bases, toutes les combinaisons possibles.',
+      'Exportez migrations, modèles ORM et structure de projet. 3 frameworks déjà supportés, 6 ORM, 3 bases, et plus arrivent.',
   },
   {
     icon: Download,
@@ -125,7 +133,7 @@ const steps = [
   {
     num: '03',
     title: 'Génère',
-    description: 'Choisissez framework, ORM, base. Téléchargez le ZIP ou poussez directement vers un nouveau repo GitHub.',
+    description: 'Choisissez framework, ORM, base. Téléchargez le ZIP ou poussez directement vers un nouveau repo GitHub ou GitLab.',
     accent: 'text-purple-500 dark:text-purple-400',
     bg: 'bg-purple-500/10 dark:bg-purple-400/10',
   },
@@ -133,15 +141,30 @@ const steps = [
 
 const plans = [
   {
-    name: 'Free',
+    name: 'Self-host',
     price: '0€',
-    period: '/mois',
-    tagline: 'Tout ce qu\'il faut pour modéliser, en solo.',
-    cta: 'Commencer',
+    period: 'à vie',
+    tagline: 'Toutes les fonctionnalités, sur vos machines.',
+    cta: 'Voir le guide Docker',
     featured: false,
     features: [
-      { label: '3 modèles, entités illimitées', included: true },
-      { label: 'Pipeline MCD → MLD → MPD complet', included: true },
+      { label: 'Tout, sans aucune limite', included: true },
+      { label: 'Vos données restent chez vous', included: true },
+      { label: 'Licence MIT, forkable', included: true },
+      { label: 'Docker Compose en 30 secondes', included: true },
+      { label: 'À vous de gérer l\'infra', included: true },
+    ],
+  },
+  {
+    name: 'Cloud Free',
+    price: '0€',
+    period: '/mois',
+    tagline: 'Pour découvrir sans installer quoi que ce soit.',
+    cta: 'Créer un compte',
+    featured: false,
+    features: [
+      { label: '3 modèles actifs', included: true },
+      { label: 'Pipeline MCD → MLD → MPD', included: true },
       { label: 'Export PNG / SVG / JSON', included: true },
       { label: 'Import depuis SQL', included: true },
       { label: 'Génération de code', included: false },
@@ -149,38 +172,116 @@ const plans = [
     ],
   },
   {
-    name: 'Pro',
-    price: '12€',
+    name: 'Cloud Pro',
+    price: '9€',
     period: '/mois',
-    tagline: 'Illimité pour les devs solos et freelances.',
-    cta: 'Essai 14 jours',
+    tagline: 'Pour les indépendants qui veulent zéro infra.',
+    cta: 'Commencer',
     featured: true,
     features: [
       { label: 'Modèles illimités', included: true },
-      { label: 'Génération de code pour toutes les stacks', included: true },
-      { label: 'Push vers GitHub / GitLab', included: true },
-      { label: 'Historique des versions', included: true },
-      { label: 'Templates de galerie', included: true },
-      { label: 'Support prioritaire', included: true },
+      { label: 'Génération de code complète', included: true },
+      { label: 'Push vers GitHub & GitLab', included: true },
+      { label: 'Sauvegardes automatiques', included: true },
+      { label: 'Maintenance & mises à jour gérées', included: true },
     ],
   },
   {
-    name: 'Team',
-    price: '39€',
+    name: 'Cloud Team',
+    price: '19€',
     period: '/siège',
-    tagline: 'Collaboration temps réel pour petites équipes.',
+    tagline: 'Pour les équipes qui modélisent ensemble.',
     cta: 'Rejoindre la beta',
     featured: false,
     features: [
-      { label: 'Tout ce qu\'il y a dans Pro', included: true },
+      { label: 'Tout Cloud Pro', included: true },
       { label: 'Workspaces & équipes', included: true },
-      { label: 'Curseurs live & présence', included: true },
+      { label: 'Collaboration temps réel', included: true },
       { label: 'Permissions par rôle', included: true },
-      { label: 'Commentaires & annotations', included: true },
-      { label: 'SSO (bientôt)', included: true },
+      { label: 'Invitations illimitées', included: true },
     ],
   },
 ]
+
+const activeCodeTab = ref<'prisma' | 'sql' | 'typescript'>('prisma')
+
+type CodeLine = {
+  type: string
+  text?: string
+  name?: string
+  flagged?: string
+  ttype?: string
+  suffix?: string
+}
+
+const codeSamples: Record<'prisma' | 'sql' | 'typescript', { label: string; lines: CodeLine[] }> = {
+  prisma: {
+    label: 'schema.prisma',
+    lines: [
+      { type: 'comment', text: '// auto-généré depuis votre MPD' },
+      { type: 'blank' },
+      { type: 'model', text: 'User' },
+      { type: 'field', name: 'id', flagged: 'Int', suffix: '@id @default(autoincrement())' },
+      { type: 'field', name: 'email', flagged: 'String', suffix: '@unique @db.VarChar(255)' },
+      { type: 'field', name: 'name', flagged: 'String', suffix: '@db.VarChar(120)' },
+      { type: 'field', name: 'orders', flagged: 'Order[]', suffix: '' },
+      { type: 'field', name: 'created_at', flagged: 'DateTime', suffix: '@default(now())' },
+      { type: 'field', name: 'updated_at', flagged: 'DateTime', suffix: '@updatedAt' },
+      { type: 'close' },
+      { type: 'blank' },
+      { type: 'model', text: 'Order' },
+      { type: 'field', name: 'id', flagged: 'Int', suffix: '@id @default(autoincrement())' },
+      { type: 'field', name: 'user_id', flagged: 'Int', suffix: '' },
+      { type: 'field', name: 'user', flagged: 'User', suffix: '@relation(fields: [user_id], references: [id])' },
+      { type: 'field', name: 'total', flagged: 'Decimal', suffix: '@db.Decimal(10, 2)' },
+      { type: 'close' },
+    ],
+  },
+  sql: {
+    label: 'migration.sql',
+    lines: [
+      { type: 'comment', text: '-- auto-généré · MySQL 8' },
+      { type: 'blank' },
+      { type: 'sql-create', name: 'users' },
+      { type: 'sql-col', name: 'id', ttype: 'BIGINT', suffix: 'AUTO_INCREMENT PRIMARY KEY' },
+      { type: 'sql-col', name: 'email', ttype: 'VARCHAR(255)', suffix: 'NOT NULL UNIQUE' },
+      { type: 'sql-col', name: 'name', ttype: 'VARCHAR(120)', suffix: 'NOT NULL' },
+      { type: 'sql-col', name: 'created_at', ttype: 'TIMESTAMP', suffix: 'DEFAULT CURRENT_TIMESTAMP' },
+      { type: 'sql-col', name: 'updated_at', ttype: 'TIMESTAMP', suffix: 'ON UPDATE CURRENT_TIMESTAMP' },
+      { type: 'close-sql' },
+      { type: 'blank' },
+      { type: 'sql-create', name: 'orders' },
+      { type: 'sql-col', name: 'id', ttype: 'BIGINT', suffix: 'AUTO_INCREMENT PRIMARY KEY' },
+      { type: 'sql-col', name: 'user_id', ttype: 'BIGINT', suffix: 'NOT NULL' },
+      { type: 'sql-col', name: 'total', ttype: 'DECIMAL(10,2)', suffix: 'NOT NULL' },
+      { type: 'sql-fk', text: 'FOREIGN KEY (user_id) REFERENCES users(id)' },
+      { type: 'close-sql' },
+    ],
+  },
+  typescript: {
+    label: 'User.ts',
+    lines: [
+      { type: 'comment', text: '// modèle TypeORM généré' },
+      { type: 'blank' },
+      { type: 'ts-import', text: 'import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from \'typeorm\'' },
+      { type: 'ts-import', text: 'import { Order } from \'./Order\'' },
+      { type: 'blank' },
+      { type: 'ts-decorator', text: '@Entity(\'users\')' },
+      { type: 'ts-class', text: 'export class User {' },
+      { type: 'ts-deco-inline', text: '  @PrimaryGeneratedColumn()' },
+      { type: 'ts-prop', name: 'id', ttype: 'number' },
+      { type: 'blank' },
+      { type: 'ts-deco-inline', text: '  @Column({ unique: true, length: 255 })' },
+      { type: 'ts-prop', name: 'email', ttype: 'string' },
+      { type: 'blank' },
+      { type: 'ts-deco-inline', text: '  @OneToMany(() => Order, o => o.user)' },
+      { type: 'ts-prop', name: 'orders', ttype: 'Order[]' },
+      { type: 'close' },
+    ],
+  },
+}
+
+const currentCode = computed(() => codeSamples[activeCodeTab.value])
 
 const workspaceUrl = computed(() => {
   const orgId = (data.value as any)?.session?.activeOrganizationId
@@ -194,10 +295,26 @@ const workspaceUrl = computed(() => {
     <header class="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
       <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-6">
         <NuxtLink to="/" class="flex items-center gap-2.5">
-          <span class="relative inline-block h-7 w-7 rounded-lg"
-                style="background:conic-gradient(from 200deg, hsl(217 91% 60%), hsl(262 83% 68%), hsl(158 64% 52%), hsl(217 91% 60%));">
-            <span class="absolute inset-[3px] flex items-center justify-center rounded-[5px] bg-background">
-              <span class="h-1.5 w-1.5 rounded-sm bg-foreground" />
+          <span
+            class="relative inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-mono text-[11px] font-bold text-primary-foreground shadow-sm"
+            aria-hidden="true"
+          >
+            <span class="flex flex-col leading-none">
+              <span class="flex">
+                <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
+                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+              </span>
+              <span class="mt-0.5 flex">
+                <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
+                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+              </span>
+              <span class="mt-0.5 flex">
+                <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
+              </span>
             </span>
           </span>
           <span class="font-semibold tracking-tight">ModelizeMe</span>
@@ -275,7 +392,7 @@ const workspaceUrl = computed(() => {
 
             <h1 class="mt-6 text-5xl font-semibold leading-[1.05] tracking-tighter sm:text-6xl md:text-7xl">
               Modélisez vos données.<br />
-              <span class="text-muted-foreground">Générez</span>
+              <span class="text-muted-foreground">Générez </span>
               <span class="italic text-primary" style="font-family: 'Merriweather', serif;">votre stack.</span>
             </h1>
 
@@ -297,7 +414,6 @@ const workspaceUrl = computed(() => {
               <Button variant="outline" size="lg" class="gap-2" as="a" href="https://github.com">
                 <Github class="h-4 w-4" />
                 Voir sur GitHub
-                <Badge variant="secondary" class="ml-1 font-mono text-xs">★ 2.4k</Badge>
               </Button>
               <Button variant="ghost" size="lg" class="gap-2 text-muted-foreground">
                 <Play class="h-4 w-4" />
@@ -323,69 +439,55 @@ const workspaceUrl = computed(() => {
             <div class="pointer-events-none absolute -inset-6 bg-gradient-to-br from-blue-500/20 via-primary/20 to-purple-500/20 opacity-60 blur-3xl" />
             <Card class="relative space-y-4 border-border/60 bg-card/60 p-5 backdrop-blur">
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="relative flex h-2 w-2">
-                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                    <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                  </span>
-                  <span class="font-mono text-xs text-muted-foreground">live sur modelize.me</span>
+                <div class="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+                  <Workflow class="h-3.5 w-3.5" />
+                  exemple de pipeline
                 </div>
-                <Badge variant="secondary" class="font-mono text-[10px]">temps réel</Badge>
+                <Badge variant="outline" class="font-mono text-[10px]">MCD</Badge>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <div class="rounded-lg border border-border/60 bg-background/40 p-3">
-                  <div class="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    <span class="h-1.5 w-1.5 rounded-full bg-blue-500" />Modèles
+              <!-- Mini diagram -->
+              <div class="relative h-48 overflow-hidden rounded-lg border border-border/60 bg-background/60 p-3">
+                <div class="absolute left-3 top-3 rounded-md border border-blue-500/30 bg-blue-500/5 px-2.5 py-1.5 font-mono text-[10px]">
+                  <div class="flex items-center gap-1.5 font-semibold">
+                    <span class="h-1.5 w-1.5 rounded-full bg-blue-500" />USER
                   </div>
-                  <div class="mt-2 text-2xl font-semibold">12 480</div>
-                  <div class="mt-0.5 font-mono text-[10px] text-emerald-500">+248 cette semaine</div>
-                </div>
-                <div class="rounded-lg border border-border/60 bg-background/40 p-3">
-                  <div class="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                    <span class="h-1.5 w-1.5 rounded-full bg-purple-500" />Projets générés
+                  <div class="mt-1 space-y-0.5 text-muted-foreground">
+                    <div>🔑 id</div>
+                    <div>email</div>
                   </div>
-                  <div class="mt-2 text-2xl font-semibold">3 210</div>
-                  <div class="mt-0.5 font-mono text-[10px] text-emerald-500">+87 aujourd'hui</div>
                 </div>
+
+                <div class="absolute right-3 top-8 rounded-md border border-blue-500/30 bg-blue-500/5 px-2.5 py-1.5 font-mono text-[10px]">
+                  <div class="flex items-center gap-1.5 font-semibold">
+                    <span class="h-1.5 w-1.5 rounded-full bg-blue-500" />ORDER
+                  </div>
+                  <div class="mt-1 space-y-0.5 text-muted-foreground">
+                    <div>🔑 id</div>
+                    <div>total</div>
+                  </div>
+                </div>
+
+                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md border border-blue-500/30 bg-blue-500/5 px-2.5 py-1.5 font-mono text-[10px]">
+                  <div class="flex items-center gap-1.5 font-semibold">
+                    <span class="h-1.5 w-1.5 rounded-full bg-blue-500" />PRODUCT
+                  </div>
+                  <div class="mt-1 text-muted-foreground">🔑 id · sku</div>
+                </div>
+
+                <svg class="absolute inset-0 h-full w-full" viewBox="0 0 400 192" fill="none">
+                  <path d="M90 38 Q 180 40 270 50" stroke="hsl(217 91% 60%)" stroke-width="1.5" fill="none" />
+                  <path d="M90 60 Q 160 130 180 150" stroke="hsl(217 91% 60%)" stroke-width="1.5" fill="none" />
+                  <path d="M285 80 Q 280 130 240 150" stroke="hsl(217 91% 60%)" stroke-width="1.5" fill="none" />
+                </svg>
               </div>
 
-              <Separator />
-
-              <div class="space-y-2">
-                <p class="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">Activité récente</p>
-                <div class="space-y-2 text-xs">
-                  <div class="flex items-center gap-2">
-                    <Avatar class="h-6 w-6">
-                      <AvatarFallback class="flex h-full w-full items-center justify-center bg-blue-500 text-[10px] text-white">SM</AvatarFallback>
-                    </Avatar>
-                    <span class="text-muted-foreground">
-                      <span class="text-foreground">Samira</span> a généré
-                      <Badge variant="outline" class="mx-0.5 font-mono text-[10px]">laravel</Badge>
-                    </span>
-                    <span class="ml-auto font-mono text-[10px] text-muted-foreground">2s</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Avatar class="h-6 w-6">
-                      <AvatarFallback class="flex h-full w-full items-center justify-center bg-emerald-500 text-[10px] text-white">JD</AvatarFallback>
-                    </Avatar>
-                    <span class="text-muted-foreground">
-                      <span class="text-foreground">Jude</span> a dérivé
-                      <Badge variant="outline" class="mx-0.5 font-mono text-[10px]">MPD</Badge>
-                    </span>
-                    <span class="ml-auto font-mono text-[10px] text-muted-foreground">14s</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Avatar class="h-6 w-6">
-                      <AvatarFallback class="flex h-full w-full items-center justify-center bg-purple-500 text-[10px] text-white">AO</AvatarFallback>
-                    </Avatar>
-                    <span class="text-muted-foreground">
-                      <span class="text-foreground">Amina</span> a pushé vers
-                      <Badge variant="outline" class="mx-0.5 font-mono text-[10px]">github</Badge>
-                    </span>
-                    <span class="ml-auto font-mono text-[10px] text-muted-foreground">42s</span>
-                  </div>
-                </div>
+              <div class="flex items-center justify-between font-mono text-[10px] text-muted-foreground">
+                <span>3 entités · 3 relations</span>
+                <span class="inline-flex items-center gap-1.5">
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  auto-layout
+                </span>
               </div>
             </Card>
           </div>
@@ -615,29 +717,6 @@ const workspaceUrl = computed(() => {
         </div>
       </section>
 
-      <!-- ============================== METRICS ============================== -->
-      <section class="border-y border-border bg-muted/30">
-        <div class="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-10 md:grid-cols-4 lg:px-6">
-          <div>
-            <div class="text-4xl font-semibold tracking-tight">12 480</div>
-            <div class="mt-1 font-mono text-xs uppercase tracking-wider text-muted-foreground">modèles créés</div>
-          </div>
-          <div>
-            <div class="text-4xl font-semibold tracking-tight">3 210</div>
-            <div class="mt-1 font-mono text-xs uppercase tracking-wider text-muted-foreground">projets générés</div>
-          </div>
-          <div>
-            <div class="text-4xl font-semibold tracking-tight">58</div>
-            <div class="mt-1 font-mono text-xs uppercase tracking-wider text-muted-foreground">contributeurs</div>
-          </div>
-          <div>
-            <div class="text-4xl font-semibold tracking-tight">
-              2.4k<span class="text-emerald-500">★</span>
-            </div>
-            <div class="mt-1 font-mono text-xs uppercase tracking-wider text-muted-foreground">sur GitHub</div>
-          </div>
-        </div>
-      </section>
 
       <!-- ============================== FEATURES ============================== -->
       <section id="features" class="py-24 md:py-32">
@@ -651,22 +730,25 @@ const workspaceUrl = computed(() => {
               </h2>
             </div>
             <p class="max-w-md leading-relaxed text-muted-foreground">
-              Conçu par des devs, pour des devs. Chaque fonctionnalité gagne sa place sur le canvas, sans fluff ni upsell.
+              Des outils pensés pour accompagner votre modélisation, de la première entité à la mise en production.
             </p>
           </div>
 
-          <div class="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-2 lg:grid-cols-3">
-            <div
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card
               v-for="feature in features"
               :key="feature.title"
-              class="group bg-card p-8 transition-colors hover:bg-accent/30"
+              class="group relative overflow-hidden border-border/60 p-7 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
             >
-              <div class="mb-5 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted/50">
-                <component :is="feature.icon" class="h-5 w-5 text-primary" />
+              <div class="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/0 via-primary/0 to-primary/0 opacity-0 transition-opacity duration-300 group-hover:from-primary/[0.03] group-hover:to-primary/[0.08] group-hover:opacity-100" />
+              <div class="relative">
+                <div class="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-muted/40 transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
+                  <component :is="feature.icon" class="h-5 w-5 text-primary" />
+                </div>
+                <h3 class="mb-2 text-lg font-semibold tracking-tight">{{ feature.title }}</h3>
+                <p class="text-sm leading-relaxed text-muted-foreground">{{ feature.description }}</p>
               </div>
-              <h3 class="mb-2 text-xl font-semibold">{{ feature.title }}</h3>
-              <p class="text-sm leading-relaxed text-muted-foreground">{{ feature.description }}</p>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
@@ -690,14 +772,50 @@ const workspaceUrl = computed(() => {
               class="relative overflow-hidden border-border/60"
             >
               <CardContent class="p-6">
-                <div class="mb-6 flex items-center justify-between">
-                  <span class="font-mono text-[11px] text-muted-foreground">ÉTAPE {{ step.num }}</span>
-                  <span :class="['text-4xl font-semibold', step.accent]">{{ step.num }}</span>
+                <div class="mb-6 flex items-center gap-2">
+                  <span :class="['flex h-7 w-7 items-center justify-center rounded-md font-mono text-xs font-semibold', step.bg, step.accent]">
+                    {{ step.num }}
+                  </span>
+                  <span class="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">Étape {{ step.num }}</span>
                 </div>
-                <h3 class="mb-2 text-2xl font-semibold">{{ step.title }}</h3>
+                <h3 class="mb-2 text-2xl font-semibold tracking-tight">{{ step.title }}</h3>
                 <p class="mb-6 text-sm leading-relaxed text-muted-foreground">{{ step.description }}</p>
-                <div :class="['flex h-36 items-center justify-center rounded-lg border border-border/60', step.bg]">
-                  <span :class="['font-mono text-5xl font-bold opacity-30', step.accent]">{{ step.num }}</span>
+
+                <!-- Step-specific visual -->
+                <div :class="['flex h-36 items-center justify-center rounded-lg border border-border/60 p-3', step.bg]">
+                  <!-- Step 01: 2 entities being connected -->
+                  <div v-if="step.num === '01'" class="flex w-full items-center justify-around">
+                    <div class="rounded border border-border/60 bg-card/80 px-2 py-1.5 text-[10px] font-mono">
+                      <div class="font-semibold">USER</div>
+                      <div class="text-muted-foreground">id · email</div>
+                    </div>
+                    <svg width="40" height="16" viewBox="0 0 40 16" fill="none" class="shrink-0">
+                      <path d="M2 8 H38" :stroke="'currentColor'" stroke-width="1.5" stroke-dasharray="4 3" :class="step.accent" />
+                      <text x="12" y="6" font-size="7" fill="currentColor" class="text-muted-foreground">1,N</text>
+                    </svg>
+                    <div class="rounded border border-border/60 bg-card/80 px-2 py-1.5 text-[10px] font-mono">
+                      <div class="font-semibold">ORDER</div>
+                      <div class="text-muted-foreground">id · total</div>
+                    </div>
+                  </div>
+
+                  <!-- Step 02: MCD → MLD → MPD -->
+                  <div v-else-if="step.num === '02'" class="flex w-full items-center justify-around gap-1 font-mono text-[10px]">
+                    <div class="rounded border border-blue-500/40 bg-blue-500/10 px-2 py-1.5 font-semibold text-blue-500 dark:text-blue-400">MCD</div>
+                    <ArrowRight class="h-3 w-3 text-muted-foreground" />
+                    <div class="rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-1.5 font-semibold text-emerald-500 dark:text-emerald-400">MLD</div>
+                    <ArrowRight class="h-3 w-3 text-muted-foreground" />
+                    <div class="rounded border border-purple-500/40 bg-purple-500/10 px-2 py-1.5 font-semibold text-purple-500 dark:text-purple-400">MPD</div>
+                  </div>
+
+                  <!-- Step 03: terminal-like output -->
+                  <div v-else class="w-full space-y-0.5 font-mono text-[10px] leading-relaxed">
+                    <div class="text-muted-foreground">$ modelize generate</div>
+                    <div><span class="text-emerald-500">✓</span> <span class="text-muted-foreground">schema.prisma</span></div>
+                    <div><span class="text-emerald-500">✓</span> <span class="text-muted-foreground">migrations/0001_init.sql</span></div>
+                    <div><span class="text-emerald-500">✓</span> <span class="text-muted-foreground">models/User.ts · Order.ts</span></div>
+                    <div class="text-muted-foreground/70">prêt en 2.1s</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -723,9 +841,15 @@ const workspaceUrl = computed(() => {
                 <div>
                   <p class="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Frameworks</p>
                   <div class="flex flex-wrap gap-2">
-                    <Badge v-for="f in frameworks" :key="f" variant="outline">{{ f }}</Badge>
-                    <Badge variant="outline" class="opacity-50">Spring Boot · bientôt</Badge>
-                    <Badge variant="outline" class="opacity-50">Rails · bientôt</Badge>
+                    <Badge
+                      v-for="f in frameworks"
+                      :key="f.name"
+                      variant="outline"
+                      :class="f.soon && 'opacity-50'"
+                    >
+                      {{ f.name }}
+                      <span v-if="f.soon" class="ml-1.5 text-[10px] text-muted-foreground">· bientôt</span>
+                    </Badge>
                   </div>
                 </div>
                 <div>
@@ -748,52 +872,82 @@ const workspaceUrl = computed(() => {
             <div class="lg:col-span-7">
               <Card class="overflow-hidden border-border/60 shadow-xl">
                 <div class="flex items-center border-b border-border/60 bg-muted/40">
-                  <button class="border-r border-border/60 bg-background px-4 py-2.5 font-mono text-xs">
-                    schema.prisma
-                  </button>
-                  <button class="border-r border-border/60 px-4 py-2.5 font-mono text-xs text-muted-foreground hover:text-foreground">
-                    migration.sql
-                  </button>
-                  <button class="border-r border-border/60 px-4 py-2.5 font-mono text-xs text-muted-foreground hover:text-foreground">
-                    User.ts
+                  <button
+                    v-for="(sample, key) in codeSamples"
+                    :key="key"
+                    class="border-r border-border/60 px-4 py-2.5 font-mono text-xs transition-colors"
+                    :class="activeCodeTab === key
+                      ? 'bg-background text-foreground'
+                      : 'text-muted-foreground hover:text-foreground'"
+                    @click="activeCodeTab = key as 'prisma' | 'sql' | 'typescript'"
+                  >
+                    {{ sample.label }}
                   </button>
                   <div class="ml-auto flex items-center gap-2 px-3 font-mono text-[11px] text-muted-foreground">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" />généré
+                    <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />généré
                   </div>
                 </div>
-                <pre class="overflow-x-auto bg-background p-5 font-mono text-[12.5px] leading-relaxed"><code><span class="text-muted-foreground">// auto-généré depuis votre MPD · ne pas éditer</span>
-<span class="text-purple-500 dark:text-purple-400">model</span> <span class="font-semibold">User</span> {
-  <span class="text-blue-500 dark:text-blue-400">id</span>          <span class="text-emerald-500 dark:text-emerald-400">Int</span>      <span class="text-muted-foreground">@id @default(autoincrement())</span>
-  <span class="text-blue-500 dark:text-blue-400">email</span>       <span class="text-emerald-500 dark:text-emerald-400">String</span>   <span class="text-muted-foreground">@unique @db.VarChar(255)</span>
-  <span class="text-blue-500 dark:text-blue-400">name</span>        <span class="text-emerald-500 dark:text-emerald-400">String</span>   <span class="text-muted-foreground">@db.VarChar(120)</span>
-  <span class="text-blue-500 dark:text-blue-400">orders</span>      <span class="text-emerald-500 dark:text-emerald-400">Order[]</span>
-  <span class="text-blue-500 dark:text-blue-400">addresses</span>   <span class="text-emerald-500 dark:text-emerald-400">Address[]</span>
-  <span class="text-blue-500 dark:text-blue-400">created_at</span>  <span class="text-emerald-500 dark:text-emerald-400">DateTime</span> <span class="text-muted-foreground">@default(now())</span>
-  <span class="text-blue-500 dark:text-blue-400">updated_at</span>  <span class="text-emerald-500 dark:text-emerald-400">DateTime</span> <span class="text-muted-foreground">@updatedAt</span>
-  <span class="text-blue-500 dark:text-blue-400">deleted_at</span>  <span class="text-emerald-500 dark:text-emerald-400">DateTime?</span>
-}
 
-<span class="text-purple-500 dark:text-purple-400">model</span> <span class="font-semibold">Order</span> {
-  <span class="text-blue-500 dark:text-blue-400">id</span>          <span class="text-emerald-500 dark:text-emerald-400">Int</span>      <span class="text-muted-foreground">@id @default(autoincrement())</span>
-  <span class="text-blue-500 dark:text-blue-400">user_id</span>     <span class="text-emerald-500 dark:text-emerald-400">Int</span>
-  <span class="text-blue-500 dark:text-blue-400">user</span>        <span class="text-emerald-500 dark:text-emerald-400">User</span>     <span class="text-muted-foreground">@relation(fields: [user_id], references: [id])</span>
-  <span class="text-blue-500 dark:text-blue-400">status</span>      <span class="text-emerald-500 dark:text-emerald-400">OrderStatus</span>
-  <span class="text-blue-500 dark:text-blue-400">total</span>       <span class="text-emerald-500 dark:text-emerald-400">Decimal</span>  <span class="text-muted-foreground">@db.Decimal(10, 2)</span>
-  <span class="text-blue-500 dark:text-blue-400">products</span>    <span class="text-emerald-500 dark:text-emerald-400">OrderProduct[]</span>
-}</code></pre>
+                <div class="min-h-[360px] overflow-x-auto bg-background p-5 font-mono text-[12.5px] leading-relaxed">
+                  <template v-for="(line, i) in currentCode.lines" :key="`${activeCodeTab}-${i}`">
+                    <div v-if="line.type === 'blank'" class="h-4" />
+                    <div v-else-if="line.type === 'comment'" class="text-muted-foreground">{{ line.text }}</div>
+
+                    <!-- Prisma -->
+                    <div v-else-if="line.type === 'model'">
+                      <span class="text-purple-500 dark:text-purple-400">model </span>
+                      <span class="font-semibold"> {{ line.text }} </span>
+                      <span>{</span>
+                    </div>
+                    <div v-else-if="line.type === 'field'" class="pl-4">
+                      <span class="text-blue-500 dark:text-blue-400">{{ line.name }}</span>
+                      <span class="text-emerald-500 dark:text-emerald-400"> {{ line.flagged }}</span>
+                      <span v-if="line.suffix" class="text-muted-foreground"> {{ line.suffix }}</span>
+                    </div>
+                    <div v-else-if="line.type === 'close'">}</div>
+
+                    <!-- SQL -->
+                    <div v-else-if="line.type === 'sql-create'">
+                      <span class="text-purple-500 dark:text-purple-400">CREATE TABLE </span>
+                      <span class="font-semibold"> {{ line.name }} </span>
+                      <span>(</span>
+                    </div>
+                    <div v-else-if="line.type === 'sql-col'" class="pl-4">
+                      <span class="text-blue-500 dark:text-blue-400">{{ line.name }}</span>
+                      <span class="text-emerald-500 dark:text-emerald-400"> {{ line.ttype }}</span>
+                      <span v-if="line.suffix" class="text-muted-foreground"> {{ line.suffix }}</span>
+                    </div>
+                    <div v-else-if="line.type === 'sql-fk'" class="pl-4 text-muted-foreground">{{ line.text }}</div>
+                    <div v-else-if="line.type === 'close-sql'">);</div>
+
+                    <!-- TypeScript -->
+                    <div v-else-if="line.type === 'ts-import'" class="text-muted-foreground">{{ line.text }}</div>
+                    <div v-else-if="line.type === 'ts-decorator'" class="text-purple-500 dark:text-purple-400">{{ line.text }}</div>
+                    <div v-else-if="line.type === 'ts-class'">
+                      <span class="text-purple-500 dark:text-purple-400">export class</span>
+                      <span class="font-semibold"> User </span>
+                      <span>{</span>
+                    </div>
+                    <div v-else-if="line.type === 'ts-deco-inline'" class="text-purple-500 dark:text-purple-400">{{ line.text }}</div>
+                    <div v-else-if="line.type === 'ts-prop'" class="pl-4">
+                      <span class="text-blue-500 dark:text-blue-400">{{ line.name }}</span>
+                      <span>: </span>
+                      <span class="text-emerald-500 dark:text-emerald-400">{{ line.ttype }}</span>
+                      <span>;</span>
+                    </div>
+                  </template>
+                </div>
+
                 <div class="flex items-center justify-between border-t border-border/60 bg-muted/40 px-4 py-3">
                   <div class="flex items-center gap-3 font-mono text-xs text-muted-foreground">
                     <kbd class="rounded border border-border/60 bg-background px-1.5 py-0.5 text-[10px] text-emerald-500">⌘⇧G</kbd>
-                    <span>régénérer</span>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Button variant="outline" size="sm">Copier</Button>
-                    <Button size="sm">
-                      <Download class="mr-1.5 h-3.5 w-3.5" />Télécharger ZIP
-                    </Button>
+                    <span>régénéré à chaque changement du modèle</span>
                   </div>
                 </div>
               </Card>
+              <p class="mt-3 text-center font-mono text-[11px] text-muted-foreground">
+                Exemple illustratif. Le code réel s'adapte à votre modèle complet.
+              </p>
             </div>
           </div>
         </div>
@@ -829,19 +983,13 @@ const workspaceUrl = computed(() => {
                 </div>
               </div>
 
-              <!-- Comment bubble -->
-              <Card class="absolute right-6 top-10 max-w-[220px] border-border/60 p-3">
-                <div class="mb-1.5 flex items-center gap-2">
-                  <Avatar class="h-5 w-5 text-[9px]">
-                    <AvatarFallback class="flex h-full w-full items-center justify-center bg-purple-500 text-white">AO</AvatarFallback>
-                  </Avatar>
-                  <span class="text-xs font-medium">Amina</span>
-                  <span class="ml-auto font-mono text-[10px] text-muted-foreground">2s</span>
-                </div>
-                <p class="text-xs leading-snug text-muted-foreground">
-                  <span class="font-mono text-blue-500 dark:text-blue-400">stripe_id</span> devrait être nullable ? Le plan gratuit ne hit pas Stripe.
-                </p>
-              </Card>
+              <!-- Remote cursor label -->
+              <div class="absolute right-10 top-16 flex items-center gap-1.5">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M2 2 L14 8 L8 9 L10 14 L8 15 L6 10 L2 14 Z" fill="hsl(262 83% 68%)" stroke="white" stroke-width="1"/>
+                </svg>
+                <span class="rounded bg-purple-500 px-1.5 py-0.5 font-mono text-[10px] font-medium text-white">Léo</span>
+              </div>
 
               <!-- Presence -->
               <div class="absolute bottom-6 left-6 flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-3 py-1.5 text-xs backdrop-blur">
@@ -856,7 +1004,7 @@ const workspaceUrl = computed(() => {
                     <AvatarFallback class="flex h-full w-full items-center justify-center bg-emerald-500 text-white">JD</AvatarFallback>
                   </Avatar>
                   <Avatar class="h-5 w-5 border border-background text-[9px]">
-                    <AvatarFallback class="flex h-full w-full items-center justify-center bg-purple-500 text-white">AO</AvatarFallback>
+                    <AvatarFallback class="flex h-full w-full items-center justify-center bg-purple-500 text-white">LM</AvatarFallback>
                   </Avatar>
                 </div>
               </div>
@@ -870,7 +1018,7 @@ const workspaceUrl = computed(() => {
               <span class="italic text-blue-500 dark:text-blue-400" style="font-family: 'Merriweather', serif;">même diagramme.</span>
             </h2>
             <p class="mt-5 leading-relaxed text-muted-foreground">
-              Yjs CRDT, sync WebSocket, awareness par workspace. Voyez les curseurs en temps réel, éditez simultanément sans conflit, laissez des commentaires épinglés aux colonnes.
+              Yjs CRDT, sync WebSocket, awareness par workspace. Voyez les curseurs en temps réel, éditez simultanément sans conflit, tout reste cohérent même en cas de reconnexion.
             </p>
             <ul class="mt-8 space-y-3 text-sm">
               <li class="flex items-start gap-3">
@@ -887,7 +1035,7 @@ const workspaceUrl = computed(() => {
               </li>
               <li class="flex items-start gap-3">
                 <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                <span><span class="font-medium">Undo/redo collaboratif.</span> <span class="text-muted-foreground">Via Yjs UndoManager. Ctrl+Z, comme il faut.</span></span>
+                <span><span class="font-medium">Event sourcing et undo/redo.</span> <span class="text-muted-foreground">Chaque action est traçable, Ctrl+Z fiable.</span></span>
               </li>
             </ul>
           </div>
@@ -916,7 +1064,7 @@ const workspaceUrl = computed(() => {
                   <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   Licence MIT
                 </Badge>
-                <Badge variant="outline" class="px-3 py-2">58 contributeurs</Badge>
+                <Badge variant="outline" class="px-3 py-2">Docker Compose</Badge>
               </div>
             </div>
 
@@ -972,12 +1120,12 @@ const workspaceUrl = computed(() => {
             </p>
           </div>
 
-          <div class="grid gap-5 md:grid-cols-3">
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card
               v-for="plan in plans"
               :key="plan.name"
               :class="[
-                'relative p-7',
+                'relative flex flex-col p-6',
                 plan.featured
                   ? 'border-primary/40 bg-gradient-to-b from-primary/5 to-transparent shadow-xl shadow-primary/10'
                   : 'border-border/60',
@@ -985,30 +1133,38 @@ const workspaceUrl = computed(() => {
             >
               <div v-if="plan.featured" class="absolute -top-3 left-1/2 -translate-x-1/2">
                 <Badge class="bg-primary font-mono text-[11px] uppercase tracking-wider text-primary-foreground">
-                  Plus populaire
+                  Recommandé
                 </Badge>
               </div>
 
-              <div class="flex items-center justify-between">
-                <h3 class="text-xl font-semibold">{{ plan.name }}</h3>
-                <span class="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-                  {{ plan.name === 'Free' ? 'à vie' : plan.name === 'Pro' ? 'solo devs' : 'par siège' }}
-                </span>
+              <h3 class="text-lg font-semibold">{{ plan.name }}</h3>
+              <div class="mt-4 flex items-baseline gap-1">
+                <span class="text-4xl font-semibold tracking-tight">{{ plan.price }}</span>
+                <span class="text-xs text-muted-foreground">{{ plan.period }}</span>
               </div>
-              <div class="mt-5 flex items-baseline gap-1">
-                <span class="text-5xl font-semibold tracking-tight">{{ plan.price }}</span>
-                <span class="text-sm text-muted-foreground">{{ plan.period }}</span>
-              </div>
-              <p class="mt-2 text-sm text-muted-foreground">{{ plan.tagline }}</p>
+              <p class="mt-2 min-h-[2.5rem] text-sm text-muted-foreground">{{ plan.tagline }}</p>
 
               <Button
-                :variant="plan.featured ? 'default' : 'outline'"
-                class="mt-6 w-full"
+                v-if="plan.name === 'Self-host'"
+                :variant="'outline'"
+                class="mt-5 w-full"
+                size="sm"
+                as="a"
+                href="#opensource"
               >
                 {{ plan.cta }}
               </Button>
+              <NuxtLink v-else :to="data ? workspaceUrl : '/sign-up'" class="mt-5 w-full">
+                <Button
+                  :variant="plan.featured ? 'default' : 'outline'"
+                  class="w-full"
+                  size="sm"
+                >
+                  {{ plan.cta }}
+                </Button>
+              </NuxtLink>
 
-              <ul class="mt-7 space-y-3 text-sm">
+              <ul class="mt-6 flex-1 space-y-2.5 text-sm">
                 <li
                   v-for="feat in plan.features"
                   :key="feat.label"
@@ -1019,15 +1175,14 @@ const workspaceUrl = computed(() => {
                     class="mt-0.5 h-4 w-4 shrink-0 text-emerald-500"
                   />
                   <X v-else class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/60" />
-                  {{ feat.label }}
+                  <span>{{ feat.label }}</span>
                 </li>
               </ul>
             </Card>
           </div>
 
           <p class="mt-10 text-center text-sm text-muted-foreground">
-            Ou self-hostez tout, pour toujours, à <span class="font-medium text-foreground">0€</span>.
-            <a href="#opensource" class="underline underline-offset-4 hover:text-foreground">Voir le guide Docker →</a>
+            Pas sûr du plan ? Commencez par Cloud Free, aucune carte bancaire requise.
           </p>
         </div>
       </section>
@@ -1045,18 +1200,20 @@ const workspaceUrl = computed(() => {
           <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
             Arrêtez de retaper vos schémas entre le whiteboard, la migration et l'ORM. Modélisez une fois, générez pour toujours.
           </p>
-          <form
-            class="mx-auto mt-10 flex max-w-lg flex-col items-stretch gap-3 sm:flex-row"
-            @submit.prevent
-          >
-            <Input type="email" placeholder="vous@entreprise.com" class="flex-1 h-11" />
-            <Button type="submit" size="lg" class="gap-2">
-              Commencer gratuitement
-              <ArrowRight class="h-4 w-4" />
+          <div class="mx-auto mt-10 flex max-w-lg flex-col items-stretch justify-center gap-3 sm:flex-row">
+            <NuxtLink :to="data ? workspaceUrl : '/sign-up'" class="sm:flex-1">
+              <Button size="lg" class="w-full gap-2">
+                Créer un compte gratuit
+                <ArrowRight class="h-4 w-4" />
+              </Button>
+            </NuxtLink>
+            <Button variant="outline" size="lg" class="gap-2" as="a" href="#opensource">
+              <Github class="h-4 w-4" />
+              Self-host
             </Button>
-          </form>
+          </div>
           <p class="mt-4 font-mono text-xs text-muted-foreground">
-            Sans carte bleue · gratuit en self-host · cloud hébergé en UE
+            Sans carte bancaire · gratuit en self-host · cloud hébergé en UE
           </p>
         </div>
       </section>
@@ -1067,10 +1224,26 @@ const workspaceUrl = computed(() => {
       <div class="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-12 lg:px-6">
         <div class="md:col-span-5">
           <div class="flex items-center gap-2.5">
-            <span class="relative inline-block h-7 w-7 rounded-lg"
-                  style="background:conic-gradient(from 200deg, hsl(217 91% 60%), hsl(262 83% 68%), hsl(158 64% 52%), hsl(217 91% 60%));">
-              <span class="absolute inset-[3px] flex items-center justify-center rounded-[5px] bg-background">
-                <span class="h-1.5 w-1.5 rounded-sm bg-foreground" />
+            <span
+              class="relative inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-mono text-[11px] font-bold text-primary-foreground shadow-sm"
+              aria-hidden="true"
+            >
+              <span class="flex flex-col leading-none">
+                <span class="flex">
+                  <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
+                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                </span>
+                <span class="mt-0.5 flex">
+                  <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
+                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                </span>
+                <span class="mt-0.5 flex">
+                  <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
+                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
+                </span>
               </span>
             </span>
             <span class="font-semibold">ModelizeMe</span>
