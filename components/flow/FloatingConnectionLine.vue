@@ -21,10 +21,10 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue';
 import { Position, getBezierPath, getSimpleBezierPath, getStraightPath, getSmoothStepPath, connectionExists, useVueFlow } from '@vue-flow/core';
-import { useMCDStore } from '~/stores/mcd-store.js';
+import { useModelStore } from '~/stores/model-store.js';
 import { storeToRefs } from 'pinia';
 
-const mcdStore = useMCDStore();
+const mcdStore = useModelStore();
 const { edgePathStyle } = storeToRefs(mcdStore);
 
 const pathFunctions = {

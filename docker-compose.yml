@@ -101,7 +101,10 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - modelizeme
+      modelizeme:
+      modelizemoi:
+        aliases:
+          - modelizeme-app
     command: ["yarn", "dev"]
 
   # ─── WebSocket Server (y-websocket) ──────
@@ -129,16 +132,16 @@ services:
       - modelizeme
 
   # ─── MailHog (dev only) ──────────────────
-  mailhog:
-    image: mailhog/mailhog:latest
-    restart: unless-stopped
-    ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # Web UI
-    networks:
-      - modelizeme
-    profiles:
-      - dev
+  # mailhog:
+  #   image: mailhog/mailhog:latest
+  #   restart: unless-stopped
+  #   ports:
+  #     - "1025:1025"   # SMTP
+  #     - "8025:8025"   # Web UI
+  #   networks:
+  #     - modelizeme
+  #   profiles:
+  #     - dev
 
   # ─── phpMyAdmin (dev only) ───────────────
   phpmyadmin:
@@ -169,3 +172,6 @@ volumes:
 networks:
   modelizeme:
     driver: bridge
+  modelizemoi:
+    external: true
+    name: modelizemoi_network

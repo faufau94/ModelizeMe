@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
   // Verify user has access to ALL models (must be member of each model's workspace)
   const models = await prisma.model.findMany({
     where: { id: { in: ids } },
-    select: { id: true, workspaceId: true },
+    select: { id: true, workspaceId: true, authorId: true },
   })
 
   if (models.length !== ids.length) {
@@ -29,13 +29,28 @@ export default defineEventHandler(async (event) => {
       userId: session.user.id,
       organizationId: { in: workspaceIds },
     },
-    select: { organizationId: true },
+    select: { organizationId: true, role: true },
   })
 
-  const memberWorkspaceIds = new Set(memberships.map((m) => m.organizationId))
+  const membershipMap = new Map(memberships.map((m) => [m.organizationId, m.role]))
 
-  if (workspaceIds.some((wsId) => !memberWorkspaceIds.has(wsId))) {
+  // Check access to all workspaces
+  if (workspaceIds.some((wsId) => !membershipMap.has(wsId))) {
     throw createError({ statusCode: 403, message: "Vous n'avez pas accès à un ou plusieurs de ces modèles" })
+  }
+
+  // For each model, user must be owner/admin of workspace OR author of the model
+  for (const model of models) {
+    const role = membershipMap.get(model.workspaceId)
+    const isOwnerOrAdmin = role === "owner" || role === "admin"
+    const isAuthor = model.authorId === session.user.id
+
+    if (!isOwnerOrAdmin && !isAuthor) {
+      throw createError({
+        statusCode: 403,
+        message: "Vous ne pouvez supprimer que vos propres modèles ou ceux de vos workspaces en tant qu'admin",
+      })
+    }
   }
 
   const result = await prisma.model.deleteMany({

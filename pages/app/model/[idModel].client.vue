@@ -3,6 +3,60 @@
 
     <ElementMenu/>
 
+    <!-- Pane context menu (right-click on empty canvas) -->
+    <div
+      v-if="paneContextMenuOpen && activeTab === 'default'"
+      ref="paneContextMenuRef"
+      class="fixed z-50 min-w-[180px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+      :style="{ left: paneContextMenuPos.x + 'px', top: paneContextMenuPos.y + 'px' }"
+    >
+      <div class="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Actions</div>
+      <button class="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground w-full"
+              @click="addNodeAtPosition(); paneContextMenuOpen = false">
+        <Plus :size="16" /> Ajouter une table
+      </button>
+      <div class="h-px bg-border my-1" />
+      <button class="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground w-full"
+              @click="reorganize(); paneContextMenuOpen = false"
+              :disabled="isReorganizing">
+        <WandSparkles :size="16" /> Réorganiser
+      </button>
+      <button class="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground w-full"
+              @click="currentFlow?.fitView({ padding: 0.1, minZoom: 0.1 }); paneContextMenuOpen = false">
+        <Maximize2 :size="16" /> Centrer la vue
+      </button>
+      <div class="h-px bg-border my-1" />
+      <button class="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground w-full"
+              :class="{ 'opacity-40 pointer-events-none': !canUndo }"
+              @click="undoRedoStore.undo(route.params.idModel, mcdStore.emitEvent); paneContextMenuOpen = false">
+        <Undo2 :size="16" /> Annuler
+      </button>
+      <button class="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground w-full"
+              :class="{ 'opacity-40 pointer-events-none': !canRedo }"
+              @click="undoRedoStore.redo(route.params.idModel, mcdStore.emitEvent); paneContextMenuOpen = false">
+        <Redo2 :size="16" /> Rétablir
+      </button>
+    </div>
+
+    <!-- Multi-selection context menu (right-click on selected element) -->
+    <div
+      v-if="selectionContextMenuOpen && activeTab === 'default'"
+      ref="selectionContextMenuRef"
+      class="fixed z-50 min-w-[200px] rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
+      :style="{ left: selectionContextMenuPos.x + 'px', top: selectionContextMenuPos.y + 'px' }"
+    >
+      <div class="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+        {{ selectedElements.count }} élément{{ selectedElements.count > 1 ? 's' : '' }} sélectionné{{ selectedElements.count > 1 ? 's' : '' }}
+      </div>
+      <div class="h-px bg-border my-1" />
+      <button class="relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-destructive/10 hover:text-destructive w-full"
+              @click="deleteSelectedElements(); selectionContextMenuOpen = false">
+        <Trash2 :size="16" />
+        Supprimer
+        <span class="ml-auto text-xs text-muted-foreground">Del</span>
+      </button>
+    </div>
+
     <VueFlow
         v-if="isFlowReady"
         :id="getFlowId"
@@ -10,17 +64,18 @@
         :edgeTypes="edgeTypes"
         :nodeTypes="nodeTypes"
         :connection-radius="50"
+        :min-zoom="0.1"
+        :delete-key-code="null"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="(e) => onDrop(e, route.params.idModel)"
         @nodes-change="onChange"
         @edges-change="onChange"
-        @edge-update="onEdgeUpdate"
         @nodes-delete="onNodesDelete"
         @edges-delete="onEdgesDelete"
     >
       <MiniMap/>
-      <Controls :fit-view-params="{ padding: 0.4, includeHiddenNodes: false }"/>
+      <Controls :fit-view-params="{ padding: 0.1, includeHiddenNodes: false, minZoom: 0.1 }"/>
 
       <!-- Ternary selection mode banner -->
       <Panel v-if="isTernaryMode" position="top-center" class="z-50">
@@ -119,23 +174,22 @@
             </Tooltip>
           </TooltipProvider> -->
 
-          <Dialog v-model:open="isImportDialogOpen">
-            <DropdownMenu>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger as-child>
-                    <DropdownMenuTrigger as-child>
-                      <Button variant="ghost" size="sm" class="rounded-md">
-                        <EllipsisVertical :size="16"/>
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent class="bg-gray-900 text-white text-xs">
-                    <p>Plus d'options</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <DropdownMenuContent class="w-56" align="start">
+          <DropdownMenu>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <DropdownMenuTrigger as-child>
+                    <Button variant="ghost" size="sm" class="rounded-md">
+                      <EllipsisVertical :size="16"/>
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent class="bg-gray-900 text-white text-xs">
+                  <p>Plus d'options</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <DropdownMenuContent class="w-56" align="start">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuSeparator/>
 
@@ -146,29 +200,32 @@
 
                 <DropdownMenuSeparator/>
 
-                <DialogTrigger as-child>
-                  <DropdownMenuItem class="cursor-pointer">
-                    <Upload :size="16" class="mr-2"/>
-                    Importer...
-                  </DropdownMenuItem>
-                </DialogTrigger>
+                <DropdownMenuItem class="cursor-pointer" @click="isImportDialogOpen = true">
+                  <Upload :size="16" class="mr-2"/>
+                  Importer...
+                </DropdownMenuItem>
 
                 <DropdownMenuSub v-if="exportItems && exportItems.length > 0">
                   <DropdownMenuSubTrigger class="cursor-pointer">
                     <Download :size="16" class="mr-2"/>
-                    <span>Exporter</span>
+                    <span>Exporter en</span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem
-                        v-for="(item, index) in exportItems"
-                        :key="index"
-                        class="cursor-pointer"
-                        @click="item.action"
-                        :disabled="item.disabled"
-                      >
-                        <span>{{ item.title }}</span>
-                      </DropdownMenuItem>
+                    <DropdownMenuSubContent class="min-w-[160px]">
+                      <template v-for="(item, index) in exportItems" :key="index">
+                        <DropdownMenuSeparator v-if="item.type === 'separator'" />
+                        <DropdownMenuLabel v-else-if="item.type === 'label'" class="text-xs text-muted-foreground font-normal px-2 py-1">
+                          {{ item.title }}
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem
+                          v-else
+                          class="cursor-pointer"
+                          @click="item.action"
+                          :disabled="item.disabled"
+                        >
+                          <span>{{ item.title }}</span>
+                        </DropdownMenuItem>
+                      </template>
                     </DropdownMenuSubContent>
                   </DropdownMenuPortal>
                 </DropdownMenuSub>
@@ -198,79 +255,82 @@
                 </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
-            <DropFile menu-item="Importer un fichier" @toggle-dialog="isImportDialogOpen = !isImportDialogOpen" />
-          </Dialog>
         </div>
 
         <!-- Mobile-only: 3-dots menu -->
         <div class="flex md:hidden items-center space-x-0.5 flex-shrink-0">
-          <Dialog v-model:open="isImportDialogOpen">
-            <DropdownMenu dir="ltr">
-              <DropdownMenuTrigger as-child>
-                <Button variant="ghost" size="sm" class="rounded-md h-8 w-8 p-0">
-                  <EllipsisVertical :size="14"/>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent class="w-56" align="start">
-                <DropdownMenuItem class="cursor-pointer" @click="navigateTo({ path: `/app/workspace/${model?.workspaceId}/generator/new`, query: { modelId: route.params.idModel } })">
-                  <FolderCode :size="16" class="mr-2"/>
-                  Générer le projet...
-                </DropdownMenuItem>
-                <DropdownMenuSeparator/>
+          <DropdownMenu dir="ltr">
+            <DropdownMenuTrigger as-child>
+              <Button variant="ghost" size="sm" class="rounded-md h-8 w-8 p-0">
+                <EllipsisVertical :size="14"/>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="w-56" align="start">
+              <DropdownMenuItem class="cursor-pointer" @click="navigateTo({ path: `/app/workspace/${model?.workspaceId}/generator/new`, query: { modelId: route.params.idModel } })">
+                <FolderCode :size="16" class="mr-2"/>
+                Générer le projet...
+              </DropdownMenuItem>
+              <DropdownMenuSeparator/>
 
-                <DialogTrigger as-child>
-                  <DropdownMenuItem class="cursor-pointer">
-                    <Upload :size="16" class="mr-2"/>
-                    Importer...
-                  </DropdownMenuItem>
-                </DialogTrigger>
+              <DropdownMenuItem class="cursor-pointer" @click="isImportDialogOpen = true">
+                <Upload :size="16" class="mr-2"/>
+                Importer...
+              </DropdownMenuItem>
 
-                <DropdownMenuSub v-if="exportItems && exportItems.length > 0">
-                  <DropdownMenuSubTrigger class="cursor-pointer">
-                    <Download :size="16" class="mr-2"/>
-                    <span>Exporter</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent>
+              <DropdownMenuSub v-if="exportItems && exportItems.length > 0">
+                <DropdownMenuSubTrigger class="cursor-pointer">
+                  <Download :size="16" class="mr-2"/>
+                  <span>Exporter en</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent class="min-w-[160px]">
+                    <template v-for="(item, index) in exportItems" :key="index">
+                      <DropdownMenuSeparator v-if="item.type === 'separator'" />
+                      <DropdownMenuLabel v-else-if="item.type === 'label'" class="text-xs text-muted-foreground font-normal px-2 py-1">
+                        {{ item.title }}
+                      </DropdownMenuLabel>
                       <DropdownMenuItem
-                        v-for="(item, index) in exportItems"
-                        :key="index"
+                        v-else
                         class="cursor-pointer"
                         @click="item.action"
                         :disabled="item.disabled"
                       >
                         <span>{{ item.title }}</span>
                       </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-                <DropdownMenuSeparator/>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger class="cursor-pointer">
-                    <Workflow :size="16" class="mr-2"/>
-                    <span>Style des connecteurs</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent class="p-1">
-                      <DropdownMenuItem
-                        v-for="opt in edgeStyleOptions" :key="opt.value"
-                        class="cursor-pointer"
-                        :class="edgePathStyle === opt.value ? 'bg-primary/10 text-primary font-medium' : ''"
-                        @click="edgePathStyle = opt.value"
-                      >
-                        <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0 mr-2">
-                          <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
-                        </svg>
-                        {{ opt.label }}
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropFile menu-item="Importer un fichier" @toggle-dialog="isImportDialogOpen = !isImportDialogOpen" />
-          </Dialog>
+                    </template>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+              <DropdownMenuSeparator/>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger class="cursor-pointer">
+                  <Workflow :size="16" class="mr-2"/>
+                  <span>Style des connecteurs</span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent class="p-1">
+                    <DropdownMenuItem
+                      v-for="opt in edgeStyleOptions" :key="opt.value"
+                      class="cursor-pointer"
+                      :class="edgePathStyle === opt.value ? 'bg-primary/10 text-primary font-medium' : ''"
+                      @click="edgePathStyle = opt.value"
+                    >
+                      <svg width="24" height="12" viewBox="0 0 24 12" class="flex-shrink-0 mr-2">
+                        <path :d="opt.preview" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                      </svg>
+                      {{ opt.label }}
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+
+        <!-- Import dialog (shared between desktop & mobile) -->
+        <Dialog v-model:open="isImportDialogOpen">
+          <DropFile menu-item="Importer un fichier" @toggle-dialog="isImportDialogOpen = !isImportDialogOpen" />
+        </Dialog>
 
         <PricingDialog />
       </Panel>
@@ -383,7 +443,7 @@
                   variant="ghost"
                   size="sm"
                   class="rounded-md"
-                  @click="currentFlow?.fitView({ padding: 0.4 })"
+                  @click="currentFlow?.fitView({ padding: 0.1, minZoom: 0.1 })"
               >
                 <Maximize2 :size="16"/>
               </Button>
@@ -393,6 +453,69 @@
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+
+        <div class="relative" ref="searchContainerRef">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button variant="ghost" size="sm" class="rounded-md" @click="searchOpen = !searchOpen">
+                  <Search :size="16"/>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent v-if="!searchOpen" class="bg-gray-900 text-white text-xs">
+                <p>Rechercher (Ctrl+K)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <div v-if="searchOpen" class="absolute top-full left-0 mt-2 w-72 rounded-md border bg-popover text-popover-foreground shadow-lg z-50">
+            <div class="p-2">
+              <input
+                ref="searchInputRef"
+                v-model="searchQuery"
+                placeholder="Rechercher une table, un champ..."
+                class="flex h-8 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                @keydown.escape="searchOpen = false"
+                @keydown.enter="selectFirstResult"
+                @keydown.down.prevent="highlightNext"
+                @keydown.up.prevent="highlightPrev"
+              />
+            </div>
+            <div v-if="filteredSearchResults.length" class="max-h-[240px] overflow-y-auto border-t">
+              <div v-if="filteredNodes.length" class="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Tables</div>
+              <button
+                v-for="(item, i) in filteredNodes"
+                :key="item.id"
+                class="flex items-center gap-2 w-full px-3 py-1.5 text-sm hover:bg-accent cursor-pointer text-left"
+                :class="{ 'bg-accent': highlightedIndex === getGlobalIndex('node', i) }"
+                @click="focusOnElement(item); searchOpen = false; searchQuery = ''"
+              >
+                <PanelTop class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div class="min-w-0 flex-1">
+                  <span class="truncate block">{{ item.label }}</span>
+                  <span v-if="item.matchedField" class="text-[11px] text-muted-foreground truncate block">champ : {{ item.matchedField }}</span>
+                </div>
+                <span v-if="item.type === 'ternaryEntity'" class="text-[10px] text-muted-foreground shrink-0">ternaire</span>
+              </button>
+              <div v-if="filteredEdges.length" class="px-2 py-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider" :class="{ 'border-t': filteredNodes.length }">Relations</div>
+              <button
+                v-for="(item, i) in filteredEdges"
+                :key="item.id"
+                class="flex items-center gap-2 w-full px-3 py-1.5 text-sm hover:bg-accent cursor-pointer text-left"
+                :class="{ 'bg-accent': highlightedIndex === getGlobalIndex('edge', i) }"
+                @click="focusOnElement(item); searchOpen = false; searchQuery = ''"
+              >
+                <Link class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div class="min-w-0 flex-1">
+                  <span class="truncate block">{{ item.label }}</span>
+                  <span v-if="item.matchedField" class="text-[11px] text-muted-foreground truncate block">champ : {{ item.matchedField }}</span>
+                </div>
+              </button>
+            </div>
+            <div v-else-if="searchQuery.length > 0" class="px-3 py-4 text-sm text-center text-muted-foreground border-t">
+              Aucun résultat
+            </div>
+          </div>
+        </div>
 
         <Separator orientation="vertical" class="h-5 bg-border"/>
 
@@ -481,6 +604,24 @@
       </DropzoneBackground>
 
 
+      <!-- Multi-selection floating bar -->
+      <Panel v-if="selectedElements.count > 1 && activeTab === 'default'" position="bottom-center" class="z-50 mb-4">
+        <div class="bg-background/95 backdrop-blur-sm border border-border px-4 py-2 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-bottom-2 fade-in-0 duration-200">
+          <span class="text-sm font-medium text-foreground">
+            {{ selectedElements.count }} élément{{ selectedElements.count > 1 ? 's' : '' }}
+          </span>
+          <div class="h-4 w-px bg-border" />
+          <button
+            class="flex items-center gap-1.5 text-sm text-destructive hover:text-destructive/80 transition-colors cursor-pointer"
+            @click="deleteSelectedElements()"
+          >
+            <Trash2 :size="14" />
+            Supprimer
+          </button>
+          <kbd class="hidden sm:inline-flex items-center gap-0.5 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">Del</kbd>
+        </div>
+      </Panel>
+
       <template #connection-line="{ sourceX, sourceY, targetX, targetY, sourceNode }">
         <FloatingConnectionLine
           :from-node="sourceNode"
@@ -506,7 +647,7 @@
     </div>
     </div>
 
-    
+
   </div>
 
 </template>
@@ -523,13 +664,13 @@ import {Controls} from "@vue-flow/controls";
 import CustomEntity from "~/components/flow/MyCustomEntity.vue";
 import CustomEntityAssociation from "~/components/flow/MyCustomEntityAssociation.vue";
 import CustomEntityTernary from "~/components/flow/MyCustomEntityTernary.vue";
+import {useModelStore} from "~/stores/model-store.js";
 import {useMCDStore} from "~/stores/mcd-store.js";
-import {useMCDGenStore} from "~/stores/mcd-gen-store.js";
 import {useMLDStore} from "~/stores/mld-store.js";
 import {useMPDStore} from "~/stores/mpd-store.js";
 import useDragAndDrop from "~/utils/useDnd.js";
 import {storeToRefs} from "pinia";
-import {ArrowLeft, Check, Download, EllipsisVertical, FolderCode, Loader2, PanelTop, Plus, Redo2, Undo2, Upload, WandSparkles, Workflow, Maximize2} from "lucide-vue-next";
+import {ArrowLeft, Check, Download, EllipsisVertical, FolderCode, Loader2, PanelTop, Plus, Redo2, Undo2, Upload, WandSparkles, Workflow, Maximize2, Table2, Search, Link, Trash2, Copy} from "lucide-vue-next";
 import {Separator} from '@/components/ui/separator'
 import PricingDialog from "@/components/PricingDialog.vue";
 import {Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,} from '@/components/ui/dialog'
@@ -553,6 +694,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import DropFile from "@/components/flow/DropFile.vue";
 
 import {toTypedSchema} from "@vee-validate/zod";
@@ -563,7 +711,7 @@ import CreateGaleryTemplate from "@/components/flow/CreateGaleryTemplate.vue";
 import {useModel} from '@/composables/api/useModel'
 import {authClient} from '~/lib/auth-client'
 import ActiveUsersAvatars from '@/components/ActiveUsersAvatars.vue'
-import { useExportImport } from '@/composables/useExportImport';
+import { useExport } from '@/composables/useExport';
 import {toast} from "vue-sonner";
 
 const route = useRoute()
@@ -571,8 +719,8 @@ const router = useRouter()
 
 const model = ref(null)
 
-const mcdStore = useMCDStore()
-const mcdGenStore = useMCDGenStore()
+const mcdStore = useModelStore()
+const mcdGenStore = useMCDStore()
 const mldStore = useMLDStore()
 const mpdStore = useMPDStore()
 const {addNode} = mcdStore
@@ -587,6 +735,159 @@ const edgeStyleOptions = [
 ]
 
 const isImportDialogOpen = ref(false)
+
+// ─── Search (Ctrl+F) ───
+const searchOpen = ref(false)
+const searchQuery = ref('')
+const searchInputRef = ref(null)
+const highlightedIndex = ref(-1)
+
+const searchContainerRef = ref(null)
+
+// Auto-focus input when search opens
+watch(searchOpen, async (open) => {
+  if (open) {
+    highlightedIndex.value = -1
+    await nextTick()
+    searchInputRef.value?.focus()
+  } else {
+    searchQuery.value = ''
+  }
+})
+
+// Close search on click outside
+const closeSearchOnClickOutside = (e) => {
+  if (searchContainerRef.value && !searchContainerRef.value.contains(e.target)) {
+    searchOpen.value = false
+  }
+}
+watch(searchOpen, (open) => {
+  if (open) {
+    window.addEventListener('mousedown', closeSearchOnClickOutside)
+  } else {
+    window.removeEventListener('mousedown', closeSearchOnClickOutside)
+  }
+})
+
+// Reset highlight when query changes
+watch(searchQuery, () => { highlightedIndex.value = -1 })
+
+const searchableNodes = computed(() => {
+  // Use mcdFlowInstance directly — it's the editable model and always available
+  const nodes = mcdFlowInstance.getNodes?.value ?? []
+  return nodes.map(n => ({
+    id: n.id,
+    label: n.data?.name || 'Sans nom',
+    type: n.type,
+    kind: 'node',
+    fields: (n.data?.properties || []).map(p => p.propertyName).filter(Boolean),
+  }))
+})
+
+const searchableEdges = computed(() => {
+  const edges = mcdFlowInstance.getEdges?.value ?? []
+  const nodes = mcdFlowInstance.getNodes?.value ?? []
+  const nameOf = (id) => nodes.find(n => n.id === id)?.data?.name || '?'
+  return edges.map(e => ({
+    id: e.id,
+    label: e.data?.name
+      ? `${e.data.name} (${nameOf(e.source)} ↔ ${nameOf(e.target)})`
+      : `${nameOf(e.source)} ↔ ${nameOf(e.target)}`,
+    kind: 'edge',
+    source: e.source,
+    target: e.target,
+    fields: (e.data?.properties || []).map(p => p.propertyName).filter(Boolean),
+  }))
+})
+
+const filteredNodes = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim()
+  if (!q) return searchableNodes.value.map(n => ({ ...n, matchedField: null }))
+  return searchableNodes.value
+    .map(n => {
+      // Match on table name
+      if (n.label.toLowerCase().includes(q)) return { ...n, matchedField: null }
+      // Match on field name
+      const match = n.fields.find(f => f.toLowerCase().includes(q))
+      if (match) return { ...n, matchedField: match }
+      return null
+    })
+    .filter(Boolean)
+})
+
+const filteredEdges = computed(() => {
+  const q = searchQuery.value.toLowerCase().trim()
+  if (!q) return searchableEdges.value.map(e => ({ ...e, matchedField: null }))
+  return searchableEdges.value
+    .map(e => {
+      if (e.label.toLowerCase().includes(q)) return { ...e, matchedField: null }
+      const match = e.fields.find(f => f.toLowerCase().includes(q))
+      if (match) return { ...e, matchedField: match }
+      return null
+    })
+    .filter(Boolean)
+})
+
+const filteredSearchResults = computed(() => [...filteredNodes.value, ...filteredEdges.value])
+
+const getGlobalIndex = (kind, localIndex) => {
+  return kind === 'node' ? localIndex : filteredNodes.value.length + localIndex
+}
+
+const highlightNext = () => {
+  if (filteredSearchResults.value.length === 0) return
+  highlightedIndex.value = (highlightedIndex.value + 1) % filteredSearchResults.value.length
+}
+
+const highlightPrev = () => {
+  if (filteredSearchResults.value.length === 0) return
+  highlightedIndex.value = highlightedIndex.value <= 0
+    ? filteredSearchResults.value.length - 1
+    : highlightedIndex.value - 1
+}
+
+const selectFirstResult = () => {
+  const results = filteredSearchResults.value
+  const idx = highlightedIndex.value >= 0 ? highlightedIndex.value : 0
+  if (results[idx]) {
+    focusOnElement(results[idx])
+    searchOpen.value = false
+    searchQuery.value = ''
+  }
+}
+
+const focusOnElement = (item) => {
+  // Always use the editable flow instance — search items use its IDs
+  const allNodes = mcdFlowInstance.getNodes?.value ?? []
+  const allEdges = mcdFlowInstance.getEdges?.value ?? []
+  allNodes.forEach(n => { n.selected = false })
+  allEdges.forEach(e => { e.selected = false })
+
+  if (item.kind === 'node') {
+    const node = mcdFlowInstance.findNode(item.id)
+    if (node) {
+      node.selected = true
+      mcdFlowInstance.fitView({ nodes: [item.id], padding: 0.5, duration: 300, maxZoom: 1.5 })
+      nodeIdSelected.value = item.id
+      edgeIdSelected.value = null
+      isSubMenuVisible.value = true
+    }
+  } else if (item.kind === 'edge') {
+    const edge = mcdFlowInstance.findEdge(item.id)
+    if (edge) {
+      edge.selected = true
+      mcdFlowInstance.fitView({ nodes: [item.source, item.target], padding: 0.5, duration: 300, maxZoom: 1.5 })
+      edgeIdSelected.value = item.id
+      nodeIdSelected.value = null
+      isSubMenuVisible.value = true
+    }
+  }
+
+  // Switch back to editable tab if not already there
+  if (activeTab.value !== 'default') {
+    activeTab.value = 'default'
+  }
+}
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
 
@@ -643,16 +944,18 @@ const undoRedoStore = useUndoRedoStore()
 const { canUndo, canRedo } = storeToRefs(undoRedoStore)
 
 
-const mcdFlowInstance = useVueFlow('flow-mcd-' + route.params.idModel)
+const mcdFlowInstance = useVueFlow('flow-model-' + route.params.idModel)
 // Clear immediately to prevent flash of cached nodes from a previous visit
 mcdFlowInstance.setNodes([])
 mcdFlowInstance.setEdges([])
 mcdStore.setFlowInstance(mcdFlowInstance)
-mcdGenStore.setFlowInstance(useVueFlow('flow-mcd-gen-' + route.params.idModel))
+mcdGenStore.setFlowInstance(useVueFlow('flow-mcd-' + route.params.idModel))
 mldStore.setFlowInstance(useVueFlow('flow-mld-' + route.params.idModel))
 mpdStore.setFlowInstance(useVueFlow('flow-mpd-' + route.params.idModel))
 
 mcdStore.flowMCD.onPaneClick((e) => {
+  paneContextMenuOpen.value = false
+  selectionContextMenuOpen.value = false
   if (activeTab.value === 'default') {
     if (isSubMenuVisible.value)
       isSubMenuVisible.value = false
@@ -661,6 +964,90 @@ mcdStore.flowMCD.onPaneClick((e) => {
     edgeIdSelected.value = null
   }
 })
+
+// ─── Multi-selection tracking ───
+const selectedElements = computed(() => {
+  const nodes = (mcdFlowInstance.getNodes?.value ?? []).filter(n => n.selected)
+  const edges = (mcdFlowInstance.getEdges?.value ?? []).filter(e => e.selected)
+  return { nodes, edges, count: nodes.length + edges.length }
+})
+
+// ─── Multi-selection context menu (right-click on selected element) ───
+const selectionContextMenuOpen = ref(false)
+const selectionContextMenuPos = ref({ x: 0, y: 0 })
+const selectionContextMenuRef = ref(null)
+
+const closeSelectionContextMenu = (e) => {
+  if (selectionContextMenuRef.value && !selectionContextMenuRef.value.contains(e.target)) {
+    selectionContextMenuOpen.value = false
+  }
+}
+watch(selectionContextMenuOpen, (open) => {
+  if (open) {
+    window.addEventListener('mousedown', closeSelectionContextMenu, { capture: true })
+  } else {
+    window.removeEventListener('mousedown', closeSelectionContextMenu, { capture: true })
+  }
+})
+
+// ─── Pane context menu ───
+const paneContextMenuOpen = ref(false)
+const paneContextMenuPos = ref({ x: 0, y: 0 })
+const paneContextMenuRef = ref(null)
+
+const onPaneContextMenu = (e) => {
+  if (activeTab.value !== 'default') return
+  const target = e.target
+
+  // If right-clicking on a selected node/edge while multi-selection is active → show selection menu
+  const clickedNode = target?.closest('.vue-flow__node')
+  const clickedEdgeLabel = target?.closest('.vue-flow__edge-labels') || target?.closest('.vue-flow__edgelabel-renderer')
+  if (selectedElements.value.count > 1 && (clickedNode || clickedEdgeLabel)) {
+    e.preventDefault()
+    selectionContextMenuPos.value = { x: e.clientX, y: e.clientY }
+    selectionContextMenuOpen.value = true
+    paneContextMenuOpen.value = false
+    return
+  }
+
+  // Don't show pane menu when right-clicking on a node, edge label, or association
+  if (clickedNode || clickedEdgeLabel || target?.closest('[data-radix-popper-content-wrapper]')) {
+    return
+  }
+  e.preventDefault()
+  paneContextMenuPos.value = { x: e.clientX, y: e.clientY }
+  paneContextMenuOpen.value = true
+  selectionContextMenuOpen.value = false
+}
+
+// Close pane context menu on any click outside
+const closePaneContextMenu = (e) => {
+  if (paneContextMenuRef.value && !paneContextMenuRef.value.contains(e.target)) {
+    paneContextMenuOpen.value = false
+  }
+}
+watch(paneContextMenuOpen, (open) => {
+  if (open) {
+    window.addEventListener('mousedown', closePaneContextMenu, { capture: true })
+  } else {
+    window.removeEventListener('mousedown', closePaneContextMenu, { capture: true })
+  }
+})
+
+const addNodeAtPosition = async () => {
+  if (activeTab.value !== 'default') return
+  const position = mcdFlowInstance.screenToFlowCoordinate(paneContextMenuPos.value)
+  const newNode = mcdStore.createNewNode(position)
+  await mcdStore.emitEvent(route.params.idModel, [{
+    type: 'TABLE_ADDED',
+    payload: { node: newNode },
+    inverse: { type: 'TABLE_DELETED', payload: { nodeId: newNode.id } },
+    undoable: true,
+  }])
+  isSubMenuVisible.value = true
+  nodeIdSelected.value = newNode.id
+  edgeIdSelected.value = null
+}
 
 
 const { data: session } = await authClient.useSession(useFetch)
@@ -819,15 +1206,56 @@ onMounted(async () => {
   isFlowReady.value = true
 
   mcdStore.flowMCD.onNodesInitialized(() => {
-    mcdStore.flowMCD.fitView({ padding: 0.4 })
+    mcdStore.flowMCD.fitView({ padding: 0.1, minZoom: 0.1 })
   })
 
   await nextTick(); // Ensure DOM is updated and .dndflow exists
+
+  // Register pane context menu on the actual VueFlow pane element
+  const paneEl = mcdFlowInstance.vueFlowRef?.value?.querySelector('.vue-flow__pane')
+  if (paneEl) {
+    paneEl.addEventListener('contextmenu', onPaneContextMenu)
+  }
+
   collaborationStore.setupCursorTracking();
 })
 
-// ─── Keyboard shortcuts for Undo/Redo ───
+// ─── Delete selected elements (single or multi-selection) ───
+const deleteSelectedElements = () => {
+  if (activeTab.value !== 'default') return
+  if (!mcdFlowInstance) return
+
+  const selectedNodes = (mcdFlowInstance.getNodes?.value ?? []).filter(n => n.selected)
+  const selectedEdges = (mcdFlowInstance.getEdges?.value ?? []).filter(e => e.selected)
+
+  // Also consider single-selected via sidebar (nodeIdSelected / edgeIdSelected)
+  const nodeIds = new Set(selectedNodes.map(n => n.id))
+  const edgeIds = new Set(selectedEdges.map(e => e.id))
+
+  if (nodeIdSelected.value && !nodeIds.has(nodeIdSelected.value)) {
+    nodeIds.add(nodeIdSelected.value)
+  }
+  if (edgeIdSelected.value && !edgeIds.has(edgeIdSelected.value)) {
+    edgeIds.add(edgeIdSelected.value)
+  }
+
+  if (!nodeIds.size && !edgeIds.size) return
+
+  mcdStore.removeElements(route.params.idModel, [...nodeIds], [...edgeIds])
+  isSubMenuVisible.value = false
+  nodeIdSelected.value = null
+  edgeIdSelected.value = null
+}
+
+// ─── Keyboard shortcuts ───
 const handleUndoRedoKeydown = (e) => {
+  // Ctrl+F: open search (always available, even in read-only tabs)
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault()
+    searchOpen.value = true
+    return
+  }
+
   // Only handle in default (MCD) tab
   if (activeTab.value !== 'default') return
   // Skip if user is typing in an input/textarea
@@ -842,11 +1270,22 @@ const handleUndoRedoKeydown = (e) => {
     e.preventDefault()
     undoRedoStore.redo(route.params.idModel, mcdStore.emitEvent)
   }
+
+  // Delete/Backspace: delete selected elements
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    deleteSelectedElements()
+  }
 }
 window.addEventListener('keydown', handleUndoRedoKeydown)
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleUndoRedoKeydown)
+  window.removeEventListener('mousedown', closePaneContextMenu, { capture: true })
+  window.removeEventListener('mousedown', closeSelectionContextMenu, { capture: true })
+  window.removeEventListener('mousedown', closeSearchOnClickOutside)
+  paneContextMenuOpen.value = false
+  selectionContextMenuOpen.value = false
+  searchOpen.value = false
   activeTab.value = 'default'
   isSubMenuVisible.value = false
   nodeIdSelected.value = null
@@ -946,11 +1385,6 @@ const onChange = async (changes) => {
   }
 }
 
-const onEdgeUpdate = async ({edge, connection}) => {
-  const prevEdgeData = JSON.parse(JSON.stringify(edge.data || {}))
-  mcdStore.flowMCD.updateEdge(edge, connection, false)
-  await mcdStore.updateEdge(route.params.idModel, edge.id, prevEdgeData)
-}
 
 
 const formSchema = toTypedSchema(z.object({
@@ -1010,18 +1444,18 @@ const goBack = async () => {
 
 // Tabs
 const getFlowId = computed(() => {
-  if (activeTab.value === 'default') return 'flow-mcd-' + route.params.idModel;
-  if (activeTab.value === 'mcd') return 'flow-mcd-gen-' + route.params.idModel;
+  if (activeTab.value === 'default') return 'flow-model-' + route.params.idModel;
+  if (activeTab.value === 'mcd') return 'flow-mcd-' + route.params.idModel;
   if (activeTab.value === 'mld') return 'flow-mld-' + route.params.idModel;
   if (activeTab.value === 'mpd') return 'flow-mpd-' + route.params.idModel;
-  return 'flow-mcd-' + route.params.idModel;
+  return 'flow-model-' + route.params.idModel;
 });
 
 const isChangingTab = ref(false)
 
 const currentFlow = ref(mcdStore.flowMCD)
 
-const { exportItems } = useExportImport(currentFlow, model)
+const { exportItems } = useExport(currentFlow, model)
 
 const hasNoNodes = computed(() => {
   // Use the local VueFlow instance ref directly for proper reactivity tracking
@@ -1068,7 +1502,7 @@ watch(activeTab, async () => {
 
   await nextTick()
   currentFlow.value?.onNodesInitialized(() => {
-    currentFlow.value?.fitView?.({ padding: 0.4 })
+    currentFlow.value?.fitView?.({ padding: 0.1, minZoom: 0.1 })
   })
   isChangingTab.value = false
 })
@@ -1117,7 +1551,7 @@ const reorganize = async () => {
     }])
 
     await nextTick();
-    mcdFlowInstance.fitView({ padding: 0.4 });
+    mcdFlowInstance.fitView({ padding: 0.1, minZoom: 0.1 });
   } finally {
     isReorganizing.value = false;
   }

@@ -5,6 +5,7 @@ import { useWorkspace } from '@/composables/api/useWorkspace'
 export interface GeneratedProject {
   id: string
   name: string
+  generatedName: string
   description?: string
   framework: string
   orm: string

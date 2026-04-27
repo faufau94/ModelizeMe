@@ -33,7 +33,9 @@ export default defineNuxtConfig({
       entries: [
         './app.vue',
         './pages/**/*.vue',
-        './components/**/*.vue'
+        './components/**/*.vue',
+        './stores/**/*.js',
+        './composables/**/*.ts',
       ],
       exclude: ['vee-validate']
     },

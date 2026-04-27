@@ -36,6 +36,7 @@ model User {
   teammembers      TeamMember[]
   modelEvents      ModelEvent[]
   generatedProjects GeneratedProject[] @relation("AuthorProjects")
+  feedbacks         Feedback[]
 
   @@unique([email])
   @@map("user")
@@ -251,9 +252,10 @@ model Annotation {
 // ─── GENERATED PROJECTS ───
 
 model GeneratedProject {
-  id          String   @id @default(cuid())
-  name        String
-  description String?  @db.Text
+  id            String   @id @default(cuid())
+  name          String
+  generatedName String?  @db.VarChar(255)
+  description   String?  @db.Text
   framework   String   @db.VarChar(50)
   orm         String   @db.VarChar(50)
   database    String   @db.VarChar(50)
@@ -305,4 +307,15 @@ model ModelSnapshot {
 
   @@index([modelId, eventCursor])
   @@map("model_snapshots")
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  category  String
+  message   String   @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("feedbacks")
 }

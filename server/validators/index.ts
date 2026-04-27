@@ -69,6 +69,12 @@ export const createCategorySchema = z.object({
   name: z.string().min(1, "Nom requis").max(100, "Nom trop long"),
 });
 
+// ─── Feedback ───
+export const createFeedbackSchema = z.object({
+  category: z.enum(["suggestion", "bug", "feedback", "praise"]),
+  message: z.string().min(1, "Message requis").max(5000, "Message trop long"),
+});
+
 // ─── Galeries ───
 export const createGalerySchema = z.object({
   modelId: z.string().min(1, "Modèle requis"),
@@ -94,6 +100,7 @@ export const generateSchema = z.object({
   orm: z.enum(["django_orm", "sqlalchemy", "eloquent", "prisma", "typeorm", "doctrine"]),
   nodes: z.array(z.record(z.unknown())),
   edges: z.array(z.record(z.unknown())),
+  packages: z.array(z.string()).optional(),
 });
 
 export const projectNameSchema = z

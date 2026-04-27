@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import { ref, computed, nextTick } from 'vue'
-import { useMCDStore } from './mcd-store'
+import { useModelStore } from './model-store'
 
 export const useCollaborationStore = defineStore('collaboration', () => {
 
@@ -34,7 +34,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     // cleanup any previous session before re-initializing
     cleanup()
 
-    const mcdStore = useMCDStore()
+    const mcdStore = useModelStore()
     const config = useRuntimeConfig()
     const wsUrl = config.public.websocketUrl || 'ws://localhost:1234'
 
@@ -166,7 +166,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   // ─── NODE CRUD ───
   // All local mutations use origin='local' so the observer skips them.
   function addNode(node) {
-    const mcdStore = useMCDStore()
+    const mcdStore = useModelStore()
     if (mcdStore.flowMCD) mcdStore.flowMCD.addNodes([ node ])
     if (!_rawNodes) return
     const plain = stripTransientState(node)
@@ -201,7 +201,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   }
 
   function removeNode(nodeId) {
-    const mcdStore = useMCDStore()
+    const mcdStore = useModelStore()
     if (mcdStore.flowMCD) mcdStore.flowMCD.removeNodes([ nodeId ])
     if (!_rawNodes) return
     const arr = _rawNodes.toArray()
@@ -215,7 +215,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
 
   // ─── EDGE CRUD ───
   function addEdge(edge) {
-    const mcdStore = useMCDStore()
+    const mcdStore = useModelStore()
     if (mcdStore.flowMCD) mcdStore.flowMCD.addEdges([ edge ])
     if (!_rawEdges) return
     const plain = stripTransientState(edge)
@@ -237,7 +237,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
   }
 
   function removeEdge(edgeId) {
-    const mcdStore = useMCDStore()
+    const mcdStore = useModelStore()
     if (mcdStore.flowMCD) mcdStore.flowMCD.removeEdges([ edgeId ])
     if (!_rawEdges) return
     const arr = _rawEdges.toArray()
@@ -274,7 +274,7 @@ export const useCollaborationStore = defineStore('collaboration', () => {
     const flowContainer = document.querySelector('.dndflow')
     if (!flowContainer) return
 
-    const mcdStore = useMCDStore()
+    const mcdStore = useModelStore()
     if (!mcdStore.flowMCD) return
 
     // Convert screen coordinates to flow coordinates

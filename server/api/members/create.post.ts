@@ -1,9 +1,7 @@
-import { requireAuth } from "~/server/utils/auth";
+import { requireOrgRole } from "~/server/utils/auth";
 import { auth } from "~/lib/auth";
 
 export default defineEventHandler(async (event) => {
-  const session = await requireAuth(event);
-
   const { email, organizationId, role } = await readBody(event);
 
   if (!email || !organizationId) {
@@ -12,6 +10,9 @@ export default defineEventHandler(async (event) => {
       message: "Email et organizationId sont requis",
     });
   }
+
+  // Only owner/admin can invite members
+  await requireOrgRole(event, organizationId, ["owner", "admin"]);
 
   // Use better-auth invitation system
   const invitation = await auth.api.createInvitation({

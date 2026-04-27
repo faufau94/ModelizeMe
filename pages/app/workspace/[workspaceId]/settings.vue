@@ -1,57 +1,73 @@
 <template>
   <div class="px-6 py-6 lg:px-8 max-w-5xl mx-auto w-full">
     <div class="max-w-2xl mx-auto space-y-6">
-      <!-- General Settings -->
-      <Form v-slot="{ handleSubmit }" :initial-values="initialValues" :validation-schema="formSchema" as="">
-        <form @submit="handleSubmit($event, onSubmit)">
-          <Card>
-            <CardHeader>
-              <CardTitle class="text-base">Informations générales</CardTitle>
-              <CardDescription>
-                Modifiez le nom et la description de votre workspace.
-              </CardDescription>
-            </CardHeader>
-            <CardContent class="space-y-4">
-              <FormField v-slot="{ componentField }" name="name">
-                <FormItem>
-                  <FormLabel for="workspace-name">Nom du workspace</FormLabel>
-                  <FormControl>
-                    <Input
-                      id="workspace-name"
-                      v-bind="componentField"
-                      placeholder="Mon workspace"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-              <FormField v-slot="{ componentField }" name="description">
-                <FormItem>
-                  <FormLabel for="workspace-description">Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      id="workspace-description"
-                      v-bind="componentField"
-                      placeholder="Décrivez votre workspace"
-                      rows="3"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              </FormField>
-            </CardContent>
-            <CardFooter>
-              <Button type="submit" size="sm" :disabled="isSaving">
-                <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
-                Enregistrer
-              </Button>
-            </CardFooter>
-          </Card>
-        </form>
-      </Form>
+      <!-- General Settings — owner/admin only -->
+      <template v-if="getIsOwnerOrAdmin">
+        <Form v-slot="{ handleSubmit }" :initial-values="initialValues" :validation-schema="formSchema" as="">
+          <form @submit="handleSubmit($event, onSubmit)">
+            <Card>
+              <CardHeader>
+                <CardTitle class="text-base">Informations générales</CardTitle>
+                <CardDescription>
+                  Modifiez le nom et la description de votre workspace.
+                </CardDescription>
+              </CardHeader>
+              <CardContent class="space-y-4">
+                <FormField v-slot="{ componentField }" name="name">
+                  <FormItem>
+                    <FormLabel for="workspace-name">Nom du workspace</FormLabel>
+                    <FormControl>
+                      <Input
+                        id="workspace-name"
+                        v-bind="componentField"
+                        placeholder="Mon workspace"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+                <FormField v-slot="{ componentField }" name="description">
+                  <FormItem>
+                    <FormLabel for="workspace-description">Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        id="workspace-description"
+                        v-bind="componentField"
+                        placeholder="Décrivez votre workspace"
+                        rows="3"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </FormField>
+              </CardContent>
+              <CardFooter>
+                <Button type="submit" size="sm" :disabled="isSaving">
+                  <Loader2 v-if="isSaving" class="mr-2 h-4 w-4 animate-spin" />
+                  Enregistrer
+                </Button>
+              </CardFooter>
+            </Card>
+          </form>
+        </Form>
+      </template>
 
-      <!-- Danger Zone -->
-      <Card class="border-destructive/50">
+      <!-- Read-only info for members -->
+      <Card v-if="!getIsOwnerOrAdmin">
+        <CardHeader>
+          <CardTitle class="text-base">Informations générales</CardTitle>
+          <CardDescription>
+            Vous n'avez pas les permissions nécessaires pour modifier les paramètres de ce workspace.
+          </CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-2">
+          <p class="text-sm"><span class="font-medium">Nom :</span> {{ selectedWorkspace?.name }}</p>
+          <p class="text-sm"><span class="font-medium">Description :</span> {{ selectedWorkspace?.metadata ? JSON.parse(selectedWorkspace?.metadata)?.description || '—' : '—' }}</p>
+        </CardContent>
+      </Card>
+
+      <!-- Danger Zone — owner only -->
+      <Card v-if="getIsOwner" class="border-destructive/50">
         <CardHeader>
           <CardTitle class="text-base text-destructive">Zone de danger</CardTitle>
           <CardDescription>
@@ -138,7 +154,7 @@ const inviteEmail = ref('')
 const inviteRole = ref('viewer')
 
 
-const { selectedWorkspace, selectedWorkspaceId, updateWorkspace, deleteWorkspace, workspaces, goToThisWorkspaceUrl } = useWorkspace()
+const { selectedWorkspace, selectedWorkspaceId, updateWorkspace, deleteWorkspace, workspaces, goToThisWorkspaceUrl, getIsOwner, getIsOwnerOrAdmin } = useWorkspace()
 
 // const workspace = ref({
 //   name: selectedWorkspace.value?.name,

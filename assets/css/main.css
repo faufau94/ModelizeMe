@@ -18,6 +18,15 @@ body,
   width: 100%;
 }
 
+/* Force stacking order: edges (SVG) → edge labels → nodes */
+.vue-flow__edgelabel-renderer {
+  z-index: 1 !important;
+}
+
+.vue-flow__nodes {
+  z-index: 2 !important;
+}
+
 .vue-flow__minimap {
   transform: scale(75%);
   transform-origin: bottom left;
@@ -224,5 +233,15 @@ body,
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Fix browser autofill background in dark mode */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset;
+    -webkit-text-fill-color: hsl(var(--foreground));
+    caret-color: hsl(var(--foreground));
+    transition: background-color 5000s ease-in-out 0s;
   }
 }
