@@ -10,7 +10,9 @@ export const auth = betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3100',
     trustedOrigins: [
       process.env.BASE_URL || 'http://localhost:3100',
-      'http://localhost:3100'
+      'http://localhost:3100',
+      'https://moldata.fr',
+      'https://www.moldata.fr',
     ],
     database: prismaAdapter(prisma, {
         provider: "mysql",
