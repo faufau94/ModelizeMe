@@ -47,7 +47,22 @@
           </div>
           <div class="max-w-sm">
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Nom de l'entité</label>
-            <Input ref="nodeNameInputRef" v-model="nodeName" type="text"/>
+            <Input
+                ref="nodeNameInputRef"
+                v-model="nodeName"
+                type="text"
+                :class="cn(nodeNameHasAccent && 'border-red-500 focus-visible:ring-red-500')"
+            />
+            <p v-if="nodeNameHasAccent" class="mt-1.5 text-xs text-red-500 dark:text-red-400">
+              Les accents ne sont pas autorisés.
+              <button
+                  type="button"
+                  class="ml-1 underline font-medium hover:text-red-700 dark:hover:text-red-300"
+                  @click="sanitizeNodeName"
+              >
+                Corriger en « {{ slugifyIdentifier(nodeName) }} »
+              </button>
+            </p>
           </div>
 
           <div class="w-full flex flex-col sm:flex-row items-start sm:items-center justify-start gap-y-2 sm:gap-y-0 gap-x-4 md:gap-x-8">
@@ -396,9 +411,23 @@
             <label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">
               Nom de l'association
             </label>
-            <Input ref="edgeNameInputRef" v-model="edgeName"
-                   type="text"
-                   placeholder=""/>
+            <Input
+                ref="edgeNameInputRef"
+                v-model="edgeName"
+                type="text"
+                placeholder=""
+                :class="cn(edgeNameHasAccent && 'border-red-500 focus-visible:ring-red-500')"
+            />
+            <p v-if="edgeNameHasAccent" class="mt-1.5 text-xs text-red-500 dark:text-red-400">
+              Les accents ne sont pas autorisés.
+              <button
+                  type="button"
+                  class="ml-1 underline font-medium hover:text-red-700 dark:hover:text-red-300"
+                  @click="sanitizeEdgeName"
+              >
+                Corriger en « {{ slugifyIdentifier(edgeName) }} »
+              </button>
+            </p>
           </div>
 
           <div v-if="checkIfTwoNRelation" class="w-full flex items-center justify-start gap-x-8">
@@ -754,6 +783,8 @@ import {
 import NullableIcon from '@/components/icon/nullable-icon';
 import draggable from 'vuedraggable';
 import {v4 as uuidv4} from 'uuid';
+import {hasDiacritics, slugifyIdentifier} from '@/utils';
+import {cn} from '@/lib/utils';
 
 const preventBodyScroll = () => {
   document.body.style.overflow = 'hidden';
@@ -1133,6 +1164,17 @@ const edgeName = computed({
     }
   },
 });
+
+// Accent detection + sanitize helpers (banned in SQL identifiers)
+const nodeNameHasAccent = computed(() => hasDiacritics(nodeName.value));
+const edgeNameHasAccent = computed(() => hasDiacritics(edgeName.value));
+
+const sanitizeNodeName = () => {
+  nodeName.value = slugifyIdentifier(nodeName.value);
+};
+const sanitizeEdgeName = () => {
+  edgeName.value = slugifyIdentifier(edgeName.value);
+};
 
 const edgeTimestamps = computed({
   get() {

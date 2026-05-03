@@ -149,10 +149,14 @@ export const useCodeGeneratorStore = defineStore("generator", () => {
     });
   });
 
+  // Frameworks that don't expose optional packages — skip the step entirely.
+  const FRAMEWORKS_WITHOUT_PACKAGES = new Set(["nuxt"]);
+
   // Package options for step 5 — filtered by selected framework
   const packageOptions = computed(() => {
     const fw = datas.value.framework;
     if (!fw || !capabilities.value?.[fw]) return [];
+    if (FRAMEWORKS_WITHOUT_PACKAGES.has(fw)) return [];
     const packages = capabilities.value[fw].packages;
     if (!packages || typeof packages !== "object") return [];
     return Object.entries(packages).map(([key, pkg]) => ({

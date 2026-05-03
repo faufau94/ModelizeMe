@@ -66,6 +66,7 @@
         :connection-radius="50"
         :min-zoom="0.1"
         :delete-key-code="null"
+        :multi-selection-key-code="['Control', 'Meta']"
         @dragover="onDragOver"
         @dragleave="onDragLeave"
         @drop="(e) => onDrop(e, route.params.idModel)"
@@ -491,7 +492,7 @@
               >
                 <PanelTop class="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <div class="min-w-0 flex-1">
-                  <span class="truncate block">{{ item.label }}</span>
+                  <span class="truncate block uppercase tracking-wide">{{ item.label }}</span>
                   <span v-if="item.matchedField" class="text-[11px] text-muted-foreground truncate block">champ : {{ item.matchedField }}</span>
                 </div>
                 <span v-if="item.type === 'ternaryEntity'" class="text-[10px] text-muted-foreground shrink-0">ternaire</span>
@@ -856,6 +857,84 @@ const selectFirstResult = () => {
   }
 }
 
+// Returns the current ElementMenu sidebar width in px (responsive: 0 if hidden, 400 sm, 570 md+)
+const getSidebarWidth = () => {
+  if (typeof window === 'undefined') return 0
+  if (!isSubMenuVisible.value) return 0
+  const w = window.innerWidth
+  if (w >= 768) return 570
+  if (w >= 640) return 400
+  return w // full width on mobile
+}
+
+// Center the viewport on a target node, accounting for the open sidebar by shifting the
+// flow center to the left of the visible area. Uses setCenter so we keep the current zoom.
+const centerOnTarget = (targetId, opts = {}) => {
+  const flow = mcdFlowInstance
+  if (!flow) return
+  const node = flow.findNode(targetId)
+  if (!node) return
+
+  const sidebar = getSidebarWidth()
+  const canvasW = flow.vueFlowRef?.value?.clientWidth ?? window.innerWidth
+  const visibleW = Math.max(canvasW - sidebar, 1)
+
+  const w = node.dimensions?.width ?? 320
+  const h = node.dimensions?.height ?? 100
+  const cx = (node.computedPosition?.x ?? node.position?.x ?? 0) + w / 2
+  const cy = (node.computedPosition?.y ?? node.position?.y ?? 0) + h / 2
+
+  // Shift center horizontally so node sits in the middle of the visible (non-sidebar) area
+  const zoom = opts.zoom ?? flow.getViewport?.().zoom ?? 1
+  const offsetX = (sidebar / 2) / zoom
+  flow.setCenter(cx + offsetX, cy, { zoom, duration: opts.duration ?? 300 })
+}
+
+// Compute the bounding box (in flow coordinates) for a list of node ids
+const getNodesBBox = (nodeIds) => {
+  const flow = mcdFlowInstance
+  if (!flow || !nodeIds?.length) return null
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const id of nodeIds) {
+    const n = flow.findNode(id)
+    if (!n) continue
+    const x = n.computedPosition?.x ?? n.position?.x ?? 0
+    const y = n.computedPosition?.y ?? n.position?.y ?? 0
+    const w = n.dimensions?.width ?? 320
+    const h = n.dimensions?.height ?? 100
+    if (x < minX) minX = x
+    if (y < minY) minY = y
+    if (x + w > maxX) maxX = x + w
+    if (y + h > maxY) maxY = y + h
+  }
+  if (minX === Infinity) return null
+  return { minX, minY, maxX, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, w: maxX - minX, h: maxY - minY }
+}
+
+// Fit a set of nodes into the *visible* (non-sidebar) area by computing zoom + center manually.
+// This gives us proper asymmetric padding without relying on Vue Flow internals.
+const fitViewOnNodes = (nodeIds, opts = {}) => {
+  const flow = mcdFlowInstance
+  if (!flow) return
+  const bbox = getNodesBBox(nodeIds)
+  if (!bbox) return
+
+  const sidebar = getSidebarWidth()
+  const canvasW = flow.vueFlowRef?.value?.clientWidth ?? window.innerWidth
+  const canvasH = flow.vueFlowRef?.value?.clientHeight ?? window.innerHeight
+  const visibleW = Math.max(canvasW - sidebar, 100)
+
+  const padFactor = 1.4 // 30% padding around bbox
+  const zoomX = visibleW / Math.max(bbox.w * padFactor, 1)
+  const zoomY = canvasH / Math.max(bbox.h * padFactor, 1)
+  const maxZoom = opts.maxZoom ?? 1.5
+  const zoom = Math.min(zoomX, zoomY, maxZoom)
+
+  // Shift center horizontally so the bbox sits in the middle of the visible area, not the canvas
+  const offsetX = (sidebar / 2) / zoom
+  flow.setCenter(bbox.cx + offsetX, bbox.cy, { zoom, duration: opts.duration ?? 400 })
+}
+
 const focusOnElement = (item) => {
   // Always use the editable flow instance — search items use its IDs
   const allNodes = mcdFlowInstance.getNodes?.value ?? []
@@ -863,31 +942,63 @@ const focusOnElement = (item) => {
   allNodes.forEach(n => { n.selected = false })
   allEdges.forEach(e => { e.selected = false })
 
+  // Switch back to editable tab BEFORE focusing so the flow instance is ready
+  if (activeTab.value !== 'default') {
+    activeTab.value = 'default'
+  }
+
   if (item.kind === 'node') {
     const node = mcdFlowInstance.findNode(item.id)
     if (node) {
       node.selected = true
-      mcdFlowInstance.fitView({ nodes: [item.id], padding: 0.5, duration: 300, maxZoom: 1.5 })
       nodeIdSelected.value = item.id
       edgeIdSelected.value = null
       isSubMenuVisible.value = true
+      nextTick(() => fitViewOnNodes([item.id]))
     }
   } else if (item.kind === 'edge') {
     const edge = mcdFlowInstance.findEdge(item.id)
     if (edge) {
       edge.selected = true
-      mcdFlowInstance.fitView({ nodes: [item.source, item.target], padding: 0.5, duration: 300, maxZoom: 1.5 })
       edgeIdSelected.value = item.id
       nodeIdSelected.value = null
       isSubMenuVisible.value = true
+      nextTick(() => fitViewOnNodes([item.source, item.target]))
     }
   }
-
-  // Switch back to editable tab if not already there
-  if (activeTab.value !== 'default') {
-    activeTab.value = 'default'
-  }
 }
+
+// Recenter on selection change (e.g. user clicks a node and the sidebar opens over it).
+// Only recenters if the target is partially hidden behind the sidebar — never zooms.
+const isNodeBehindSidebar = (nodeId) => {
+  const flow = mcdFlowInstance
+  if (!flow) return false
+  const node = flow.findNode(nodeId)
+  if (!node) return false
+  const sidebar = getSidebarWidth()
+  if (sidebar === 0) return false
+  const canvasW = flow.vueFlowRef?.value?.clientWidth ?? window.innerWidth
+  const w = node.dimensions?.width ?? 320
+  const cx = (node.computedPosition?.x ?? node.position?.x ?? 0) + w / 2
+  const screen = flow.flowToScreenCoordinate({ x: cx, y: 0 })
+  return screen.x > canvasW - sidebar
+}
+
+watch([nodeIdSelected, edgeIdSelected, isSubMenuVisible], async () => {
+  if (activeTab.value !== 'default') return
+  if (!isSubMenuVisible.value) return
+  await nextTick()
+  if (nodeIdSelected.value) {
+    if (isNodeBehindSidebar(nodeIdSelected.value)) centerOnTarget(nodeIdSelected.value)
+  } else if (edgeIdSelected.value) {
+    const edge = mcdFlowInstance.findEdge(edgeIdSelected.value)
+    if (edge) {
+      const srcHidden = isNodeBehindSidebar(edge.source)
+      const tgtHidden = isNodeBehindSidebar(edge.target)
+      if (srcHidden || tgtHidden) fitViewOnNodes([edge.source, edge.target])
+    }
+  }
+})
 
 const {onDragOver, onDragLeave, isDragOver, onDrop, onDragStart} = useDragAndDrop()
 
@@ -1188,6 +1299,16 @@ onMounted(async () => {
       const handled = await handleTernaryNodeClick(e.node.id)
       if (handled) return
 
+      // Without Ctrl/Cmd, deselect everything else first
+      const ev = e.event
+      const isMulti = ev?.ctrlKey || ev?.metaKey
+      if (!isMulti) {
+        const allNodes = mcdFlowInstance.getNodes?.value ?? []
+        const allEdges = mcdFlowInstance.getEdges?.value ?? []
+        allNodes.forEach(n => { if (n.id !== e.node.id) n.selected = false })
+        allEdges.forEach(eg => { eg.selected = false })
+      }
+
       edgeIdSelected.value = null
       isSubMenuVisible.value = true
       nodeIdSelected.value = e.node.id
@@ -1196,6 +1317,16 @@ onMounted(async () => {
 
   mcdStore.flowMCD.onEdgeClick((e) => {
     if (activeTab.value === 'default') {
+      // Without Ctrl/Cmd, deselect everything else first (Vue Flow doesn't do it for edges)
+      const ev = e.event
+      const isMulti = ev?.ctrlKey || ev?.metaKey
+      if (!isMulti) {
+        const allNodes = mcdFlowInstance.getNodes?.value ?? []
+        const allEdges = mcdFlowInstance.getEdges?.value ?? []
+        allNodes.forEach(n => { n.selected = false })
+        allEdges.forEach(eg => { if (eg.id !== e.edge.id) eg.selected = false })
+      }
+
       nodeIdSelected.value = null
       isSubMenuVisible.value = true
       edgeIdSelected.value = e.edge.id

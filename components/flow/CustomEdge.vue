@@ -63,7 +63,7 @@
         class="nodrag nopan"
         @contextmenu.stop
       >
-        <div @click="onclick">
+        <div @click="(ev) => onclick(ev)">
           <MyCustomEntityAssociation :data="data" :selected="props.selected" :edgeId="props.id" />
         </div>
       </div>
@@ -272,7 +272,7 @@ const cardinalityClass = computed(() => {
   }
 });
 
-const onclick = () => {
+const onclick = (ev?: MouseEvent) => {
   nodeIdSelected.value = null;
   isSubMenuVisible.value = true;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -280,6 +280,14 @@ const onclick = () => {
 
   const flow = mcdStore.flowMCD as any;
   if (props.id && flow) {
+    // Without Ctrl/Cmd, deselect every other node/edge first
+    const isMulti = !!(ev?.ctrlKey || ev?.metaKey);
+    if (!isMulti) {
+      const nodes = flow.getNodes?.value ?? flow.getNodes ?? [];
+      const edges = flow.getEdges?.value ?? flow.getEdges ?? [];
+      nodes.forEach((n: any) => { n.selected = false; });
+      edges.forEach((eg: any) => { if (eg.id !== props.id) eg.selected = false; });
+    }
     const edge = flow.findEdge(props.id);
     if (edge) edge.selected = true;
   }
@@ -378,8 +386,10 @@ const targetLabelY = computed(() => {
 }
 
 :root.dark .cardinality-label--mcd {
-  background: rgba(37, 99, 235, 0.15);
-  color: #60a5fa;
+  /* Solid dark blue tinted background — fully opaque so edges never bleed through */
+  background: #172554;
+  color: #93c5fd;
+  border-color: #1e40af;
 }
 
 .cardinality-label--mld {
@@ -389,8 +399,9 @@ const targetLabelY = computed(() => {
 }
 
 :root.dark .cardinality-label--mld {
-  background: rgba(5, 150, 105, 0.15);
-  color: #34d399;
+  background: #022c22;
+  color: #6ee7b7;
+  border-color: #047857;
 }
 
 .cardinality-label--mpd {
@@ -400,8 +411,9 @@ const targetLabelY = computed(() => {
 }
 
 :root.dark .cardinality-label--mpd {
-  background: rgba(124, 58, 237, 0.15);
-  color: #a78bfa;
+  background: #1e1b4b;
+  color: #c4b5fd;
+  border-color: #6d28d9;
 }
 
 .cif-badge {
