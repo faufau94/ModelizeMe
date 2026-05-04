@@ -1,5 +1,7 @@
 import { unzipSync, strFromU8 } from "fflate";
 
+const APP_NAME = process.env.NUXT_PUBLIC_APP_NAME || 'Moldata'
+
 // ─── Types ─────────────────────────────────
 
 interface FileEntry {
@@ -132,7 +134,7 @@ export async function createGitHubRepo(
   const commit: any = await githubFetch(`${repoPath}/git/commits`, token, {
     method: "POST",
     body: {
-      message: "Initial commit from ModelizeMe",
+      message: `Initial commit from ${APP_NAME}`,
       tree: tree.sha,
       parents: [baseSha],
     },
@@ -249,7 +251,7 @@ export async function createGitLabRepo(
 
     const message =
       i === 0
-        ? "Initial commit from ModelizeMe"
+        ? `Initial commit from ${APP_NAME}`
         : `Add files (batch ${Math.floor(i / BATCH_SIZE) + 1})`;
 
     await gitlabFetch(`/projects/${projectId}/repository/commits`, token, {

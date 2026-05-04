@@ -1,4 +1,5 @@
 <script setup lang="ts">
+const appName = useAppName()
 import {
   ArrowRight,
   Check,
@@ -295,29 +296,8 @@ const workspaceUrl = computed(() => {
     <header class="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
       <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 lg:px-6">
         <NuxtLink to="/" class="flex items-center gap-2.5">
-          <span
-            class="relative inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-mono text-[11px] font-bold text-primary-foreground shadow-sm"
-            aria-hidden="true"
-          >
-            <span class="flex flex-col leading-none">
-              <span class="flex">
-                <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
-                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-              </span>
-              <span class="mt-0.5 flex">
-                <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
-                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-              </span>
-              <span class="mt-0.5 flex">
-                <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
-              </span>
-            </span>
-          </span>
-          <span class="font-semibold tracking-tight">ModelizeMe</span>
+          <img src="/favicon.svg" class="h-7 w-7" alt="" aria-hidden="true" />
+          <span class="font-semibold tracking-tight">{{ appName }}</span>
           <Badge variant="secondary" class="ml-1 font-mono text-[10px]">v0.9 beta</Badge>
         </NuxtLink>
 
@@ -397,7 +377,7 @@ const workspaceUrl = computed(() => {
             </h1>
 
             <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-              ModelizeMe est un IDE open source basé sur la méthode Merise. Dessinez vos entités, dérivez
+              {{ appName }} est un IDE open source basé sur la méthode Merise. Dessinez vos entités, dérivez
               <span class="font-medium text-blue-500 dark:text-blue-400">MCD</span> →
               <span class="font-medium text-emerald-500 dark:text-emerald-400">MLD</span> →
               <span class="font-medium text-purple-500 dark:text-purple-400">MPD</span>
@@ -834,7 +814,7 @@ const workspaceUrl = computed(() => {
                 <span class="italic text-purple-500 dark:text-purple-400" style="font-family: 'Merriweather', serif;">n'importe quelle stack.</span>
               </h2>
               <p class="mt-5 leading-relaxed text-muted-foreground">
-                Arrêtez de retaper vos schémas à la main. Choisissez le framework que votre équipe utilise vraiment, un ORM, une base. ModelizeMe génère le code que vous auriez écrit vous-même.
+                Arrêtez de retaper vos schémas à la main. Choisissez le framework que votre équipe utilise vraiment, un ORM, une base. {{ appName }} génère le code que vous auriez écrit vous-même.
               </p>
 
               <div class="mt-8 space-y-5">
@@ -1224,29 +1204,8 @@ const workspaceUrl = computed(() => {
       <div class="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-12 lg:px-6">
         <div class="md:col-span-5">
           <div class="flex items-center gap-2.5">
-            <span
-              class="relative inline-flex h-7 w-7 items-center justify-center rounded-lg bg-primary font-mono text-[11px] font-bold text-primary-foreground shadow-sm"
-              aria-hidden="true"
-            >
-              <span class="flex flex-col leading-none">
-                <span class="flex">
-                  <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
-                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                </span>
-                <span class="mt-0.5 flex">
-                  <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
-                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                </span>
-                <span class="mt-0.5 flex">
-                  <span class="inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground/60" />
-                  <span class="ml-0.5 inline-block h-1 w-1 rounded-sm bg-primary-foreground" />
-                </span>
-              </span>
-            </span>
-            <span class="font-semibold">ModelizeMe</span>
+            <img src="/favicon.svg" class="h-7 w-7" alt="" aria-hidden="true" />
+            <span class="font-semibold">{{ appName }}</span>
           </div>
           <p class="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
             L'IDE Merise open source. Modélisez vos données, collaborez en temps réel, générez votre stack.
@@ -1297,7 +1256,7 @@ const workspaceUrl = computed(() => {
 
       <div class="border-t border-border">
         <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 font-mono text-xs text-muted-foreground sm:flex-row lg:px-6">
-          <div>© {{ new Date().getFullYear() }} ModelizeMe · Licence MIT · Construit avec <span class="text-emerald-500">Vue Flow</span></div>
+          <div>© {{ new Date().getFullYear() }} {{ appName }} · Licence MIT · Construit avec <span class="text-emerald-500">Vue Flow</span></div>
           <div class="flex items-center gap-5">
             <a href="#" class="hover:text-foreground">Confidentialité</a>
             <a href="#" class="hover:text-foreground">Conditions</a>

@@ -5,7 +5,7 @@
       <DialogHeader>
         <DialogTitle>Envoyer un feedback</DialogTitle>
         <DialogDescription>
-          Aidez-nous à améliorer ModelizeMe. Partagez vos idées, signalements de bugs ou suggestions.
+          Aidez-nous à améliorer {{ appName }}. Partagez vos idées, signalements de bugs ou suggestions.
         </DialogDescription>
       </DialogHeader>
 
@@ -57,6 +57,7 @@
 </template>
 
 <script setup lang="ts">
+const appName = useAppName()
 import { ref } from 'vue'
 import {
   Dialog,

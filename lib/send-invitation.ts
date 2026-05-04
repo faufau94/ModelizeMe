@@ -1,5 +1,7 @@
 import nodemailer from "nodemailer";
 
+const APP_NAME = process.env.NUXT_PUBLIC_APP_NAME || 'Moldata'
+
 export async function sendOrganizationInvitation({
   email,
   invitedByUsername,
@@ -42,7 +44,7 @@ export async function sendOrganizationInvitation({
 
     try {
       const info = await transporter.sendMail({
-        from: 'noreply@modelizeme.local',
+        from: 'noreply@moldata.local',
         to: email,
         subject: `Invitation to join ${teamName}`,
         html,
@@ -66,13 +68,13 @@ export async function sendOrganizationInvitation({
     },
   });
 
-  const from = config.mailerFrom || process.env.MAILER_FROM || "noreply@modelizeme.com";
+  const from = config.mailerFrom || process.env.MAILER_FROM || "noreply@moldata.fr";
 
   try {
     const info = await transporter.sendMail({
       from,
       to: email,
-      subject: `Invitation to join ${teamName} on ModelizeMe`,
+      subject: `Invitation to join ${teamName} on ${APP_NAME}`,
       html,
     });
     console.log('✅ [PROD] Email sent:', info.messageId);
@@ -107,7 +109,7 @@ export async function sendFeedbackNotification({
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
       <div style="background: #4f46e5; color: white; padding: 20px 28px;">
-        <h2 style="margin: 0; font-size: 18px;">Nouveau feedback — ModelizeMe</h2>
+        <h2 style="margin: 0; font-size: 18px;">Nouveau feedback — ${APP_NAME}</h2>
       </div>
       <div style="padding: 28px; background: #f9fafb;">
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
@@ -136,7 +138,7 @@ export async function sendFeedbackNotification({
         secure: false,
       });
       await transporter.sendMail({
-        from: 'noreply@modelizeme.local',
+        from: 'noreply@moldata.local',
         to: adminEmail,
         subject: `[Feedback] ${categoryLabel} de ${userName}`,
         html,
@@ -154,7 +156,7 @@ export async function sendFeedbackNotification({
         pass: config.mailerPassword || process.env.MAILER_PASSWORD,
       },
     });
-    const from = config.mailerFrom || process.env.MAILER_FROM || 'noreply@modelizeme.com';
+    const from = config.mailerFrom || process.env.MAILER_FROM || 'noreply@moldata.fr';
     await transporter.sendMail({
       from,
       to: adminEmail,

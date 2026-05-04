@@ -76,6 +76,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
+      appName: process.env.NUXT_PUBLIC_APP_NAME || 'Moldata',
       baseUrl: process.env.BASE_URL,
       websocketUrl: process.env.NUXT_PUBLIC_WEBSOCKET_URL || 'ws://localhost:1234',
     },

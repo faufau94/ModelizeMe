@@ -16,7 +16,7 @@
         >
           <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
         </svg>
-        <span class="text-xl font-bold ml-2">ModelizeMe</span>
+        <span class="text-xl font-bold ml-2">{{ appName }}</span>
       </NuxtLink>
     </header>
     <div class="flex-grow flex justify-center items-center">
@@ -25,7 +25,7 @@
           <div class="mx-auto mb-4">
             <PartyPopper class="h-12 w-12 text-primary" />
           </div>
-          <CardTitle class="text-2xl">Bienvenue sur ModelizeMe !</CardTitle>
+          <CardTitle class="text-2xl">Bienvenue sur {{ appName }} !</CardTitle>
           <CardDescription>
             Votre compte a été créé avec succès. Vous allez être redirigé vers votre espace de travail.
           </CardDescription>
@@ -42,6 +42,7 @@
 </template>
 
 <script setup>
+const appName = useAppName()
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Loader2, PartyPopper } from 'lucide-vue-next'
 import { authClient } from '~/lib/auth-client'
