@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Full model deletion — only owner/admin or model author can delete
+  // Full model deletion - only owner/admin or model author can delete
   const modelId = idSchema.parse(query.id);
   const { session, model, member } = await requireModelAccess(event, modelId);
 

@@ -3,7 +3,7 @@ import { getBezierPath } from '@vue-flow/core';
 import { getDistributedEdgeParams, getEdgeParams } from './useFloatingEdge.js';
 
 /**
- * Compute the bezier midpoint for an edge — this is where CustomEdge.vue
+ * Compute the bezier midpoint for an edge - this is where CustomEdge.vue
  * actually renders the association table (edgePath[1], edgePath[2]).
  * Nodes must have fresh positions (post-layout).
  */
@@ -189,7 +189,7 @@ export function findFreePosition(candidate, size, otherNodes, flowInstance, marg
 
   if (!overlaps(candidate)) return candidate;
 
-  // Spiral outward to find free spot — step scales with node size
+  // Spiral outward to find free spot - step scales with node size
   const step = Math.max(40, Math.min(size.width, size.height) * 0.5);
   for (let dist = step; dist < 1200; dist += step) {
     for (let angle = 0; angle < 360; angle += 20) {
@@ -323,7 +323,7 @@ export function resolveCollisions(nodes, edges = [], { maxIterations = 50, overl
       }
     }
 
-    // Converged or oscillating — stop early
+    // Converged or oscillating - stop early
     if (totalDisplacement < 1.0) break;
   }
 

@@ -117,7 +117,7 @@ export const useCodeGeneratorStore = defineStore("generator", () => {
     });
   });
 
-  // ORM options for step 3 — filtered by selected framework
+  // ORM options for step 3 - filtered by selected framework
   const ormOptions = computed(() => {
     const fw = datas.value.framework;
     if (!fw || !capabilities.value?.[fw]) return [];
@@ -133,7 +133,7 @@ export const useCodeGeneratorStore = defineStore("generator", () => {
     });
   });
 
-  // Database options for step 4 — filtered by selected framework
+  // Database options for step 4 - filtered by selected framework
   const databaseOptions = computed(() => {
     const fw = datas.value.framework;
     if (!fw || !capabilities.value?.[fw]) return [];
@@ -149,10 +149,10 @@ export const useCodeGeneratorStore = defineStore("generator", () => {
     });
   });
 
-  // Frameworks that don't expose optional packages — skip the step entirely.
+  // Frameworks that don't expose optional packages - skip the step entirely.
   const FRAMEWORKS_WITHOUT_PACKAGES = new Set(["nuxt"]);
 
-  // Package options for step 5 — filtered by selected framework
+  // Package options for step 5 - filtered by selected framework
   const packageOptions = computed(() => {
     const fw = datas.value.framework;
     if (!fw || !capabilities.value?.[fw]) return [];
@@ -167,7 +167,7 @@ export const useCodeGeneratorStore = defineStore("generator", () => {
     }));
   });
 
-  // Steps definition — built dynamically
+  // Steps definition - built dynamically
   const STEPS = computed(() => {
     const steps = [
       { step: 1, title: "Informations principales" },

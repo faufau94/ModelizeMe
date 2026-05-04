@@ -58,7 +58,7 @@ export function applyEvent(state: ModelState, event: EventPayload): ModelState {
     }
 
     case "TABLE_DUPLICATED": {
-      // Same as TABLE_ADDED — the duplicated node is a new full node
+      // Same as TABLE_ADDED - the duplicated node is a new full node
       const node = event.payload.node;
       if (node) nodes.push(node);
       break;
@@ -163,7 +163,7 @@ export function applyEvent(state: ModelState, event: EventPayload): ModelState {
     }
 
     default:
-      // Unknown event type — ignore silently to be forward-compatible
+      // Unknown event type - ignore silently to be forward-compatible
       break;
   }
 
@@ -196,7 +196,7 @@ export async function buildModelState(
 
     if (eventCount > 0) {
       // Events exist: start from empty state and replay all events.
-      // Do NOT use Model.nodes/edges as base — the double-write in events.post.ts
+      // Do NOT use Model.nodes/edges as base - the double-write in events.post.ts
       // already updates them, so using them + replaying events = duplicates.
       state = { nodes: [], edges: [] };
       cursor = 0;

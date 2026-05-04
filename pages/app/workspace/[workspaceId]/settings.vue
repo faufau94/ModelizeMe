@@ -1,7 +1,7 @@
 <template>
   <div class="px-6 py-6 lg:px-8 max-w-5xl mx-auto w-full">
     <div class="max-w-2xl mx-auto space-y-6">
-      <!-- General Settings — owner/admin only -->
+      <!-- General Settings - owner/admin only -->
       <template v-if="getIsOwnerOrAdmin">
         <Form v-slot="{ handleSubmit }" :initial-values="initialValues" :validation-schema="formSchema" as="">
           <form @submit="handleSubmit($event, onSubmit)">
@@ -62,11 +62,11 @@
         </CardHeader>
         <CardContent class="space-y-2">
           <p class="text-sm"><span class="font-medium">Nom :</span> {{ selectedWorkspace?.name }}</p>
-          <p class="text-sm"><span class="font-medium">Description :</span> {{ selectedWorkspace?.metadata ? JSON.parse(selectedWorkspace?.metadata)?.description || '—' : '—' }}</p>
+          <p class="text-sm"><span class="font-medium">Description :</span> {{ selectedWorkspace?.metadata ? JSON.parse(selectedWorkspace?.metadata)?.description || '-' : '-' }}</p>
         </CardContent>
       </Card>
 
-      <!-- Danger Zone — owner only -->
+      <!-- Danger Zone - owner only -->
       <Card v-if="getIsOwner" class="border-destructive/50">
         <CardHeader>
           <CardTitle class="text-base text-destructive">Zone de danger</CardTitle>

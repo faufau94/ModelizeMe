@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { title, framework, database, orm, nodes, edges, packages } = generateSchema.parse(body);
 
-  // Validate that every node has a name — backend generators require it
+  // Validate that every node has a name - backend generators require it
   const unnamedNodes = nodes.filter((n: any) => !n?.data?.name || String(n.data.name).trim() === "");
   if (unnamedNodes.length > 0) {
     throw createError({

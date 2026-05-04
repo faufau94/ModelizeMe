@@ -2,7 +2,7 @@
 @import '@vue-flow/core/dist/theme-default.css';
 @import '@vue-flow/controls/dist/style.css';
 @import '@vue-flow/minimap/dist/style.css';
-/* @vue-flow/node-resizer not installed — removed unused import */
+/* @vue-flow/node-resizer not installed - removed unused import */
 
 
 @tailwind base;

@@ -900,7 +900,7 @@ watch(
   }
 )
 
-// Snapshot of node/edge data at selection time — used as inverse for undo.
+// Snapshot of node/edge data at selection time - used as inverse for undo.
 // Only captured on selection change or after explicit save, NOT on every
 // VueFlow state change (which would overwrite the snapshot after undo/redo).
 let _snapshotNodeData = null
@@ -1004,13 +1004,13 @@ function saveEdgeNow() {
   if (hasEdgeChanges()) updateEdge()
 }
 
-// Deep watcher on node data — handle undo/redo by refreshing snapshot
+// Deep watcher on node data - handle undo/redo by refreshing snapshot
 watch(
   () => nodeData.value?.data,
   () => {
     if (!nodeData.value?.data || !nodeIdSelected.value) return
     if (undoRedoStore.isUndoRedoing) {
-      // Undo/redo just changed data — cancel pending auto-save and refresh snapshot
+      // Undo/redo just changed data - cancel pending auto-save and refresh snapshot
       cancelNodeTimer()
       _snapshotNodeData = JSON.parse(JSON.stringify(nodeData.value.data))
       return
@@ -1021,7 +1021,7 @@ watch(
   { deep: true }
 )
 
-// Deep watcher on edge data — handle undo/redo by refreshing snapshot
+// Deep watcher on edge data - handle undo/redo by refreshing snapshot
 watch(
   () => edgeData.value?.data,
   () => {

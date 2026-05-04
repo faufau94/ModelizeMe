@@ -109,7 +109,7 @@ export async function sendFeedbackNotification({
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
       <div style="background: #4f46e5; color: white; padding: 20px 28px;">
-        <h2 style="margin: 0; font-size: 18px;">Nouveau feedback — ${APP_NAME}</h2>
+        <h2 style="margin: 0; font-size: 18px;">Nouveau feedback - ${APP_NAME}</h2>
       </div>
       <div style="padding: 28px; background: #f9fafb;">
         <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">

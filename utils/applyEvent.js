@@ -1,6 +1,6 @@
 /**
  * Apply a single event to a model state { nodes, edges }.
- * Pure function — no side effects. Shared between client stores.
+ * Pure function - no side effects. Shared between client stores.
  * Must stay in sync with server/utils/event-engine.ts applyEvent().
  */
 export function applyEvent(state, event) {

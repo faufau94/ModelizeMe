@@ -10,7 +10,7 @@ export const teamColorClass = (color: string | undefined | null) => {
   return colorMap[color || 'blue'] || 'bg-blue-500';
 };
 
-// Detect diacritics (accented chars) in a string — used to warn the user before submission.
+// Detect diacritics (accented chars) in a string - used to warn the user before submission.
 export const hasDiacritics = (str: string): boolean => {
   if (!str) return false;
   return /[̀-ͯ]/.test(str.normalize('NFD'));

@@ -84,7 +84,7 @@ function getDistributedCoords(node, side, index, count) {
     const padding = 0.15;
 
     if (count <= 1) {
-        // Single edge — use the center of the side (original behavior)
+        // Single edge - use the center of the side (original behavior)
         switch (side) {
             case Position.Left:   return [pos.x, pos.y + h / 2];
             case Position.Right:  return [pos.x + w, pos.y + h / 2];

@@ -73,7 +73,7 @@ export async function createGitHubRepo(
   isPublic = false,
   description = ""
 ): Promise<CreateRepoResult> {
-  // 1. Create repo with auto_init — GitHub creates the default branch "main"
+  // 1. Create repo with auto_init - GitHub creates the default branch "main"
   //    and an initial README commit. The Git Database API requires a non-empty repo.
   const repo: any = await githubFetch("/user/repos", token, {
     method: "POST",
@@ -173,7 +173,7 @@ async function gitlabFetch(path: string, token: string, options: any = {}) {
 
 /**
  * Poll the GitLab branches endpoint until the default branch is ready.
- * GitLab creates projects asynchronously — pushing files too early fails.
+ * GitLab creates projects asynchronously - pushing files too early fails.
  */
 async function waitForGitLabBranch(
   projectId: number,

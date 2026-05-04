@@ -186,7 +186,7 @@ const formatOptions = [
     id: 'json-export',
     label: 'JSON export',
     icon: RefreshCcw,
-    description: 'Re-import d\'un JSON exporté depuis ' + appName + ' — contient nodes + edges, prêt à l\'emploi.',
+    description: 'Re-import d\'un JSON exporté depuis ' + appName + ' - contient nodes + edges, prêt à l\'emploi.',
   },
   {
     id: 'json-structured',
@@ -198,7 +198,7 @@ const formatOptions = [
     id: 'sql-ddl',
     label: 'SQL DDL',
     icon: Database,
-    description: 'Instructions CREATE TABLE — MySQL, PostgreSQL, SQLite et SQL Server. Les clés primaires, étrangères et contraintes UNIQUE sont automatiquement détectées.',
+    description: 'Instructions CREATE TABLE - MySQL, PostgreSQL, SQLite et SQL Server. Les clés primaires, étrangères et contraintes UNIQUE sont automatiquement détectées.',
   },
 ]
 

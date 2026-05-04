@@ -73,9 +73,9 @@ Moldata is under active development. Here's what's planned:
 
 ### Code Generation
 
-- [x] **More ORMs**: Prisma, TypeORM, SQLAlchemy, Doctrine, Eloquent ✓ — Hibernate (Java), ActiveRecord (Rails), GORM (Go) coming
-- [x] **More frameworks**: Laravel, Symfony, Django, Next.js, Nuxt ✓ — Spring Boot, Rails, FastAPI, NestJS coming
-- [x] **More databases**: MySQL, PostgreSQL, SQLite ✓ — MongoDB, MariaDB, MSSQL coming
+- [x] **More ORMs**: Prisma, TypeORM, SQLAlchemy, Doctrine, Eloquent ✓ - Hibernate (Java), ActiveRecord (Rails), GORM (Go) coming
+- [x] **More frameworks**: Laravel, Symfony, Django, Next.js, Nuxt ✓ - Spring Boot, Rails, FastAPI, NestJS coming
+- [x] **More databases**: MySQL, PostgreSQL, SQLite ✓ - MongoDB, MariaDB, MSSQL coming
 - [ ] **API generation**: Generate REST/GraphQL endpoint scaffolding from the model
 
 ### Collaboration & UX
@@ -90,7 +90,7 @@ Moldata is under active development. Here's what's planned:
 
 - [ ] **CLI tool**: Import/export models from the command line
 - [ ] **VS Code extension**: View and navigate your models from the editor
-- [x] **Self-hosted deploy via Docker Compose**: Full stack containerized ✓ — one-click Railway / Render / Coolify coming
+- [x] **Self-hosted deploy via Docker Compose**: Full stack containerized ✓ - one-click Railway / Render / Coolify coming
 
 > Have an idea? [Open an issue](https://github.com/your-org/moldata/issues) and let's discuss it.
 

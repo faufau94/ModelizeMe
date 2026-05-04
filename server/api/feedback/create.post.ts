@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     },
   });
 
-  // Best-effort email notification — does not throw on failure
+  // Best-effort email notification - does not throw on failure
   await sendFeedbackNotification({
     userEmail: session.user.email,
     userName: session.user.name,
