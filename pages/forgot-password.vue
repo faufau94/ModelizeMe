@@ -16,7 +16,7 @@
         >
           <path d="m8 3 4 8 5-5 5 15H2L8 3z"></path>
         </svg>
-        <span class="text-xl font-bold ml-2">ModelizeMe</span>
+        <span class="text-xl font-bold ml-2">{{ appName }}</span>
       </NuxtLink>
     </header>
     <div class="flex-grow flex justify-center items-center">
@@ -74,6 +74,7 @@
 </template>
 
 <script setup>
+const appName = useAppName()
 import { Button } from '~/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Input } from '~/components/ui/input'

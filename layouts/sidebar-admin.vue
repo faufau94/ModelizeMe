@@ -7,7 +7,7 @@
             <!--
             <Package2 class="h-6 w-6" />
             -->
-            <span class="">ModelizeMe</span>
+            <span class="">{{ appName }}</span>
           </NuxtLink>
           <!--
           <Button @click="toggleSidebar" variant="ghost" size="icon" class="ml-auto h-8 w-8">
@@ -88,7 +88,7 @@
           <!--
           <Package2 class="h-6 w-6" />
           -->
-          <span class="">ModelizeMe</span>
+          <span class="">{{ appName }}</span>
         </NuxtLink>
         <Sheet>
           <SheetTrigger as-child>
@@ -110,7 +110,7 @@
                 <!--
                 <Package2 class="h-6 w-6" />
                 -->
-                <span class="sr-only">ModelizMe</span>
+                <span class="sr-only">Moldata</span>
               </NuxtLink>
               <!--
               <NuxtLink
@@ -189,6 +189,7 @@
 </template>
 
 <script setup>
+const appName = useAppName()
 import {computed, ref} from "vue";
 import {
   Folder,

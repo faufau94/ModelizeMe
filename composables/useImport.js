@@ -210,7 +210,7 @@ export const useImport = () => {
 
   /**
    * Parse a JSON file. Supports two formats:
-   * 1. Direct ModelizeMe format: { nodes, edges } — re-import from export
+   * 1. Direct Moldata format: { nodes, edges } — re-import from export
    * 2. Entity/relationship format: { entities, relationships }
    */
   function parseJSONFile(jsonContent) {
@@ -225,7 +225,7 @@ export const useImport = () => {
       throw new Error('Le fichier JSON doit être un objet. Format attendu : { "nodes", "edges" } pour un re-import, ou { "entities", "relationships" } pour un import manuel.')
     }
 
-    // Direct node/edge format (exported from ModelizeMe)
+    // Direct node/edge format (exported from Moldata)
     if (data.nodes && data.edges) {
       if (!Array.isArray(data.nodes) || !Array.isArray(data.edges)) {
         throw new Error('Les clés "nodes" et "edges" doivent être des tableaux. Le fichier semble corrompu.')
@@ -589,7 +589,7 @@ export const useImport = () => {
   async function convertJSONToFlowElements(jsonContent, modelId) {
     const parsed = parseJSONFile(jsonContent)
 
-    // Direct node/edge format (re-import from ModelizeMe export)
+    // Direct node/edge format (re-import from Moldata export)
     if (parsed.isDirect) {
       const idRemap = new Map()
       const nodes = parsed.nodes.map((node) => {

@@ -149,6 +149,7 @@
 </template>
 
 <script setup>
+const appName = useAppName()
 import { nextTick, ref } from 'vue'
 
 import { Button } from '@/components/ui/button'
@@ -185,7 +186,7 @@ const formatOptions = [
     id: 'json-export',
     label: 'JSON export',
     icon: RefreshCcw,
-    description: 'Re-import d\'un JSON exporté depuis ModelizeMe — contient nodes + edges, prêt à l\'emploi.',
+    description: 'Re-import d\'un JSON exporté depuis ' + appName + ' — contient nodes + edges, prêt à l\'emploi.',
   },
   {
     id: 'json-structured',

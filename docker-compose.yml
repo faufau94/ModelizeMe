@@ -1,5 +1,5 @@
 # =============================================
-#  ModelizeMe - Docker Compose
+#  Moldata - Docker Compose
 # =============================================
 #  Services: app, websocket, mysql, redis, phpmyadmin
 #
@@ -24,7 +24,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
-      - modelizeme
+      - moldata
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
@@ -45,7 +45,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - modelizeme
+      - moldata
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -90,6 +90,7 @@ services:
       # WebSocket (server-side uses internal Docker hostname, browser uses localhost)
       WEBSOCKET_URL: ws://websocket:1234
       NUXT_PUBLIC_WEBSOCKET_URL: ws://localhost:1234
+      NUXT_PUBLIC_APP_NAME: ${NUXT_PUBLIC_APP_NAME:-Moldata}
     volumes:
       - .:/app
       - /app/node_modules
@@ -101,10 +102,10 @@ services:
       redis:
         condition: service_healthy
     networks:
-      modelizeme:
-      modelizemoi:
+      moldata:
+      moldata-generator:
         aliases:
-          - modelizeme-app
+          - moldata-app
     command: ["yarn", "dev"]
 
   # ─── WebSocket Server (y-websocket) ──────
@@ -129,7 +130,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - modelizeme
+      - moldata
 
   # ─── MailHog (dev only) ──────────────────
   # mailhog:
@@ -139,7 +140,7 @@ services:
   #     - "1025:1025"   # SMTP
   #     - "8025:8025"   # Web UI
   #   networks:
-  #     - modelizeme
+  #     - moldata
   #   profiles:
   #     - dev
 
@@ -157,7 +158,7 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - modelizeme
+      - moldata
     profiles:
       - dev
 
@@ -170,8 +171,8 @@ volumes:
 
 # ─── Networks ──────────────────────────────
 networks:
-  modelizeme:
+  moldata:
     driver: bridge
-  modelizemoi:
+  moldata-generator:
     external: true
     name: modelizemoi_network

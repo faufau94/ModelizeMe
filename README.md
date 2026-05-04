@@ -1,18 +1,18 @@
 ﻿<div align="center">
-  <img src="public/logo.svg" alt="ModelizeMe" width="120" />
-  <h1>ModelizeMe</h1>
+  <img src="public/logo.svg" alt="Moldata" width="120" />
+  <h1>Moldata</h1>
   <p><strong>The open-source Merise data modeling IDE, from concept to code.</strong></p>
 
   [![Nuxt](https://img.shields.io/badge/Nuxt-3-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com)
   [![Vue](https://img.shields.io/badge/Vue-3-42b883?logo=vue.js&logoColor=white)](https://vuejs.org)
   [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
   [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
-  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/your-org/modelizeme/pulls)
+  [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/your-org/moldata/pulls)
 </div>
 
 ---
 
-**ModelizeMe** is a collaborative, visual data modeling IDE built around the **[Merise](https://en.wikipedia.org/wiki/Merise) methodology**. Design your data from the ground up: starting with the **Conceptual Data Model (MCD)**, deriving the **Logical Data Model (MLD)**, down to the **Physical Data Model (MPD)**, then generate production-ready code (migrations, ORM models, project scaffolding) for your framework, ORM, and database of choice.
+**Moldata** is a collaborative, visual data modeling IDE built around the **[Merise](https://en.wikipedia.org/wiki/Merise) methodology**. Design your data from the ground up: starting with the **Conceptual Data Model (MCD)**, deriving the **Logical Data Model (MLD)**, down to the **Physical Data Model (MPD)**, then generate production-ready code (migrations, ORM models, project scaffolding) for your framework, ORM, and database of choice.
 
 > Design your data. Collaborate in real time. Generate your stack.
 
@@ -62,7 +62,7 @@ The project is actively developed. More methodologies (UML class diagrams, Entit
 
 ## 🗺️ Roadmap
 
-ModelizeMe is under active development. Here's what's planned:
+Moldata is under active development. Here's what's planned:
 
 ### Modeling
 
@@ -92,7 +92,7 @@ ModelizeMe is under active development. Here's what's planned:
 - [ ] **VS Code extension**: View and navigate your models from the editor
 - [x] **Self-hosted deploy via Docker Compose**: Full stack containerized ✓ — one-click Railway / Render / Coolify coming
 
-> Have an idea? [Open an issue](https://github.com/your-org/modelizeme/issues) and let's discuss it.
+> Have an idea? [Open an issue](https://github.com/your-org/moldata/issues) and let's discuss it.
 
 ---
 
@@ -126,8 +126,8 @@ ModelizeMe is under active development. Here's what's planned:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/modelizeme.git
-cd modelizeme
+git clone https://github.com/your-org/moldata.git
+cd moldata
 
 # Install dependencies
 npm install
@@ -152,7 +152,7 @@ The app will be available at `http://localhost:3000`.
 
 ### 🐳 Docker
 
-The recommended way to run ModelizeMe locally is with Docker Compose.  
+The recommended way to run Moldata locally is with Docker Compose.  
 It spins up the main app **and** the Yjs WebSocket collaboration server as separate containers.
 
 ```bash
@@ -177,7 +177,7 @@ Create a `.env` file at the root. Required variables:
 
 ```env
 # Database
-DATABASE_URL="mysql://user:password@localhost:3306/modelizeme"
+DATABASE_URL="mysql://user:password@localhost:3306/moldata"
 
 # Better-Auth
 BETTER_AUTH_SECRET="your-secret"
@@ -215,11 +215,11 @@ npm run build
 
 ## 💝 Special Thanks
 
-ModelizeMe is built on the shoulders of giants:
+Moldata is built on the shoulders of giants:
 
-- **[Claude](https://www.anthropic.com/claude) by [Anthropic](https://www.anthropic.com/)**: The AI pair programmer that helped design, build and iterate on ModelizeMe. A genuinely useful coding companion.
+- **[Claude](https://www.anthropic.com/claude) by [Anthropic](https://www.anthropic.com/)**: The AI pair programmer that helped design, build and iterate on Moldata. A genuinely useful coding companion.
 
-- **[Vue Flow](https://vueflow.dev/)**: The powerful Vue 3 graph/flowchart library that powers the entire modeling canvas. Without it, ModelizeMe wouldn't exist in its current form. Please consider [starring their repo](https://github.com/bcakmakoglu/vue-flow).
+- **[Vue Flow](https://vueflow.dev/)**: The powerful Vue 3 graph/flowchart library that powers the entire modeling canvas. Without it, Moldata wouldn't exist in its current form. Please consider [starring their repo](https://github.com/bcakmakoglu/vue-flow).
 
 - **[Better Auth](https://www.better-auth.com/)**: A refreshingly simple and secure authentication library for TypeScript. Handles all our OAuth flows, sessions and user management without the usual headaches.
 

@@ -23,7 +23,7 @@ export async function sendEmail({
 
     try {
       const info = await transporter.sendMail({
-        from: "noreply@modelizeme.local",
+        from: "noreply@moldata.local",
         to,
         subject,
         html,
@@ -47,7 +47,7 @@ export async function sendEmail({
     },
   });
 
-  const from = config.mailerFrom || process.env.MAILER_FROM || "noreply@modelizeme.com";
+  const from = config.mailerFrom || process.env.MAILER_FROM || "noreply@moldata.fr";
 
   try {
     const info = await transporter.sendMail({

@@ -6,6 +6,8 @@ import { organization } from "better-auth/plugins";
 import { sendOrganizationInvitation } from "@/lib/send-invitation";
 import { sendEmail } from "@/lib/send-email";
 
+const APP_NAME = process.env.NUXT_PUBLIC_APP_NAME || 'Moldata'
+
 export const auth = betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3100',
     trustedOrigins: [
@@ -24,7 +26,7 @@ export const auth = betterAuth({
         async sendResetPassword({ user, url }, request) {
             void sendEmail({
                 to: user.email,
-                subject: "Réinitialisation de votre mot de passe - ModelizeMe",
+                subject: `Réinitialisation de votre mot de passe - ${APP_NAME}`,
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
                         <div style="background: #4f46e5; color: white; padding: 24px 32px;">
@@ -54,7 +56,7 @@ export const auth = betterAuth({
         async sendVerificationEmail({ user, url }) {
             void sendEmail({
                 to: user.email,
-                subject: "Vérifiez votre adresse email - ModelizeMe",
+                subject: `Vérifiez votre adresse email - ${APP_NAME}`,
                 html: `
                     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
                         <div style="background: #4f46e5; color: white; padding: 24px 32px;">
@@ -62,7 +64,7 @@ export const auth = betterAuth({
                         </div>
                         <div style="padding: 32px; background: #f9fafb;">
                             <p style="font-size: 16px; margin-bottom: 24px;">Bonjour <strong>${user.name}</strong>,</p>
-                            <p style="font-size: 16px; margin-bottom: 24px;">Merci de vous être inscrit sur ModelizeMe ! Cliquez sur le bouton ci-dessous pour vérifier votre adresse email :</p>
+                            <p style="font-size: 16px; margin-bottom: 24px;">Merci de vous être inscrit sur ${APP_NAME} ! Cliquez sur le bouton ci-dessous pour vérifier votre adresse email :</p>
                             <a href="${url}" style="display: inline-block; background: #4f46e5; color: white; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-size: 18px; font-weight: bold; margin-bottom: 24px;">Vérifier mon email</a>
                             <p style="font-size: 14px; color: #6b7280; margin-top: 32px;">Si vous n'avez pas créé de compte, ignorez cet email.</p>
                         </div>
