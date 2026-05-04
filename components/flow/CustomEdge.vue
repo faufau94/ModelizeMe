@@ -123,7 +123,7 @@ const props = defineProps({
 
 const modelType = computed(() => props.data?.modelType ?? 'default');
 
-// Ternary edges connect to a ternaryEntity node — they should not display an association table
+// Ternary edges connect to a ternaryEntity node - they should not display an association table
 const isTernaryEdge = computed(() => {
   return props.sourceNode?.type === 'ternaryEntity' || props.targetNode?.type === 'ternaryEntity';
 });
@@ -386,7 +386,7 @@ const targetLabelY = computed(() => {
 }
 
 :root.dark .cardinality-label--mcd {
-  /* Solid dark blue tinted background — fully opaque so edges never bleed through */
+  /* Solid dark blue tinted background - fully opaque so edges never bleed through */
   background: #172554;
   color: #93c5fd;
   border-color: #1e40af;

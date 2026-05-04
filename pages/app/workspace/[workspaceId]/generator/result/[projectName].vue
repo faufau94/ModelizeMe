@@ -108,11 +108,11 @@ const openRepoDialog = async (provider) => {
       // Redirect to OAuth linking before showing the form
       const callbackURL = `${route.path}?linkProvider=${provider}&repoName=${cleanProjectName}`
       await authClient.linkSocial({ provider, callbackURL })
-      // Browser redirects — execution stops here
+      // Browser redirects - execution stops here
       return
     }
 
-    // Account already linked — open form directly
+    // Account already linked - open form directly
     selectedProvider.value = provider
     repoProjectName.value = cleanProjectName
     autoSubmitRepo.value = false
@@ -125,7 +125,7 @@ const openRepoDialog = async (provider) => {
 }
 
 const onRepoCreated = () => {
-  // Nothing extra needed — dialog handles success state
+  // Nothing extra needed - dialog handles success state
 }
 
 const isDownloading = ref(false)

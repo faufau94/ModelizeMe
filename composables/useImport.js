@@ -210,7 +210,7 @@ export const useImport = () => {
 
   /**
    * Parse a JSON file. Supports two formats:
-   * 1. Direct Moldata format: { nodes, edges } — re-import from export
+   * 1. Direct Moldata format: { nodes, edges } - re-import from export
    * 2. Entity/relationship format: { entities, relationships }
    */
   function parseJSONFile(jsonContent) {
@@ -284,7 +284,7 @@ export const useImport = () => {
 
   /**
    * Convert parsed entities into Vue Flow nodes.
-   * Junction tables (composite FK-only PK) are excluded — they become edges.
+   * Junction tables (composite FK-only PK) are excluded - they become edges.
    * FK columns are removed from node data (in MCD, relationships are edges).
    */
   function createNodesFromEntities(entities) {
@@ -300,7 +300,7 @@ export const useImport = () => {
     const nodes = entities
       .filter(entity => !junctionTableNames.has(entity.name))
       .map((entity) => {
-        // Remove FK columns — in MCD, relationships are edges, not columns
+        // Remove FK columns - in MCD, relationships are edges, not columns
         const nonFKProperties = entity.properties.filter(p => !p.isForeignKey)
 
         // Ensure a PK exists

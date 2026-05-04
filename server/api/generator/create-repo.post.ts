@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
       repoUrl: result.repoUrl,
     };
   } catch (err: any) {
-    // TEMP debug — remove once stable
+    // TEMP debug - remove once stable
     console.error("[create-repo] provider=", provider, "status=", err?.response?.status || err?.statusCode, "data=", JSON.stringify(err?.data), "message=", err?.message);
 
     // Handle known API errors with clear messages
@@ -110,7 +110,7 @@ export default defineEventHandler(async (event) => {
           ? JSON.stringify(rawMessage)
           : err?.message || "";
 
-    // Only a repo-creation conflict should yield 409 — file-push errors must not.
+    // Only a repo-creation conflict should yield 409 - file-push errors must not.
     const isRepoDuplicate =
       (status === 422 || status === 400) &&
       (detail.includes("name already exists") ||

@@ -774,7 +774,7 @@ watch(searchOpen, (open) => {
 watch(searchQuery, () => { highlightedIndex.value = -1 })
 
 const searchableNodes = computed(() => {
-  // Use mcdFlowInstance directly — it's the editable model and always available
+  // Use mcdFlowInstance directly - it's the editable model and always available
   const nodes = mcdFlowInstance.getNodes?.value ?? []
   return nodes.map(n => ({
     id: n.id,
@@ -936,7 +936,7 @@ const fitViewOnNodes = (nodeIds, opts = {}) => {
 }
 
 const focusOnElement = (item) => {
-  // Always use the editable flow instance — search items use its IDs
+  // Always use the editable flow instance - search items use its IDs
   const allNodes = mcdFlowInstance.getNodes?.value ?? []
   const allEdges = mcdFlowInstance.getEdges?.value ?? []
   allNodes.forEach(n => { n.selected = false })
@@ -969,7 +969,7 @@ const focusOnElement = (item) => {
 }
 
 // Recenter on selection change (e.g. user clicks a node and the sidebar opens over it).
-// Only recenters if the target is partially hidden behind the sidebar — never zooms.
+// Only recenters if the target is partially hidden behind the sidebar - never zooms.
 const isNodeBehindSidebar = (nodeId) => {
   const flow = mcdFlowInstance
   if (!flow) return false
@@ -1288,7 +1288,7 @@ onMounted(async () => {
     isConnecting.value = false
     connectingSourceNodeId.value = null
     connectHoveredNodeId.value = null
-    // Prevent self-loops via drag & drop — use the ElementMenu instead
+    // Prevent self-loops via drag & drop - use the ElementMenu instead
     if (params.source === params.target) return
     mcdStore.addEdge(route.params.idModel, params)
   })

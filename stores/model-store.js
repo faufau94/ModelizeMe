@@ -36,7 +36,7 @@ export const useModelStore = defineStore("flow-model", () => {
   const isTernaryMode = ref(false);
   const ternarySelectedNodes = ref([]);
 
-  // Connection drag state — used to highlight valid target nodes
+  // Connection drag state - used to highlight valid target nodes
   const isConnecting = ref(false);
   const connectingSourceNodeId = ref(null);
   const connectHoveredNodeId = ref(null);
@@ -128,7 +128,7 @@ export const useModelStore = defineStore("flow-model", () => {
         if (evt.payload.nodeId && flowMCD.value) {
           const node = flowMCD.value.findNode(evt.payload.nodeId)
           if (node) {
-            // Full replacement of data — not a shallow merge.
+            // Full replacement of data - not a shallow merge.
             // The event payload contains the COMPLETE data snapshot for this state.
             const newData = { ...evt.payload.data }
             // Update VueFlow directly

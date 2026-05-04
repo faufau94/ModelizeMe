@@ -28,14 +28,14 @@
           <Clock class="h-4 w-4 text-muted-foreground" />
           <p class="text-sm font-medium text-muted-foreground">Dernier modifié</p>
         </div>
-        <NuxtLink :to="`/app/model/${lastModifiedModel.id}`" class="text-md font-medium mt-3 truncate block hover:text-primary transition-colors" :title="lastModifiedModel.name">{{ lastModifiedModel.name || '—' }}</NuxtLink>
+        <NuxtLink :to="`/app/model/${lastModifiedModel.id}`" class="text-md font-medium mt-3 truncate block hover:text-primary transition-colors" :title="lastModifiedModel.name">{{ lastModifiedModel.name || '-' }}</NuxtLink>
       </div>
       <div v-else class="rounded-xl border border-border bg-card p-5">
         <div class="flex items-center gap-2 mb-3">
           <Clock class="h-4 w-4 text-muted-foreground" />
           <p class="text-sm font-medium text-muted-foreground">Dernier modifié</p>
         </div>
-        <p class="text-sm font-medium mt-1 truncate">—</p>
+        <p class="text-sm font-medium mt-1 truncate">-</p>
       </div>
     </div>
 

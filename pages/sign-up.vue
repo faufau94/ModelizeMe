@@ -219,7 +219,7 @@ const onSubmit = async (values) => {
     message.value.text = res.error.message || "";
     isLoading.value = false;
   } else {
-    // Email verification is required — show success message
+    // Email verification is required - show success message
     message.value.type = 'success';
     message.value.text = 'Un email de vérification a été envoyé. Vérifiez votre boîte de réception pour activer votre compte.';
     isLoading.value = false;

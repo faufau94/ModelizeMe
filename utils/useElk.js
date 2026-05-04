@@ -4,7 +4,7 @@ const elk = new ELK();
 
 /**
  * Compute the size of an association table rendered on an edge.
- * Single source of truth — used by useElk (phantom nodes) and useCollisions (obstacles).
+ * Single source of truth - used by useElk (phantom nodes) and useCollisions (obstacles).
  */
 const computeAssociationSize = (edgeData) => {
     const propCount = edgeData?.properties?.length || 0;
@@ -89,7 +89,7 @@ const computeElkOptions = (nodes, edges, direction = 'RIGHT') => {
         if (height > maxH) maxH = height;
     }
 
-    // Count loopback edges — they need extra space on the side of their parent node
+    // Count loopback edges - they need extra space on the side of their parent node
     let loopbackCount = 0;
     for (const edge of (edges || [])) {
         if (edge.source === edge.target) loopbackCount++;
@@ -156,7 +156,7 @@ const determineHandles = (sourceNode, targetNode) => {
 const getLayoutedElements = (nodes, edges, options) => {
     const opts = options || computeElkOptions(nodes, edges);
 
-    // Separate loopback edges (source === target) — ELK layered doesn't handle self-loops
+    // Separate loopback edges (source === target) - ELK layered doesn't handle self-loops
     const normalEdges = [];
     const loopbackEdges = [];
     for (const edge of edges) {
@@ -167,7 +167,7 @@ const getLayoutedElements = (nodes, edges, options) => {
         }
     }
 
-    // Separate ternary entity nodes — they will be positioned post-layout
+    // Separate ternary entity nodes - they will be positioned post-layout
     // at the barycenter of their connected entities, not by ELK's layered algo
     const ternaryNodeIds = new Set();
     const regularNodes = [];
@@ -242,7 +242,7 @@ const getLayoutedElements = (nodes, edges, options) => {
             }
 
             // Apply new positions to regular nodes (preserving all Vue Flow properties)
-            // ELK guarantees no overlap between its children — no post-processing needed.
+            // ELK guarantees no overlap between its children - no post-processing needed.
             const layoutedRegularNodes = regularNodes.map((node) => {
                 const pos = positionMap.get(node.id);
                 return { ...node, position: pos || node.position };
@@ -263,7 +263,7 @@ const getLayoutedElements = (nodes, edges, options) => {
                 const tgt = nodeMap.get(edge.target);
                 if (!src || !tgt) continue;
                 const assocSize = computeAssociationSize(edge.data);
-                // Approximate midpoint (exact bezier not needed here — ELK handles main spacing)
+                // Approximate midpoint (exact bezier not needed here - ELK handles main spacing)
                 const midX = (src.position.x + tgt.position.x) / 2;
                 const midY = (src.position.y + tgt.position.y) / 2;
                 virtualObstacles.push({
