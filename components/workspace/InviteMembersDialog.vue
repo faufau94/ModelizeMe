@@ -21,11 +21,6 @@
           </DialogDescription>
         </DialogHeader>
 
-        <Form
-          v-slot="{ meta, values, errors }"
-          :validation-schema="formSchema"
-          as=""
-        >
           <form class="mt-4 space-y-4" @submit="onSubmit">
             <FormField
               name="emails"
@@ -56,14 +51,13 @@
             <div class="flex items-center justify-end">
               <Button
                 type="submit"
-                :disabled="isSubmitDisabled(meta, values, errors)"
+                :disabled="isSubmitDisabled()"
               >
                 <Loader2 v-if="isLoading" class="w-4 h-4 mr-2 animate-spin" />
                 {{ isLoading ? 'Envoi des invitations...' : 'Envoyer les invitations' }}
               </Button>
             </div>
           </form>
-        </Form>
       </DialogContent>
     </Dialog>
   </div>
@@ -89,7 +83,6 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import {
-  Form,
   FormField,
   FormItem,
   FormLabel,
@@ -142,20 +135,16 @@ watch(isDialogOpen, (open) => {
   }
 })
 
-function isSubmitDisabled(
-  meta: { valid: boolean; dirty: boolean },
-  values: { emails?: string },
-  errors: Record<string, string | string[] | undefined>,
-) {
-  const rawEmails = values.emails?.trim() ?? ''
-  const hasEmailsError = !!errors.emails
+function isSubmitDisabled() {
+  const rawEmails = (form.values.emails as string | undefined)?.trim() ?? ''
+  const hasEmailsError = !!form.errors.value.emails
 
   return (
     isLoading.value ||
     rawEmails.length === 0 ||
     hasEmailsError ||
-    !meta.dirty ||
-    !meta.valid
+    !form.meta.value.dirty ||
+    !form.meta.value.valid
   )
 }
 
