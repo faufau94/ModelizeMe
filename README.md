@@ -50,7 +50,7 @@ The project is actively developed. More methodologies (UML class diagrams, Entit
 
 - ↩️ **Undo / Redo**: Full collaborative undo history via Yjs UndoManager
 
-- 📤 **Export & Import**: Export your diagrams as JSON, SQL, or XML; import existing schemas
+- 📤 **Export & Import**: Export your diagrams as PNG, JPEG, SVG, JSON, or SQL (MySQL / PostgreSQL); import existing SQL DDL or JSON schemas
 
 - 🖼 **Gallery**: Browse and fork community model templates to jumpstart your project
 
@@ -80,7 +80,7 @@ Moldata is under active development. Here's what's planned:
 
 ### Collaboration & UX
 
-- [x] **Comments & annotations** on entities and attributes
+- [ ] **Comments & annotations** on entities and attributes
 - [ ] **Version history**: Browse and restore previous model states
 - [ ] **Shareable public links** for read-only model viewing
 - [x] **Multiplayer cursors**: See teammates' cursors in real time
@@ -100,7 +100,7 @@ Moldata is under active development. Here's what's planned:
 
 | Layer | Technology |
 |---|---|
-| Framework | Nuxt 3 + Vue 3 (Composition API) |
+| Framework | Nuxt 4 + Vue 3 (Composition API) |
 | UI | shadcn-nuxt, Tailwind CSS, Lucide icons |
 | Graph canvas | Vue Flow (`@vue-flow/core`) |
 | Auto-layout | ELK.js |
@@ -108,6 +108,7 @@ Moldata is under active development. Here's what's planned:
 | State | Pinia |
 | Data fetching | TanStack Query + `$fetch` |
 | ORM / DB | Prisma + MySQL |
+| Cache | Redis 7 |
 | Auth | Better-Auth (OAuth Google / GitHub / GitLab) |
 | Validation | Zod + vee-validate |
 | Infra | Docker Compose |
@@ -119,7 +120,7 @@ Moldata is under active development. Here's what's planned:
 ### Prerequisites
 
 - [Node.js v20+](https://nodejs.org/)
-- [pnpm v9+](https://pnpm.io/)
+- [yarn](https://yarnpkg.com/) (or npm / pnpm / bun)
 - [Docker & Docker Compose](https://docs.docker.com/compose/) (recommended)
 
 ### Development
@@ -180,8 +181,8 @@ Create a `.env` file at the root. Required variables:
 DATABASE_URL="mysql://user:password@localhost:3306/moldata"
 
 # Better-Auth
-BETTER_AUTH_SECRET="your-secret"
-BETTER_AUTH_URL="http://localhost:3000"
+AUTH_SECRET="your-secret"
+NUXT_AUTH_ORIGIN="http://localhost:3000"
 
 # OAuth (optional)
 GITHUB_CLIENT_ID=
@@ -192,12 +193,12 @@ GITLAB_CLIENT_ID=
 GITLAB_CLIENT_SECRET=
 
 # WebSocket server
-NUXT_PUBLIC_WS_URL="ws://localhost:1234"
+NUXT_PUBLIC_WEBSOCKET_URL="ws://localhost:1234"
 
 # Mailer (for invitations)
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
+MAILER_HOST=
+MAILER_PORT=
+MAILER_USER=
 SMTP_PASS=
 ```
 
